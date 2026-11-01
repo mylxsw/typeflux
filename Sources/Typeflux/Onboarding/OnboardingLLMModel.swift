@@ -176,7 +176,7 @@ extension OnboardingLLMModel {
         }
         isSyncing = false
         if selectedProvider == .remote(.freeModel) {
-            validationStatus = .valid
+            validationStatus = selectedModel.isEmpty ? .invalid(message: L("models.noModels")) : .valid
             canContinue = !selectedModel.isEmpty
             if validate {
                 commitCurrentSelection()
@@ -289,7 +289,7 @@ extension OnboardingLLMModel {
     }
 
     func testConnection() {
-        guard validationStatus == .valid, !isBusy else { return }
+        guard validationStatus == .valid, !selectedModel.isEmpty, !isBusy else { return }
         testTask?.cancel()
         let token = generation
         let (provider, configuration) = connectionConfiguration()

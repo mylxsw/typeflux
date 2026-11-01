@@ -7,3 +7,7 @@
 "skip" = "Skip";
 "custom" = "Use your own models";
 "skipAll" = "Connect later, use the launcher first";
+"close.title" = "Set up later?";
+"close.message" = "Continue from the menu bar.";
+"close.continue" = "Continue setup";
+"close.quit" = "Exit";

@@ -19,18 +19,13 @@ extension OnboardingViewModel {
             return ready
         }
         switch currentStep {
-        case .cloud:
-            return authState.isLoggedIn && cloudCheckCompleted && !isCheckingCloud && cloudError == nil
-                && (authState.canUseCloudASR || (settingsStore.sttProvider == .localModel && speechConfigured))
-        case .speech: return speechConfigured && speechVerified
-        case .llm: return languageConfigured && languageVerified
+        case .cloud, .speech, .llm: return false
         case .permissions: return allRequiredPermissionsGranted
         default: return true
         }
     }
 
     func chooseRoute(_ route: ServiceRoute) {
-        requestedSetupAdvance = nil
         serviceRoute = route
         speechSkipped = false
         aiSkipped = false
@@ -40,7 +35,6 @@ extension OnboardingViewModel {
     }
 
     func returnToRoute() {
-        requestedSetupAdvance = nil
         skipConfirmation = nil
         stepDirection = -1
         currentStep = .route
@@ -53,7 +47,6 @@ extension OnboardingViewModel {
     }
 
     func resumeDeferredSetup() {
-        requestedSetupAdvance = nil
         serviceRoute = .custom
         speechSkipped = settingsStore.onboardingSpeechDeferred
         aiSkipped = settingsStore.onboardingAIDeferred
@@ -81,12 +74,10 @@ extension OnboardingViewModel {
         if currentStep == .permissions {
             settingsStore.onboardingPermissionsDeferred = false
         }
-        requestedSetupAdvance = nil
         advanceToNextStepOrComplete()
     }
 
     func goBack() {
-        requestedSetupAdvance = nil
         guard let previous = adjacentStep(offset: -1) else { return }
         stepDirection = -1
         currentStep = previous
@@ -94,13 +85,11 @@ extension OnboardingViewModel {
 
     func skipPermissions() {
         guard currentStep == .permissions else { return }
-        requestedSetupAdvance = nil
         skipConfirmation = .permissions
     }
 
     func confirmSkip(_ confirmedTarget: SkipTarget? = nil) {
         guard let target = confirmedTarget ?? skipConfirmation else { return }
-        requestedSetupAdvance = nil
         skipConfirmation = nil
         reportCurrentStepCompleted(skipped: true)
         switch target {

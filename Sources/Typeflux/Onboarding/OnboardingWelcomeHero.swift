@@ -262,10 +262,10 @@ struct OnboardingWaveform: View {
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 15, paused: reduceMotion)) { context in
-            let t = context.date.timeIntervalSinceReferenceDate
+            let elapsed = context.date.timeIntervalSinceReferenceDate
             HStack(spacing: 2.5) {
                 ForEach(heights.indices, id: \.self) { index in
-                    let phase = CGFloat(reduceMotion ? 0 : sin(t * 6 + Double(index) * 0.9) * 0.35)
+                    let phase = CGFloat(reduceMotion ? 0 : sin(elapsed * 6 + Double(index) * 0.9) * 0.35)
                     Capsule()
                         .fill(Color.white)
                         .frame(width: 3, height: max(4, 16 * min(1, max(0.2, heights[index] + phase))))

@@ -33,4 +33,3 @@
 "fullDiskAccess.title" = "完整磁碟存取";
 "fullDiskAccess.summary" = "搜尋受保護的檔案和瀏覽器書籤";
 "missing" = "還差 %d 項必需權限";
-"guideOtherApp" = "Raycast";

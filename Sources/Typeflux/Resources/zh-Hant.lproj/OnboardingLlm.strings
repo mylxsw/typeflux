@@ -54,7 +54,6 @@
 "action.getKey" = "獲取 API Key";
 "action.testConnection" = "測試連線";
 "status.testing" = "測試中…";
-"status.sampleReply" = "你好！我已準備好幫你改寫文字。";
 "error.invalidKey" = "API Key 無效";
 "error.ollamaNotFound" = "未檢測到 Ollama";
 "action.download" = "下載";

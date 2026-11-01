@@ -1109,56 +1109,12 @@
 "workflow.vocabulary.autoAdded.multiple" = "Added %d terms to vocabulary.";
 
 "onboarding.window.title" = "Welcome to Typeflux";
-"onboarding.step.language" = "Language";
-"onboarding.step.models" = "Models";
-"onboarding.step.permissions" = "Permissions";
-"onboarding.step.shortcuts" = "Shortcuts";
 
-"onboarding.welcome.tagline" = "Voice input for every app.";
-"onboarding.welcome.feature1.title" = "Hold to talk";
-"onboarding.welcome.feature1.desc" = "Hold your hotkey to record, release to transcribe — text appears in any app instantly.";
-"onboarding.welcome.feature2.title" = "Works everywhere";
-"onboarding.welcome.feature2.desc" = "Inserts text into any macOS app via the Accessibility API.";
-"onboarding.welcome.feature3.title" = "AI rewriting";
-"onboarding.welcome.feature3.desc" = "An optional language model refines your dictation on the fly.";
 
-"onboarding.language.title" = "Choose your language";
-"onboarding.language.subtitle" = "Select the display language for the Typeflux interface.";
-"onboarding.account.title" = "Welcome Back";
-"onboarding.account.subtitle" = "Unlock cloud speech recognition and AI inference";
-"onboarding.account.cloudReady" = "Speech recognition and language model services ready — no extra API keys needed.";
 
-"onboarding.models.title" = "Set up your models";
-"onboarding.models.subtitle" = "Pick a voice recognizer and a language model. You can change these anytime in Settings.";
-"onboarding.models.stt.title" = "Voice Recognition";
-"onboarding.models.stt.subtitle" = "Converts your speech to text";
-"onboarding.models.llm.title" = "Language Model";
-"onboarding.models.llm.subtitle" = "Rewrites and refines your dictation";
-"onboarding.models.stt.apple.description" = "On-device, no setup required";
-"onboarding.models.stt.whisper.description" = "Remote API — needs endpoint & key";
-"onboarding.models.stt.local.description" = "Download and run locally";
-"onboarding.models.stt.local.hint" = "The model will be downloaded automatically on first use.";
-"onboarding.models.llm.openai.title" = "OpenAI-Compatible";
-"onboarding.models.llm.openai.description" = "Any remote chat API — OpenAI, Claude, Deepseek…";
-"onboarding.models.llm.ollama.title" = "Local Ollama";
-"onboarding.models.llm.ollama.description" = "Private, runs entirely on your Mac";
-"onboarding.models.badge.noSetup" = "No setup";
-"onboarding.models.badge.apiKey" = "API key";
-"onboarding.models.badge.local" = "Local";
 
 "onboarding.models.getAPIKey" = "Get API Key";
 
-"onboarding.sttProvider.subtitle" = "Choose the engine that converts your voice to text";
-"onboarding.sttConfig.subtitle" = "Configure credentials and preferences";
-"onboarding.sttConfig.incomplete.message" = "Complete the selected speech model configuration before continuing.";
-"onboarding.sttConfig.incompleteAlert.title" = "Speech model not configured";
-"onboarding.sttConfig.incompleteAlert.message" = "Complete the selected speech model configuration before continuing to the next step.";
-"onboarding.llmProvider.subtitle" = "Choose the model that rewrites and refines your dictation";
-"onboarding.llmConfig.subtitle" = "Configure credentials and preferences";
-"onboarding.llmConfig.incompleteAlert.title" = "Language model not configured";
-"onboarding.llmConfig.incompleteAlert.message" = "Voice transcription can still work, but rewriting and polishing features that need a language model will be limited for now.";
-"onboarding.llmConfig.incompleteAlert.continueConfig" = "Continue Setup";
-"onboarding.llmConfig.incompleteAlert.skip" = "Skip";
 
 "onboarding.permissions.title" = "Grant permissions";
 "onboarding.permissions.subtitle" = "Typeflux needs a few system permissions to capture your voice and insert text into other apps.";
@@ -1169,37 +1125,7 @@
 "onboarding.permissions.privacyCallout.title" = "Privacy First";
 "onboarding.permissions.privacyCallout.subtitle" = "Your audio data is processed locally whenever possible. We never store recordings without your explicit consent.";
 
-"onboarding.shortcuts.title" = "Keyboard shortcuts";
-"onboarding.shortcuts.subtitle" = "These are the default shortcuts. You're all set — no changes required.";
-"onboarding.shortcuts.globeKeyNotice.title" = "Free up the FN / Globe (🌐) key";
-"onboarding.shortcuts.globeKeyNotice.message" = "macOS reserves the FN / 🌐 key to open Emoji & Symbols by default, which blocks Typeflux from using it. Open Keyboard settings and change \"Press FN / 🌐 key to\" to \"Do Nothing\" — that's all it takes.";
-"onboarding.shortcuts.globeKeyNotice.button" = "Open Keyboard Settings";
-"onboarding.shortcuts.globeKeyNotice.ready.title" = "FN / 🌐 key is ready";
-"onboarding.shortcuts.globeKeyNotice.ready.message" = "Your keyboard setting looks good — Typeflux can use the FN / 🌐 key as a hotkey. If the hotkey still doesn't respond, try signing out and back in, or restart your Mac.";
-"onboarding.shortcuts.externalKeyboard.title" = "Using an external keyboard without a working FN key?";
-"onboarding.shortcuts.externalKeyboard.message" = "You can use Right Command or Right Option instead. Typeflux will change Voice Input to that key, and Chat to a quick double-press of that key.";
-"onboarding.shortcuts.externalKeyboard.useRightCommand" = "Use Right Command";
-"onboarding.shortcuts.externalKeyboard.useRightOption" = "Use Right Option";
-"onboarding.shortcuts.replacement.rightCommand" = "Right Command";
-"onboarding.shortcuts.replacement.rightOption" = "Right Option";
-"onboarding.shortcuts.replacement.fn" = "FN / 🌐";
-"onboarding.shortcuts.replacement.active.title" = "%@ shortcuts are active";
-"onboarding.shortcuts.replacement.active.message" = "Your shortcuts have changed: Voice Input now uses %@, and Chat uses %@×2.";
-"onboarding.shortcuts.replacement.restore" = "Restore FN shortcuts";
-"onboarding.shortcuts.replacement.appliedAlert.title" = "Shortcuts updated";
-"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux now uses %@ for Voice Input and %@×2 for Chat.";
-"onboarding.shortcuts.replacement.restoredAlert.message" = "Typeflux has restored the default FN / 🌐 shortcuts.";
-"onboarding.shortcuts.activation.hint" = "Turn speech into text";
-"onboarding.shortcuts.ask.hint" = "Ask aloud or edit selected text";
-"onboarding.shortcuts.persona.hint" = "Switch personas or rewrite selected text";
-"onboarding.shortcuts.history.hint" = "Browse and paste past entries";
-"onboarding.shortcuts.changeInSettings" = "You can customize shortcuts anytime in Settings → Voice Shortcuts.";
 
-"onboarding.action.back" = "Previous";
-"onboarding.action.continue" = "Next";
-"onboarding.action.skip" = "Skip";
-"onboarding.account.skip" = "Skip, I'll configure my own models";
-"onboarding.action.getStarted" = "Get Started";
 
 // MARK: - Agent Framework
 
@@ -1469,10 +1395,6 @@
 "settings.shortcuts.auxiliaryUpdated" = "Auxiliary shortcut updated";
 "settings.shortcuts.auxiliaryUnset" = "Auxiliary shortcut removed";
 "settings.shortcuts.recordingAuxiliary" = "Press your auxiliary shortcut, or double-tap a single key.";
-"onboarding.shortcuts.auxiliary.hint" = "Dictate with another persona";
-"onboarding.shortcuts.auxiliary.unset" = "No shortcut assigned. Configure one in Settings.";
-"onboarding.shortcuts.auxiliary.externalKeyboard" = "The auxiliary shortcut follows the selected key + Left Shift. Custom auxiliary bindings are preserved.";
-"onboarding.shortcuts.auxiliary.active" = "Auxiliary shortcut: %@";
 // Ask conversations
 "ask.allowOnce" = "Allow once";
 "ask.allowConversation" = "Allow in this conversation";
@@ -6667,7 +6589,6 @@
 /* Onboarding v2 (GUL-339) */
 "onboarding.v2.welcome.title" = "Speak, find, swipe, ask.\nOne key away.";
 "onboarding.v2.welcome.lead" = "Lives in the menu bar, ready in any app.";
-"onboarding.v2.welcome.duration" = "About 2 minutes";
 "onboarding.v2.verb.voice" = "Speak";
 "onboarding.v2.verb.launcher" = "Find";
 "onboarding.v2.verb.ring" = "Swipe";
@@ -6692,53 +6613,7 @@
 "onboarding.v2.hero.chat.question" = "Which month grew fastest?";
 "onboarding.v2.hero.chat.step" = "Read the current screen";
 "onboarding.v2.hero.chat.answer" = "July, up 32% month over month, mostly from the App Store.";
-"onboarding.v2.action.start" = "Get Started";
-"onboarding.v2.action.continue" = "Continue";
-"onboarding.v2.action.back" = "Back";
-"onboarding.v2.action.later" = "Later";
-"onboarding.v2.action.finish" = "Start Using Typeflux";
-"onboarding.v2.later.screen" = "Screen Recording";
-"onboarding.v2.later.ai" = "AI";
-"onboarding.v2.permissions.title.ready" = "Permissions are ready";
-"onboarding.v2.permissions.title.missing" = "%d still needed";
-"onboarding.v2.permissions.subtitle" = "Review the permissions needed for your setup.";
-"onboarding.v2.permissions.later" = "Asked when needed:";
-"onboarding.v2.permission.microphone.detail" = "Records when you start voice input";
-"onboarding.v2.permission.accessibility.detail" = "Types text into the current app";
-"onboarding.v2.permission.speechRecognition.detail" = "Apple Speech fallback";
-"onboarding.v2.globe.title" = "macOS is using fn";
-"onboarding.v2.globe.detail" = "Set it to “Do Nothing” to hold and talk";
-"onboarding.v2.globe.conflict" = "That key is already used by another shortcut";
-"onboarding.v2.globe.open" = "Open Keyboard Settings";
-"onboarding.v2.globe.useOtherKey" = "Use Another Key";
-"onboarding.feature.voice.title" = "Voice Input";
-"onboarding.feature.voice.caption" = "Hold to talk, release to type";
-"onboarding.feature.launcher.title" = "Launcher";
-"onboarding.feature.launcher.caption" = "Apps, math, clipboard, screenshots";
-"onboarding.feature.tools.title" = "Tools";
-"onboarding.feature.tools.caption" = "Translate, record GIFs, run workflows";
-"onboarding.feature.ring.title" = "Ring";
-"onboarding.feature.ring.caption" = "Hold, point, release";
-"onboarding.feature.chat.title" = "Agent Chat";
-"onboarding.feature.chat.caption" = "Sees your screen and gets things done";
-"onboarding.tip.voice.talk" = "Hold to talk";
-"onboarding.tip.voice.rewrite" = "Select text first to rewrite";
-"onboarding.tip.launcher.open" = "Open the launcher";
-"onboarding.tip.launcher.clipboard" = "Clipboard history";
-"onboarding.tip.launcher.screenshot" = "Screenshot";
-"onboarding.tip.tools.translate" = "Translate";
-"onboarding.tip.tools.record" = "Record screen or GIF";
-"onboarding.tip.tools.workflow" = "Workflows: type a keyword";
-"onboarding.tip.ring.swipe" = "Open the ring";
-"onboarding.tip.chat.ask" = "Ask in the launcher";
-"onboarding.tip.chat.window" = "Open the chat window";
 "onboarding.v2.hero.tools" = "Translate, record, automate";
-"onboarding.v2.action.next" = "Next";
-"onboarding.v2.shortcut.notSet" = "Set in Settings";
-"onboarding.v2.voice.practice.placeholder" = "Click here, hold %@ and say something";
-"onboarding.v2.voice.practice.done" = "It works";
-"onboarding.v2.finish.title" = "You're all set";
-"onboarding.v2.finish.subtitle" = "These keys are all you need.";
 "ask.history.syncPending" = "Some conversations have not synced yet. Retrying automatically.";
 
 "ask.storage.inUse" = "Another Typeflux process is using these conversations. Close it and try again.";
@@ -7652,38 +7527,11 @@
 
 
 // Service setup and feature availability.
-"setup.services.title" = "Choose how to connect";
-"setup.services.subtitle" = "Voice input and Agent need a model service. You can use the launcher without one.";
-"setup.services.cloud" = "Sign in to connect. No API key needed.";
-"setup.services.custom.title" = "Use my own models";
-"setup.services.custom" = "Connect local models or your own model services.";
-"setup.services.recommended" = "Recommended";
-"setup.services.launcherOnly" = "Start with the launcher";
-"setup.cloud.title" = "Connect to Typeflux Cloud";
-"setup.cloud.subtitle" = "Sign in to connect voice and AI services.";
-"setup.cloud.signInDetail" = "Sign in, then return here to continue.";
 "setup.cloud.signIn" = "Sign in to Typeflux Cloud";
-"setup.cloud.checking" = "Checking available services…";
 "setup.cloud.checkFailed" = "Couldn’t check your account. Retry or use your own models.";
-"setup.cloud.aiReady" = "Use the account’s default AI model";
-"setup.cloud.speechReady" = "Cloud speech recognition is available";
-"setup.cloud.localNext" = "Cloud speech isn’t included in this account. Next, choose a local model or your own speech service.";
-"setup.cloud.useOwn" = "Use my own models instead";
-"setup.speech.title" = "Set up speech recognition";
-"setup.speech.subtitle" = "Turn what you say into text.";
 "setup.speech.configure" = "Configure speech model";
-"setup.speech.hint" = "Local models need no account. Download or check your model before continuing.";
 "setup.speech.cloudUnavailable" = "Sign in and check Cloud access, or configure a local speech model.";
 "setup.speech.required" = "Set up speech recognition before recording. %@";
-"setup.language.title" = "Set up your AI model";
-"setup.language.subtitle" = "One model for Agent, conversations and voice rewriting.";
-"setup.language.configure" = "Add or configure models";
-"setup.language.hint" = "Choose a model, then test it. You can change models later in Settings.";
-"setup.status.title" = "Status";
-"setup.status.configured" = "Configured";
-"setup.status.notSetUp" = "Not set up";
-"setup.status.downloading" = "Downloading · %d%%";
-"setup.status.testing" = "Testing connection…";
 "setup.skip.title" = "Set up later?";
 "setup.skip.allModels.message" = "Launcher search, opening apps and calculations still work. Voice input, Agent and AI rewriting need model setup. You can configure them later in Settings.";
 "setup.skip.speech.message" = "Voice input and voice questions won’t be set up. You can still configure AI and use Agent by typing.";
@@ -7691,58 +7539,11 @@
 "setup.skip.permissions.message" = "Without microphone access, Typeflux can’t record. Without Accessibility access, it can’t type into other apps. You can grant access later in Settings.";
 "setup.skip.confirm" = "Set up later";
 "setup.skip.back" = "Back to setup";
-"setup.action.skip" = "Set up later";
-"setup.action.retry" = "Retry";
-"setup.action.done" = "Done";
-"setup.action.configure" = "Set up";
 "setup.action.resume" = "Continue setup…";
-"setup.finish.title" = "Ready to start";
-"setup.finish.subtitle" = "Here’s what you’ve set up. You can add the rest whenever you need it.";
-"setup.finish.launcher" = "Search apps and files, open apps and calculate";
-"setup.finish.speechSkipped" = "Set up a speech model when you need voice input";
-"setup.finish.permissionsMissing" = "Model configured · Permissions still needed";
-"setup.finish.ai" = "Agent & AI rewriting";
-"setup.stage.services" = "Connection";
-"setup.stage.models" = "Model services";
-"setup.stage.permissions" = "Permissions";
-"setup.stage.practice" = "Get started";
-"setup.cloud.signInShort" = "Sign in";
-"setup.speech.remoteHint" = "Test the connection before continuing.";
-"setup.status.testNeeded" = "Not verified";
-"setup.language.choose" = "Choose a model";
 "setup.permission.microphone.impact" = "Without microphone access, voice input and voice questions cannot record.";
 "setup.permission.accessibility.impact" = "Without Accessibility access, typing into other apps and some global shortcuts will not work.";
 "setup.permission.speechRecognition.impact" = "Apple speech recognition needs Speech Recognition access.";
 "setup.permission.later" = "Launcher search remains available. You can grant access later in Settings.";
-"setup.voice.permissionsFirst" = "Set up permissions and your shortcut before trying voice input.";
-"setup.action.permissions" = "Set up permissions";
-"setup.launcher.permissionsHint" = "Some global shortcuts need Accessibility access. You can still open the launcher from the menu bar.";
 "setup.skip.existingModels" = "Existing model settings will be kept. Start with the launcher, and set up any missing voice or AI services later in Settings.";
 "setup.skip.existingSpeech" = "Your speech model settings will be kept. Skip the voice guide for now; you can change the model later in Settings.";
 "setup.skip.existingAI" = "Your AI model settings will be kept. Skip the AI guide for now; you can change the model later in Settings.";
-"setup.finish.readySubtitle" = "Your models and permissions are set up. You can adjust them in Settings.";
-"setup.permission.keyboardImpact" = "The 🌐 shortcut is not ready yet. Voice input needs a working shortcut; you can set one up later.";
-"setup.finish.keyboardMissing" = "Model configured · Set up the 🌐 shortcut";
-"setup.permission.launcherAccessibility" = "For global shortcuts and actions across apps";
-
-"setup.services.launcherImpact" = "Voice input and Agent will be unavailable until set up.";
-"setup.cloud.signInContinue" = "Sign in and continue";
-"setup.cloud.entitlementNote" = "Available services depend on your account.";
-"setup.cloud.speechService" = "Speech recognition";
-"setup.action.testAndContinue" = "Test and continue";
-"setup.rail.title" = "GET STARTED";
-"setup.rail.later" = "Adjust later in Settings";
-"setup.rail.current" = "Current step";
-"setup.rail.completed" = "Completed";
-"setup.stage.complete" = "Finish";
-"setup.speech.serviceLabel" = "Speech service";
-"setup.speech.preview" = "Say what’s on your mind";
-"setup.connection.configured" = "Connection details added";
-"setup.connection.edit" = "Edit connection";
-"setup.language.shortTitle" = "Language model";
-"setup.speech.manage" = "Manage speech models";
-"setup.status.ready" = "Ready";
-"setup.rail.skipped" = "Skipped";
-"setup.services.existingImpact" = "Existing model connections will be kept.";
-"setup.services.aiMissingImpact" = "Set up Agent and AI rewriting later.";
-"setup.services.speechMissingImpact" = "Set up voice input later.";

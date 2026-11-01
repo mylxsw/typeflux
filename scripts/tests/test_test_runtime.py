@@ -71,6 +71,14 @@ class RuntimeTests(unittest.TestCase):
         _, run = self.prepare()
         self.assertEqual(run.call_count, 1)
 
+    def test_make_selection_metadata_does_not_rebuild_identical_sources(self):
+        result, _ = self.prepare()
+        self.save(result)
+        self.environment.update(FILTER="other tests", SUITE="OtherTests", REASON="retry",
+                                MAKEFLAGS="-- FILTER=other-tests", MFLAGS="-j2", MAKEOVERRIDES="FILTER")
+        _, run = self.prepare()
+        run.assert_not_called()
+
     def test_source_changes_even_same_size_and_restored_mtime_invalidate(self):
         result, _ = self.prepare()
         self.save(result)
@@ -265,18 +273,87 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(status, 7)
         self.assertEqual(run.call_count, 1)
 
+    def test_native_swift_host_verifies_source_toolchain_and_artifact(self):
+        scripts = self.root / "scripts"
+        scripts.mkdir()
+        source = scripts / "native_swift_testing.swift"
+        source.write_text("host source")
+        developer = Path(self.environment["DEVELOPER_DIR"])
+        compiler = developer / "Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        compiler.parent.mkdir(parents=True)
+        compiler.write_text("compiler")
+        framework = developer / "Platforms/MacOSX.platform/Developer/Library/Frameworks/Testing.framework"
+        framework.mkdir(parents=True)
+        (framework / "Testing").write_text("testing framework")
+        sdk = developer / "Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json"
+        sdk.parent.mkdir(parents=True)
+        sdk.write_text("SDK")
+
+        def compile_host(command, **kwargs):
+            Path(command[-1]).write_text("compiled host")
+            return subprocess.CompletedProcess(command, 0)
+
+        with patch.object(RUNTIME, "__file__", str(scripts / "test_runtime.py")), \
+                patch.object(RUNTIME.subprocess, "run", side_effect=compile_host) as run:
+            host = RUNTIME.native_swift_testing_host(self.root, self.environment)
+            self.assertEqual(run.call_count, 1)
+            self.assertEqual(RUNTIME.native_swift_testing_host(self.root, self.environment), host)
+            self.assertEqual(run.call_count, 1)
+            for change in (lambda: source.write_text("changed source"),
+                           lambda: host.write_text("tampered binary"),
+                           lambda: compiler.write_text("new compiler"),
+                           lambda: (framework / "Testing").write_text("new testing framework"),
+                           lambda: sdk.write_text("new SDK")):
+                change()
+                before = run.call_count
+                RUNTIME.native_swift_testing_host(self.root, self.environment)
+                self.assertEqual(run.call_count, before + 1)
+
+    @staticmethod
+    def swift_output(output):
+        def invoke(command, **kwargs):
+            kwargs["stdout"].write(output)
+            return subprocess.CompletedProcess(command, 0)
+        return invoke
+
     def test_swift_testing_uses_the_binary_and_keeps_ui_serial(self):
         tests = {"TypefluxTests.ExampleTests/run()"}
-        with patch.object(RUNTIME.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run:
+        with patch.object(RUNTIME.subprocess, "run", side_effect=self.swift_output(
+                "✔ Test run with 1 test passed after 0.01 seconds.\n")) as run, \
+                patch.object(RUNTIME, "native_swift_testing_host", return_value=self.root / "native-host"), \
+                redirect_stdout(io.StringIO()):
             status = RUNTIME.run_native("serial", tests, 4, self.bundle, self.tools, {}, lambda _: "anchored filter", self.root)
         self.assertEqual(status, 0)
         command = run.call_args.args[0]
-        self.assertEqual(command[2], str(self.binary))
+        self.assertEqual(command[0], str(self.root / "native-host"))
+        self.assertEqual(run.call_args.kwargs["env"]["TYPEFLUX_TEST_BUNDLE"], str(self.binary))
         self.assertIn("--no-parallel", command)
         self.assertEqual(command[-1], "anchored filter")
         self.binary.unlink()
         with self.assertRaisesRegex(ValueError, "layout"):
             RUNTIME.run_native("serial", tests, 4, self.bundle, self.tools, {}, str, self.root)
+
+    def test_reviewed_parallel_swift_suites_keep_the_swiftpm_host(self):
+        tests = {"TypefluxTests.ExampleTests/run()"}
+        with patch.object(RUNTIME.subprocess, "run", side_effect=self.swift_output(
+                "✔ Test run with 1 test passed after 0.01 seconds.\n")) as run, \
+                patch.object(RUNTIME, "native_swift_testing_host") as host, redirect_stdout(io.StringIO()):
+            self.assertEqual(RUNTIME.run_native("swift-testing", tests, 4, self.bundle, self.tools,
+                                               {}, str, self.root), 0)
+        host.assert_not_called()
+        self.assertEqual(run.call_args.args[0][0], str(self.tools["swift-testing"]))
+        self.assertIn("--parallel", run.call_args.args[0])
+
+    def test_swift_testing_rejects_early_success_exit_failed_summary_and_missing_methods(self):
+        tests = {"TypefluxTests.ExampleTests/run()", "TypefluxTests.ExampleTests/other()"}
+        for output in ("◇ Test run() started.\n", "✔ Test run with 1 test passed after 0.01 seconds.\n",
+                       "✘ Test run with 2 tests in 1 suite failed after 0.01 seconds.\n"):
+            with self.subTest(output=output), patch.object(RUNTIME.subprocess, "run",
+                    side_effect=self.swift_output(output)), \
+                    patch.object(RUNTIME, "native_swift_testing_host", return_value=self.root / "native-host"), \
+                    redirect_stdout(io.StringIO()):
+                self.assertEqual(RUNTIME.run_native("serial", tests, 4, self.bundle, self.tools,
+                                                   {}, str, self.root), 1)
 
 
 if __name__ == "__main__":

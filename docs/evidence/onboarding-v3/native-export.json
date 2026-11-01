@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/usr/bin/swift",
+    "../export-gul642-native.swift",
+    "../gul642-native-snapshots",
+    "docs/evidence/onboarding-v3/native"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 65.04
+}

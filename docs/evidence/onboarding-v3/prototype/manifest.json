@@ -1,0 +1,674 @@
+[
+  {
+    "screen": "welcome",
+    "state": 0,
+    "name": "默认",
+    "theme": "dark",
+    "file": "prototype/welcome-0-dark.png"
+  },
+  {
+    "screen": "welcome",
+    "state": 1,
+    "name": "语言菜单",
+    "theme": "dark",
+    "file": "prototype/welcome-1-dark.png"
+  },
+  {
+    "screen": "welcome",
+    "state": 2,
+    "name": "关闭确认",
+    "theme": "dark",
+    "file": "prototype/welcome-2-dark.png"
+  },
+  {
+    "screen": "route",
+    "state": 0,
+    "name": "Cloud 选中",
+    "theme": "dark",
+    "file": "prototype/route-0-dark.png"
+  },
+  {
+    "screen": "route",
+    "state": 1,
+    "name": "自己的模型",
+    "theme": "dark",
+    "file": "prototype/route-1-dark.png"
+  },
+  {
+    "screen": "route",
+    "state": 2,
+    "name": "暂不连接确认",
+    "theme": "dark",
+    "file": "prototype/route-2-dark.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 0,
+    "name": "未登录",
+    "theme": "dark",
+    "file": "prototype/cloud-0-dark.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 1,
+    "name": "等待浏览器",
+    "theme": "dark",
+    "file": "prototype/cloud-1-dark.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 2,
+    "name": "正在完成",
+    "theme": "dark",
+    "file": "prototype/cloud-2-dark.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 3,
+    "name": "登录失败",
+    "theme": "dark",
+    "file": "prototype/cloud-3-dark.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 4,
+    "name": "已登录",
+    "theme": "dark",
+    "file": "prototype/cloud-4-dark.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 5,
+    "name": "不含云端语音",
+    "theme": "dark",
+    "file": "prototype/cloud-5-dark.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 6,
+    "name": "下载本地模型",
+    "theme": "dark",
+    "file": "prototype/cloud-6-dark.png"
+  },
+  {
+    "screen": "speech",
+    "state": 0,
+    "name": "本地模型",
+    "theme": "dark",
+    "file": "prototype/speech-0-dark.png"
+  },
+  {
+    "screen": "speech",
+    "state": 1,
+    "name": "模型菜单",
+    "theme": "dark",
+    "file": "prototype/speech-1-dark.png"
+  },
+  {
+    "screen": "speech",
+    "state": 2,
+    "name": "下载中",
+    "theme": "dark",
+    "file": "prototype/speech-2-dark.png"
+  },
+  {
+    "screen": "speech",
+    "state": 3,
+    "name": "麦克风授权",
+    "theme": "dark",
+    "file": "prototype/speech-3-dark.png"
+  },
+  {
+    "screen": "speech",
+    "state": 4,
+    "name": "测试成功",
+    "theme": "dark",
+    "file": "prototype/speech-4-dark.png"
+  },
+  {
+    "screen": "speech",
+    "state": 5,
+    "name": "API Key",
+    "theme": "dark",
+    "file": "prototype/speech-5-dark.png"
+  },
+  {
+    "screen": "speech",
+    "state": 6,
+    "name": "Key 无效",
+    "theme": "dark",
+    "file": "prototype/speech-6-dark.png"
+  },
+  {
+    "screen": "speech",
+    "state": 7,
+    "name": "豆包",
+    "theme": "dark",
+    "file": "prototype/speech-7-dark.png"
+  },
+  {
+    "screen": "speech",
+    "state": 8,
+    "name": "Google 授权",
+    "theme": "dark",
+    "file": "prototype/speech-8-dark.png"
+  },
+  {
+    "screen": "speech",
+    "state": 9,
+    "name": "麦克风被拒",
+    "theme": "dark",
+    "file": "prototype/speech-9-dark.png"
+  },
+  {
+    "screen": "llm",
+    "state": 0,
+    "name": "免费模型",
+    "theme": "dark",
+    "file": "prototype/llm-0-dark.png"
+  },
+  {
+    "screen": "llm",
+    "state": 1,
+    "name": "填写 Key",
+    "theme": "dark",
+    "file": "prototype/llm-1-dark.png"
+  },
+  {
+    "screen": "llm",
+    "state": 2,
+    "name": "已连接",
+    "theme": "dark",
+    "file": "prototype/llm-2-dark.png"
+  },
+  {
+    "screen": "llm",
+    "state": 3,
+    "name": "模型菜单",
+    "theme": "dark",
+    "file": "prototype/llm-3-dark.png"
+  },
+  {
+    "screen": "llm",
+    "state": 4,
+    "name": "测试成功",
+    "theme": "dark",
+    "file": "prototype/llm-4-dark.png"
+  },
+  {
+    "screen": "llm",
+    "state": 5,
+    "name": "Key 无效",
+    "theme": "dark",
+    "file": "prototype/llm-5-dark.png"
+  },
+  {
+    "screen": "llm",
+    "state": 6,
+    "name": "更多服务商",
+    "theme": "dark",
+    "file": "prototype/llm-6-dark.png"
+  },
+  {
+    "screen": "llm",
+    "state": 7,
+    "name": "Ollama 未运行",
+    "theme": "dark",
+    "file": "prototype/llm-7-dark.png"
+  },
+  {
+    "screen": "perms",
+    "state": 0,
+    "name": "初始",
+    "theme": "dark",
+    "file": "prototype/perms-0-dark.png"
+  },
+  {
+    "screen": "perms",
+    "state": 1,
+    "name": "麦克风被拒",
+    "theme": "dark",
+    "file": "prototype/perms-1-dark.png"
+  },
+  {
+    "screen": "perms",
+    "state": 2,
+    "name": "辅助功能引导",
+    "theme": "dark",
+    "file": "prototype/perms-2-dark.png"
+  },
+  {
+    "screen": "perms",
+    "state": 3,
+    "name": "必需完成",
+    "theme": "dark",
+    "file": "prototype/perms-3-dark.png"
+  },
+  {
+    "screen": "perms",
+    "state": 4,
+    "name": "展开可选",
+    "theme": "dark",
+    "file": "prototype/perms-4-dark.png"
+  },
+  {
+    "screen": "perms",
+    "state": 5,
+    "name": "可选权限引导",
+    "theme": "dark",
+    "file": "prototype/perms-5-dark.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 0,
+    "name": "默认（含冲突）",
+    "theme": "dark",
+    "file": "prototype/shortcuts-0-dark.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 1,
+    "name": "录制中",
+    "theme": "dark",
+    "file": "prototype/shortcuts-1-dark.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 2,
+    "name": "操作菜单",
+    "theme": "dark",
+    "file": "prototype/shortcuts-2-dark.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 3,
+    "name": "与其它功能冲突",
+    "theme": "dark",
+    "file": "prototype/shortcuts-3-dark.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 4,
+    "name": "fn 修改引导",
+    "theme": "dark",
+    "file": "prototype/shortcuts-4-dark.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 5,
+    "name": "全部就绪",
+    "theme": "dark",
+    "file": "prototype/shortcuts-5-dark.png"
+  },
+  {
+    "screen": "try",
+    "state": 0,
+    "name": "语音",
+    "theme": "dark",
+    "file": "prototype/try-0-dark.png"
+  },
+  {
+    "screen": "try",
+    "state": 1,
+    "name": "启动器",
+    "theme": "dark",
+    "file": "prototype/try-1-dark.png"
+  },
+  {
+    "screen": "try",
+    "state": 2,
+    "name": "圆环",
+    "theme": "dark",
+    "file": "prototype/try-2-dark.png"
+  },
+  {
+    "screen": "try",
+    "state": 3,
+    "name": "Agent",
+    "theme": "dark",
+    "file": "prototype/try-3-dark.png"
+  },
+  {
+    "screen": "try",
+    "state": 4,
+    "name": "未连接 AI",
+    "theme": "dark",
+    "file": "prototype/try-4-dark.png"
+  },
+  {
+    "screen": "welcome",
+    "state": 0,
+    "name": "默认",
+    "theme": "light",
+    "file": "prototype/welcome-0-light.png"
+  },
+  {
+    "screen": "welcome",
+    "state": 1,
+    "name": "语言菜单",
+    "theme": "light",
+    "file": "prototype/welcome-1-light.png"
+  },
+  {
+    "screen": "welcome",
+    "state": 2,
+    "name": "关闭确认",
+    "theme": "light",
+    "file": "prototype/welcome-2-light.png"
+  },
+  {
+    "screen": "route",
+    "state": 0,
+    "name": "Cloud 选中",
+    "theme": "light",
+    "file": "prototype/route-0-light.png"
+  },
+  {
+    "screen": "route",
+    "state": 1,
+    "name": "自己的模型",
+    "theme": "light",
+    "file": "prototype/route-1-light.png"
+  },
+  {
+    "screen": "route",
+    "state": 2,
+    "name": "暂不连接确认",
+    "theme": "light",
+    "file": "prototype/route-2-light.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 0,
+    "name": "未登录",
+    "theme": "light",
+    "file": "prototype/cloud-0-light.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 1,
+    "name": "等待浏览器",
+    "theme": "light",
+    "file": "prototype/cloud-1-light.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 2,
+    "name": "正在完成",
+    "theme": "light",
+    "file": "prototype/cloud-2-light.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 3,
+    "name": "登录失败",
+    "theme": "light",
+    "file": "prototype/cloud-3-light.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 4,
+    "name": "已登录",
+    "theme": "light",
+    "file": "prototype/cloud-4-light.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 5,
+    "name": "不含云端语音",
+    "theme": "light",
+    "file": "prototype/cloud-5-light.png"
+  },
+  {
+    "screen": "cloud",
+    "state": 6,
+    "name": "下载本地模型",
+    "theme": "light",
+    "file": "prototype/cloud-6-light.png"
+  },
+  {
+    "screen": "speech",
+    "state": 0,
+    "name": "本地模型",
+    "theme": "light",
+    "file": "prototype/speech-0-light.png"
+  },
+  {
+    "screen": "speech",
+    "state": 1,
+    "name": "模型菜单",
+    "theme": "light",
+    "file": "prototype/speech-1-light.png"
+  },
+  {
+    "screen": "speech",
+    "state": 2,
+    "name": "下载中",
+    "theme": "light",
+    "file": "prototype/speech-2-light.png"
+  },
+  {
+    "screen": "speech",
+    "state": 3,
+    "name": "麦克风授权",
+    "theme": "light",
+    "file": "prototype/speech-3-light.png"
+  },
+  {
+    "screen": "speech",
+    "state": 4,
+    "name": "测试成功",
+    "theme": "light",
+    "file": "prototype/speech-4-light.png"
+  },
+  {
+    "screen": "speech",
+    "state": 5,
+    "name": "API Key",
+    "theme": "light",
+    "file": "prototype/speech-5-light.png"
+  },
+  {
+    "screen": "speech",
+    "state": 6,
+    "name": "Key 无效",
+    "theme": "light",
+    "file": "prototype/speech-6-light.png"
+  },
+  {
+    "screen": "speech",
+    "state": 7,
+    "name": "豆包",
+    "theme": "light",
+    "file": "prototype/speech-7-light.png"
+  },
+  {
+    "screen": "speech",
+    "state": 8,
+    "name": "Google 授权",
+    "theme": "light",
+    "file": "prototype/speech-8-light.png"
+  },
+  {
+    "screen": "speech",
+    "state": 9,
+    "name": "麦克风被拒",
+    "theme": "light",
+    "file": "prototype/speech-9-light.png"
+  },
+  {
+    "screen": "llm",
+    "state": 0,
+    "name": "免费模型",
+    "theme": "light",
+    "file": "prototype/llm-0-light.png"
+  },
+  {
+    "screen": "llm",
+    "state": 1,
+    "name": "填写 Key",
+    "theme": "light",
+    "file": "prototype/llm-1-light.png"
+  },
+  {
+    "screen": "llm",
+    "state": 2,
+    "name": "已连接",
+    "theme": "light",
+    "file": "prototype/llm-2-light.png"
+  },
+  {
+    "screen": "llm",
+    "state": 3,
+    "name": "模型菜单",
+    "theme": "light",
+    "file": "prototype/llm-3-light.png"
+  },
+  {
+    "screen": "llm",
+    "state": 4,
+    "name": "测试成功",
+    "theme": "light",
+    "file": "prototype/llm-4-light.png"
+  },
+  {
+    "screen": "llm",
+    "state": 5,
+    "name": "Key 无效",
+    "theme": "light",
+    "file": "prototype/llm-5-light.png"
+  },
+  {
+    "screen": "llm",
+    "state": 6,
+    "name": "更多服务商",
+    "theme": "light",
+    "file": "prototype/llm-6-light.png"
+  },
+  {
+    "screen": "llm",
+    "state": 7,
+    "name": "Ollama 未运行",
+    "theme": "light",
+    "file": "prototype/llm-7-light.png"
+  },
+  {
+    "screen": "perms",
+    "state": 0,
+    "name": "初始",
+    "theme": "light",
+    "file": "prototype/perms-0-light.png"
+  },
+  {
+    "screen": "perms",
+    "state": 1,
+    "name": "麦克风被拒",
+    "theme": "light",
+    "file": "prototype/perms-1-light.png"
+  },
+  {
+    "screen": "perms",
+    "state": 2,
+    "name": "辅助功能引导",
+    "theme": "light",
+    "file": "prototype/perms-2-light.png"
+  },
+  {
+    "screen": "perms",
+    "state": 3,
+    "name": "必需完成",
+    "theme": "light",
+    "file": "prototype/perms-3-light.png"
+  },
+  {
+    "screen": "perms",
+    "state": 4,
+    "name": "展开可选",
+    "theme": "light",
+    "file": "prototype/perms-4-light.png"
+  },
+  {
+    "screen": "perms",
+    "state": 5,
+    "name": "可选权限引导",
+    "theme": "light",
+    "file": "prototype/perms-5-light.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 0,
+    "name": "默认（含冲突）",
+    "theme": "light",
+    "file": "prototype/shortcuts-0-light.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 1,
+    "name": "录制中",
+    "theme": "light",
+    "file": "prototype/shortcuts-1-light.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 2,
+    "name": "操作菜单",
+    "theme": "light",
+    "file": "prototype/shortcuts-2-light.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 3,
+    "name": "与其它功能冲突",
+    "theme": "light",
+    "file": "prototype/shortcuts-3-light.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 4,
+    "name": "fn 修改引导",
+    "theme": "light",
+    "file": "prototype/shortcuts-4-light.png"
+  },
+  {
+    "screen": "shortcuts",
+    "state": 5,
+    "name": "全部就绪",
+    "theme": "light",
+    "file": "prototype/shortcuts-5-light.png"
+  },
+  {
+    "screen": "try",
+    "state": 0,
+    "name": "语音",
+    "theme": "light",
+    "file": "prototype/try-0-light.png"
+  },
+  {
+    "screen": "try",
+    "state": 1,
+    "name": "启动器",
+    "theme": "light",
+    "file": "prototype/try-1-light.png"
+  },
+  {
+    "screen": "try",
+    "state": 2,
+    "name": "圆环",
+    "theme": "light",
+    "file": "prototype/try-2-light.png"
+  },
+  {
+    "screen": "try",
+    "state": 3,
+    "name": "Agent",
+    "theme": "light",
+    "file": "prototype/try-3-light.png"
+  },
+  {
+    "screen": "try",
+    "state": 4,
+    "name": "未连接 AI",
+    "theme": "light",
+    "file": "prototype/try-4-light.png"
+  }
+]

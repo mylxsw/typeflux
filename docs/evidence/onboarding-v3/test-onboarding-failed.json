@@ -1,0 +1,29 @@
+{
+  "command": [
+    "make",
+    "test",
+    "PROFILE=onboarding",
+    "FILTER=window controller keeps native title bar|native resume opens|welcome language menu|closing the native onboarding|empty free LLM catalog|every remote provider can commit|native pages cover provider|rendered permission buttons refresh"
+  ],
+  "exit_code": 2,
+  "wall_seconds": 166.26,
+  "selected_methods": [
+    "TypefluxFocusedTests.OnboardingBehaviorTests/`window controller keeps native title bar and resume entry`()",
+    "TypefluxFocusedTests.OnboardingComponentTests/`native resume opens the first deferred page without resetting shortcuts`()",
+    "TypefluxFocusedTests.OnboardingComponentTests/`welcome language menu and close confirmation remain resumable`()",
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`closing the native onboarding window cancels pending login`()",
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`empty free LLM catalog blocks continuation and never dispatches a probe`()",
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`every remote provider can commit a fetched model and errors block verification`()",
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`native pages cover provider configuration and result states in both languages and appearances`()",
+    "TypefluxFocusedTests.PermissionsSettingsTests/`rendered permission buttons refresh and request only their own permission`()"
+  ],
+  "build_input_digest": "b0e52f904a4a36d0519751cc11a71d653982a5350bb2d1aba791c93d4c55e5fd",
+  "build_artifact_digest": "397e32eb1811147619d96d152e8552a2e43cfa0ec5a263492cb3fcdfb9a1a0d5",
+  "discovery_digest": "c880d4e0e47fba9852a073e981ec799efe6ffb1fc27a9a77ab4e767e1a93cce7",
+  "runner_sha256": {
+    "scripts/test_runtime.py": "21f1e417510242bdf116d691cd602c9bcefc5eab7c5f30a13f4cf88047470363",
+    "scripts/test_groups.py": "12938ad96a4f94ce7feae64476da6bd57c10693aea46e55ba7d76f67096a21c9",
+    "scripts/native_swift_testing.swift": "39aff2da6184bd5f4423a4b105edc329885a9dec099b1837b0085b63c2e953c4"
+  },
+  "native_framework_summary": "\u2718 Test run with 8 tests in 5 suites failed after 68.858 seconds with 4 issues."
+}

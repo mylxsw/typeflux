@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "test-full",
+    "REASON=GUL-634 final validation after stage-2 merges"
+  ],
+  "exit_code": 2,
+  "wall_seconds": 3156.93
+}

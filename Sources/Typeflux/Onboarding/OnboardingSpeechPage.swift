@@ -112,27 +112,25 @@ private extension OnboardingSpeechPage {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
 
-                Menu {
-                    ForEach(LocalSTTModel.displayOrder, id: \.self) { localModel in
-                        Button {
-                            model.selectLocalModel(localModel)
-                        } label: {
-                            HStack {
-                                if localModel == model.selectedLocalModel {
-                                    Image(systemName: "checkmark")
-                                }
-                                Text(localModel.displayName)
-                                Spacer()
-                                Text(model.isModelAvailable(localModel)
-                                    ? OnboardingStrings.text("local.downloadedTag", table: "OnboardingSpeech")
-                                    : localModel.specs.sizeValue)
-                            }
-                        }
+                OnboardingModelPicker(
+                    items: LocalSTTModel.displayOrder.map { local in
+                        .init(id: local.rawValue, title: local.displayName,
+                              detail: model.isModelAvailable(local)
+                                ? OnboardingStrings.text("local.downloadedTag", table: "OnboardingSpeech")
+                                : local.specs.sizeValue)
+                    },
+                    selection: model.selectedLocalModel.rawValue,
+                    identifier: "onboarding.speech.model",
+                    height: 36,
+                    onSelect: { id in
+                        if let local = LocalSTTModel(rawValue: id) { model.selectLocalModel(local) }
                     }
-                } label: {
+                ) {
                     HStack(spacing: 8) {
                         Text(model.selectedLocalModel.displayName)
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 13))
+                            .lineLimit(1)
+                        Spacer()
                         if model.selectedLocalModel == .senseVoiceSmall {
                             Text(OnboardingStrings.text("badge.recommended", table: "OnboardingSpeech"))
                                 .font(.system(size: 9.5, weight: .bold))
@@ -141,7 +139,6 @@ private extension OnboardingSpeechPage {
                                 .padding(.vertical, 2)
                                 .background(Color.accentColor.opacity(0.12), in: Capsule())
                         }
-                        Spacer()
                         Text(model.selectedLocalModel.specs.sizeValue)
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
@@ -154,7 +151,6 @@ private extension OnboardingSpeechPage {
                     .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(.primary.opacity(0.08), lineWidth: 1))
                 }
-                .menuStyle(.borderlessButton)
             }
 
             HStack(spacing: 10) {
@@ -194,7 +190,8 @@ private extension OnboardingSpeechPage {
                         .font(.system(size: 12, weight: .semibold))
                         .padding(.horizontal, 12)
                         .frame(height: 30)
-                        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                        .background(.primary.opacity(0.04), in: Capsule())
+                        .overlay(Capsule().stroke(.primary.opacity(0.12), lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                 }

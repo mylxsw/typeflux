@@ -1,0 +1,27 @@
+{
+  "command": [
+    "make",
+    "test",
+    "PROFILE=onboarding",
+    "FILTER=every page has fixed|native window captures|welcome route selection back|native provider and test|native speech model menu|native LLM menu"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 527.01,
+  "selected_methods": [
+    "TypefluxFocusedTests.OnboardingBehaviorTests/`every page has fixed stage chrome in both languages and appearances`()",
+    "TypefluxFocusedTests.OnboardingBehaviorTests/`welcome route selection back and skip are wired through native buttons`()",
+    "TypefluxFocusedTests.OnboardingComponentTests/`native window captures include the actual traffic lights`()",
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`native LLM menu updates the registry and disables an empty catalog`()",
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`native provider and test buttons drive the same persisted setup`()",
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`native speech model menu persists the selected model`()"
+  ],
+  "build_input_digest": "63bb06d63530acd3f3acf33ae6cbfa1b9b3ddd498a75177619a6ac24b7ad701b",
+  "build_artifact_digest": "59ec08aa0237803d6e4262d3a9ee5d2ab2efbedab6c677680141cf1f8e514e1c",
+  "discovery_digest": "c880d4e0e47fba9852a073e981ec799efe6ffb1fc27a9a77ab4e767e1a93cce7",
+  "runner_sha256": {
+    "scripts/test_runtime.py": "21f1e417510242bdf116d691cd602c9bcefc5eab7c5f30a13f4cf88047470363",
+    "scripts/test_groups.py": "12938ad96a4f94ce7feae64476da6bd57c10693aea46e55ba7d76f67096a21c9",
+    "scripts/native_swift_testing.swift": "39aff2da6184bd5f4423a4b105edc329885a9dec099b1837b0085b63c2e953c4"
+  },
+  "native_framework_summary": "\u2714 Test run with 6 tests in 3 suites passed after 50.321 seconds."
+}

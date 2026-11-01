@@ -1109,56 +1109,12 @@
 "workflow.vocabulary.autoAdded.multiple" = "已自动将 %d 个词添加到生词本。";
 
 "onboarding.window.title" = "欢迎使用 Typeflux";
-"onboarding.step.language" = "语言";
-"onboarding.step.models" = "模型";
-"onboarding.step.permissions" = "权限";
-"onboarding.step.shortcuts" = "快捷键";
 
-"onboarding.welcome.tagline" = "为每个应用提供语音输入。";
-"onboarding.welcome.feature1.title" = "按住说话";
-"onboarding.welcome.feature1.desc" = "按住快捷键录音，松手即完成转录 — 文字自动插入任何应用。";
-"onboarding.welcome.feature2.title" = "随处可用";
-"onboarding.welcome.feature2.desc" = "通过无障碍 API 向任意 macOS 应用注入文字。";
-"onboarding.welcome.feature3.title" = "AI 润色";
-"onboarding.welcome.feature3.desc" = "可选的语言模型实时优化你的听写内容。";
 
-"onboarding.language.title" = "选择语言";
-"onboarding.language.subtitle" = "选择 Typeflux 界面的显示语言。";
-"onboarding.account.title" = "欢迎回来";
-"onboarding.account.subtitle" = "解锁云端语音识别与 AI 推理能力";
-"onboarding.account.cloudReady" = "语音识别与大语言模型服务已就绪，无需额外配置 API 密钥。";
 
-"onboarding.models.title" = "配置模型";
-"onboarding.models.subtitle" = "选择语音识别引擎和语言模型，稍后可以在设置中随时更改。";
-"onboarding.models.stt.title" = "语音识别";
-"onboarding.models.stt.subtitle" = "将你的语音转换为文字";
-"onboarding.models.llm.title" = "语言模型";
-"onboarding.models.llm.subtitle" = "改写和润色你的语音输入";
-"onboarding.models.stt.apple.description" = "本地运行，无需配置";
-"onboarding.models.stt.whisper.description" = "远程 API，需要接口地址和密钥";
-"onboarding.models.stt.local.description" = "下载后本地运行";
-"onboarding.models.stt.local.hint" = "所选模型将在首次使用时自动下载。";
-"onboarding.models.llm.openai.title" = "OpenAI 兼容接口";
-"onboarding.models.llm.openai.description" = "任意远程聊天 API — OpenAI、Claude、DeepSeek…";
-"onboarding.models.llm.ollama.title" = "Ollama 本地";
-"onboarding.models.llm.ollama.description" = "完全在你的 Mac 上本地运行，保护隐私";
-"onboarding.models.badge.noSetup" = "免配置";
-"onboarding.models.badge.apiKey" = "需要密钥";
-"onboarding.models.badge.local" = "本地";
 
 "onboarding.models.getAPIKey" = "获取 API Key";
 
-"onboarding.sttProvider.subtitle" = "选择将语音转换为文字的引擎";
-"onboarding.sttConfig.subtitle" = "配置凭据与偏好设置";
-"onboarding.sttConfig.incomplete.message" = "请先完成当前语音模型配置，再继续。";
-"onboarding.sttConfig.incompleteAlert.title" = "语音模型尚未配置完成";
-"onboarding.sttConfig.incompleteAlert.message" = "请先完成当前选择的语音模型配置，然后再继续下一步。";
-"onboarding.llmProvider.subtitle" = "选择用于润色和优化你语音内容的模型";
-"onboarding.llmConfig.subtitle" = "配置凭据与偏好设置";
-"onboarding.llmConfig.incompleteAlert.title" = "语言模型还未配置完成";
-"onboarding.llmConfig.incompleteAlert.message" = "语音转写可以继续使用，但润色、改写等需要语言模型的功能会暂时受限。";
-"onboarding.llmConfig.incompleteAlert.continueConfig" = "继续配置";
-"onboarding.llmConfig.incompleteAlert.skip" = "跳过";
 
 "onboarding.permissions.title" = "授予权限";
 "onboarding.permissions.subtitle" = "Typeflux 需要少量系统权限，用于录制语音并将文字输入到其他应用。";
@@ -1169,37 +1125,7 @@
 "onboarding.permissions.privacyCallout.title" = "隐私优先";
 "onboarding.permissions.privacyCallout.subtitle" = "你的音频数据会尽可能在本地处理。未经你明确授权，我们不会存储任何录音。";
 
-"onboarding.shortcuts.title" = "键盘快捷键";
-"onboarding.shortcuts.subtitle" = "以下是默认快捷键设置，无需修改即可使用。";
-"onboarding.shortcuts.globeKeyNotice.title" = "请先释放 FN / 🌐（地球）键";
-"onboarding.shortcuts.globeKeyNotice.message" = "macOS 默认会用 FN / 🌐 键打开「表情与符号」，这会阻止 Typeflux 使用它。请打开键盘设置，将「按下 FN / 🌐 键时」改为「不执行任何操作」即可。";
-"onboarding.shortcuts.globeKeyNotice.button" = "打开键盘设置";
-"onboarding.shortcuts.globeKeyNotice.ready.title" = "FN / 🌐 键已就绪";
-"onboarding.shortcuts.globeKeyNotice.ready.message" = "键盘设置已经到位，Typeflux 可以使用 FN / 🌐 键作为快捷键了。若按键仍无响应，请尝试注销后重新登录，或重启 Mac。";
-"onboarding.shortcuts.externalKeyboard.title" = "使用外置键盘，且没有可用的 FN 键？";
-"onboarding.shortcuts.externalKeyboard.message" = "你可以改用右侧 Command 或右侧 Option。Typeflux 会将语音输入改为这个按键，将“对话”改为快速连按两次这个按键。";
-"onboarding.shortcuts.externalKeyboard.useRightCommand" = "使用右侧 Command";
-"onboarding.shortcuts.externalKeyboard.useRightOption" = "使用右侧 Option";
-"onboarding.shortcuts.replacement.rightCommand" = "右侧 Command";
-"onboarding.shortcuts.replacement.rightOption" = "右侧 Option";
-"onboarding.shortcuts.replacement.fn" = "FN / 🌐";
-"onboarding.shortcuts.replacement.active.title" = "%@ 快捷键已启用";
-"onboarding.shortcuts.replacement.active.message" = "你的快捷键已经发生变化：语音输入现在使用 %@，“对话”使用 %@×2。";
-"onboarding.shortcuts.replacement.restore" = "恢复 FN 快捷键";
-"onboarding.shortcuts.replacement.appliedAlert.title" = "快捷键已更新";
-"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux 现在使用 %@ 作为语音输入快捷键，使用 %@×2 打开“对话”。";
-"onboarding.shortcuts.replacement.restoredAlert.message" = "Typeflux 已恢复默认的 FN / 🌐 快捷键。";
-"onboarding.shortcuts.activation.hint" = "把说的话输入为文字";
-"onboarding.shortcuts.ask.hint" = "语音提问或修改选中文字";
-"onboarding.shortcuts.persona.hint" = "切换人设或改写选中文字";
-"onboarding.shortcuts.history.hint" = "查看并粘贴历史内容";
-"onboarding.shortcuts.changeInSettings" = "随时可以在 设置 → 语音快捷键 中自定义快捷键。";
 
-"onboarding.action.back" = "上一步";
-"onboarding.action.continue" = "下一步";
-"onboarding.action.skip" = "跳过";
-"onboarding.account.skip" = "跳过，我要自己配置模型";
-"onboarding.action.getStarted" = "开始使用";
 
 // MARK: - Agent 框架
 
@@ -1469,10 +1395,6 @@
 "settings.shortcuts.auxiliaryUpdated" = "辅助快捷键已更新";
 "settings.shortcuts.auxiliaryUnset" = "辅助快捷键已取消绑定";
 "settings.shortcuts.recordingAuxiliary" = "按下辅助快捷键，或双击一个按键。";
-"onboarding.shortcuts.auxiliary.hint" = "用另一套人设输入";
-"onboarding.shortcuts.auxiliary.unset" = "未绑定快捷键，请前往设置配置。";
-"onboarding.shortcuts.auxiliary.externalKeyboard" = "辅助快捷键会同步使用所选按键 + 左 Shift，已有的自定义辅助绑定会保留。";
-"onboarding.shortcuts.auxiliary.active" = "辅助快捷键：%@";
 // Ask conversations
 "ask.allowOnce" = "允许本次";
 "ask.allowConversation" = "本次对话中允许";
@@ -6667,7 +6589,6 @@
 /* Onboarding v2 (GUL-339) */
 "onboarding.v2.welcome.title" = "说、找、划、问。\n都在一个按键之外。";
 "onboarding.v2.welcome.lead" = "常驻菜单栏，任何应用里随叫随到。";
-"onboarding.v2.welcome.duration" = "约 2 分钟";
 "onboarding.v2.verb.voice" = "说";
 "onboarding.v2.verb.launcher" = "找";
 "onboarding.v2.verb.ring" = "划";
@@ -6692,53 +6613,7 @@
 "onboarding.v2.hero.chat.question" = "这张表哪个月增长最快？";
 "onboarding.v2.hero.chat.step" = "读取了当前屏幕";
 "onboarding.v2.hero.chat.answer" = "7 月，环比 +32%，主要来自应用商店渠道。";
-"onboarding.v2.action.start" = "开始";
-"onboarding.v2.action.continue" = "继续";
-"onboarding.v2.action.back" = "返回";
-"onboarding.v2.action.later" = "稍后再说";
-"onboarding.v2.action.finish" = "开始使用";
-"onboarding.v2.later.screen" = "屏幕录制";
-"onboarding.v2.later.ai" = "AI 连接";
-"onboarding.v2.permissions.title.ready" = "权限已就绪";
-"onboarding.v2.permissions.title.missing" = "还需要 %d 个权限";
-"onboarding.v2.permissions.subtitle" = "检查当前所需的权限。";
-"onboarding.v2.permissions.later" = "用到时再问：";
-"onboarding.v2.permission.microphone.detail" = "在你开始语音输入时录音";
-"onboarding.v2.permission.accessibility.detail" = "把文字写进当前应用";
-"onboarding.v2.permission.speechRecognition.detail" = "Apple 语音识别备用";
-"onboarding.v2.globe.title" = "fn 键被系统占用";
-"onboarding.v2.globe.detail" = "改成「不执行任何操作」才能按住说话";
-"onboarding.v2.globe.conflict" = "这个按键已被其他快捷键使用";
-"onboarding.v2.globe.open" = "打开键盘设置";
-"onboarding.v2.globe.useOtherKey" = "改用其他键";
-"onboarding.feature.voice.title" = "语音输入";
-"onboarding.feature.voice.caption" = "按住说话，松开就写好";
-"onboarding.feature.launcher.title" = "启动器";
-"onboarding.feature.launcher.caption" = "打开应用、算数、剪贴板、截图";
-"onboarding.feature.tools.title" = "工具";
-"onboarding.feature.tools.caption" = "翻译、录 GIF、跑工作流";
-"onboarding.feature.ring.title" = "圆环";
-"onboarding.feature.ring.caption" = "按住、指向、松开";
-"onboarding.feature.chat.title" = "Agent 对话";
-"onboarding.feature.chat.caption" = "看得懂屏幕，能帮你动手";
-"onboarding.tip.voice.talk" = "按住说话";
-"onboarding.tip.voice.rewrite" = "先选中文字，说一句就改写";
-"onboarding.tip.launcher.open" = "打开启动器";
-"onboarding.tip.launcher.clipboard" = "剪贴板历史";
-"onboarding.tip.launcher.screenshot" = "截图";
-"onboarding.tip.tools.translate" = "翻译";
-"onboarding.tip.tools.record" = "录屏 / GIF";
-"onboarding.tip.tools.workflow" = "工作流：输入关键词";
-"onboarding.tip.ring.swipe" = "呼出圆环";
-"onboarding.tip.chat.ask" = "在启动器里提问";
-"onboarding.tip.chat.window" = "打开对话窗口";
 "onboarding.v2.hero.tools" = "翻译、录屏、自动化";
-"onboarding.v2.action.next" = "下一步";
-"onboarding.v2.shortcut.notSet" = "可在设置中指定";
-"onboarding.v2.voice.practice.placeholder" = "点这里，按住 %@ 说句话";
-"onboarding.v2.voice.practice.done" = "成功了";
-"onboarding.v2.finish.title" = "全部就绪";
-"onboarding.v2.finish.subtitle" = "记住这几个键就够了。";
 "ask.history.syncPending" = "部分对话尚未同步，将自动重试。";
 
 "ask.storage.inUse" = "另一个 Typeflux 进程正在使用这些会话，请关闭它后重试。";
@@ -7652,38 +7527,11 @@
 
 
 // Service setup and feature availability.
-"setup.services.title" = "选择使用方式";
-"setup.services.subtitle" = "语音输入与 Agent 需要模型服务，启动器可直接使用。";
-"setup.services.cloud" = "登录后连接，无需填写 API Key。";
-"setup.services.custom.title" = "使用自己的模型";
-"setup.services.custom" = "连接本地模型或自己的模型服务。";
-"setup.services.recommended" = "推荐";
-"setup.services.launcherOnly" = "先用启动器，稍后设置";
-"setup.cloud.title" = "连接 Typeflux Cloud";
-"setup.cloud.subtitle" = "登录后连接语音与 AI 服务。";
-"setup.cloud.signInDetail" = "完成登录后，回到这里继续设置。";
 "setup.cloud.signIn" = "登录 Typeflux Cloud";
-"setup.cloud.checking" = "正在检查可用服务…";
 "setup.cloud.checkFailed" = "未能获取账号的服务状态，请重试或自行配置模型。";
-"setup.cloud.aiReady" = "使用账号的默认 AI 模型";
-"setup.cloud.speechReady" = "可使用云端语音识别";
-"setup.cloud.localNext" = "当前账号不包含云端语音识别，下一步可选择本地模型或自己的语音服务。";
-"setup.cloud.useOwn" = "改用自己的模型";
-"setup.speech.title" = "设置语音识别";
-"setup.speech.subtitle" = "把你说的话转成文字。";
 "setup.speech.configure" = "配置语音模型";
-"setup.speech.hint" = "本地模型无需账号。模型准备好后，即可继续。";
 "setup.speech.cloudUnavailable" = "请登录并检查云端服务权限，或配置本地语音模型。";
 "setup.speech.required" = "请先设置语音识别。%@";
-"setup.language.title" = "设置大语言模型";
-"setup.language.subtitle" = "用于 Agent、AI 对话和语音改写。";
-"setup.language.configure" = "添加或配置模型";
-"setup.language.hint" = "选择模型并测试连接，之后可在设置中更换。";
-"setup.status.title" = "状态";
-"setup.status.configured" = "已配置";
-"setup.status.notSetUp" = "尚未配置";
-"setup.status.downloading" = "正在下载 · %d%%";
-"setup.status.testing" = "正在测试连接…";
 "setup.skip.title" = "稍后再设置？";
 "setup.skip.allModels.message" = "你仍可使用启动器搜索、打开应用和计算。语音输入、Agent 和 AI 改写需要完成模型配置后才能使用，之后可在设置中补充。";
 "setup.skip.speech.message" = "语音输入和语音提问将暂不可用。你仍可继续配置 AI，通过打字使用 Agent，之后在设置中补充语音模型。";
@@ -7691,58 +7539,11 @@
 "setup.skip.permissions.message" = "未授权麦克风时无法录音；未授权辅助功能时无法向其他应用输入文字。之后可在设置中授权。";
 "setup.skip.confirm" = "稍后设置";
 "setup.skip.back" = "返回设置";
-"setup.action.skip" = "稍后设置";
-"setup.action.retry" = "重试";
-"setup.action.done" = "完成";
-"setup.action.configure" = "去设置";
 "setup.action.resume" = "继续设置…";
-"setup.finish.title" = "开始使用 Typeflux";
-"setup.finish.subtitle" = "这是当前的配置，未设置的功能可以之后再补充。";
-"setup.finish.launcher" = "搜索应用和文件、打开应用、计算";
-"setup.finish.speechSkipped" = "需要语音输入时，再配置语音模型";
-"setup.finish.permissionsMissing" = "模型已配置，仍需授予权限";
-"setup.finish.ai" = "Agent 与 AI 改写";
-"setup.stage.services" = "使用方式";
-"setup.stage.models" = "模型服务";
-"setup.stage.permissions" = "权限设置";
-"setup.stage.practice" = "开始使用";
-"setup.cloud.signInShort" = "登录账号";
-"setup.speech.remoteHint" = "先测试连接，再继续。";
-"setup.status.testNeeded" = "待验证";
-"setup.language.choose" = "选择模型";
 "setup.permission.microphone.impact" = "未授权麦克风时，语音输入和语音提问无法录音。";
 "setup.permission.accessibility.impact" = "未授权辅助功能时，无法向其他应用输入文字，部分全局快捷键也无法使用。";
 "setup.permission.speechRecognition.impact" = "Apple 语音识别需要授予语音识别权限。";
 "setup.permission.later" = "启动器基础搜索仍可使用，之后可在设置中授权。";
-"setup.voice.permissionsFirst" = "先完成权限与快捷键设置，再试用语音输入。";
-"setup.action.permissions" = "前往权限设置";
-"setup.launcher.permissionsHint" = "部分全局快捷键需要辅助功能权限，你仍可从菜单栏打开启动器。";
 "setup.skip.existingModels" = "已有模型配置会保留。你可以先使用启动器，未配置的语音和 AI 服务之后可在设置中补充。";
 "setup.skip.existingSpeech" = "已有语音模型配置会保留，暂时跳过语音教学，之后可在设置中调整模型。";
 "setup.skip.existingAI" = "已有 AI 模型配置会保留，暂时跳过 AI 功能介绍，之后可在设置中调整模型。";
-"setup.finish.readySubtitle" = "模型和权限已设置，可随时在设置中调整。";
-"setup.permission.keyboardImpact" = "🌐 快捷键尚未设置好，暂时无法用它启动语音输入。你可以稍后设置或更换快捷键。";
-"setup.finish.keyboardMissing" = "模型已配置 · 还需设置 🌐 快捷键";
-"setup.permission.launcherAccessibility" = "使用全局快捷键，操作其他应用";
-
-"setup.services.launcherImpact" = "语音输入与 Agent 将暂不可用。";
-"setup.cloud.signInContinue" = "登录并继续";
-"setup.cloud.entitlementNote" = "可用服务以账号权益为准。";
-"setup.cloud.speechService" = "语音识别";
-"setup.action.testAndContinue" = "测试并继续";
-"setup.rail.title" = "初次设置";
-"setup.rail.later" = "之后也能在设置中调整";
-"setup.rail.current" = "当前步骤";
-"setup.rail.completed" = "已完成";
-"setup.stage.complete" = "完成";
-"setup.speech.serviceLabel" = "识别服务";
-"setup.speech.preview" = "把想法说出来";
-"setup.connection.configured" = "连接信息已填写";
-"setup.connection.edit" = "编辑连接信息";
-"setup.language.shortTitle" = "大语言模型";
-"setup.speech.manage" = "管理语音模型";
-"setup.status.ready" = "已就绪";
-"setup.rail.skipped" = "已跳过";
-"setup.services.existingImpact" = "已有模型配置会保留。";
-"setup.services.aiMissingImpact" = "Agent 与 AI 改写需稍后配置。";
-"setup.services.speechMissingImpact" = "语音输入需稍后配置。";

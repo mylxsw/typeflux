@@ -54,7 +54,6 @@
 "action.getKey" = "Get API Key";
 "action.testConnection" = "Test Connection";
 "status.testing" = "Testing…";
-"status.sampleReply" = "Hello! I'm ready to help you rewrite text.";
 "error.invalidKey" = "Invalid API Key";
 "error.ollamaNotFound" = "Ollama not detected";
 "action.download" = "Download";

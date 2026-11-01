@@ -3,7 +3,7 @@ import Combine
 import Foundation
 import SwiftUI
 
-/// Service setup precedes permissions and feature guides. Skips are explicit and resumable.
+/// Service setup precedes permissions and practice. Skips are explicit and resumable.
 @MainActor
 // swiftlint:disable:next type_body_length
 final class OnboardingViewModel: ObservableObject {
@@ -40,7 +40,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var currentStep: Step = .welcome
     @Published var stepDirection: Int = 1 // 1 = forward, -1 = backward
     @Published var appLanguage: AppLanguage
-    /// What the user dictated into the voice guide's practice box.
+    /// What the user dictated into the practice box.
     @Published var voicePracticeSucceeded = false
     @Published var voicePracticeText = ""
     @Published var serviceRoute: ServiceRoute = .cloud
@@ -48,29 +48,6 @@ final class OnboardingViewModel: ObservableObject {
     @Published var speechSkipped = false
     @Published var aiSkipped = false
     @Published var setupRevision = 0
-    @Published var isCheckingCloud = false
-    @Published var cloudCheckCompleted = false
-    @Published var cloudError: String?
-    @Published var languageTestState: ConnectionTestState = .idle
-    @Published var modelEditorDomain: StudioModelDomain?
-    var requestedSetupAdvance: Step?
-    var presentLogin: () -> Void = { LoginWindowController.shared.show() }
-    var configurationModel: StudioViewModel? {
-        didSet {
-            configurationSubscription = configurationModel?.objectWillChange.sink { [weak self] _ in
-                Task { @MainActor in self?.refreshSetup() }
-            }
-        }
-    }
-    var configurationSubscription: AnyCancellable?
-    var languageTestTask: Task<Void, Never>?
-    var verifiedLanguageSignature: String?
-    var testingLanguageSignature: String?
-    var languageConnectionProbe: @Sendable (
-        RegisteredProvider, SettingsStore.TextLLMConfiguration
-    ) async throws -> String = {
-        try await OnboardingConnectionProbe.language(provider: $0, configuration: $1)
-    }
     var setupObservers: [NSObjectProtocol] = []
     var historyStore: HistoryStore?
     var voicePracticeBeganAt: Date?
@@ -147,7 +124,6 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     deinit {
-        languageTestTask?.cancel()
         setupObservers.forEach(NotificationCenter.default.removeObserver)
     }
 
@@ -157,15 +133,13 @@ final class OnboardingViewModel: ObservableObject {
         reportAbandonedIfNeeded()
         settingsStore.onboardingSpeechDeferred = speechSkipped || !speechConfigured
         settingsStore.onboardingAIDeferred = aiSkipped || !languageConfigured
+        settingsStore.onboardingPermissionsDeferred = settingsStore.onboardingPermissionsDeferred
+            || !allRequiredPermissionsGranted
         if !aiSkipped && languageConfigured { settingsStore.applyDefaultPersonaIfLLMConfigured() }
         settingsStore.isOnboardingCompleted = true
     }
 
-    // MARK: - Guides
-
-    func shortcuts(for feature: OnboardingFeature) -> [OnboardingShortcut] {
-        feature.shortcuts(settingsStore: settingsStore)
-    }
+    // MARK: - Practice
 
     var didPracticeVoice: Bool {
         voicePracticeSucceeded
@@ -174,12 +148,7 @@ final class OnboardingViewModel: ObservableObject {
     // MARK: - Permissions
 
     var requiredPermissionIDs: [PrivacyGuard.PermissionID] {
-        guard !speechSkipped && speechConfigured else { return [.accessibility] }
-        return OnboardingFeature.requiredPermissionIDs(settingsStore: settingsStore)
-    }
-
-    var requiredPermissions: [PrivacyGuard.PermissionSnapshot] {
-        requiredPermissionIDs.compactMap { id in permissions.first { $0.id == id } }
+        permissionsModel.required.compactMap(\.corePermission)
     }
 
     var missingPermissionCount: Int {

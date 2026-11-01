@@ -75,22 +75,17 @@ struct OnboardingLLMPage: View {
     }
 
     private var moreProvidersMenu: some View {
-        Menu {
-            ForEach(OnboardingLLMProvider.moreProviders, id: \.self) { provider in
-                Button {
+        OnboardingModelPicker(
+            items: OnboardingLLMProvider.moreProviders.map {
+                .init(id: $0.id, title: title(for: $0), detail: detail(for: $0))
+            },
+            selection: model.selectedProvider.id, identifier: "onboarding.llm.moreProviders", height: 44,
+            onSelect: { id in
+                if let provider = OnboardingLLMProvider.moreProviders.first(where: { $0.id == id }) {
                     model.selectProvider(provider)
-                } label: {
-                    HStack {
-                        if model.selectedProvider == provider {
-                            Image(systemName: "checkmark")
-                        }
-                        Text(title(for: provider))
-                        Spacer()
-                        Text(detail(for: provider))
-                    }
                 }
             }
-        } label: {
+        ) {
             HStack(spacing: 6) {
                 Text(OnboardingStrings.text("provider.more", table: "OnboardingLlm"))
                     .font(.system(size: 12.5, weight: .semibold))
@@ -106,7 +101,6 @@ struct OnboardingLLMPage: View {
                     .foregroundStyle(.primary.opacity(0.12))
             )
         }
-        .menuStyle(.borderlessButton)
     }
 
     private var configPanel: some View {
@@ -266,30 +260,23 @@ private extension OnboardingLLMPage {
     }
 
     private func modelSelectorMenu(models: [String], enabled: Bool) -> some View {
-        Menu {
-            ForEach(Array(models.enumerated()), id: \.element) { index, modelName in
-                Button {
-                    model.selectModel(modelName)
-                } label: {
-                    HStack {
-                        if modelName == model.selectedModel {
-                            Image(systemName: "checkmark")
-                        }
-                        Text(modelName)
-                        if index == 0 {
-                            Spacer()
-                            Text(OnboardingStrings.text("badge.recommended", table: "OnboardingLlm"))
-                        }
-                    }
-                }
-            }
-        } label: {
+        OnboardingModelPicker(
+            items: models.enumerated().map { index, name in
+                .init(id: name, title: name,
+                      detail: index == 0 ? OnboardingStrings.text("badge.recommended", table: "OnboardingLlm") : nil)
+            },
+            selection: model.selectedModel,
+            identifier: "onboarding.llm.model",
+            enabled: enabled,
+            onSelect: model.selectModel
+        ) {
             HStack(spacing: 6) {
                 Text(enabled ? (model.selectedModel.isEmpty ? (models.first ?? "") : model.selectedModel)
                     : OnboardingStrings.text("model.autoFetch", table: "OnboardingLlm"))
                     .font(.system(size: 12.5, weight: .medium))
                     .lineLimit(1)
 
+                Spacer()
                 if enabled, let first = models.first, model.selectedModel == first {
                     Text(OnboardingStrings.text("badge.recommended", table: "OnboardingLlm"))
                         .font(.system(size: 9, weight: .bold))
@@ -299,7 +286,6 @@ private extension OnboardingLLMPage {
                         .background(Color.accentColor.opacity(0.12), in: Capsule())
                 }
 
-                Spacer()
 
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 10))
@@ -311,7 +297,6 @@ private extension OnboardingLLMPage {
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(.primary.opacity(0.08), lineWidth: 1))
             .opacity(enabled ? 1 : 0.5)
         }
-        .menuStyle(.borderlessButton)
         .disabled(!enabled)
     }
 

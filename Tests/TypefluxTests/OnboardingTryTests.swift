@@ -170,21 +170,13 @@ struct OnboardingTryTests {
             model.markTried(.chat)
             #expect(model.isTried(.chat))
 
-            // Simulations must not falsify real dictation detection or analytics.
+            // Only history-backed dictation can mark voice as tried.
             #expect(!model.isTried(.voice))
-            model.endSimulation(sampleText: "Ignored without a press")
-            #expect(model.simulatedText.isEmpty)
-            model.beginSimulation()
-            #expect(model.isSimulating)
-            model.endSimulation(sampleText: "Testing voice")
-            #expect(!model.isSimulating)
-            #expect(model.simulatedText == "Testing voice")
             model.markTried(.voice)
             #expect(!model.isTried(.voice))
             #expect(viewModel.voicePracticeText.isEmpty)
             #expect(!viewModel.voicePracticeSucceeded)
             model.selectFeature(.launcher)
-            #expect(model.simulatedText.isEmpty)
         }
     }
 
@@ -280,6 +272,10 @@ struct OnboardingTryTests {
                     UI.contains(OnboardingStrings.text("title", table: "OnboardingTry"), in: host)
                 }
 
+                #expect(!UI.contains("Hold to simulate", in: host))
+                #expect(!UI.contains("按住模拟", in: host))
+                #expect(!UI.contains("Send me the new homepage design by Friday.", in: host))
+
                 // Left feature list buttons exist
                 let voiceTitle = OnboardingStrings.text("feature.voice", table: "OnboardingTry")
                 let launcherTitle = OnboardingStrings.text("feature.launcher", table: "OnboardingTry")
@@ -356,22 +352,11 @@ struct OnboardingTryTests {
                         window.titleVisibility = .hidden
                         window.titlebarAppearsTransparent = true
 
-                        // Capture empty, held and released simulation without counting it as dictation.
                         try await Task.sleep(for: .milliseconds(100))
                         try UI.snapshot(host, name: "try-0-voice-empty-\(mode)")
-                        viewModel.tryModel.beginSimulation()
-                        try await Task.sleep(for: .milliseconds(100))
-                        try UI.snapshot(host, name: "try-0-voice-holding-\(mode)")
-                        viewModel.tryModel.endSimulation(
-                            sampleText: OnboardingStrings.text("voice.sampleText", table: "OnboardingTry")
-                        )
-                        try await Task.sleep(for: .milliseconds(100))
-                        try UI.snapshot(host, name: "try-0-voice-demo-\(mode)")
-                        #expect(!viewModel.voicePracticeSucceeded)
-                        viewModel.tryModel.clearSimulation()
 
                         // 1. A successful real dictation state.
-                        viewModel.voicePracticeText = OnboardingStrings.text("voice.sampleText", table: "OnboardingTry")
+                        viewModel.voicePracticeText = "Send me the new homepage design by Friday."
                         viewModel.voicePracticeSucceeded = true
                         try await Task.sleep(for: .milliseconds(100))
                         try UI.snapshot(host, name: "try-1-voice-\(mode)")

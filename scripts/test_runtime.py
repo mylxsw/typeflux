@@ -118,7 +118,8 @@ def build_inputs(root, files, environment, fingerprints):
     # Store only the environment digest, never its values. Selection is not a
     # compiler input; the manifest's explicit file list is included separately.
     build_environment = {key: value for key, value in environment.items()
-                         if key not in {"FILTER", "SUITE", "REASON", "PROFILE", "PWD", "OLDPWD", "_", "SHLVL"}}
+                         if key not in {"FILTER", "SUITE", "REASON", "PROFILE", "PWD", "OLDPWD", "_", "SHLVL",
+                                        "MAKEFLAGS", "MFLAGS", "MAKEOVERRIDES"}}
     return digest([VERSION, files, developer, fingerprints.tree(paths), digest(build_environment)])
 
 
@@ -249,6 +250,29 @@ def discover(bundle, tools, environment, cwd, directory):
         return "\n".join([*identifiers, result.stdout])
 
 
+def native_swift_testing_host(root, environment):
+    directory = root / ".build/test-runner"
+    directory.mkdir(parents=True, exist_ok=True)
+    source = Path(__file__).with_name("native_swift_testing.swift")
+    developer = developer_directory(environment)
+    compiler = developer / "Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    frameworks = developer / "Platforms/MacOSX.platform/Developer/Library/Frameworks"
+    sdk = Path(environment.get("SDKROOT") or developer / "Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
+    fingerprints = Fingerprints(directory / "native-host-files.json")
+    inputs = fingerprints.tree([source, compiler, frameworks / "Testing.framework", sdk / "SDKSettings.json"])
+    host = directory / "native-swift-testing"
+    record_path = directory / "native-host.json"
+    record = read_json(record_path)
+    if (record.get("inputs") != inputs or not host.is_file()
+            or record.get("artifact") != fingerprints.file(host)):
+        subprocess.run([str(compiler), "-parse-as-library", "-sdk", str(sdk), "-F", str(frameworks),
+                        "-framework", "Testing", "-framework", "AppKit", str(source), "-o", str(host)],
+                       cwd=root, env=environment, check=True)
+        write_json(record_path, {"inputs": inputs, "artifact": fingerprints.file(host)})
+    fingerprints.save()
+    return host
+
+
 def run_native(mode, tests, workers, bundle, tools, environment, pattern, cwd, inventory=None):
     xctests = {test for test in tests if not test.endswith(")")}
     swift_tests = tests - xctests
@@ -288,8 +312,33 @@ def run_native(mode, tests, workers, bundle, tools, environment, pattern, cwd, i
     binary = bundle / "Contents/MacOS" / bundle.stem
     if not binary.is_file():
         raise ValueError("Unsupported macOS test executable layout; use --swiftpm")
-    command = [str(tools["swift-testing"]), "--test-bundle-path", str(binary), str(binary),
-               "--testing-library", "swift-testing", "--parallel" if mode == "swift-testing" else "--no-parallel",
-               "--filter", pattern(swift_tests)]
-    # Swift Testing returns a failure exit when the validated filter matches no tests.
-    return subprocess.run(command, cwd=cwd, env=environment).returncode
+    if mode == "swift-testing":
+        # Reviewed pure suites retain their SwiftPM host and need no AppKit loop.
+        command = [str(tools["swift-testing"]), "--test-bundle-path", str(binary), str(binary),
+                   "--testing-library", "swift-testing", "--parallel", "--filter", pattern(swift_tests)]
+        swift_environment = environment
+    else:
+        host = native_swift_testing_host(cwd, environment)
+        command = [str(host), "--testing-library", "swift-testing", "--no-parallel",
+                   "--filter", pattern(swift_tests)]
+        swift_environment = dict(environment, TYPEFLUX_TEST_BUNDLE=str(binary))
+    # Keep long native runs observable even while a test is awaiting a callback.
+    # The runner lock gives this per-checkout file one writer at a time.
+    log_path = cwd / ".build/test-runner/swift-testing.log"
+    print(f"Native Swift Testing live output: {log_path.relative_to(cwd)}", flush=True)
+    with log_path.open("w+") as output:
+        result = subprocess.run(command, cwd=cwd, env=swift_environment, stdout=output,
+                                stderr=subprocess.STDOUT, text=True)
+        output.seek(0)
+        log = output.read()
+    print(log, end="", flush=True)
+    if result.returncode:
+        return result.returncode
+    # AppKit can terminate its host with exit 0 before Swift Testing finishes.
+    # Require the framework's final summary, just as XCTest verifies its count.
+    summaries = re.findall(r"Test run with (\d+) tests?(?: in \d+ suites?)? (passed|failed)\b", log)
+    if not summaries or summaries[-1] != (str(len(swift_tests)), "passed"):
+        print(f"Error: Swift Testing did not confirm completion of all {len(swift_tests)} selected methods",
+              flush=True)
+        return 1
+    return 0

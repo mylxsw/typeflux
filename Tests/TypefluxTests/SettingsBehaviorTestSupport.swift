@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import SwiftUI
 import Testing
 @testable import Typeflux
@@ -106,11 +107,25 @@ enum SettingsBehaviorTestSupport {
     }
 
     static func withWindow(_ content: some View, width: CGFloat = 980, height: CGFloat = 780,
+                           nativeWindow: Bool = false,
                            check: (NSWindow, NSView) async throws -> Void) async throws {
         let window = NSWindow(contentRect: NSRect(x: -10000, y: -10000, width: width, height: height),
-                              styleMask: [.titled], backing: .buffered, defer: false)
+                              styleMask: nativeWindow ? [.titled, .closable, .fullSizeContentView] : [.titled],
+                              backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        let host = NSHostingView(rootView: content.frame(width: width, height: height))
+        let host: NSView
+        if nativeWindow {
+            let hosting = NSHostingView(rootView: content.frame(width: width, height: height).ignoresSafeArea())
+            hosting.sizingOptions = []
+            host = hosting
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+            window.isOpaque = false
+            window.backgroundColor = .clear
+            window.center()
+        } else {
+            host = NSHostingView(rootView: content.frame(width: width, height: height))
+        }
         window.contentView = host
         window.makeKeyAndOrderFront(nil)
         defer {
@@ -130,6 +145,12 @@ enum SettingsBehaviorTestSupport {
 
     static func snapshot(_ host: NSView, name: String) throws {
         host.layoutSubtreeIfNeeded()
+        if let window = host.window, window.styleMask.contains(.fullSizeContentView),
+           host.bounds.size == window.frame.size,
+           NSScreen.screens.contains(where: { $0.frame.intersects(window.frame) }) {
+            try snapshotNativeWindow(window, name: name)
+            return
+        }
         let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: bitmap)
         let png = try #require(bitmap.representation(using: .png, properties: [:]))
@@ -142,4 +163,124 @@ enum SettingsBehaviorTestSupport {
     }
 
     private struct ReadinessTimeout: Error {}
+}
+
+@MainActor
+extension SettingsBehaviorTestSupport {
+    static func captureMenu(in host: NSView, identifier: String, name: String) async throws {
+        func buttons(_ view: NSView) -> [NSPopUpButton] {
+            (view as? NSPopUpButton).map { [$0] } ?? view.subviews.flatMap(buttons)
+        }
+        try await wait { buttons(host).contains {
+            $0.accessibilityIdentifier() == identifier && $0.isEnabled && $0.numberOfItems > 0
+        } }
+        let button = try #require(buttons(host).first { $0.accessibilityIdentifier() == identifier })
+        let menu = try #require(button.menu)
+        button.scrollToVisible(button.bounds)
+        host.layoutSubtreeIfNeeded()
+        // Page activation can replace the catalog after the incoming control is first mounted.
+        try await Task.sleep(for: .milliseconds(250))
+        try await wait { button.isEnabled && button.numberOfItems > 0 }
+        menu.delegate?.menuNeedsUpdate?(menu)
+        let previous = Set(NSApp.windows.filter(\.isVisible).map(\.windowNumber))
+        var captureError: Error?
+        var captured = false
+        let timer = Timer(timeInterval: 0.5, repeats: false) { _ in
+            MainActor.assumeIsolated {
+                do {
+                    try snapshotMenuWindows(host, excluding: previous, name: name)
+                    captured = true
+                } catch { captureError = error }
+                menu.cancelTracking()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        RunLoop.main.add(timer, forMode: .eventTracking)
+        defer { timer.invalidate() }
+        button.performClick(nil)
+        if let captureError { throw captureError }
+        try #require(captured, "The native menu must remain open for capture: \(identifier)")
+    }
+
+    static func snapshotMenuWindows(_ host: NSView, excluding previous: Set<Int>, name: String) throws {
+        let window = try #require(host.window)
+        let menus = NSApp.windows.filter {
+            $0 !== window && $0.isVisible && !previous.contains($0.windowNumber)
+                && $0.level.rawValue > NSWindow.Level.normal.rawValue
+        }
+        try #require(!menus.isEmpty, "A native popup window must be visible")
+        // Native popup menus can extend beyond the wizard (notably the footer language menu).
+        let bounds = menus.reduce(window.frame) { $0.union($1.frame) }
+        let origin = bounds.origin
+        let image = NSImage(size: bounds.size)
+        image.lockFocus()
+        do {
+            let pixels = try ownWindowImage(window)
+            NSImage(cgImage: pixels, size: window.frame.size).draw(in: NSRect(
+                origin: NSPoint(x: window.frame.minX - origin.x, y: window.frame.minY - origin.y),
+                size: window.frame.size
+            ))
+            for menu in menus {
+                let pixels = try ownWindowImage(menu)
+                NSImage(cgImage: pixels, size: menu.frame.size).draw(in: NSRect(
+                    origin: NSPoint(x: menu.frame.minX - origin.x, y: menu.frame.minY - origin.y),
+                    size: menu.frame.size
+                ))
+            }
+        } catch { image.unlockFocus(); throw error }
+        image.unlockFocus()
+        try write(image, name: name)
+    }
+
+    static func snapshotNativeWindow(_ window: NSWindow, overlays: [NSWindow] = [], name: String) throws {
+        let pixels = try ownWindowImage(window)
+        let image = NSImage(size: window.frame.size)
+        image.lockFocus()
+        do {
+            NSImage(cgImage: pixels, size: window.frame.size).draw(in: NSRect(origin: .zero, size: window.frame.size))
+            for overlay in overlays {
+                let pixels = try ownWindowImage(overlay)
+                NSImage(cgImage: pixels, size: overlay.frame.size).draw(in: NSRect(
+                    origin: NSPoint(x: overlay.frame.minX - window.frame.minX,
+                                    y: overlay.frame.minY - window.frame.minY), size: overlay.frame.size
+                ))
+            }
+        } catch { image.unlockFocus(); throw error }
+        image.unlockFocus()
+        try write(image, name: name)
+    }
+
+    private static func ownWindowImage(_ window: NSWindow) throws -> CGImage {
+        // Only windows owned by this test host may be captured. The runtime C API
+        // preserves AppKit vibrancy without requesting global screen-recording access;
+        // recent SDKs no longer expose its legacy Swift declaration.
+        try #require(window.isVisible && window.windowNumber > 0 && NSApp.windows.contains { $0 === window })
+        typealias Capture = @convention(c) (CGRect, UInt32, CGWindowID, UInt32) -> Unmanaged<CGImage>?
+        let symbol = try #require(dlsym(UnsafeMutableRawPointer(bitPattern: -2), "CGWindowListCreateImage"))
+        let capture = unsafeBitCast(symbol, to: Capture.self)
+        return try #require(capture(.null, CGWindowListOption.optionIncludingWindow.rawValue,
+                                   CGWindowID(window.windowNumber),
+                                   CGWindowImageOption.boundsIgnoreFraming.rawValue)?.takeRetainedValue())
+    }
+
+    private static func write(_ image: NSImage, name: String) throws {
+        let data = try #require(image.tiffRepresentation)
+        let bitmap = try #require(NSBitmapImageRep(data: data))
+        let pixels = try #require(bitmap.cgImage)
+        // Export SDR evidence at the captured pixel dimensions instead of retaining
+        // the display's 16-bit working surface in every PNG.
+        let colorSpace = try #require(CGColorSpace(name: CGColorSpace.sRGB))
+        let context = try #require(CGContext(data: nil, width: pixels.width, height: pixels.height,
+            bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.draw(pixels, in: CGRect(x: 0, y: 0, width: pixels.width, height: pixels.height))
+        let exported = try #require(context.makeImage())
+        let png = try #require(NSBitmapImageRep(cgImage: exported).representation(using: .png, properties: [:]))
+        #expect(png.count > 3000)
+        if let path = ProcessInfo.processInfo.environment["TYPEFLUX_GUL303_SNAPSHOTS"] {
+            let directory = URL(fileURLWithPath: path)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try png.write(to: directory.appendingPathComponent(name + ".png"))
+        }
+    }
 }

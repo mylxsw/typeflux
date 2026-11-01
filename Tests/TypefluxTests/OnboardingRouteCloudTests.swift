@@ -437,7 +437,7 @@ extension OnboardingRouteCloudTests {
             session.currentStep = .cloud
             await model.start()
             #expect(model.phase == .waiting)
-            controller.window?.performClose(nil)
+            controller.window?.close()
             #expect(model.phase == .cancelled && !model.isBusy)
             #expect(controller.window == nil && controller.viewModel == nil)
             #expect(OnboardingCloudModel.activeLogin == nil && OnboardingCloudModel.activeSession == nil)
@@ -547,9 +547,12 @@ extension OnboardingRouteCloudTests {
                             try await withNativeWindow(session, dark: dark) { window, _ in
                                 session.requestSetupSkip()
                                 try await TestUI.wait { window.attachedSheet != nil }
-                                let sheet = try #require(window.attachedSheet?.contentView)
-                                try TestUI.snapshot(
-                                    sheet.superview ?? sheet,
+                                // Wait for the native sheet's presentation animation before caching its pixels.
+                                try await Task.sleep(for: .milliseconds(500))
+                                let sheet = try #require(window.attachedSheet)
+                                sheet.displayIfNeeded()
+                                try TestUI.snapshotNativeWindow(
+                                    window, overlays: [sheet],
                                     name: "route-skip-\(language.rawValue)-\(dark ? "dark" : "light")"
                                 )
                             }

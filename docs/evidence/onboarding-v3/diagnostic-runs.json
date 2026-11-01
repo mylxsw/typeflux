@@ -1,0 +1,354 @@
+[
+  {
+    "name": "test-followup-filter-retry",
+    "command": [
+      "make",
+      "test",
+      "FILTER=<explicit diagnostic scope>"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 414.18,
+    "complete": false,
+    "selected_count": 381
+  },
+  {
+    "name": "test-remaining",
+    "command": [
+      "make",
+      "test",
+      "FILTER=<explicit diagnostic scope>"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 722.9,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "capture-probe",
+    "command": [
+      "/usr/bin/swift",
+      "../CaptureProbe.swift",
+      "../gul642-capture-probe"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 657.01,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "playback-probe",
+    "command": [
+      "python3",
+      "../probe-gul642-playback.py"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 3.96,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "test-unrun",
+    "command": [
+      "make",
+      "test",
+      "FILTER=^Typeflux(?:Focused)?Tests[./](?!(?:AskCalculatorDetectionTests|AskCalculatorLexerTests|AskCalculatorNumberTests)[./]).*\\)$"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1206.89,
+    "complete": false,
+    "selected_count": 0
+  },
+  {
+    "name": "test-xctest-retry",
+    "command": [
+      "make",
+      "test",
+      "SUITE=AgentSettingsRedesignTests AskCodeSandboxTests AskLocalBudgetTests AskRemoteImageTests ClipboardAudioPlaybackTests ClipboardContentClassifierTests ClipboardVideoPlaybackTests NativeIconIsolationTests RecordingPreviewIsolationTests ScreenshotBeautificationTests ScreenshotOverlayTests SmallIconIsolationTests TypefluxOfficialASRGatewayFixtureTests"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 1205.16,
+    "complete": false,
+    "selected_count": 0
+  },
+  {
+    "name": "test-swift-repairs",
+    "command": [
+      "make",
+      "test",
+      "SUITE=AgentSettingsRedesignTests AppTerminationBarrierTests AskAppSearchPluginTests AskBrowserFaviconTests AskChatRedesignCopyTests AskChatRedesignVisualTests AskCodeSandboxTests AskComposerInteractionTests AskContentPreviewTests AskFileStreamingTests AskLauncherHeaderTests AskLauncherInputHistoryTests AskLauncherKindShortcutTests AskLauncherNumberShortcutTests AskLibraryVisualConsistencyTests AskLocalBudgetTests AskNotebookAuthorizationTests AskPrefixPluginTests AskQuickAskTests AskQuickResultsInteractionTests AskRecoveryActionTests AskRemoteImageTests ClipboardAudioPlaybackTests ClipboardContentClassifierTests ClipboardVideoPlaybackTests NativeIconIsolationTests OnboardingBehaviorTests OnboardingComponentTests OnboardingFeatureTests OnboardingNavigationTests OnboardingPermissionsTests OnboardingRouteCloudTests OnboardingShortcutsTests OnboardingSpeechLLMTests OnboardingTryTests OnboardingViewModelTests RecordingPreviewIsolationTests ScreenshotBeautificationTests ScreenshotOverlayTests SmallIconIsolationTests TypefluxOfficialASRGatewayFixtureTests"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 1702.81,
+    "complete": false,
+    "selected_count": 551
+  },
+  {
+    "name": "native-host-onboarding",
+    "command": [
+      "/Users/mylxsw/multica_workspaces/gulu-bf089d178fd3/gul-642-d92dae25f04e/workdir/gul642-native-host",
+      "--testing-library",
+      "swift-testing",
+      "--no-parallel",
+      "--filter",
+      "^TypefluxTests.Onboarding(?:RouteCloud|SpeechLLM|Try|ViewModel)Tests[./]"
+    ],
+    "exit_code": 1,
+    "wall_seconds": 108.61,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "test-remaining-repaired",
+    "command": [
+      "make",
+      "test",
+      "FILTER=<explicit diagnostic scope>"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 1832.78,
+    "complete": false,
+    "selected_count": 3460
+  },
+  {
+    "name": "test-onboarding",
+    "command": [
+      "make",
+      "test",
+      "FILTER=^Typeflux(?:Focused)?Tests[./]Onboarding[^/]*/.*\\)$"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 183.02,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "skipped-summary-probe",
+    "command": [
+      "/Users/mylxsw/multica_workspaces/gulu-bf089d178fd3/gul-642-d92dae25f04e/workdir/gul642-native-host",
+      "--testing-library",
+      "swift-testing",
+      "--no-parallel",
+      "--filter",
+      "^TypefluxTests.AppleReminderLiveModelTests/"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.43,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "native-host-build",
+    "command": [
+      "/usr/bin/swiftc",
+      "-parse-as-library",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-framework",
+      "Testing",
+      "-framework",
+      "AppKit",
+      "../NativeTestHost.swift",
+      "-o",
+      "../gul642-native-host"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 16.66,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "native-host-shortcuts",
+    "command": [
+      "/Users/mylxsw/multica_workspaces/gulu-bf089d178fd3/gul-642-d92dae25f04e/workdir/gul642-native-host",
+      "--testing-library",
+      "swift-testing",
+      "--no-parallel",
+      "--filter",
+      "TypefluxTests.OnboardingShortcutsTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 34.76,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "onboarding-lint",
+    "command": [
+      "swiftlint",
+      "lint",
+      "--quiet",
+      "--reporter",
+      "json",
+      "Sources/Typeflux/Onboarding/"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 1.12,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "test-remaining-host-build-first",
+    "command": [
+      "make",
+      "test",
+      "FILTER=<explicit diagnostic scope>"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 62.17,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "test-onboarding-retry",
+    "command": [
+      "make",
+      "test",
+      "FILTER=^Typeflux(?:Focused)?Tests[./]Onboarding(?:RouteCloud|Shortcuts|SpeechLLM|Try|ViewModel)Tests[./].*\\)$"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 470.19,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "test-note-isolated",
+    "command": [
+      "make",
+      "test",
+      "FILTER=^Typeflux(?:Focused)?Tests[./]AskQuickResultsInteractionTests/theNoteKeywordListsAndOpensNotes\\(\\)$"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 239.91,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "test-remaining-repaired-build-first",
+    "command": [
+      "make",
+      "test",
+      "FILTER=<explicit diagnostic scope>"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 139.69,
+    "complete": false,
+    "selected_count": 0
+  },
+  {
+    "name": "test-swift-repairs-interrupted",
+    "command": [
+      "make",
+      "test",
+      "SUITE=AgentSettingsRedesignTests AppTerminationBarrierTests AskAppSearchPluginTests AskBrowserFaviconTests AskChatRedesignCopyTests AskChatRedesignVisualTests AskCodeSandboxTests AskComposerInteractionTests AskContentPreviewTests AskFileStreamingTests AskLauncherHeaderTests AskLauncherInputHistoryTests AskLauncherKindShortcutTests AskLauncherNumberShortcutTests AskLibraryVisualConsistencyTests AskLocalBudgetTests AskNotebookAuthorizationTests AskPrefixPluginTests AskQuickAskTests AskQuickResultsInteractionTests AskRecoveryActionTests AskRemoteImageTests ClipboardAudioPlaybackTests ClipboardContentClassifierTests ClipboardVideoPlaybackTests NativeIconIsolationTests OnboardingBehaviorTests OnboardingComponentTests OnboardingFeatureTests OnboardingNavigationTests OnboardingPermissionsTests OnboardingRouteCloudTests OnboardingShortcutsTests OnboardingSpeechLLMTests OnboardingTryTests OnboardingViewModelTests RecordingPreviewIsolationTests ScreenshotBeautificationTests ScreenshotOverlayTests SmallIconIsolationTests TypefluxOfficialASRGatewayFixtureTests"
+    ],
+    "exit_code": -15,
+    "wall_seconds": 418.69,
+    "complete": false,
+    "selected_count": 0
+  },
+  {
+    "name": "test-repaired-followup",
+    "command": [
+      "make",
+      "test",
+      "FILTER=<explicit diagnostic scope>"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 425.14,
+    "complete": false,
+    "selected_count": 0
+  },
+  {
+    "name": "picker-typecheck",
+    "command": [
+      "/usr/bin/swiftc",
+      "-typecheck",
+      "Sources/Typeflux/Onboarding/OnboardingModelPicker.swift"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 2.96,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "swift-syntax",
+    "command": [
+      "/usr/bin/swiftc",
+      "-frontend",
+      "-parse",
+      "Sources/Typeflux/App/AppCoordinator.swift",
+      "Sources/Typeflux/Onboarding/OnboardingConfigPanel.swift",
+      "Sources/Typeflux/Onboarding/OnboardingFeature.swift",
+      "Sources/Typeflux/Onboarding/OnboardingLLMModel.swift",
+      "Sources/Typeflux/Onboarding/OnboardingLLMPage.swift",
+      "Sources/Typeflux/Onboarding/OnboardingPermissionsPage.swift",
+      "Sources/Typeflux/Onboarding/OnboardingProviderCard.swift",
+      "Sources/Typeflux/Onboarding/OnboardingSpeechPage.swift",
+      "Sources/Typeflux/Onboarding/OnboardingTryModel.swift",
+      "Sources/Typeflux/Onboarding/OnboardingTryPage.swift",
+      "Sources/Typeflux/Onboarding/OnboardingViewModel+Navigation.swift",
+      "Sources/Typeflux/Onboarding/OnboardingViewModel+Setup.swift",
+      "Sources/Typeflux/Onboarding/OnboardingViewModel+SetupActions.swift",
+      "Sources/Typeflux/Onboarding/OnboardingViewModel.swift",
+      "Sources/Typeflux/Onboarding/OnboardingWindowController.swift",
+      "Sources/Typeflux/Settings/AppPreferences.swift",
+      "Tests/TypefluxTests/AgentSettingsRedesignTests.swift",
+      "Tests/TypefluxTests/AppTerminationBarrierTests.swift",
+      "Tests/TypefluxTests/AskAppSearchPluginTests.swift",
+      "Tests/TypefluxTests/AskBrowserFaviconTests.swift",
+      "Tests/TypefluxTests/AskChatRedesignTests.swift",
+      "Tests/TypefluxTests/AskChatRedesignVisualTests.swift",
+      "Tests/TypefluxTests/AskContentPreviewTests.swift",
+      "Tests/TypefluxTests/AskConversationTests.swift",
+      "Tests/TypefluxTests/AskFileToolsTests.swift",
+      "Tests/TypefluxTests/AskLauncherHeaderTests.swift",
+      "Tests/TypefluxTests/AskLauncherInputHistoryTests.swift",
+      "Tests/TypefluxTests/AskLauncherKindShortcutTests.swift",
+      "Tests/TypefluxTests/AskLauncherNumberShortcutTests.swift",
+      "Tests/TypefluxTests/AskLibraryVisualConsistencyTests.swift",
+      "Tests/TypefluxTests/AskLocalBudgetTests.swift",
+      "Tests/TypefluxTests/AskNotebookAuthorizationTests.swift",
+      "Tests/TypefluxTests/AskPrefixPluginTests.swift",
+      "Tests/TypefluxTests/AskQuickResultsInteractionTests+Notes.swift",
+      "Tests/TypefluxTests/AskQuickResultsInteractionTests.swift",
+      "Tests/TypefluxTests/AskRemoteImageTests.swift",
+      "Tests/TypefluxTests/AskSourceContextViewTests.swift",
+      "Tests/TypefluxTests/ClipboardAudioPlaybackTests.swift",
+      "Tests/TypefluxTests/ClipboardContentClassifierTests.swift",
+      "Tests/TypefluxTests/ClipboardVideoPlaybackTests.swift",
+      "Tests/TypefluxTests/NativeIconIsolationTests.swift",
+      "Tests/TypefluxTests/OnboardingBehaviorTests.swift",
+      "Tests/TypefluxTests/OnboardingComponentTests.swift",
+      "Tests/TypefluxTests/OnboardingFeatureTests.swift",
+      "Tests/TypefluxTests/OnboardingLLMBehaviorTests.swift",
+      "Tests/TypefluxTests/OnboardingNavigationTests.swift",
+      "Tests/TypefluxTests/OnboardingPermissionsTests.swift",
+      "Tests/TypefluxTests/OnboardingProviderControlTests.swift",
+      "Tests/TypefluxTests/OnboardingRouteCloudTests.swift",
+      "Tests/TypefluxTests/OnboardingShortcutsTests.swift",
+      "Tests/TypefluxTests/OnboardingSpeechLLMCaptureTests.swift",
+      "Tests/TypefluxTests/OnboardingTryTests.swift",
+      "Tests/TypefluxTests/OnboardingViewModelTests.swift",
+      "Tests/TypefluxTests/ScreenshotBeautificationTests.swift",
+      "Tests/TypefluxTests/ScreenshotOverlayTests.swift",
+      "Tests/TypefluxTests/SettingsBehaviorTestSupport.swift",
+      "Tests/TypefluxTests/SmallIconIsolationTests.swift",
+      "Tests/TypefluxTests/TypefluxOfficialASRGatewayFixtureTests.swift",
+      "Sources/Typeflux/Onboarding/OnboardingModelPicker.swift"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.32,
+    "complete": null,
+    "selected_count": 0
+  },
+  {
+    "name": "png-export",
+    "command": [
+      "/usr/bin/swift",
+      "../normalize-gul642-png.swift",
+      "../gul642-native-snapshots"
+    ],
+    "exit_code": 1,
+    "wall_seconds": 148.92
+  }
+]

@@ -7,3 +7,7 @@
 "skip" = "スキップ";
 "custom" = "自分のモデルを使う";
 "skipAll" = "接続せずランチャーを使う";
+"close.title" = "後で設定しますか？";
+"close.message" = "メニューバーから再開できます。";
+"close.continue" = "設定を続ける";
+"close.quit" = "終了";

@@ -21,6 +21,7 @@ struct OnboardingConfigPanel<Fields: View, Actions: View, Result: View>: View {
                         height: 38
                     )
                     .background(.white, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(.black.opacity(0.1), lineWidth: 1))
                 }
                 Text(name).font(.system(size: 18, weight: .bold))
             }

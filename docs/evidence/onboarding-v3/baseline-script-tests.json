@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts/tests",
+    "-p",
+    "test_test_coverage.py"
+  ],
+  "baseline_commit": "56aba873cd9e2659465a7ab2cc315046cf732a4e",
+  "wall_seconds": 5.24,
+  "exit_code": 1,
+  "output": "F.F\n======================================================================\nFAIL: test_focused_coverage_builds_and_executes_only_its_scope (test_test_coverage.FocusedCoverageTests.test_focused_coverage_builds_and_executes_only_its_scope)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"<baseline>/scripts/tests/test_test_coverage.py\", line 59, in test_focused_coverage_builds_and_executes_only_its_scope\n    self.assertEqual(result.returncode, 0, result.stderr)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 1 != 0 : \n\n======================================================================\nFAIL: test_test_failure_is_not_masked_by_report_generation (test_test_coverage.FocusedCoverageTests.test_test_failure_is_not_masked_by_report_generation)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"<baseline>/scripts/tests/test_test_coverage.py\", line 70, in test_test_failure_is_not_masked_by_report_generation\n    self.assertEqual(len(calls), 2)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^\nAssertionError: 1 != 2\n\n----------------------------------------------------------------------\nRan 3 tests in 5.015s\n\nFAILED (failures=2)\n",
+  "expected_failure": true
+}

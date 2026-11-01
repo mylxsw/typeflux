@@ -1,0 +1,25 @@
+{
+  "baseline": {
+    "cyclomatic_complexity:Error": 1,
+    "cyclomatic_complexity:Warning": 1,
+    "file_length:Warning": 1,
+    "function_body_length:Warning": 1,
+    "identifier_name:Warning": 1,
+    "line_length:Warning": 22,
+    "line_length:Error": 2,
+    "statement_position:Warning": 10,
+    "type_body_length:Error": 1
+  },
+  "current": {
+    "cyclomatic_complexity:Error": 1,
+    "cyclomatic_complexity:Warning": 1,
+    "file_length:Warning": 1,
+    "function_body_length:Warning": 1,
+    "identifier_name:Warning": 1,
+    "line_length:Warning": 22,
+    "line_length:Error": 2,
+    "statement_position:Warning": 10,
+    "type_body_length:Error": 1
+  },
+  "new_violations": []
+}

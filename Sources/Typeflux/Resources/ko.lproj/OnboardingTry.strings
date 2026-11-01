@@ -16,8 +16,6 @@
 "voice.instructionPrefix" = "";
 "voice.instructionSuffix" = " 키를 누른 채 말해보세요";
 "voice.placeholder" = "텍스트가 여기에 표시됩니다";
-"voice.sampleText" = "금요일까지 새 홈페이지 디자인 시안을 보내주세요.";
-"voice.simulate" = "길게 눌러 시뮬레이션";
 
 "launcher.instructionPrefix" = "";
 "launcher.instructionSuffix" = " 키를 누르고 「fy hello」 입력";

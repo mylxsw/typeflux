@@ -7,3 +7,7 @@
 "skip" = "跳过";
 "custom" = "改用自己的模型";
 "skipAll" = "暂不连接，先用启动器";
+"close.title" = "稍后再设置？";
+"close.message" = "可以从菜单栏继续。";
+"close.continue" = "继续设置";
+"close.quit" = "退出";

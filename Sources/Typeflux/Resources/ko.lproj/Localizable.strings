@@ -1098,56 +1098,12 @@
 "workflow.vocabulary.autoAdded.multiple" = "어휘에 %d 용어를 추가했습니다.";
 
 "onboarding.window.title" = "Typeflux에 오신 것을 환영합니다.";
-"onboarding.step.language" = "언어";
-"onboarding.step.models" = "모델";
-"onboarding.step.permissions" = "권한";
-"onboarding.step.shortcuts" = "단축키";
 
-"onboarding.welcome.tagline" = "모든 앱에 음성 입력을.";
-"onboarding.welcome.feature1.title" = "누르고 말하기";
-"onboarding.welcome.feature1.desc" = "핫키를 누르면 녹음, 떼면 변환 — 텍스트가 어느 앱에나 입력됩니다.";
-"onboarding.welcome.feature2.title" = "어디서나 사용";
-"onboarding.welcome.feature2.desc" = "접근성 API를 이용해 모든 macOS 앱에 텍스트를 삽입합니다.";
-"onboarding.welcome.feature3.title" = "AI 재작성";
-"onboarding.welcome.feature3.desc" = "선택적 언어 모델이 받아쓰기를 실시간으로 다듬어 줍니다.";
 
-"onboarding.language.title" = "언어를 선택하세요";
-"onboarding.language.subtitle" = "Typeflux 인터페이스의 표시 언어를 선택하세요.";
-"onboarding.account.title" = "다시 오신 것을 환영합니다";
-"onboarding.account.subtitle" = "클라우드 음성 인식과 AI 추론 기능을 해방하세요";
-"onboarding.account.cloudReady" = "음성 인식 및 대형 언어 모델 서비스가 준비되었습니다. 추가 API 키가 필요 없습니다.";
 
-"onboarding.models.title" = "모델 설정";
-"onboarding.models.subtitle" = "음성 인식기와 언어 모델을 선택하세요. 언제든지 설정에서 변경할 수 있습니다.";
-"onboarding.models.stt.title" = "음성인식";
-"onboarding.models.stt.subtitle" = "음성을 텍스트로 변환합니다.";
-"onboarding.models.llm.title" = "언어 모델";
-"onboarding.models.llm.subtitle" = "받아쓰기를 다시 작성하고 다듬습니다.";
-"onboarding.models.stt.apple.description" = "기기 내에서는 설정이 필요하지 않습니다.";
-"onboarding.models.stt.whisper.description" = "원격 API — 엔드포인트 및 키 필요";
-"onboarding.models.stt.local.description" = "로컬로 다운로드 및 실행";
-"onboarding.models.stt.local.hint" = "모델은 처음 사용할 때 자동으로 다운로드됩니다.";
-"onboarding.models.llm.openai.title" = "OpenAI-Compatible";
-"onboarding.models.llm.openai.description" = "모든 원격 채팅 API — OpenAI, Claude, Deepseek…";
-"onboarding.models.llm.ollama.title" = "Local Ollama";
-"onboarding.models.llm.ollama.description" = "비공개, 전적으로 Mac에서 실행됩니다.";
-"onboarding.models.badge.noSetup" = "설정 없음";
-"onboarding.models.badge.apiKey" = "API 키";
-"onboarding.models.badge.local" = "지역";
 
 "onboarding.models.getAPIKey" = "API 키 받기";
 
-"onboarding.sttProvider.subtitle" = "음성을 텍스트로 변환하는 엔진을 선택하세요";
-"onboarding.sttConfig.subtitle" = "자격 증명 및 기본 설정 구성";
-"onboarding.sttConfig.incomplete.message" = "계속하기 전에 선택한 음성 모델 설정을 완료하세요.";
-"onboarding.sttConfig.incompleteAlert.title" = "음성 모델 설정이 완료되지 않았습니다";
-"onboarding.sttConfig.incompleteAlert.message" = "다음 단계로 진행하기 전에 선택한 음성 모델 설정을 완료하세요.";
-"onboarding.llmProvider.subtitle" = "받아쓰기를 다시 작성하고 다듬는 모델을 선택하세요";
-"onboarding.llmConfig.subtitle" = "자격 증명 및 기본 설정 구성";
-"onboarding.llmConfig.incompleteAlert.title" = "언어 모델 설정이 완료되지 않았습니다";
-"onboarding.llmConfig.incompleteAlert.message" = "음성 전사는 계속 사용할 수 있지만, 언어 모델이 필요한 다시 쓰기와 다듬기 기능은 당분간 제한됩니다.";
-"onboarding.llmConfig.incompleteAlert.continueConfig" = "계속 설정";
-"onboarding.llmConfig.incompleteAlert.skip" = "건너뛰기";
 
 "onboarding.permissions.title" = "권한 부여";
 "onboarding.permissions.subtitle" = "Typeflux에 음성을 캡처하고 다른 앱에 텍스트를 삽입하려면 몇 가지 시스템 권한이 필요합니다.";
@@ -1158,37 +1114,7 @@
 "onboarding.permissions.privacyCallout.title" = "개인정보 보호 우선";
 "onboarding.permissions.privacyCallout.subtitle" = "오디오 데이터는 가능한 한 로컬에서 처리됩니다. 명시적인 동의 없이는 어떤 녹음도 저장하지 않습니다.";
 
-"onboarding.shortcuts.title" = "키보드 단축키";
-"onboarding.shortcuts.subtitle" = "기본 단축키입니다. 모든 설정이 완료되었습니다. 변경할 필요가 없습니다.";
-"onboarding.shortcuts.globeKeyNotice.title" = "FN / 🌐(지구본) 키를 먼저 비워 주세요";
-"onboarding.shortcuts.globeKeyNotice.message" = "macOS 는 기본적으로 FN / 🌐 키에 「이모티콘과 기호」를 배정하므로 Typeflux 가 이 키를 사용할 수 없습니다. 키보드 설정을 열어 「FN / 🌐 키를 눌렀을 때」를 「아무 작업도 하지 않음」으로 바꾸기만 하면 됩니다.";
-"onboarding.shortcuts.globeKeyNotice.button" = "키보드 설정 열기";
-"onboarding.shortcuts.globeKeyNotice.ready.title" = "FN / 🌐 키가 준비되었습니다";
-"onboarding.shortcuts.globeKeyNotice.ready.message" = "키보드 설정이 완료되어 Typeflux 가 FN / 🌐 키를 단축키로 사용할 수 있습니다. 그래도 반응이 없다면 한 번 로그아웃 후 다시 로그인하거나, Mac 을 재시작해 주세요.";
-"onboarding.shortcuts.externalKeyboard.title" = "외장 키보드에서 FN 키를 사용할 수 없나요?";
-"onboarding.shortcuts.externalKeyboard.message" = "오른쪽 Command 또는 오른쪽 Option 을 대신 사용할 수 있습니다. Typeflux 는 음성 입력을 해당 키로, 대화를 해당 키 빠른 두 번 누르기로 변경합니다.";
-"onboarding.shortcuts.externalKeyboard.useRightCommand" = "오른쪽 Command 사용";
-"onboarding.shortcuts.externalKeyboard.useRightOption" = "오른쪽 Option 사용";
-"onboarding.shortcuts.replacement.rightCommand" = "오른쪽 Command";
-"onboarding.shortcuts.replacement.rightOption" = "오른쪽 Option";
-"onboarding.shortcuts.replacement.fn" = "FN / 🌐";
-"onboarding.shortcuts.replacement.active.title" = "%@ 단축키가 활성화되었습니다";
-"onboarding.shortcuts.replacement.active.message" = "단축키가 변경되었습니다. 음성 입력은 %@, 대화는 %@×2 를 사용합니다.";
-"onboarding.shortcuts.replacement.restore" = "FN 단축키 복원";
-"onboarding.shortcuts.replacement.appliedAlert.title" = "단축키가 업데이트되었습니다";
-"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux 가 이제 음성 입력에 %@, 대화에 %@×2 를 사용합니다.";
-"onboarding.shortcuts.replacement.restoredAlert.message" = "Typeflux 가 기본 FN / 🌐 단축키로 복원되었습니다.";
-"onboarding.shortcuts.activation.hint" = "말한 내용을 텍스트로 입력";
-"onboarding.shortcuts.ask.hint" = "음성으로 질문하거나 선택한 글 수정";
-"onboarding.shortcuts.persona.hint" = "페르소나 전환 또는 선택한 글 재작성";
-"onboarding.shortcuts.changeInSettings" = "설정 → 음성 단축키에서 언제든지 단축키를 맞춤 설정할 수 있습니다.";
-"onboarding.shortcuts.history.hint" = "이전 내용을 확인하고 붙여넣기";
 
-"onboarding.action.back" = "이전";
-"onboarding.action.continue" = "다음";
-"onboarding.action.skip" = "건너뛰기";
-"onboarding.account.skip" = "건너뛰고 내 모델 설정";
-"onboarding.action.getStarted" = "시작하기";
 
 // MARK: - Agent Framework
 
@@ -1458,10 +1384,6 @@
 "settings.shortcuts.auxiliaryUpdated" = "보조 단축키가 업데이트되었습니다";
 "settings.shortcuts.auxiliaryUnset" = "보조 단축키가 해제되었습니다";
 "settings.shortcuts.recordingAuxiliary" = "보조 단축키를 누르거나 단일 키를 두 번 누르세요.";
-"onboarding.shortcuts.auxiliary.hint" = "다른 페르소나로 음성 입력";
-"onboarding.shortcuts.auxiliary.unset" = "지정된 단축키가 없습니다. 설정에서 지정하세요.";
-"onboarding.shortcuts.auxiliary.externalKeyboard" = "보조 단축키는 선택한 키 + 왼쪽 Shift로 변경됩니다. 사용자 지정 보조 단축키는 유지됩니다.";
-"onboarding.shortcuts.auxiliary.active" = "보조 단축키: %@";
 
 // Ask conversations
 "ask.allowOnce" = "이번만 허용";
@@ -6668,7 +6590,6 @@
 /* Onboarding v2 (GUL-339) */
 "onboarding.v2.welcome.title" = "말하고, 찾고, 긋고, 묻고.\n키 하나면 됩니다.";
 "onboarding.v2.welcome.lead" = "메뉴 막대에 상주하며 어떤 앱에서든 바로 씁니다.";
-"onboarding.v2.welcome.duration" = "약 2분";
 "onboarding.v2.verb.voice" = "말하기";
 "onboarding.v2.verb.launcher" = "찾기";
 "onboarding.v2.verb.ring" = "긋기";
@@ -6693,53 +6614,7 @@
 "onboarding.v2.hero.chat.question" = "어느 달이 가장 많이 늘었어?";
 "onboarding.v2.hero.chat.step" = "현재 화면을 읽었습니다";
 "onboarding.v2.hero.chat.answer" = "7월이며 전월 대비 +32%, 주로 앱 스토어 유입입니다.";
-"onboarding.v2.action.start" = "시작";
-"onboarding.v2.action.continue" = "계속";
-"onboarding.v2.action.back" = "뒤로";
-"onboarding.v2.action.later" = "나중에";
-"onboarding.v2.action.finish" = "사용 시작";
-"onboarding.v2.later.screen" = "화면 기록";
-"onboarding.v2.later.ai" = "AI 연결";
-"onboarding.v2.permissions.title.ready" = "권한 설정 완료";
-"onboarding.v2.permissions.title.missing" = "권한 %d개 남음";
-"onboarding.v2.permissions.subtitle" = "현재 설정에 필요한 권한을 확인하세요.";
-"onboarding.v2.permissions.later" = "필요할 때 요청:";
-"onboarding.v2.permission.microphone.detail" = "음성 입력을 시작하면 녹음합니다";
-"onboarding.v2.permission.accessibility.detail" = "현재 앱에 텍스트 입력";
-"onboarding.v2.permission.speechRecognition.detail" = "Apple 음성 인식 예비";
-"onboarding.v2.globe.title" = "macOS가 fn 키를 사용 중";
-"onboarding.v2.globe.detail" = "‘아무것도 안 함’으로 바꾸면 누르고 말할 수 있어요";
-"onboarding.v2.globe.conflict" = "이 키는 다른 단축키가 쓰고 있어요";
-"onboarding.v2.globe.open" = "키보드 설정 열기";
-"onboarding.v2.globe.useOtherKey" = "다른 키 사용";
-"onboarding.feature.voice.title" = "음성 입력";
-"onboarding.feature.voice.caption" = "누르고 말하면, 떼는 순간 입력";
-"onboarding.feature.launcher.title" = "런처";
-"onboarding.feature.launcher.caption" = "앱, 계산, 클립보드, 스크린샷";
-"onboarding.feature.tools.title" = "도구";
-"onboarding.feature.tools.caption" = "번역, GIF 녹화, 워크플로";
-"onboarding.feature.ring.title" = "링";
-"onboarding.feature.ring.caption" = "누르고, 가리키고, 떼기";
-"onboarding.feature.chat.title" = "Agent 채팅";
-"onboarding.feature.chat.caption" = "화면을 보고 일을 끝내 줘요";
-"onboarding.tip.voice.talk" = "누르고 말하기";
-"onboarding.tip.voice.rewrite" = "텍스트를 선택하고 말하면 고쳐 쓰기";
-"onboarding.tip.launcher.open" = "런처 열기";
-"onboarding.tip.launcher.clipboard" = "클립보드 기록";
-"onboarding.tip.launcher.screenshot" = "스크린샷";
-"onboarding.tip.tools.translate" = "번역";
-"onboarding.tip.tools.record" = "화면 녹화 · GIF";
-"onboarding.tip.tools.workflow" = "워크플로: 키워드 입력";
-"onboarding.tip.ring.swipe" = "링 열기";
-"onboarding.tip.chat.ask" = "런처에서 질문";
-"onboarding.tip.chat.window" = "채팅 창 열기";
 "onboarding.v2.hero.tools" = "번역, 녹화, 자동화";
-"onboarding.v2.action.next" = "다음";
-"onboarding.v2.shortcut.notSet" = "설정에서 지정";
-"onboarding.v2.voice.practice.placeholder" = "여기를 클릭하고 %@ 누른 채 말해 보세요";
-"onboarding.v2.voice.practice.done" = "성공";
-"onboarding.v2.finish.title" = "준비 완료";
-"onboarding.v2.finish.subtitle" = "이 키만 기억하면 돼요.";
 "ask.history.syncPending" = "일부 대화가 아직 동기화되지 않았습니다. 자동으로 다시 시도합니다.";
 
 "ask.storage.inUse" = "다른 Typeflux 프로세스가 이 대화를 사용 중입니다. 해당 프로세스를 종료한 후 다시 시도하세요.";
@@ -7651,38 +7526,11 @@
 
 
 // Service setup and feature availability.
-"setup.services.title" = "모델 연결 방식 선택";
-"setup.services.subtitle" = "음성 입력과 Agent에는 모델 서비스가 필요합니다. 런처는 바로 사용할 수 있습니다.";
-"setup.services.cloud" = "로그인하여 Typeflux 모델을 사용하세요. API 키는 필요하지 않습니다.";
-"setup.services.custom.title" = "내 모델 사용";
-"setup.services.custom" = "로컬 음성 모델을 선택하거나 내 모델 서비스에 연결하세요.";
-"setup.services.recommended" = "추천";
-"setup.services.launcherOnly" = "런처부터 사용하기";
-"setup.cloud.title" = "Typeflux Cloud에 연결";
-"setup.cloud.subtitle" = "로그인하여 음성 및 AI 서비스에 연결하세요.";
-"setup.cloud.signInDetail" = "로그인 후 여기로 돌아와 설정을 계속하세요.";
 "setup.cloud.signIn" = "Typeflux Cloud 로그인";
-"setup.cloud.checking" = "사용 가능한 서비스 확인 중…";
 "setup.cloud.checkFailed" = "계정 상태를 확인하지 못했습니다. 다시 시도하거나 내 모델을 설정하세요.";
-"setup.cloud.aiReady" = "계정의 기본 AI 모델 사용";
-"setup.cloud.speechReady" = "클라우드 음성 인식 사용 가능";
-"setup.cloud.localNext" = "이 계정에는 클라우드 음성 인식이 포함되지 않습니다. 다음 단계에서 로컬 모델이나 내 음성 서비스를 선택하세요.";
-"setup.cloud.useOwn" = "내 모델 사용하기";
-"setup.speech.title" = "음성 인식 설정";
-"setup.speech.subtitle" = "말을 텍스트로 변환할 방식을 선택하세요.";
 "setup.speech.configure" = "음성 모델 설정";
-"setup.speech.hint" = "로컬 모델은 계정이 필요 없습니다. 모델이 준비되면 계속할 수 있습니다.";
 "setup.speech.cloudUnavailable" = "로그인하여 클라우드 이용 권한을 확인하거나 로컬 음성 모델을 설정하세요.";
 "setup.speech.required" = "녹음 전에 음성 인식을 설정하세요. %@";
-"setup.language.title" = "AI 모델 설정";
-"setup.language.subtitle" = "Agent, 대화, 음성 문장 수정에 사용합니다.";
-"setup.language.configure" = "모델 추가 또는 설정";
-"setup.language.hint" = "모델을 선택하고 연결을 테스트하세요. 나중에 설정에서 변경할 수 있습니다.";
-"setup.status.title" = "상태";
-"setup.status.configured" = "설정됨";
-"setup.status.notSetUp" = "설정되지 않음";
-"setup.status.downloading" = "다운로드 중 · %d%%";
-"setup.status.testing" = "연결 테스트 중…";
 "setup.skip.title" = "나중에 설정할까요?";
 "setup.skip.allModels.message" = "런처 검색, 앱 실행, 계산은 사용할 수 있습니다. 음성 입력, Agent, AI 문장 수정은 모델 설정 후 사용할 수 있습니다. 나중에 설정에서 추가하세요.";
 "setup.skip.speech.message" = "음성 입력과 음성 질문은 설정하지 않습니다. AI 설정을 계속하고 입력으로 Agent를 사용할 수 있습니다.";
@@ -7690,58 +7538,11 @@
 "setup.skip.permissions.message" = "마이크 권한이 없으면 녹음할 수 없습니다. 손쉬운 사용 권한이 없으면 다른 앱에 입력할 수 없습니다. 나중에 설정에서 허용할 수 있습니다.";
 "setup.skip.confirm" = "나중에 설정";
 "setup.skip.back" = "설정으로 돌아가기";
-"setup.action.skip" = "나중에 설정";
-"setup.action.retry" = "다시 시도";
-"setup.action.done" = "완료";
-"setup.action.configure" = "설정하기";
 "setup.action.resume" = "설정 계속…";
-"setup.finish.title" = "Typeflux 시작하기";
-"setup.finish.subtitle" = "현재 설정 상태입니다. 필요한 기능은 나중에 추가할 수 있습니다.";
-"setup.finish.launcher" = "앱과 파일 검색, 앱 실행, 계산";
-"setup.finish.speechSkipped" = "음성 입력이 필요할 때 음성 모델 설정";
-"setup.finish.permissionsMissing" = "모델 설정됨 · 권한 허용 필요";
-"setup.finish.ai" = "Agent 및 AI 문장 수정";
-"setup.stage.services" = "연결 방식";
-"setup.stage.models" = "모델 서비스";
-"setup.stage.permissions" = "권한";
-"setup.stage.practice" = "시작하기";
-"setup.cloud.signInShort" = "로그인";
-"setup.speech.remoteHint" = "연결을 테스트한 후 계속하세요.";
-"setup.status.testNeeded" = "검증 전";
-"setup.language.choose" = "모델 선택";
 "setup.permission.microphone.impact" = "마이크 권한이 없으면 음성 입력과 음성 질문을 녹음할 수 없습니다.";
 "setup.permission.accessibility.impact" = "손쉬운 사용 권한이 없으면 다른 앱에 입력하거나 일부 전역 단축키를 사용할 수 없습니다.";
 "setup.permission.speechRecognition.impact" = "Apple 음성 인식에는 음성 인식 권한이 필요합니다.";
 "setup.permission.later" = "런처의 기본 검색은 사용할 수 있습니다. 나중에 설정에서 허용할 수 있습니다.";
-"setup.voice.permissionsFirst" = "음성 입력을 체험하기 전에 권한과 단축키를 설정하세요.";
-"setup.action.permissions" = "권한 설정";
-"setup.launcher.permissionsHint" = "일부 전역 단축키에는 손쉬운 사용 권한이 필요합니다. 메뉴 막대에서 런처를 열 수 있습니다.";
 "setup.skip.existingModels" = "기존 모델 설정은 유지됩니다. 먼저 런처를 사용하고, 설정하지 않은 음성 및 AI 서비스는 나중에 추가하세요.";
 "setup.skip.existingSpeech" = "기존 음성 모델 설정은 유지됩니다. 음성 안내를 건너뛰고 나중에 설정에서 모델을 변경할 수 있습니다.";
 "setup.skip.existingAI" = "기존 AI 모델 설정은 유지됩니다. AI 안내를 건너뛰고 나중에 설정에서 모델을 변경할 수 있습니다.";
-"setup.finish.readySubtitle" = "모델과 권한이 설정되었습니다. 설정에서 언제든 변경할 수 있습니다.";
-"setup.permission.keyboardImpact" = "🌐 단축키가 아직 설정되지 않아 이 키로 음성 입력을 시작할 수 없습니다. 나중에 설정하거나 다른 키로 바꿀 수 있습니다.";
-"setup.finish.keyboardMissing" = "모델 설정 완료 · 🌐 단축키 설정 필요";
-"setup.permission.launcherAccessibility" = "전역 단축키와 다른 앱 제어에 사용";
-
-"setup.services.launcherImpact" = "설정하기 전에는 음성 입력과 Agent를 사용할 수 없습니다.";
-"setup.cloud.signInContinue" = "로그인하고 계속";
-"setup.cloud.entitlementNote" = "사용 가능한 서비스는 계정 권한에 따라 다릅니다.";
-"setup.cloud.speechService" = "음성 인식";
-"setup.action.testAndContinue" = "테스트하고 계속";
-"setup.rail.title" = "초기 설정";
-"setup.rail.later" = "나중에 설정에서 변경 가능";
-"setup.rail.current" = "현재 단계";
-"setup.rail.completed" = "완료됨";
-"setup.stage.complete" = "완료";
-"setup.speech.serviceLabel" = "음성 인식 서비스";
-"setup.speech.preview" = "생각을 말로 표현하세요";
-"setup.connection.configured" = "연결 정보 입력 완료";
-"setup.connection.edit" = "연결 정보 편집";
-"setup.language.shortTitle" = "언어 모델";
-"setup.speech.manage" = "음성 모델 관리";
-"setup.status.ready" = "준비 완료";
-"setup.rail.skipped" = "건너뜀";
-"setup.services.existingImpact" = "기존 모델 설정은 유지됩니다.";
-"setup.services.aiMissingImpact" = "Agent와 AI 재작성은 나중에 설정하세요.";
-"setup.services.speechMissingImpact" = "음성 입력은 나중에 설정하세요.";

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "swiftlint",
+    "lint",
+    "--quiet",
+    "Sources/Typeflux/Onboarding"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 1.49,
+  "warnings": 18
+}

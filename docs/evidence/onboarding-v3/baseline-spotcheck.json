@@ -1,0 +1,22 @@
+{
+  "baseline_commit": "56aba873cd9e2659465a7ab2cc315046cf732a4e",
+  "command": [
+    "swiftc",
+    "<pristine ClipboardCategory.swift>",
+    "<original assertion inputs (standalone Swift comparison)>",
+    "-o",
+    "baseline-probe"
+  ],
+  "wall_seconds": 454.0,
+  "exit_code": 1,
+  "assertion": "XCTAssertEqual(ClipboardCategory.allCases.map(\\.id), [\"all\", \"snippet\"])",
+  "output": "Expected: [\"all\", \"snippet\"] Actual: [\"all\", \"voice\", \"snippet\"]\n",
+  "method": "ClipboardContentClassifierTests.testKindCategoriesAndTextuality (category assertion only)",
+  "limitation": "Standalone component reproducer of the original assertion inputs from a pristine detached main worktree; not the full XCTest method or a full application build. Localization shim is unused by this comparison.",
+  "same_as_delivery": {
+    "Sources/Typeflux/Clipboard/ClipboardCategory.swift": true,
+    "Tests/TypefluxTests/ClipboardContentClassifierTests.swift": true
+  },
+  "wall_time_note": "Includes waiting for the shared Swift build lock.",
+  "expected_failure": true
+}

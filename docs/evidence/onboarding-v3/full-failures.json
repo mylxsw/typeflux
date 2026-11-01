@@ -1,0 +1,78 @@
+[
+  {
+    "suite": "AgentSettingsRedesignTests",
+    "method": "testEveryPaneRendersInBothAppearances"
+  },
+  {
+    "suite": "AskCodeSandboxTests",
+    "method": "testPythonImageAndOutputLimit"
+  },
+  {
+    "suite": "AskLocalBudgetTests",
+    "method": "testContextBudgetStopsBeforeInferenceAndUsesModelWindow"
+  },
+  {
+    "suite": "AskRemoteImageTests",
+    "method": "testOutputGroupBoundsPreviewAttemptsAndRetainsAllAssetReferences"
+  },
+  {
+    "suite": "AskRemoteImageTests",
+    "method": "testRealHelperDetectsOriginalTypeAndRejectsMalformedBytes"
+  },
+  {
+    "suite": "ClipboardAudioPlaybackTests",
+    "method": "testPanelHideSelectionDeletionAndAccountStopActualOwners"
+  },
+  {
+    "suite": "ClipboardContentClassifierTests",
+    "method": "testKindCategoriesAndTextuality"
+  },
+  {
+    "suite": "ClipboardVideoPlaybackTests",
+    "method": "testActualPanelHideSelectionDeletionAndAccountClearVideo"
+  },
+  {
+    "suite": "ClipboardVideoPlaybackTests",
+    "method": "testPixelBudgetDeniesBeforeFactoryAndCancelledUncooperativeReplyKeepsLease"
+  },
+  {
+    "suite": "ClipboardVideoPlaybackTests",
+    "method": "testRealHelperRotatedVideoFramesSeekVolumeEndAndExplicitRestartWithoutAudioTrack"
+  },
+  {
+    "suite": "NativeIconIsolationTests",
+    "method": "testHomePrefetchCoversGridViewportBeforeAnyImageViewExists"
+  },
+  {
+    "suite": "RecordingPreviewIsolationTests",
+    "method": "testRealRecordingHelperStopsAtTrimEndAndPausedSeekNeverResumes"
+  },
+  {
+    "suite": "ScreenshotBeautificationTests",
+    "method": "testBeautificationPreviewsTheFinishedCutoutAndWaitsForProcessing"
+  },
+  {
+    "suite": "ScreenshotBeautificationTests",
+    "method": "testOverlayAndLongImageControllerForwardSettingsAndDismissSheets"
+  },
+  {
+    "suite": "ScreenshotBeautificationTests",
+    "method": "testPanelCancelApplyAndReopenKeepDraftsIsolated"
+  },
+  {
+    "suite": "ScreenshotOverlayTests",
+    "method": "testChromeDrawsEveryPart"
+  },
+  {
+    "suite": "SmallIconIsolationTests",
+    "method": "testEditorLocalIconScopeLoadsAndCancelsOnRemoval"
+  },
+  {
+    "suite": "TypefluxOfficialASRGatewayFixtureTests",
+    "method": "testLLMErrorAfterOutputDoesNotReplayOnAnotherGateway"
+  },
+  {
+    "suite": "TypefluxOfficialASRGatewayFixtureTests",
+    "method": "testPartialThenServerErrorDoesNotReplayOnAnotherGateway"
+  }
+]

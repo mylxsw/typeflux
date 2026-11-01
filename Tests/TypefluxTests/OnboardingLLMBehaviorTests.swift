@@ -110,20 +110,22 @@ extension OnboardingSpeechLLMTests {
         }
     }
 
-    @Test func `free LLM uses the injected connection probe and preserves a resolvable selection`() async throws {
+    @Test func `empty free LLM catalog blocks continuation and never dispatches a probe`() async throws {
         try await fixture { _, session, _, _, _ in
             let model = session.llmModel
+            let previousDefault = session.modelLibrary.defaultReference
             session.currentStep = .llm
             model.activate()
-            #expect(model.canContinue == true)
-            #expect(session.languageConfigured)
+            #expect(model.availableModels.isEmpty)
+            #expect(model.canContinue == false)
+            #expect(!session.languageConfigured)
+            #expect(model.validationStatus == .invalid(message: L("models.noModels")))
+            var probes = 0
+            model.connectionProbe = { _, _ in probes += 1; return "Unexpected" }
             model.testConnection()
-            try await Controls.wait {
-                if case .success = model.testStatus {
-                    return true
-                }; return false
-            }
-            #expect(session.modelLibrary.registry.resolve(session.modelLibrary.defaultReference) != nil)
+            await Task.yield()
+            #expect(probes == 0 && model.testStatus == .idle)
+            #expect(session.modelLibrary.defaultReference == previousDefault)
         }
     }
 
@@ -180,7 +182,10 @@ extension OnboardingSpeechLLMTests {
                 }; return false
             }
             #expect(model.canContinue == false)
-            model.selectProvider(.remote(.freeModel))
+            catalog.fails = false
+            model.selectProvider(.remote(.openAI))
+            model.apiKey = "fixture"
+            try await Controls.wait { model.validationStatus == .valid }
             model.connectionProbe = { _, _ in "  " }
             model.testConnection()
             try await Controls.wait {

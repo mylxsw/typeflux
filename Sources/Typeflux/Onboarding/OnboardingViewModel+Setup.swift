@@ -40,39 +40,6 @@ extension OnboardingViewModel {
                                             loggedIn: authState.isLoggedIn, scenario: "rewrite") == nil
     }
 
-    var speechVerified: Bool {
-        if settingsStore.sttProvider == .localModel || settingsStore
-            .sttProvider == .appleSpeech { return speechConfigured }
-        if settingsStore.sttProvider == .typefluxOfficial {
-            guard authState.canUseCloudASR else { return false }
-            if cloudCheckCompleted { return true }
-        }
-        if case .success = configurationModel?.sttConnectionTestState { return true }
-        return false
-    }
-
-    var languageVerified: Bool {
-        if case .success = languageTestState { return verifiedLanguageSignature == languageConfigurationSignature }
-        return false
-    }
-
-    var speechStatusText: String {
-        if settingsStore.sttProvider == .localModel {
-            if case let .downloading(model, progress) = LocalModelDownloadProgressCenter.shared.status,
-               model == settingsStore.localSTTModel {
-                return L("setup.status.downloading", Int(progress * 100))
-            }
-            if case let .failed(model, message) = LocalModelDownloadProgressCenter.shared.status,
-               model == settingsStore.localSTTModel { return message }
-        }
-        return speechConfigured ? L(speechVerified ? "setup.status.configured" : "setup.status.testNeeded")
-            : L("setup.status.notSetUp")
-    }
-
-    var languageStatusText: String {
-        languageConfigured ? L("setup.status.configured") : L("setup.status.notSetUp")
-    }
-
     var voicePermissionsGranted: Bool {
         PrivacyGuard.requiredPermissionIDs(settingsStore: settingsStore).allSatisfy { id in
             permissions.first(where: { $0.id == id })?.isGranted == true
@@ -87,29 +54,10 @@ extension OnboardingViewModel {
         speechConfigured && voicePermissionsGranted && voiceHotkeyReady
     }
 
-    func guideShortcuts(for feature: OnboardingFeature) -> [OnboardingShortcut] {
-        shortcuts(for: feature).filter { shortcut in
-            shortcut.id != "voice.rewrite" || (!aiSkipped && languageConfigured)
-        }
-    }
-
     func refreshSetup() {
         modelLibrary.reloadFeaturePreferences()
         setupRevision += 1
-        if languageTestState == .testing, testingLanguageSignature != languageConfigurationSignature {
-            languageTestTask?.cancel()
-            requestedSetupAdvance = nil
-            languageTestState = .idle
-            testingLanguageSignature = nil
-        }
-        if case .success = languageTestState,
-           verifiedLanguageSignature != languageConfigurationSignature { languageTestState = .idle }
-        if let testingLanguageSignature, testingLanguageSignature != languageConfigurationSignature {
-            languageTestState = .idle
-            requestedSetupAdvance = nil
-        }
         updateVoicePractice()
-        completeRequestedSetupAdvanceIfReady()
     }
 
     var languageConfigurationSignature: String {
@@ -129,19 +77,6 @@ extension OnboardingViewModel {
                   !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
             return voicePracticeText.contains(text)
         }
-    }
-
-    func checkCloud() async {
-        guard authState.isLoggedIn, !isCheckingCloud else { return }
-        isCheckingCloud = true
-        cloudCheckCompleted = false
-        cloudError = nil
-        let snapshot = await authState.refreshSubscription()
-        guard !Task.isCancelled else { isCheckingCloud = false; return }
-        cloudCheckCompleted = snapshot != nil
-        cloudError = snapshot == nil ? L("setup.cloud.checkFailed") : nil
-        isCheckingCloud = false
-        refreshSetup()
     }
 
     func applyCloudSelection() {
@@ -168,65 +103,10 @@ extension OnboardingViewModel {
         if target == .speech, speechConfigured { return L("setup.skip.existingSpeech") }
         if target == .language, languageConfigured { return L("setup.skip.existingAI") }
         guard target == .permissions else { return target.message }
-        let impacts = requiredPermissions.filter { !$0.isGranted }.map {
-            L("setup.permission.\($0.id.rawValue).impact")
-        }
+        let impacts = requiredPermissionIDs.filter { id in
+            permissions.first(where: { $0.id == id })?.isGranted != true
+        }.map { L("setup.permission.\($0.rawValue).impact") }
         return (impacts + [L("setup.permission.later")]).joined(separator: "\n\n")
     }
 
-    func editModels(_ domain: StudioModelDomain) {
-        requestedSetupAdvance = nil
-        configurationModel?.selectModelPageTab(ModelPageTab(domain: domain))
-        if domain == .stt, let configurationModel {
-            configurationModel.focusModelProvider(configurationModel.focusedModelProvider)
-            configurationModel.isShowingSpeechProviderDetail = true
-        }
-        modelEditorDomain = domain
-    }
-
-    /// Assign both consumers, so configuring rewriting also enables new conversations.
-    func selectLanguageModel(_ reference: String) {
-        requestedSetupAdvance = nil
-        languageTestTask?.cancel()
-        modelLibrary.rewriteReference = reference
-        modelLibrary.defaultReference = reference
-        verifiedLanguageSignature = nil
-        testingLanguageSignature = nil
-        languageTestState = .idle
-        refreshSetup()
-    }
-
-    func testLanguageModel() {
-        guard let (provider, model) = modelLibrary.registry.resolve(modelLibrary.rewriteReference),
-              modelLibrary.selectionReason(model, provider: provider, hasImage: false,
-                                           loggedIn: authState.isLoggedIn, scenario: "rewrite") == nil else { return }
-        languageTestTask?.cancel()
-        let reference = model.reference
-        let signature = languageConfigurationSignature
-        let connection = modelLibrary.connection(provider, model: model)
-        let probe = languageConnectionProbe
-        testingLanguageSignature = signature
-        languageTestState = .testing
-        languageTestTask = Task {
-            defer { refreshSetup() }
-            do {
-                let reply = try await ConnectionTestSupport.runWithTimeout {
-                    try await probe(provider, connection)
-                }
-                try Task.checkCancellation()
-                guard reference == modelLibrary.rewriteReference,
-                      signature == languageConfigurationSignature else {
-                    languageTestState = .idle; return
-                }
-                guard !reply.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                    throw AskStreamError.invalidResponse
-                }
-                verifiedLanguageSignature = signature
-                languageTestState = .success(firstTokenMs: 0, totalMs: 0, preview: "")
-            } catch {
-                guard !Task.isCancelled, signature == languageConfigurationSignature else { return }
-                languageTestState = .failure(message: error.localizedDescription)
-            }
-        }
-    }
 }

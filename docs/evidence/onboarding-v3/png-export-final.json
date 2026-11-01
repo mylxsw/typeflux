@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/usr/bin/swift",
+    "../normalize-gul642-png.swift",
+    "../gul642-native-snapshots"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 312.98
+}

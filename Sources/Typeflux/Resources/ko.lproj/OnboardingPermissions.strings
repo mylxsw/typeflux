@@ -33,4 +33,3 @@
 "fullDiskAccess.title" = "전체 디스크 접근";
 "fullDiskAccess.summary" = "보호된 파일 및 브라우저 북마크 검색";
 "missing" = "필수 권한 %d개 남음";
-"guideOtherApp" = "Raycast";

@@ -51,7 +51,6 @@
 "action.testHoldToTalk" = "Hold to Talk Test";
 "status.listening" = "Listening… release to finish";
 "status.recognizing" = "Recognizing…";
-"status.samplePreview" = "Meeting tomorrow at 3 PM";
 "error.invalidKey" = "Invalid API Key, please check and retry";
 "error.micPermissionDenied" = "Microphone permission required for testing";
 "action.openSettings" = "Open Settings";

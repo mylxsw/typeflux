@@ -7,3 +7,7 @@
 "skip" = "略過";
 "custom" = "改用自己的模型";
 "skipAll" = "暫不連線，先用啟動器";
+"close.title" = "稍後再設定？";
+"close.message" = "可以從選單列繼續。";
+"close.continue" = "繼續設定";
+"close.quit" = "離開";
