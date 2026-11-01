@@ -96,7 +96,7 @@ private extension OnboardingSpeechPage {
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 6)
             case .doubaoRealtime:
-                doubaoFields
+                OnboardingDoubaoConfiguration(model: model)
             case .whisperAPI:
                 whisperFields
             default:
@@ -242,23 +242,6 @@ private extension OnboardingSpeechPage {
             }
         }
         .padding(.vertical, 6)
-    }
-
-    private var doubaoFields: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(OnboardingStrings.text("field.appId", table: "OnboardingSpeech"))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                TextField("App ID", text: $model.doubaoAppID)
-                    .textFieldStyle(.plain)
-                    .padding(.horizontal, 10)
-                    .frame(height: 34)
-                    .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(.primary.opacity(0.08), lineWidth: 1))
-            }
-            apiKeyField(label: OnboardingStrings.text("field.accessToken", table: "OnboardingSpeech"), token: true)
-        }
     }
 
     private var whisperFields: some View {

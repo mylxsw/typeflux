@@ -54,3 +54,19 @@
 "error.invalidKey" = "API Key가 유효하지 않습니다. 확인 후 다시 시도하세요";
 "error.micPermissionDenied" = "테스트를 위해 마이크 권한이 필요합니다";
 "action.openSettings" = "설정 열기";
+
+/* Doubao setup */
+"doubao.guideTitle" = "Doubao 음성 설정";
+"doubao.guideService" = "Volcengine 음성 콘솔에서 스트리밍 음성 인식을 활성화하세요.";
+"doubao.guideCredentials" = "동일한 음성 앱에서 App ID와 Access Token을 복사하세요.";
+"doubao.resourceLabel" = "모델 / Resource ID";
+"doubao.presets" = "모델 선택";
+"doubao.model2Duration" = "2.0 · 시간제";
+"doubao.model2Concurrent" = "2.0 · 동시 접속";
+"doubao.model1Duration" = "1.0 · 시간제 (이전 버전)";
+"doubao.model1Concurrent" = "1.0 · 동시 접속 (이전 버전)";
+"doubao.resourceHint" = "기본값은 2.0 시간제입니다. 활성화한 리소스를 선택하거나 Resource ID를 붙여 넣으세요. 비워 두면 기본값을 사용합니다.";
+"doubao.testHint" = "인증 정보를 입력한 후 아래 버튼을 누른 채 한 문장을 말하고 인식 결과를 확인하세요.";
+"doubao.openGuide" = "공식 설정 가이드 열기 ↗";
+"doubao.guideExpanded" = "펼쳐짐";
+"doubao.guideCollapsed" = "접힘";

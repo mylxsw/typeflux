@@ -43,8 +43,11 @@ final class AppPreferencesTests: XCTestCase {
     func testSTTProviderOnboardingDisplayOrderExcludesHiddenTypefluxCloudProvider() {
         XCTAssertFalse(STTProvider.onboardingDisplayOrder.contains(.typefluxOfficial))
 
-        let expected = STTProvider.settingsDisplayOrder.filter { $0 != .typefluxOfficial }
+        let expected: [STTProvider] = [.doubaoRealtime, .localModel] + STTProvider.settingsDisplayOrder.filter {
+            $0 != .typefluxOfficial && $0 != .doubaoRealtime && $0 != .localModel
+        }
         XCTAssertEqual(STTProvider.onboardingDisplayOrder, expected)
+        XCTAssertEqual(Set(expected).count, expected.count)
     }
 
     func testMultimodalLLMHandlesPersonaInternally() {

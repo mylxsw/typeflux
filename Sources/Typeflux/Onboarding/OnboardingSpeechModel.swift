@@ -32,6 +32,10 @@ final class OnboardingSpeechModel: ObservableObject {
         didSet { credentialsChanged() }
     }
 
+    @Published var doubaoResourceID = DoubaoASRDefaults.resourceID {
+        didSet { credentialsChanged() }
+    }
+
     @Published var whisperBaseURL = "https://api.openai.com/v1" {
         didSet { credentialsChanged() }
     }
@@ -387,6 +391,7 @@ extension OnboardingSpeechModel {
         googleProjectID = store.googleCloudProjectID
         doubaoAppID = store.doubaoAppID
         doubaoAccessToken = store.doubaoAccessToken
+        doubaoResourceID = store.doubaoResourceID
         whisperBaseURL = store.whisperBaseURL.isEmpty ? "https://api.openai.com/v1" : store.whisperBaseURL
         switch selectedProvider {
         case .aliCloud: apiKey = store.aliCloudAPIKey
@@ -411,6 +416,8 @@ extension OnboardingSpeechModel {
         case .doubaoRealtime:
             store.doubaoAppID = trimmed(doubaoAppID)
             store.doubaoAccessToken = trimmed(doubaoAccessToken)
+            store.doubaoResourceID = trimmed(doubaoResourceID).isEmpty
+                ? DoubaoASRDefaults.resourceID : trimmed(doubaoResourceID)
         default: break
         }
         store.sttProvider = selectedProvider
@@ -439,7 +446,10 @@ extension OnboardingSpeechModel {
         case .groq: URL(string: "https://console.groq.com/keys")
         case .aliCloud: URL(string: "https://bailian.console.aliyun.com?tab=model#/api-key")
         case .soniox: URL(string: "https://console.soniox.com/")
-        case .doubaoRealtime: URL(string: "https://www.volcengine.com/docs/6561/1354869?lang=zh")
+        case .doubaoRealtime:
+            URL(
+                string: "https://docs.volcengine.com/docs/doubao-voice/bidirectional-streaming-automatic-speech-recognition-websocket?lang=zh"
+            )
         default: nil
         }
     }

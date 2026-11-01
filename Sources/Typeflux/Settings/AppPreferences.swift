@@ -53,8 +53,8 @@ enum STTProvider: String, CaseIterable, Codable {
         .groq
     ]
 
-    static let onboardingDisplayOrder: [STTProvider] = [.localModel] + settingsDisplayOrder.filter {
-        $0 != .typefluxOfficial && $0 != .localModel
+    static let onboardingDisplayOrder: [STTProvider] = [.doubaoRealtime, .localModel] + settingsDisplayOrder.filter {
+        $0 != .typefluxOfficial && $0 != .localModel && $0 != .doubaoRealtime
     }
 
     var displayName: String {

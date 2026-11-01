@@ -12,7 +12,7 @@
 "provider.soniox.detail" = "实时流式识别，多语种";
 "provider.ali.title" = "阿里云 ASR";
 "provider.ali.detail" = "百炼实时语音识别";
-"provider.doubao.title" = "豆包实时 ASR";
+"provider.doubao.title" = "豆包实时语音";
 "provider.doubao.detail" = "火山引擎流式识别";
 "provider.google.title" = "Google 语音转文字";
 "provider.google.detail" = "Google Cloud Speech";
@@ -54,3 +54,19 @@
 "error.invalidKey" = "API Key 无效，请检查后重试";
 "error.micPermissionDenied" = "需要麦克风权限才能测试";
 "action.openSettings" = "打开设置";
+
+/* Doubao setup */
+"doubao.guideTitle" = "配置豆包语音";
+"doubao.guideService" = "在火山引擎语音控制台开通流式语音识别。";
+"doubao.guideCredentials" = "从同一个语音应用中复制 App ID 和 Access Token。";
+"doubao.resourceLabel" = "模型 / Resource ID";
+"doubao.presets" = "常用模型";
+"doubao.model2Duration" = "2.0 · 小时版";
+"doubao.model2Concurrent" = "2.0 · 并发版";
+"doubao.model1Duration" = "1.0 · 小时版（旧版）";
+"doubao.model1Concurrent" = "1.0 · 并发版（旧版）";
+"doubao.resourceHint" = "默认使用 2.0 小时版。请与已开通的资源一致，也可直接粘贴 Resource ID；留空使用默认值。";
+"doubao.testHint" = "填好凭证后，按住下方按钮说一句话，检查识别结果。";
+"doubao.openGuide" = "查看官方配置说明 ↗";
+"doubao.guideExpanded" = "已展开";
+"doubao.guideCollapsed" = "已收起";

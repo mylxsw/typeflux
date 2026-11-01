@@ -55,6 +55,53 @@ extension OnboardingSpeechLLMTests {
         (view as? NSPopUpButton).map { [$0] } ?? view.subviews.flatMap(nativeButtons)
     }
 
+    @Test func `Doubao setup exposes editable resource and native presets in both appearances`() async throws {
+        try await fixture { settings, session, _, _, _ in
+            let model = session.speechModel
+            model.selectProvider(.doubaoRealtime)
+            for language in [AppLanguage.english, .simplifiedChinese] {
+                AppLocalization.shared.setLanguage(language)
+                for appearance in [AppearanceMode.light, .dark] {
+                    try await Controls.withWindow(OnboardingView(viewModel: session, appearanceMode: appearance),
+                                                  width: 960, height: 664, nativeWindow: true) { window, host in
+                        window.appearance = AppAppearance.nsAppearance(for: appearance)
+                        try await Controls.wait { nativeButtons(host).contains {
+                            $0.accessibilityIdentifier() == "onboarding.speech.doubaoResourcePresets"
+                        } }
+                        let editable = Controls.elements(in: host).first {
+                            $0.value("accessibilityIdentifier") as? String == "onboarding.speech.doubaoResourceID"
+                        }
+                        #expect(editable != nil)
+                        #expect(try #require(editable).frame.intersects(window.frame))
+                        #expect(Controls.contains(
+                            OnboardingStrings.text("doubao.guideTitle", table: "OnboardingSpeech"),
+                            in: host
+                        ))
+                        let menu = try #require(nativeButtons(host).first {
+                            $0.accessibilityIdentifier() == "onboarding.speech.doubaoResourcePresets"
+                        })
+                        let resource = "volc.seedasr.sauc.concurrent"
+                        try menu.select(#require(menu.itemArray.first { $0.representedObject as? String == resource }))
+                        #expect(try NSApp.sendAction(#require(menu.action), to: menu.target, from: menu))
+                        #expect(model.doubaoResourceID == resource && settings.doubaoResourceID == resource)
+                        try await Task.sleep(for: .milliseconds(100))
+                        try Controls.snapshot(host, name: "doubao-setup-\(language.rawValue)-\(appearance.rawValue)")
+                        let guideTitle = OnboardingStrings.text("doubao.guideTitle", table: "OnboardingSpeech")
+                        try Controls.button(guideTitle, in: host).press()
+                        try await Controls.wait {
+                            Controls.contains(
+                                OnboardingStrings.text("doubao.guideCredentials", table: "OnboardingSpeech"),
+                                in: host
+                            )
+                        }
+                        try await Task.sleep(for: .milliseconds(150))
+                        try Controls.snapshot(host, name: "doubao-guide-\(language.rawValue)-\(appearance.rawValue)")
+                    }
+                }
+            }
+        }
+    }
+
     @Test func `native speech model menu persists the selected model`() async throws {
         try await fixture { settings, session, _, _, _ in
             session.speechModel.selectProvider(.localModel)

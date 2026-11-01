@@ -211,6 +211,37 @@ extension OnboardingSpeechLLMTests {
         }
     }
 
+    @Test func `Doubao resource edits persist restore defaults and invalidate recognition`() async throws {
+        try await fixture { settings, session, _, _, _ in
+            let model = session.speechModel
+            #expect(Array(model.availableProviders.prefix(2)) == [.doubaoRealtime, .localModel])
+            model.selectProvider(.doubaoRealtime)
+            #expect(model.doubaoResourceID == DoubaoASRDefaults.resourceID)
+            #expect(!model.canTest)
+            model.doubaoAppID = " app "
+            model.doubaoAccessToken = " token "
+            model.doubaoResourceID = " volc.seedasr.sauc.concurrent "
+            model.makeTranscriber = { provider in
+                #expect(provider == .doubaoRealtime)
+                #expect(settings.doubaoResourceID == "volc.seedasr.sauc.concurrent")
+                return Engine()
+            }
+            try await record(model)
+            try await Controls.wait { model.canContinue == true }
+            model.doubaoResourceID = "volc.bigasr.sauc.duration"
+            #expect(model.testStatus == .idle && model.canContinue == false)
+            #expect(settings.doubaoResourceID == "volc.bigasr.sauc.duration")
+            model.selectProvider(.localModel)
+            model.selectProvider(.doubaoRealtime)
+            #expect(model.doubaoResourceID == "volc.bigasr.sauc.duration")
+            model.doubaoResourceID = "  "
+            #expect(settings.doubaoResourceID == DoubaoASRDefaults.resourceID)
+            let restored = OnboardingSpeechModel(session: session)
+            #expect(restored.selectedProvider == .doubaoRealtime)
+            #expect(restored.doubaoResourceID == DoubaoASRDefaults.resourceID)
+        }
+    }
+
     @Test func `engines preserve the selected provider without fallback`() async throws {
         try await fixture { settings, _, manager, _, _ in
             #expect(ModelProviderIcon.image(for: .googleCloud) != nil)
@@ -286,5 +317,4 @@ extension OnboardingSpeechLLMTests {
             #expect(authorizations == 0)
         }
     }
-
 }

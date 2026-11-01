@@ -12,7 +12,7 @@
 "provider.soniox.detail" = "即時串流識別，多語種";
 "provider.ali.title" = "阿里雲 ASR";
 "provider.ali.detail" = "百煉即時語音識別";
-"provider.doubao.title" = "豆包即時 ASR";
+"provider.doubao.title" = "豆包即時語音";
 "provider.doubao.detail" = "火山引擎串流識別";
 "provider.google.title" = "Google 語音轉文字";
 "provider.google.detail" = "Google Cloud Speech";
@@ -54,3 +54,19 @@
 "error.invalidKey" = "API Key 無效，請檢查後重試";
 "error.micPermissionDenied" = "需要麥克風權限才能測試";
 "action.openSettings" = "打開設定";
+
+/* Doubao setup */
+"doubao.guideTitle" = "設定豆包語音";
+"doubao.guideService" = "在火山引擎語音控制台開通串流語音識別。";
+"doubao.guideCredentials" = "從同一個語音應用程式複製 App ID 和 Access Token。";
+"doubao.resourceLabel" = "模型 / Resource ID";
+"doubao.presets" = "常用模型";
+"doubao.model2Duration" = "2.0 · 小時版";
+"doubao.model2Concurrent" = "2.0 · 並行版";
+"doubao.model1Duration" = "1.0 · 小時版（舊版）";
+"doubao.model1Concurrent" = "1.0 · 並行版（舊版）";
+"doubao.resourceHint" = "預設使用 2.0 小時版。請與已開通的資源一致，也可直接貼上 Resource ID；留空使用預設值。";
+"doubao.testHint" = "填好憑證後，按住下方按鈕說一句話，檢查識別結果。";
+"doubao.openGuide" = "查看官方設定說明 ↗";
+"doubao.guideExpanded" = "已展開";
+"doubao.guideCollapsed" = "已收起";

@@ -175,12 +175,12 @@ extension SettingsBehaviorTestSupport {
             $0.accessibilityIdentifier() == identifier && $0.isEnabled && $0.numberOfItems > 0
         } }
         let button = try #require(buttons(host).first { $0.accessibilityIdentifier() == identifier })
-        let menu = try #require(button.menu)
         button.scrollToVisible(button.bounds)
         host.layoutSubtreeIfNeeded()
         // Page activation can replace the catalog after the incoming control is first mounted.
         try await Task.sleep(for: .milliseconds(250))
         try await wait { button.isEnabled && button.numberOfItems > 0 }
+        let menu = try #require(button.menu)
         menu.delegate?.menuNeedsUpdate?(menu)
         let previous = Set(NSApp.windows.filter(\.isVisible).map(\.windowNumber))
         var captureError: Error?
@@ -197,7 +197,8 @@ extension SettingsBehaviorTestSupport {
         RunLoop.main.add(timer, forMode: .common)
         RunLoop.main.add(timer, forMode: .eventTracking)
         defer { timer.invalidate() }
-        button.performClick(nil)
+        // Open explicitly: a synthetic button click can finish tracking before the timer fires.
+        menu.popUp(positioning: button.selectedItem, at: NSPoint(x: 0, y: button.bounds.maxY), in: button)
         if let captureError { throw captureError }
         try #require(captured, "The native menu must remain open for capture: \(identifier)")
     }
@@ -259,8 +260,8 @@ extension SettingsBehaviorTestSupport {
         let symbol = try #require(dlsym(UnsafeMutableRawPointer(bitPattern: -2), "CGWindowListCreateImage"))
         let capture = unsafeBitCast(symbol, to: Capture.self)
         return try #require(capture(.null, CGWindowListOption.optionIncludingWindow.rawValue,
-                                   CGWindowID(window.windowNumber),
-                                   CGWindowImageOption.boundsIgnoreFraming.rawValue)?.takeRetainedValue())
+                                    CGWindowID(window.windowNumber),
+                                    CGWindowImageOption.boundsIgnoreFraming.rawValue)?.takeRetainedValue())
     }
 
     private static func write(_ image: NSImage, name: String) throws {
@@ -271,8 +272,8 @@ extension SettingsBehaviorTestSupport {
         // the display's 16-bit working surface in every PNG.
         let colorSpace = try #require(CGColorSpace(name: CGColorSpace.sRGB))
         let context = try #require(CGContext(data: nil, width: pixels.width, height: pixels.height,
-            bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+                                             bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace,
+                                             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
         context.draw(pixels, in: CGRect(x: 0, y: 0, width: pixels.width, height: pixels.height))
         let exported = try #require(context.makeImage())
         let png = try #require(NSBitmapImageRep(cgImage: exported).representation(using: .png, properties: [:]))

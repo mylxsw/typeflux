@@ -54,3 +54,19 @@
 "error.invalidKey" = "Invalid API Key, please check and retry";
 "error.micPermissionDenied" = "Microphone permission required for testing";
 "action.openSettings" = "Open Settings";
+
+/* Doubao setup */
+"doubao.guideTitle" = "Set up Doubao Speech";
+"doubao.guideService" = "Enable streaming speech recognition in the Volcengine Speech console.";
+"doubao.guideCredentials" = "Copy the App ID and Access Token from the same speech application.";
+"doubao.resourceLabel" = "Model / Resource ID";
+"doubao.presets" = "Common models";
+"doubao.model2Duration" = "2.0 · Hourly";
+"doubao.model2Concurrent" = "2.0 · Concurrent";
+"doubao.model1Duration" = "1.0 · Hourly (legacy)";
+"doubao.model1Concurrent" = "1.0 · Concurrent (legacy)";
+"doubao.resourceHint" = "Default: 2.0 Hourly. Match your enabled resource or paste its Resource ID. Blank uses the default.";
+"doubao.testHint" = "After filling in the credentials, hold the button below and say a sentence to test.";
+"doubao.openGuide" = "Open setup documentation ↗";
+"doubao.guideExpanded" = "Expanded";
+"doubao.guideCollapsed" = "Collapsed";
