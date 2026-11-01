@@ -16,8 +16,6 @@
 "voice.instructionPrefix" = "按住";
 "voice.instructionSuffix" = "说一句话";
 "voice.placeholder" = "文字会出现在这里";
-"voice.sampleText" = "周五前把新版首页的设计稿发给我。";
-"voice.simulate" = "按住模拟";
 
 "launcher.instructionPrefix" = "按";
 "launcher.instructionSuffix" = "，输入「fy hello」";

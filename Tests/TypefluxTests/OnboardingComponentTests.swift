@@ -55,8 +55,9 @@ struct OnboardingComponentTests {
                                 EmptyView()
                             }
                         }.padding(34)
-                        OnboardingSystemSettingsGuide(title: L("onboarding.v2.globe.title"),
-                                                      steps: [L("onboarding.v2.globe.detail")], dismissTitle: "×") {
+                        OnboardingSystemSettingsGuide(title: OnboardingShortcutsModel.text("guideTitle"),
+                                                      steps: [OnboardingShortcutsModel.text("guideSetting")],
+                                                      dismissTitle: "×") {
                             dismissed = true
                         }
                         .padding(.trailing, 34).padding(.bottom, 110)
@@ -110,42 +111,32 @@ struct OnboardingComponentTests {
         }
     }
 
-    @Test func `retained guides still read live shortcuts and practice completion`() async throws {
+    @Test func `native resume opens the first deferred page without resetting shortcuts`() async throws {
         try await UI.withFixture { settings in
-            let manager = OnboardingTestModelManager()
-            manager.available = true
-            settings.activationHotkey = .rightCommandActivation
-            let model = OnboardingViewModel(settingsStore: settings,
-                                            modelLibrary: AskModelLibrary(
-                                                defaults: settings.defaults,
-                                                automaticallyLoadsCatalog: false
-                                            ),
-                                            globeKeyReader: OnboardingReadyGlobeKey(), localModelManager: manager,
-                                            onComplete: {})
-            model.permissions = []
-            for feature in OnboardingFeature.allCases {
-                try await UI.withWindow(OnboardingLegacyGuidePage(viewModel: model, feature: feature),
-                                        width: 960, height: 550) { _, host in
-                    #expect(UI.contains(feature.title, in: host))
-                    if feature == .voice {
-                        let link = try #require(UI.elements(in: host).first {
-                            $0.label == L("setup.action.permissions") && $0.role == NSAccessibility.Role.link.rawValue
-                        })
-                        try link.press()
-                        #expect(model.currentStep == .permissions)
+            for language in [AppLanguage.english, .simplifiedChinese] {
+                settings.appLanguage = language
+                AppLocalization.shared.setLanguage(language)
+                for appearance in [AppearanceMode.light, .dark] {
+                    settings.appearanceMode = appearance
+                    for (speech, ai, step) in [(true, true, OnboardingStep.speech),
+                                               (false, true, .llm), (false, false, .permissions)] {
+                        settings.onboardingSpeechDeferred = speech
+                        settings.onboardingAIDeferred = ai
+                        settings.activationHotkey = .rightCommandActivation
+                        let controller = OnboardingWindowController()
+                        controller.show(settingsStore: settings, resume: true, onComplete: {})
+                        let window = try #require(controller.window)
+                        defer { window.close() }
+                        let model = try #require(controller.viewModel)
+                        let host = try #require(window.contentView)
+                        #expect(model.currentStep == step)
+                        #expect(settings.activationHotkey == .rightCommandActivation)
+                        try await UI.wait { UI.contains(OnboardingStrings.text("title", table: step.table), in: host) }
+                        try await Task.sleep(for: .milliseconds(200))
+                        try UI.snapshot(#require(host.superview),
+                                        name: "resume-\(step.rawValue)-\(language.rawValue)-\(appearance.rawValue)")
                     }
                 }
-            }
-            model.permissions = PrivacyGuard.PermissionID.allCases.map {
-                .init(id: $0, state: .granted, detail: "Granted")
-            }
-            try await UI.withWindow(OnboardingLegacyGuidePage(viewModel: model, feature: .voice),
-                                    width: 960, height: 550) { _, host in
-                #expect(UI.contains(L("onboarding.v2.voice.practice.placeholder",
-                                      HotkeyFormat.display(.rightCommandActivation)), in: host))
-                model.voicePracticeText = "Hello"
-                model.voicePracticeSucceeded = true
-                try await UI.wait { UI.contains(L("onboarding.v2.voice.practice.done"), in: host) }
             }
         }
     }
@@ -160,7 +151,7 @@ struct OnboardingComponentTests {
                     let controller = OnboardingWindowController()
                     controller.show(settingsStore: settings, onComplete: {})
                     let window = try #require(controller.window)
-                    defer { window.performClose(nil) }
+                    defer { window.close() }
                     let frame = try #require(window.contentView?.superview)
                     try await Task.sleep(for: .milliseconds(200))
                     #expect(window.standardWindowButton(.closeButton)?.isHidden == false)
@@ -168,5 +159,64 @@ struct OnboardingComponentTests {
                 }
             }
         }
+    }
+}
+
+extension OnboardingComponentTests {
+    @Test func `welcome language menu and close confirmation remain resumable`() async throws {
+        try await UI.withFixture { settings in
+            for language in [AppLanguage.english, .simplifiedChinese] {
+                settings.appLanguage = language
+                AppLocalization.shared.setLanguage(language)
+                for appearance in [AppearanceMode.light, .dark] {
+                    settings.appearanceMode = appearance
+                    settings.isOnboardingCompleted = false
+                    settings.onboardingSpeechDeferred = false
+                    settings.onboardingAIDeferred = false
+                    settings.onboardingPermissionsDeferred = false
+                    var completions = 0
+                    let controller = OnboardingWindowController()
+                    controller.show(settingsStore: settings, onComplete: { completions += 1 })
+                    let window = try #require(controller.window)
+                    defer { window.close() }
+                    let host = try #require(window.contentView)
+                    try await UI.wait { !UI.elements(in: host).isEmpty }
+                    try await captureLanguageMenu(host, suffix: "\(language.rawValue)-\(appearance.rawValue)")
+                    window.performClose(nil)
+                    try await UI.wait { window.attachedSheet != nil }
+                    let sheet = try #require(window.attachedSheet)
+                    window.performClose(nil)
+                    #expect(window.attachedSheet === sheet)
+                    try await Task.sleep(for: .milliseconds(500))
+                    try UI.snapshotNativeWindow(window, overlays: [sheet],
+                                                name: "welcome-close-\(language.rawValue)-\(appearance.rawValue)")
+                    window.endSheet(sheet, returnCode: .alertFirstButtonReturn)
+                    sheet.close()
+                    try await UI.wait { window.attachedSheet == nil }
+                    try await Task.sleep(for: .milliseconds(50))
+                    #expect(controller.window === window && !settings.isOnboardingCompleted)
+                    #expect(completions == 0)
+                    #expect(!settings.onboardingSpeechDeferred && !settings.onboardingAIDeferred
+                        && !settings.onboardingPermissionsDeferred)
+                    let session = try #require(controller.viewModel)
+                    session.speechSkipped = true
+                    session.aiSkipped = true
+                    session.permissions = []
+                    window.performClose(nil)
+                    try await UI.wait { window.attachedSheet != nil }
+                    let exit = try #require(window.attachedSheet)
+                    window.endSheet(exit, returnCode: .alertSecondButtonReturn)
+                    exit.close()
+                    try await UI.wait { controller.window == nil }
+                    #expect(settings.isOnboardingCompleted && completions == 1)
+                    #expect(settings.onboardingSpeechDeferred && settings.onboardingAIDeferred
+                        && settings.onboardingPermissionsDeferred)
+                }
+            }
+        }
+    }
+
+    private func captureLanguageMenu(_ host: NSView, suffix: String) async throws {
+        try await UI.captureMenu(in: host, identifier: "onboarding.language", name: "welcome-language-\(suffix)")
     }
 }

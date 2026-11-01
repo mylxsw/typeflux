@@ -1,0 +1,24 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts/tests",
+    "-p",
+    "test_ios_cli.py",
+    "-k",
+    "test_http_exception_is_only_in_debug_plist"
+  ],
+  "baseline_commit": "56aba873cd9e2659465a7ab2cc315046cf732a4e",
+  "wall_seconds": 0.54,
+  "exit_code": 1,
+  "result": "1 existing failure: release plist already contains NSAllowsLocalNetworking; test expects no ATS dictionary",
+  "same_as_delivery": {
+    "scripts/tests/test_ios_cli.py": true,
+    "Apps/iOS/TypefluxIOS/Info.plist": true,
+    "Apps/iOS/TypefluxIOS/Info-Debug.plist": true
+  },
+  "expected_failure": true
+}

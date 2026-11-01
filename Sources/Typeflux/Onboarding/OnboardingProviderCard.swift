@@ -25,7 +25,9 @@ struct OnboardingProviderCard: View {
                 if let badge {
                     Text(badge.uppercased()).font(.system(size: 9, weight: .bold))
                         .padding(.horizontal, 8).padding(.vertical, 5)
-                        .background(.primary.opacity(0.05), in: Capsule())
+                        .foregroundStyle(selected && provider == .localSTT ? Color.accentColor : Color.primary)
+                        .background(selected && provider == .localSTT
+                            ? Color.accentColor.opacity(0.12) : .primary.opacity(0.05), in: Capsule())
                 }
             }
         }

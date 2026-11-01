@@ -31,8 +31,6 @@ final class OnboardingTryModel: ObservableObject {
 
     @Published var selectedFeature: Feature = .voice
     @Published private(set) var triedFeatures: Set<Feature> = []
-    @Published private(set) var isSimulating = false
-    @Published private(set) var simulatedText = ""
 
     init(session: OnboardingViewModel) {
         self.session = session
@@ -103,24 +101,6 @@ final class OnboardingTryModel: ObservableObject {
     }
 
     func selectFeature(_ feature: Feature) {
-        clearSimulation()
         selectedFeature = feature
-    }
-
-    func clearSimulation() {
-        isSimulating = false
-        simulatedText = ""
-    }
-
-    /// The prototype demo never contributes to real dictation success or analytics.
-    func beginSimulation() {
-        isSimulating = true
-        simulatedText = ""
-    }
-
-    func endSimulation(sampleText: String) {
-        guard isSimulating else { return }
-        isSimulating = false
-        simulatedText = sampleText
     }
 }

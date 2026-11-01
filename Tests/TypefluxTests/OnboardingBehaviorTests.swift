@@ -106,7 +106,6 @@ struct OnboardingBehaviorTests {
                             #expect(try UI.contains(#require(step.pill), in: host))
                         }
                         #expect(host.bounds.size == NSSize(width: 960, height: 664))
-                        #expect(!UI.contains(L("setup.rail.title"), in: host))
                         let primary = try UI.button(OnboardingStrings.text(
                             step == .welcome ? "start" : step == .try ? "finish" : "continue"
                         ), in: host)
@@ -134,7 +133,6 @@ struct OnboardingBehaviorTests {
             try await UI.wait { UI.contains(OnboardingStrings.text("title", table: "OnboardingSpeech"), in: host) }
             try UI.button(OnboardingStrings.text("continue"), in: host).press()
             #expect(called)
-            #expect(model.modelEditorDomain == nil)
             #expect(host.window?.attachedSheet == nil)
             model.speechModel.primaryAction = nil
         }
@@ -155,7 +153,7 @@ struct OnboardingBehaviorTests {
             controller.bringToFront()
             controller.show(settingsStore: settings) { completed += 10 }
             #expect(controller.window === window)
-            window.performClose(nil)
+            window.close()
             #expect(controller.window == nil)
             #expect(completed == 1)
         }

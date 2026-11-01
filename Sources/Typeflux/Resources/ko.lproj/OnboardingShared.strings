@@ -7,3 +7,7 @@
 "skip" = "건너뛰기";
 "custom" = "내 모델 사용";
 "skipAll" = "연결하지 않고 런처 먼저 사용";
+"close.title" = "나중에 설정할까요?";
+"close.message" = "메뉴 막대에서 계속할 수 있습니다.";
+"close.continue" = "설정 계속";
+"close.quit" = "종료";

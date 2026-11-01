@@ -51,7 +51,6 @@
 "action.testHoldToTalk" = "길게 눌러 말하기 테스트";
 "status.listening" = "듣는 중… 손을 떼면 완료";
 "status.recognizing" = "인식 중…";
-"status.samplePreview" = "내일 오후 3시에 회의";
 "error.invalidKey" = "API Key가 유효하지 않습니다. 확인 후 다시 시도하세요";
 "error.micPermissionDenied" = "테스트를 위해 마이크 권한이 필요합니다";
 "action.openSettings" = "설정 열기";

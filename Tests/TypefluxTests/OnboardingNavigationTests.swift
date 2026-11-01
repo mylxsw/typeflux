@@ -30,12 +30,10 @@ struct OnboardingNavigationTests {
                                            (false, false, .permissions)] {
                 settings.onboardingSpeechDeferred = speech
                 settings.onboardingAIDeferred = ai
-                model.requestedSetupAdvance = .cloud
                 model.resumeDeferredSetup()
                 #expect(model.currentStep == expected)
                 #expect(model.serviceRoute == .custom)
                 #expect(model.speechSkipped == speech && model.aiSkipped == ai)
-                #expect(model.requestedSetupAdvance == nil)
                 #expect(settings.activationHotkey == .rightCommandActivation)
             }
         }
@@ -53,10 +51,8 @@ struct OnboardingNavigationTests {
             model.chooseRoute(.cloud)
             #expect(model.currentStep == .route)
             model.currentStep = .cloud
-            model.requestedSetupAdvance = .cloud
             model.useCustomModels()
             #expect(model.currentStep == .speech && model.serviceRoute == .custom)
-            #expect(model.requestedSetupAdvance == nil)
             model.skipConfirmation = .speech
             model.returnToRoute()
             #expect(model.currentStep == .route && model.skipConfirmation == nil)
@@ -112,6 +108,21 @@ struct OnboardingNavigationTests {
             try await SettingsBehaviorTestSupport.wait { changes > count }
             model.currentStep = .welcome
             #expect(model.pageReadiness == nil && model.pagePrimaryAction == nil && !model.isPageBusy)
+        }
+    }
+
+    @Test func `missing page readiness never falls back to the removed editor flow`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let model = OnboardingViewModel(settingsStore: settings, onComplete: {})
+            model.cloudModel.canContinue = nil
+            model.speechModel.canContinue = nil
+            model.llmModel.canContinue = nil
+            for step in [OnboardingStep.cloud, .speech, .llm] {
+                model.currentStep = step
+                #expect(!model.canAdvance)
+                model.performSetupAction()
+                #expect(model.currentStep == step)
+            }
         }
     }
 

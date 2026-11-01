@@ -1,0 +1,10 @@
+{
+  "command": [
+    "swift",
+    "build",
+    "--jobs",
+    "2"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 728.47
+}

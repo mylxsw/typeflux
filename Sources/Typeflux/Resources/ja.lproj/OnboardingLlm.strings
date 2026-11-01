@@ -54,7 +54,6 @@
 "action.getKey" = "API Key を取得";
 "action.testConnection" = "接続テスト";
 "status.testing" = "テスト中…";
-"status.sampleReply" = "こんにちは！テキストのリライトをお手伝いする準備ができました。";
 "error.invalidKey" = "API Key が無効です";
 "error.ollamaNotFound" = "Ollama が検出されませんでした";
 "action.download" = "ダウンロード";

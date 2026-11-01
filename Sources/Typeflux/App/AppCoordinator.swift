@@ -554,7 +554,6 @@ final class AppCoordinator {
             historyStore: di.historyStore,
             resume: resume,
             localModelManager: di.localModelManager,
-            notificationService: di.notificationService,
             analyticsReporter: di.analyticsReporter,
             permissionStatusAnalyticsMonitor: di.permissionStatusAnalyticsMonitor
         ) { [weak self] in

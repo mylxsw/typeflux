@@ -1,0 +1,22 @@
+{
+  "command": [
+    "make",
+    "test",
+    "PROFILE=onboarding",
+    "FILTER=native pages cover provider configuration"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 241.5,
+  "selected_methods": [
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`native pages cover provider configuration and result states in both languages and appearances`()"
+  ],
+  "build_input_digest": "5714e8857f3220a2941b452385a226399ed2406be82b45cd5ec9a52b37cdac5b",
+  "build_artifact_digest": "3c70dcd94d84de3693493a68e6efbf50e012ddb637b361d4144a363c9136dc69",
+  "discovery_digest": "c880d4e0e47fba9852a073e981ec799efe6ffb1fc27a9a77ab4e767e1a93cce7",
+  "runner_sha256": {
+    "scripts/test_runtime.py": "21f1e417510242bdf116d691cd602c9bcefc5eab7c5f30a13f4cf88047470363",
+    "scripts/test_groups.py": "12938ad96a4f94ce7feae64476da6bd57c10693aea46e55ba7d76f67096a21c9",
+    "scripts/native_swift_testing.swift": "39aff2da6184bd5f4423a4b105edc329885a9dec099b1837b0085b63c2e953c4"
+  },
+  "native_framework_summary": "\u2714 Test run with 1 test in 1 suite passed after 138.402 seconds."
+}

@@ -54,7 +54,6 @@
 "action.getKey" = "API Key 받기";
 "action.testConnection" = "연결 테스트";
 "status.testing" = "테스트 중…";
-"status.sampleReply" = "안녕하세요! 텍스트 재작성을 도와드릴 준비가 되었습니다.";
 "error.invalidKey" = "API Key가 유효하지 않습니다";
 "error.ollamaNotFound" = "Ollama가 감지되지 않았습니다";
 "action.download" = "다운로드";

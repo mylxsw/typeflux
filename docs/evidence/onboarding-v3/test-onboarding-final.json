@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "test",
+    "PROFILE=onboarding"
+  ],
+  "exit_code": 2,
+  "wall_seconds": 125.0
+}

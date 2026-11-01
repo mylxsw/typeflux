@@ -36,6 +36,10 @@ existing session APIs (`canAdvance`, `isSetupActionRunning`, setup actions).
 
 ## Migration, skips and recovery
 
+Closing the native window asks whether to continue setup or exit. Cancel keeps
+the current session; Exit records unfinished services and permissions for the
+menu bar’s Continue setup entry, then cancels the session’s work.
+
 - Rename services → route and stt → speech; replace voice/launcher/tools/ring/chat
   guide destinations and finish with try. Keep existing feature metadata for
   practice. Move the voice-practice history check from `.voice` to `.try`.
@@ -76,8 +80,8 @@ five stage-2 tasks (the issue's reference to four is stale).
 Foundation creates and wires all page/model slots, including inert placeholders,
 before stage 2 starts. Models are session-owned `@MainActor ObservableObject`s,
 constructed once with a weak `session` reference and observed by their page.
-Use that session to access the already-injected settings, auth, model library,
-configuration model and local model manager. Do not create another SettingsStore. Pages call
+Use that session to access the already-injected settings, auth, model library
+and local model manager. Do not create another SettingsStore. Pages call
 session navigation actions; page models own feature actions, never navigation.
 Set `canContinue` to override the legacy readiness check, `isBusy` while working,
 and `primaryAction` for an inline action when not ready. Once ready, the footer
@@ -86,8 +90,8 @@ child changes so the shell updates. Capture the session weakly in action closure
 No page task edits the root switch, shared navigation or another task's page.
 Provider configuration migration belongs to GUL-638; route/cloud actions belong
 to GUL-637. Foundation moves shared navigation out of the existing setup extensions.
-Keep legacy setup extensions stable during stage two: implement new actions in
-owned page models, then GUL-642 removes unused compatibility methods.
+Page models own inline setup and validation. GUL-642 removed the legacy model
+editor and compatibility validation paths; the shell consumes page readiness.
 
 ## Existing services
 
@@ -96,10 +100,10 @@ owned page models, then GUL-642 removes unused compatibility methods.
   and `CloudLoginSyncCoordinator` handoff. The success NSAlert currently belongs
   to `LoginWindowController`; onboarding must not present that controller.
   Cancel pending login on session close and reject stale auth generations.
-- Speech/LLM models adapt the injected `StudioViewModel` and `AskModelLibrary`;
-  use inline configuration, validation and downloads, with no StudioView sheet.
-  Preserve connection signature checks and cancellation when configuration changes.
-  GUL-638 owns migration from `+SetupActions` and model-specific parts of `+Setup`.
+- Speech/LLM models use the session settings, `AskModelLibrary` and local model
+  manager for inline configuration, validation and downloads. The window no longer
+  creates a `StudioViewModel` or model editor sheet. Connection signatures and
+  cancellation reject results after configuration or route changes.
 - Permissions model wraps `PermissionsSettingsModel` with
   `SettingsPermissionService` and `SettingsPermission` as the authoritative
   status/action set; refresh on appearance and app reactivation, with scoped
@@ -128,7 +132,7 @@ slots; they never invoke login, permissions, downloads or settings directly.
   bottom-right overlay with injected steps and dismissal, no service side effects.
 
 Remove setup rail and superseded header/footer as the shell replaces them.
-Keep old feature-guide files/strings until GUL-642, as GUL-641 explicitly requires.
+GUL-642 removed the superseded feature-guide view and unused localized strings.
 Use only prototype copy in all five localizations. Page tasks own their prefixed
 keys in separate per-page string tables to avoid shared Localizable.strings edits;
 foundation supplies the table-aware lookup before handoff. Broad dead-key cleanup

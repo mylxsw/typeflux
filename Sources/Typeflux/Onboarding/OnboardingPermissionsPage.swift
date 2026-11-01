@@ -137,12 +137,6 @@ struct OnboardingPermissionsPage: View {
             }
             VStack(spacing: 0) {
                 HStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: 4).fill(.gray).frame(width: 16, height: 16)
-                    Text(Self.text("guideOtherApp"))
-                    Spacer()
-                    guideToggle(true)
-                }.padding(.horizontal, 6).frame(height: 28)
-                HStack(spacing: 8) {
                     appIcon(size: 16)
                     Text("Typeflux")
                     Spacer()

@@ -296,6 +296,7 @@ extension OnboardingPermissionsTests {
                                 try TestUI.button(OnboardingPermissionsPage.text("allow"), in: host).press()
                                 try await TestUI.wait { probe.requests == [.microphone] && !model.isBusy }
                             }
+                            #expect(!TestUI.contains("Raycast", in: host))
                             if model.guidePermission != nil {
                                 try TestUI.button("×", in: host).press()
                                 #expect(model.guidePermission == nil)
@@ -375,7 +376,7 @@ extension OnboardingPermissionsTests {
                 }
             }
             for key in ["required", "optional", "optionalHint", "allow", "openSettings", "granted", "managed",
-                        "waiting", "denied", "guideTitle", "guideOtherApp", "completed", "detecting"] {
+                        "waiting", "denied", "guideTitle", "completed", "detecting"] {
                 #expect(OnboardingStrings.text(key, table: "OnboardingPermissions", language: language) != key)
             }
         }

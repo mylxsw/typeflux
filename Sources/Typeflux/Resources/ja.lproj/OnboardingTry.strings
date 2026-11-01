@@ -16,8 +16,6 @@
 "voice.instructionPrefix" = "";
 "voice.instructionSuffix" = "を押しながら話してください";
 "voice.placeholder" = "ここにテキストが表示されます";
-"voice.sampleText" = "金曜日までに新しいホームページのデザイン案を送ってください。";
-"voice.simulate" = "押してシミュレート";
 
 "launcher.instructionPrefix" = "";
 "launcher.instructionSuffix" = "を押して「fy hello」と入力";

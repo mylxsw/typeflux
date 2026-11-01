@@ -16,8 +16,6 @@
 "voice.instructionPrefix" = "Hold";
 "voice.instructionSuffix" = "and say something";
 "voice.placeholder" = "Text will appear here";
-"voice.sampleText" = "Send me the new homepage design by Friday.";
-"voice.simulate" = "Hold to simulate";
 
 "launcher.instructionPrefix" = "Press";
 "launcher.instructionSuffix" = ", type \"fy hello\"";

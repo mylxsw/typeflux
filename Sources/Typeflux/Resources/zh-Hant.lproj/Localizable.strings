@@ -1105,56 +1105,12 @@
 "workflow.vocabulary.autoAdded.multiple" = "已自動將 %d 個詞加入生詞本。";
 
 "onboarding.window.title" = "歡迎使用 Typeflux";
-"onboarding.step.language" = "語言";
-"onboarding.step.models" = "模型";
-"onboarding.step.permissions" = "權限";
-"onboarding.step.shortcuts" = "快捷鍵";
 
-"onboarding.welcome.tagline" = "為每個應用提供語音輸入。";
-"onboarding.welcome.feature1.title" = "按住說話";
-"onboarding.welcome.feature1.desc" = "按住快捷鍵錄音，放開即完成轉錄 — 文字自動插入任何應用。";
-"onboarding.welcome.feature2.title" = "隨處可用";
-"onboarding.welcome.feature2.desc" = "透過無障礙 API 向任意 macOS 應用注入文字。";
-"onboarding.welcome.feature3.title" = "AI 潤色";
-"onboarding.welcome.feature3.desc" = "可選的語言模型即時優化您的聽寫內容。";
 
-"onboarding.language.title" = "選擇語言";
-"onboarding.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";
-"onboarding.account.title" = "歡迎回來";
-"onboarding.account.subtitle" = "解鎖雲端語音辨識與 AI 推理能力";
-"onboarding.account.cloudReady" = "語音辨識與大語言模型服務已就緒，無需額外設定 API 金鑰。";
 
-"onboarding.models.title" = "設定模型";
-"onboarding.models.subtitle" = "選擇語音辨識引擎和語言模型，稍後可在設定中隨時更改。";
-"onboarding.models.stt.title" = "語音辨識";
-"onboarding.models.stt.subtitle" = "將你的語音轉換為文字";
-"onboarding.models.llm.title" = "語言模型";
-"onboarding.models.llm.subtitle" = "改寫和潤飾你的語音輸入";
-"onboarding.models.stt.apple.description" = "本機執行，無需設定";
-"onboarding.models.stt.whisper.description" = "遠端 API，需要端點位址和金鑰";
-"onboarding.models.stt.local.description" = "下載後在本機執行";
-"onboarding.models.stt.local.hint" = "所選模型將在首次使用時自動下載。";
-"onboarding.models.llm.openai.title" = "OpenAI 相容介面";
-"onboarding.models.llm.openai.description" = "任意遠端聊天 API — OpenAI、Claude、DeepSeek…";
-"onboarding.models.llm.ollama.title" = "Ollama 本地";
-"onboarding.models.llm.ollama.description" = "完全在你的 Mac 上本機執行，保護隱私";
-"onboarding.models.badge.noSetup" = "免設定";
-"onboarding.models.badge.apiKey" = "需要金鑰";
-"onboarding.models.badge.local" = "本機";
 
 "onboarding.models.getAPIKey" = "取得 API Key";
 
-"onboarding.sttProvider.subtitle" = "選擇將語音轉換為文字的引擎";
-"onboarding.sttConfig.subtitle" = "設定憑據與偏好設定";
-"onboarding.sttConfig.incomplete.message" = "請先完成目前語音模型設定，再繼續。";
-"onboarding.sttConfig.incompleteAlert.title" = "語音模型尚未設定完成";
-"onboarding.sttConfig.incompleteAlert.message" = "請先完成目前選擇的語音模型設定，然後再繼續下一步。";
-"onboarding.llmProvider.subtitle" = "選擇用於潤色和優化語音內容的模型";
-"onboarding.llmConfig.subtitle" = "設定憑據與偏好設定";
-"onboarding.llmConfig.incompleteAlert.title" = "語言模型尚未設定完成";
-"onboarding.llmConfig.incompleteAlert.message" = "語音轉寫仍可繼續使用，但潤色、改寫等需要語言模型的功能會暫時受限。";
-"onboarding.llmConfig.incompleteAlert.continueConfig" = "繼續設定";
-"onboarding.llmConfig.incompleteAlert.skip" = "略過";
 
 "onboarding.permissions.title" = "授予權限";
 "onboarding.permissions.subtitle" = "Typeflux 需要少量系統權限，用於錄製語音並將文字輸入其他應用程式。";
@@ -1165,37 +1121,7 @@
 "onboarding.permissions.privacyCallout.title" = "隱私優先";
 "onboarding.permissions.privacyCallout.subtitle" = "你的音訊資料會盡可能在本機處理。未經你明確授權，我們不會儲存任何錄音。";
 
-"onboarding.shortcuts.title" = "鍵盤快捷鍵";
-"onboarding.shortcuts.subtitle" = "以下是預設快捷鍵設定，無需修改即可使用。";
-"onboarding.shortcuts.globeKeyNotice.title" = "請先釋放 FN / 🌐（地球）鍵";
-"onboarding.shortcuts.globeKeyNotice.message" = "macOS 預設會用 FN / 🌐 鍵開啟「表情符號與符號」，這會讓 Typeflux 無法使用它。請開啟鍵盤設定，將「按下 FN / 🌐 鍵時」改為「不執行任何操作」即可。";
-"onboarding.shortcuts.globeKeyNotice.button" = "開啟鍵盤設定";
-"onboarding.shortcuts.globeKeyNotice.ready.title" = "FN / 🌐 鍵已就緒";
-"onboarding.shortcuts.globeKeyNotice.ready.message" = "鍵盤設定已經到位，Typeflux 可以使用 FN / 🌐 鍵作為快捷鍵了。若按鍵仍無回應，請嘗試登出後重新登入，或重新啟動 Mac。";
-"onboarding.shortcuts.externalKeyboard.title" = "使用外接鍵盤，且沒有可用的 FN 鍵？";
-"onboarding.shortcuts.externalKeyboard.message" = "你可以改用右側 Command 或右側 Option。Typeflux 會將語音輸入改為這個按鍵，將「對話」改為快速連按兩次這個按鍵。";
-"onboarding.shortcuts.externalKeyboard.useRightCommand" = "使用右側 Command";
-"onboarding.shortcuts.externalKeyboard.useRightOption" = "使用右側 Option";
-"onboarding.shortcuts.replacement.rightCommand" = "右側 Command";
-"onboarding.shortcuts.replacement.rightOption" = "右側 Option";
-"onboarding.shortcuts.replacement.fn" = "FN / 🌐";
-"onboarding.shortcuts.replacement.active.title" = "%@ 快捷鍵已啟用";
-"onboarding.shortcuts.replacement.active.message" = "你的快捷鍵已經發生變化：語音輸入現在使用 %@，「對話」使用 %@×2。";
-"onboarding.shortcuts.replacement.restore" = "恢復 FN 快捷鍵";
-"onboarding.shortcuts.replacement.appliedAlert.title" = "快捷鍵已更新";
-"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux 現在使用 %@ 作為語音輸入快捷鍵，使用 %@×2 開啟「對話」。";
-"onboarding.shortcuts.replacement.restoredAlert.message" = "Typeflux 已恢復預設的 FN / 🌐 快捷鍵。";
-"onboarding.shortcuts.activation.hint" = "把說的話輸入為文字";
-"onboarding.shortcuts.ask.hint" = "語音提問或修改選取文字";
-"onboarding.shortcuts.persona.hint" = "切換人設或改寫選取文字";
-"onboarding.shortcuts.history.hint" = "查看並貼上歷史內容";
-"onboarding.shortcuts.changeInSettings" = "隨時可在 設定 → 語音快捷鍵 中自訂快捷鍵。";
 
-"onboarding.action.back" = "上一步";
-"onboarding.action.continue" = "下一步";
-"onboarding.action.skip" = "略過";
-"onboarding.account.skip" = "略過，我要自行設定模型";
-"onboarding.action.getStarted" = "開始使用";
 
 // MARK: - Agent 框架
 
@@ -1465,10 +1391,6 @@
 "settings.shortcuts.auxiliaryUpdated" = "輔助快捷鍵已更新";
 "settings.shortcuts.auxiliaryUnset" = "輔助快捷鍵已取消綁定";
 "settings.shortcuts.recordingAuxiliary" = "按下輔助快捷鍵，或按兩下同一按鍵。";
-"onboarding.shortcuts.auxiliary.hint" = "用另一套人設輸入";
-"onboarding.shortcuts.auxiliary.unset" = "未綁定快捷鍵，請前往設定配置。";
-"onboarding.shortcuts.auxiliary.externalKeyboard" = "輔助快捷鍵會同步使用所選按鍵 + 左 Shift，現有的自訂輔助綁定會保留。";
-"onboarding.shortcuts.auxiliary.active" = "輔助快捷鍵：%@";
 
 // Ask conversations
 "ask.allowOnce" = "允許本次";
@@ -6669,7 +6591,6 @@
 /* Onboarding v2 (GUL-339) */
 "onboarding.v2.welcome.title" = "說、找、劃、問。\n都在一個按鍵之外。";
 "onboarding.v2.welcome.lead" = "常駐選單列，任何 App 中隨叫隨到。";
-"onboarding.v2.welcome.duration" = "約 2 分鐘";
 "onboarding.v2.verb.voice" = "說";
 "onboarding.v2.verb.launcher" = "找";
 "onboarding.v2.verb.ring" = "劃";
@@ -6694,53 +6615,7 @@
 "onboarding.v2.hero.chat.question" = "這張表哪個月成長最快？";
 "onboarding.v2.hero.chat.step" = "讀取了目前螢幕";
 "onboarding.v2.hero.chat.answer" = "7 月，月增 +32%，主要來自 App Store 管道。";
-"onboarding.v2.action.start" = "開始";
-"onboarding.v2.action.continue" = "繼續";
-"onboarding.v2.action.back" = "返回";
-"onboarding.v2.action.later" = "稍後再說";
-"onboarding.v2.action.finish" = "開始使用";
-"onboarding.v2.later.screen" = "螢幕錄製";
-"onboarding.v2.later.ai" = "AI 連線";
-"onboarding.v2.permissions.title.ready" = "權限已就緒";
-"onboarding.v2.permissions.title.missing" = "還需要 %d 個權限";
-"onboarding.v2.permissions.subtitle" = "檢查目前所需的權限。";
-"onboarding.v2.permissions.later" = "用到時再問：";
-"onboarding.v2.permission.microphone.detail" = "在你開始語音輸入時錄音";
-"onboarding.v2.permission.accessibility.detail" = "把文字寫進目前 App";
-"onboarding.v2.permission.speechRecognition.detail" = "Apple 語音辨識備用";
-"onboarding.v2.globe.title" = "fn 鍵被系統占用";
-"onboarding.v2.globe.detail" = "改成「不執行任何動作」才能按住說話";
-"onboarding.v2.globe.conflict" = "這個按鍵已被其他快速鍵使用";
-"onboarding.v2.globe.open" = "打開鍵盤設定";
-"onboarding.v2.globe.useOtherKey" = "改用其他鍵";
-"onboarding.feature.voice.title" = "語音輸入";
-"onboarding.feature.voice.caption" = "按住說話，放開就寫好";
-"onboarding.feature.launcher.title" = "啟動器";
-"onboarding.feature.launcher.caption" = "開啟 App、算數、剪貼簿、截圖";
-"onboarding.feature.tools.title" = "工具";
-"onboarding.feature.tools.caption" = "翻譯、錄 GIF、跑工作流程";
-"onboarding.feature.ring.title" = "圓環";
-"onboarding.feature.ring.caption" = "按住、指向、放開";
-"onboarding.feature.chat.title" = "Agent 對話";
-"onboarding.feature.chat.caption" = "看得懂螢幕，能幫你動手";
-"onboarding.tip.voice.talk" = "按住說話";
-"onboarding.tip.voice.rewrite" = "先選取文字，說一句就改寫";
-"onboarding.tip.launcher.open" = "開啟啟動器";
-"onboarding.tip.launcher.clipboard" = "剪貼簿紀錄";
-"onboarding.tip.launcher.screenshot" = "截圖";
-"onboarding.tip.tools.translate" = "翻譯";
-"onboarding.tip.tools.record" = "錄影 / GIF";
-"onboarding.tip.tools.workflow" = "工作流程：輸入關鍵詞";
-"onboarding.tip.ring.swipe" = "叫出圓環";
-"onboarding.tip.chat.ask" = "在啟動器裡提問";
-"onboarding.tip.chat.window" = "開啟對話視窗";
 "onboarding.v2.hero.tools" = "翻譯、錄影、自動化";
-"onboarding.v2.action.next" = "下一步";
-"onboarding.v2.shortcut.notSet" = "可在設定中指定";
-"onboarding.v2.voice.practice.placeholder" = "點這裡，按住 %@ 說句話";
-"onboarding.v2.voice.practice.done" = "成功了";
-"onboarding.v2.finish.title" = "全部就緒";
-"onboarding.v2.finish.subtitle" = "記住這幾個鍵就夠了。";
 "ask.history.syncPending" = "部分對話尚未同步，將自動重試。";
 
 "ask.storage.inUse" = "另一個 Typeflux 程序正在使用這些對話，請關閉它後重試。";
@@ -7654,38 +7529,11 @@
 
 
 // Service setup and feature availability.
-"setup.services.title" = "選擇使用方式";
-"setup.services.subtitle" = "語音輸入與 Agent 需要模型服務，啟動器可直接使用。";
-"setup.services.cloud" = "登入後連線，無需填寫 API Key。";
-"setup.services.custom.title" = "使用自己的模型";
-"setup.services.custom" = "連線本機模型或自己的模型服務。";
-"setup.services.recommended" = "推薦";
-"setup.services.launcherOnly" = "先用啟動器，稍後設定";
-"setup.cloud.title" = "連接 Typeflux Cloud";
-"setup.cloud.subtitle" = "登入後連線語音與 AI 服務。";
-"setup.cloud.signInDetail" = "完成登入後，回到這裡繼續設定。";
 "setup.cloud.signIn" = "登入 Typeflux Cloud";
-"setup.cloud.checking" = "正在檢查可用服務…";
 "setup.cloud.checkFailed" = "未能取得帳號的服務狀態，請重試或自行設定模型。";
-"setup.cloud.aiReady" = "使用帳號的預設 AI 模型";
-"setup.cloud.speechReady" = "可使用雲端語音辨識";
-"setup.cloud.localNext" = "目前帳號不包含雲端語音辨識，下一步可選擇本機模型或自己的語音服務。";
-"setup.cloud.useOwn" = "改用自己的模型";
-"setup.speech.title" = "設定語音辨識";
-"setup.speech.subtitle" = "把你說的話轉成文字。";
 "setup.speech.configure" = "設定語音模型";
-"setup.speech.hint" = "本機模型無需帳號。模型準備好後，即可繼續。";
 "setup.speech.cloudUnavailable" = "請登入並檢查雲端服務權限，或設定本機語音模型。";
 "setup.speech.required" = "請先設定語音辨識。%@";
-"setup.language.title" = "設定大型語言模型";
-"setup.language.subtitle" = "用於 Agent、AI 對話和語音改寫。";
-"setup.language.configure" = "新增或設定模型";
-"setup.language.hint" = "選擇模型並測試連線，之後可在設定中更換。";
-"setup.status.title" = "狀態";
-"setup.status.configured" = "已設定";
-"setup.status.notSetUp" = "尚未設定";
-"setup.status.downloading" = "正在下載 · %d%%";
-"setup.status.testing" = "正在測試連線…";
 "setup.skip.title" = "稍後再設定？";
 "setup.skip.allModels.message" = "你仍可使用啟動器搜尋、開啟應用程式和計算。語音輸入、Agent 和 AI 改寫需完成模型設定後才能使用，之後可在設定中補充。";
 "setup.skip.speech.message" = "暫不設定語音輸入和語音提問。你仍可繼續設定 AI，透過打字使用 Agent。";
@@ -7693,58 +7541,11 @@
 "setup.skip.permissions.message" = "未授權麥克風時無法錄音；未授權輔助使用時無法向其他應用程式輸入文字。之後可在設定中授權。";
 "setup.skip.confirm" = "稍後設定";
 "setup.skip.back" = "返回設定";
-"setup.action.skip" = "稍後設定";
-"setup.action.retry" = "重試";
-"setup.action.done" = "完成";
-"setup.action.configure" = "前往設定";
 "setup.action.resume" = "繼續設定…";
-"setup.finish.title" = "開始使用 Typeflux";
-"setup.finish.subtitle" = "這是目前的設定，未設定的功能可以之後再補充。";
-"setup.finish.launcher" = "搜尋應用程式和檔案、開啟應用程式、計算";
-"setup.finish.speechSkipped" = "需要語音輸入時，再設定語音模型";
-"setup.finish.permissionsMissing" = "模型已設定，仍需授予權限";
-"setup.finish.ai" = "Agent 與 AI 改寫";
-"setup.stage.services" = "使用方式";
-"setup.stage.models" = "模型服務";
-"setup.stage.permissions" = "權限設定";
-"setup.stage.practice" = "開始使用";
-"setup.cloud.signInShort" = "登入帳號";
-"setup.speech.remoteHint" = "先測試連線，再繼續。";
-"setup.status.testNeeded" = "待驗證";
-"setup.language.choose" = "選擇模型";
 "setup.permission.microphone.impact" = "未授權麥克風時，語音輸入和語音提問無法錄音。";
 "setup.permission.accessibility.impact" = "未授權輔助使用時，無法向其他應用程式輸入文字，部分全域快速鍵也無法使用。";
 "setup.permission.speechRecognition.impact" = "Apple 語音辨識需要授予語音辨識權限。";
 "setup.permission.later" = "啟動器基本搜尋仍可使用，之後可在設定中授權。";
-"setup.voice.permissionsFirst" = "先完成權限與快速鍵設定，再試用語音輸入。";
-"setup.action.permissions" = "前往權限設定";
-"setup.launcher.permissionsHint" = "部分全域快速鍵需要輔助使用權限，你仍可從選單列開啟啟動器。";
 "setup.skip.existingModels" = "已有模型設定會保留。你可以先使用啟動器，未設定的語音和 AI 服務之後可在設定中補充。";
 "setup.skip.existingSpeech" = "已有語音模型設定會保留，暫時跳過語音教學，之後可在設定中調整模型。";
 "setup.skip.existingAI" = "已有 AI 模型設定會保留，暫時跳過 AI 功能介紹，之後可在設定中調整模型。";
-"setup.finish.readySubtitle" = "模型和權限已設定，可隨時在設定中調整。";
-"setup.permission.keyboardImpact" = "🌐 快捷鍵尚未設定好，暫時無法用它啟動語音輸入。你可以稍後設定或更換快捷鍵。";
-"setup.finish.keyboardMissing" = "模型已設定 · 還需設定 🌐 快捷鍵";
-"setup.permission.launcherAccessibility" = "使用全域快捷鍵，操作其他應用程式";
-
-"setup.services.launcherImpact" = "語音輸入與 Agent 將暫不可用。";
-"setup.cloud.signInContinue" = "登入並繼續";
-"setup.cloud.entitlementNote" = "可用服務依帳號權益而定。";
-"setup.cloud.speechService" = "語音辨識";
-"setup.action.testAndContinue" = "測試並繼續";
-"setup.rail.title" = "初次設定";
-"setup.rail.later" = "之後也能在設定中調整";
-"setup.rail.current" = "目前步驟";
-"setup.rail.completed" = "已完成";
-"setup.stage.complete" = "完成";
-"setup.speech.serviceLabel" = "辨識服務";
-"setup.speech.preview" = "把想法說出來";
-"setup.connection.configured" = "連線資訊已填寫";
-"setup.connection.edit" = "編輯連線資訊";
-"setup.language.shortTitle" = "大型語言模型";
-"setup.speech.manage" = "管理語音模型";
-"setup.status.ready" = "已就緒";
-"setup.rail.skipped" = "已略過";
-"setup.services.existingImpact" = "現有模型設定會保留。";
-"setup.services.aiMissingImpact" = "Agent 與 AI 改寫需稍後設定。";
-"setup.services.speechMissingImpact" = "語音輸入需稍後設定。";

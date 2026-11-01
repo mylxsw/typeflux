@@ -310,9 +310,11 @@ struct PermissionsSettingsTests {
                         $0.value("accessibilityIdentifier") as? String == "settings.permissions.\(permission.rawValue).action"
                     })
                 }
+                try await waitForPermissionActions(in: host)
                 try action(.camera).press()
                 try await UI.wait { model.statuses[.camera] == .granted && model.requestingPermission == nil }
                 #expect(probe.requests == ["camera"])
+                try await waitForPermissionActions(in: host)
                 try action(.microphone).press()
                 try await UI.wait { probe.requests == ["camera", "microphone"] && model.requestingPermission == nil }
                 probe.screen.granted = true
@@ -325,6 +327,7 @@ struct PermissionsSettingsTests {
                 NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
                 try await UI.wait { model.statuses[.fullDiskAccess] == .granted }
                 probe.failRequest = true
+                try await waitForPermissionActions(in: host)
                 try action(.calendar).press()
                 try await UI.wait { UI.contains(
                     L("settings.permissions.requestFailed", SettingsPermission.calendar.title),

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "make",
+    "test",
+    "PROFILE=onboarding",
+    "FILTER=welcome language menu|native pages cover provider|rendered provider controls|native model|model picker"
+  ],
+  "exit_code": 2,
+  "wall_seconds": 523.06,
+  "selected_methods": [
+    "TypefluxFocusedTests.OnboardingComponentTests/`welcome language menu and close confirmation remain resumable`()",
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`native pages cover provider configuration and result states in both languages and appearances`()"
+  ],
+  "build_input_digest": "63bb06d63530acd3f3acf33ae6cbfa1b9b3ddd498a75177619a6ac24b7ad701b",
+  "build_artifact_digest": "59ec08aa0237803d6e4262d3a9ee5d2ab2efbedab6c677680141cf1f8e514e1c",
+  "discovery_digest": "c880d4e0e47fba9852a073e981ec799efe6ffb1fc27a9a77ab4e767e1a93cce7",
+  "runner_sha256": {
+    "scripts/test_runtime.py": "21f1e417510242bdf116d691cd602c9bcefc5eab7c5f30a13f4cf88047470363",
+    "scripts/test_groups.py": "12938ad96a4f94ce7feae64476da6bd57c10693aea46e55ba7d76f67096a21c9",
+    "scripts/native_swift_testing.swift": "39aff2da6184bd5f4423a4b105edc329885a9dec099b1837b0085b63c2e953c4"
+  },
+  "native_framework_summary": "\u2718 Test run with 2 tests in 2 suites failed after 324.767 seconds with 4 issues."
+}

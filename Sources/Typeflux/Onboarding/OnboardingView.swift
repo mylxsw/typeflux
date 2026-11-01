@@ -15,14 +15,17 @@ struct OnboardingView: View {
                 OnboardingFooterBar(back: back, tertiary: tertiary, primary: primary,
                                     hint: footerHint) {
                     if viewModel.currentStep == .welcome {
-                        Menu {
-                            ForEach(AppLanguage.allCases) { language in
-                                Button(language.displayName) { viewModel.setLanguage(language) }
+                        OnboardingModelPicker(
+                            items: AppLanguage.allCases.map { .init(id: $0.rawValue, title: $0.displayName) },
+                            selection: viewModel.appLanguage.rawValue, identifier: "onboarding.language", height: 26,
+                            onSelect: { id in
+                                if let language = AppLanguage(rawValue: id) { viewModel.setLanguage(language) }
                             }
-                        } label: {
+                        ) {
                             Label(viewModel.appLanguage.displayName, systemImage: "globe")
                                 .font(.system(size: 12))
-                        }.menuStyle(.borderlessButton).fixedSize()
+                        }
+                        .frame(width: 120)
                     }
                 }
                 .padding(.horizontal, 20).padding(.bottom, 18)

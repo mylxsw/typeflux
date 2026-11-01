@@ -1,0 +1,612 @@
+{
+  "scope": "Onboarding plus login, hotkey recorder and shared permissions integration; cumulative final source checks, not repository-wide validation",
+  "inventory": 148,
+  "xctest": {
+    "passed": 22,
+    "skipped": 0,
+    "failed": 0,
+    "unexecuted": 0
+  },
+  "swift_testing": {
+    "passed": 126,
+    "skipped": 0,
+    "failed": 0,
+    "unexecuted": 0
+  },
+  "complete": true,
+  "unresolved": [],
+  "methods": {
+    "TypefluxFocusedTests.CloudLoginSyncCoordinatorTests/testAppliesCloudDefaultsWhenOnlyOneProviderDiffers": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.CloudLoginSyncCoordinatorTests/testFreePlanOffersCloudLLMWithoutChangingSTTProvider": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.CloudLoginSyncCoordinatorTests/testIgnoresUnrelatedNotifications": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.CloudLoginSyncCoordinatorTests/testKeepsCurrentProvidersWhenPromptDeclined": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.CloudLoginSyncCoordinatorTests/testOnboardingOwnsCloudSelectionWithoutAnotherModal": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.CloudLoginSyncCoordinatorTests/testPostsModelDefaultsNotificationAfterApplyingCloudDefaults": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.CloudLoginSyncCoordinatorTests/testPromptsAndAppliesCloudDefaultsAfterCheckoutSubscriptionEntitlement": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.CloudLoginSyncCoordinatorTests/testPromptsAndAppliesCloudDefaultsAfterLoginWithExistingEntitlement": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.CloudLoginSyncCoordinatorTests/testStaysSilentWhenAlreadyFullyOnCloud": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.HotkeyRecorderTests/testIgnoresRepeatedKeyDown": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.HotkeyRecorderTests/testIgnoresSingleNonModifierKeyDownWithoutModifiers": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.HotkeyRecorderTests/testIgnoresUnsupportedModifierOnlyTriggerFromFlagsChanged": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.HotkeyRecorderTests/testRecordsKeyDownWithModifiers": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.HotkeyRecorderTests/testRecordsRightCommandModifierOnlyTriggerFromFlagsChanged": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.HotkeyRecorderTests/testRecordsRightCommandModifierOnlyTriggerWithAdditionalFlagsNoise": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.HotkeyRecorderTests/testRecordsRightOptionModifierOnlyTriggerFromFlagsChanged": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.HotkeyRecorderTests/testRecordsRightOptionModifierOnlyTriggerWithAdditionalFlagsNoise": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.HotkeyRecorderTests/testRecordsSupportedModifierOnlyTriggerFromFlagsChanged": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.LoginWindowControllerTests/testDefaultWindowSizePreservesDialogWidth": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.LoginWindowControllerTests/testDefaultWindowSizeProvidesEnoughVerticalSpaceForLoginContent": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingBehaviorTests/`every page has fixed stage chrome in both languages and appearances`()": {
+      "result": "passed",
+      "run": "test-onboarding-controls-final"
+    },
+    "TypefluxFocusedTests.OnboardingBehaviorTests/`inline adapter enables the primary without opening a modal editor`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingBehaviorTests/`welcome route selection back and skip are wired through native buttons`()": {
+      "result": "passed",
+      "run": "test-onboarding-controls-final"
+    },
+    "TypefluxFocusedTests.OnboardingBehaviorTests/`window controller keeps native title bar and resume entry`()": {
+      "result": "passed",
+      "run": "test-onboarding-failed"
+    },
+    "TypefluxFocusedTests.OnboardingComponentTests/`native resume opens the first deferred page without resetting shortcuts`()": {
+      "result": "passed",
+      "run": "test-onboarding-failed"
+    },
+    "TypefluxFocusedTests.OnboardingComponentTests/`native window captures include the actual traffic lights`()": {
+      "result": "passed",
+      "run": "test-onboarding-controls-final"
+    },
+    "TypefluxFocusedTests.OnboardingComponentTests/`optional content and disabled actions stay absent or inactive`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingComponentTests/`shared cards panel guide and footer render in both appearances`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingComponentTests/`welcome language menu and close confirmation remain resumable`()": {
+      "result": "passed",
+      "run": "test-onboarding-menu-retry"
+    },
+    "TypefluxFocusedTests.OnboardingFeatureTests/testPermissionsPerFeature": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingFeatureTests/testRequiredPermissionsAreOrderedAndAddSpeechOnlyForAppleSpeech": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingNavigationTests/`all routes keep four progress stages and always reach try`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingNavigationTests/`missing page readiness never falls back to the removed editor flow`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingNavigationTests/`page adapters forward readiness busy and inline actions to the shell`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingNavigationTests/`page tables resolve in all five languages and preserve format arguments`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingNavigationTests/`recovery prioritizes speech then AI then permissions without erasing settings`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingNavigationTests/`route changes and invalid destinations never accidentally complete`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingPermissionsTests/`leaving the page cancels requests and suppresses late guide updates`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingPermissionsTests/`page copy resolves in all five languages`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingPermissionsTests/`permissions states render in Chinese and English in both appearances`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingPermissionsTests/`requests switch denied actions to settings and guide tracks external grants`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingPermissionsTests/`required permissions follow route and provider and optional permissions never gate`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingPermissionsTests/`required statuses gate continuation independently of pending optional queries`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingPermissionsTests/`returning during a canceled native request refreshes its late grant without advancing`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingPermissionsTests/`system adapter selects native prompts and pane navigation without external guidance`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`a callback after Back never reopens the global login entry`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`a download failure from an older account is ignored`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`an in-flight account refresh is awaited before validating cloud availability`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`background subscription loading hides stale capability actions`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`closing the native onboarding window cancels pending login`()": {
+      "result": "passed",
+      "run": "test-onboarding-failed"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`disabled web rollout fails inline without opening a browser`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`entitlement gates continuation and hands off cloud defaults explicitly`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`failed entitlement and late downloads never navigate or change settings`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`free plan downloads local speech and failure retries inline`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`inline browser lifecycle rejects callbacks after leaving cloud`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`late entitlement results cannot unlock a departed or replaced account`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`native route and cloud states render in both languages and appearances`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`onboarding owns login callbacks and leaves global presentation silent`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`rendered controls select routes and drive inline browser actions`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`resumed onboarding defers account prompts and preserves the normal defaults handoff`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`route choices and launcher skip preserve configuration`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`route controls ignore clicks after navigating away`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`subscription refresh cannot erase a newer download failure`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingRouteCloudTests/`successful browser login checks entitlement without advancing or presenting a modal`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`card buttons record suggest reset and present the guide`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`escape cancels either capture mode without saving`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`globe changes are reread on application activation`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`menus expose presets and recording reset clear for every card`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`native menu capture includes its popup`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`preset checkmarks compare physical bindings rather than persisted identities`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`presets move standard auxiliary chords and reject outside owners atomically`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`recorded callbacks save and cancel without leaving a busy page`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`settings are live and rejected conflicts preserve the previous binding`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`shortcut states render in both appearances and languages`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingShortcutsTests/`system conflicts refresh and alternatives respect every owner`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`LLM has every remaining provider and validates before committing real registry references`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`LLM rejects stale catalogs and probes after key endpoint model and route changes`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`LLM validation errors empty catalogs and Ollama retry never invent models`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`cancelled scheduled work never opens a microphone or authorization prompt`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`download success failure cancellation and model switches retain the selected model`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`editing a Google project preserves authorization but leaving the page cancels it`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`empty free LLM catalog blocks continuation and never dispatches a probe`()": {
+      "result": "passed",
+      "run": "test-onboarding-failed"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`engines preserve the selected provider without fallback`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`every remote provider can commit a fetched model and errors block verification`()": {
+      "result": "passed",
+      "run": "test-onboarding-failed"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`existing endpoint and Ollama selections survive initialization and provider changes`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`external configuration changes invalidate in flight speech and LLM signatures`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`first permission grant waits for a new hold and focus loss releases capture`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`google runs authorization and reports failures without faking a grant`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`late speech results cannot verify changed credentials or navigate after skip`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`multimodal speech follows the next step model and becomes testable on return`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`native LLM menu updates the registry and disables an empty catalog`()": {
+      "result": "passed",
+      "run": "test-onboarding-controls-final"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`native pages cover provider configuration and result states in both languages and appearances`()": {
+      "result": "passed",
+      "run": "test-onboarding-capture-final"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`native provider and test buttons drive the same persisted setup`()": {
+      "result": "passed",
+      "run": "test-onboarding-controls-final"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`native speech model menu persists the selected model`()": {
+      "result": "passed",
+      "run": "test-onboarding-controls-final"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`permission release denial recorder failures and empty recognition stay inline`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`speech credentials use the right fields and invalidate successful tests`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingSpeechLLMTests/`speech records the held audio and only success enables continuation`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingTryTests/`feature connectivity reflects route and skip state`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingTryTests/`feature selection and tried state transitions`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingTryTests/`localization lookup provides strings in all five languages`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingTryTests/`returnToRoute switches step to route`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingTryTests/`shortcut keys read live bindings from session`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingTryTests/`try model initializes with default state`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingTryTests/`try page captures native snapshots across all states in dark and light modes`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingTryTests/`try page renders and completes onboarding through finish button`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingTryTests/`voice practice detection via history store marks voice tried`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`back follows the selected service route`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`changing speech service invalidates the inline test and preserves deferral`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`cloud is recommended but login is not bypassed`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`cloud selection checks access and assigns both models`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`completion and abandonment analytics are reported once`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`configuring models later clears AI deferral`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`finish does not require skipped configuration`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`launcher only requires explicit skip and does not prepare models`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`model setup precedes permissions`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`no download starts on welcome`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`permission counts and skip impacts use the same requirements as the visible page`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`permission deferral requires confirmation`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`practice needs A successful applied recording`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`shortcut replacement and language still persist`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`skip cancels pending navigation and explains each affected capability`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`skipping AI keeps ordinary dictation`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`skipping AI without login does not enable an automatic rewrite persona`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`skipping keeps existing working configurations available`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`skipping keyboard setup explains why voice shortcut is not ready`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`skipping speech still offers AI configuration`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`speech continuation follows the inline page readiness`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`speech preflight distinguishes missing keys and paid cloud access`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.OnboardingViewModelTests/`typing in practice is not A successful voice test`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionGuidanceServiceTests/abandonedGuidanceExpiresWithoutReportingGrant()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionGuidanceServiceTests/grantedAndNonAppHostsOnlyNavigate()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionGuidanceServiceTests/missingDragPermissionsUseCurrentAppAndLocale()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionGuidanceServiceTests/otherPermissionsAndOrdinaryURLsOnlyNavigate()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionGuidanceServiceTests/refreshRequiresActualGrantAndUpdatesLanguage()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionGuidanceServiceTests/returningToAppDismissesAndUnsubscribes()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionGuidanceServiceTests/switchingOrOpeningOrdinaryPermissionClosesPreviousGuide()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`canceled refresh and request release busy state`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`catalog keeps core permissions separate from feature permissions`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`first time requests and previously decided permissions take the correct route`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`permission copy is localized in every supported language`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`permissions render in both languages and appearances without clipped actions`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`refresh coalesces overlaps and blocks requests until statuses are ready`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`rendered permission buttons refresh and request only their own permission`()": {
+      "result": "passed",
+      "run": "test-onboarding-failed"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`repeated clicks cannot launch concurrent permission requests`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`request failures are visible and later success clears the error`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`requests reuse core and screen capture adapters`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`settings tab moves permissions out of general and before shortcuts`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    },
+    "TypefluxFocusedTests.PermissionsSettingsTests/`status checks do not request access or open settings`()": {
+      "result": "passed",
+      "run": "test-onboarding-final-retry"
+    }
+  }
+}

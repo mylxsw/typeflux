@@ -33,4 +33,3 @@
 "fullDiskAccess.title" = "完全磁盘访问";
 "fullDiskAccess.summary" = "搜索受保护的文件和浏览器书签";
 "missing" = "还差 %d 项必需权限";
-"guideOtherApp" = "Raycast";

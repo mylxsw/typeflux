@@ -1,0 +1,16 @@
+{
+  "command": [
+    "plutil",
+    "-lint",
+    "Sources/Typeflux/Resources/*/{Onboarding*,Localizable}.strings"
+  ],
+  "files": 45,
+  "exit_code": 0,
+  "wall_seconds": 0.88,
+  "new_prototype_keys": [
+    "close.title",
+    "close.message",
+    "close.continue",
+    "close.quit"
+  ]
+}

@@ -256,16 +256,13 @@ struct OnboardingShortcutsTests {
         guard ProcessInfo.processInfo.environment["TYPEFLUX_NATIVE_MENU_CAPTURE"] == "1" else { return }
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_GUL303_SNAPSHOTS"] else { return }
         try await UI.withFixture { settings in
-            let previousPolicy = NSApp.activationPolicy()
-            NSApp.setActivationPolicy(.regular)
-            defer { NSApp.setActivationPolicy(previousPolicy) }
             let session = OnboardingViewModel(settingsStore: settings, onComplete: {})
             session.currentStep = .shortcuts
             for language in [AppLanguage.english, .simplifiedChinese] {
                 session.setLanguage(language)
                 for dark in [false, true] {
                     let content = OnboardingView(viewModel: session, appearanceMode: dark ? .dark : .light)
-                    try await UI.withWindow(content, width: 960, height: 664) { window, host in
+                    try await UI.withWindow(content, width: 960, height: 664, nativeWindow: true) { window, host in
                         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
                         window.titleVisibility = .hidden
                         window.titlebarAppearsTransparent = true
@@ -276,7 +273,6 @@ struct OnboardingShortcutsTests {
                         ))
                         window.makeKeyAndOrderFront(nil)
                         window.orderFrontRegardless()
-                        NSApp.activate(ignoringOtherApps: true)
                         try await Task.sleep(for: .milliseconds(200))
                         func buttons(_ view: NSView) -> [NSPopUpButton] {
                             (view as? NSPopUpButton).map { [$0] } ?? view.subviews.flatMap(buttons)
@@ -285,38 +281,26 @@ struct OnboardingShortcutsTests {
                             $0.accessibilityIdentifier() == "onboarding.shortcuts.activation"
                         })
                         let menu = try #require(button.menu)
-                        let screenHeight = screen.frame.maxY
-                        let frame = window.frame
-                        let region = "\(Int(frame.minX)),\(Int(screenHeight - frame.maxY)),\(Int(frame.width)),\(Int(frame.height))"
-                        print(
-                            "Native menu capture: screen=\(screen.frame), window=\(frame), region=\(region), permission=\(CGPreflightScreenCaptureAccess())"
-                        )
-                        let path = URL(fileURLWithPath: directory).appendingPathComponent(
-                            "shortcuts-menu-\(language.rawValue)-\(dark ? "dark" : "light").png"
-                        )
-                        try FileManager.default.createDirectory(
-                            at: path.deletingLastPathComponent(),
-                            withIntermediateDirectories: true
-                        )
-                        var captureStatus: Int32 = -1
+                        let name = "shortcuts-menu-\(language.rawValue)-\(dark ? "dark" : "light")"
+                        let previousWindows = Set(NSApp.windows.filter(\.isVisible).map(\.windowNumber))
+                        var captureError: Error?
+                        var captured = false
                         let timer = Timer(timeInterval: 0.5, repeats: false) { _ in
                             MainActor.assumeIsolated {
-                                defer { menu.cancelTracking() }
-                                let process = Process()
-                                process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-                                process.arguments = ["-x", "-R", region, path.path]
+                                defer { button.menu?.cancelTracking() }
                                 do {
-                                    try process.run()
-                                    process.waitUntilExit()
-                                    captureStatus = process.terminationStatus
-                                } catch { captureStatus = -1 }
+                                    try UI.snapshotMenuWindows(host, excluding: previousWindows, name: name)
+                                    captured = true
+                                } catch { captureError = error }
                             }
                         }
                         RunLoop.main.add(timer, forMode: .eventTracking)
                         RunLoop.main.add(timer, forMode: .common)
+                        menu.delegate?.menuNeedsUpdate?(menu)
                         button.performClick(nil)
                         timer.invalidate()
-                        #expect(captureStatus == 0)
+                        if let captureError { throw captureError }
+                        #expect(captured)
                     }
                 }
             }

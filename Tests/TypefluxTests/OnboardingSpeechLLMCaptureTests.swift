@@ -15,13 +15,15 @@ extension OnboardingSpeechLLMTests {
                     settings.appLanguage = language
                     AppLocalization.shared.setLanguage(language)
                     try await Controls.withWindow(OnboardingView(viewModel: session, appearanceMode: appearance),
-                                            width: 960, height: 664) { _, host in
+                                            width: 960, height: 664, nativeWindow: true) { window, host in
+                        window.appearance = AppAppearance.nsAppearance(for: appearance)
                         @MainActor func capture(_ name: String) async throws {
                             try await Task.sleep(for: .milliseconds(80))
                             try Controls.snapshot(host, name: "\(name)-\(language.rawValue)-\(appearance.rawValue)")
                         }
                         try await captureSpeech(session, manager: manager, host: host, capture: capture)
                         try await captureLLM(session, catalog: catalog, host: host, capture: capture)
+                        catalog.fails = false
                         try await captureMenus(session, host: host,
                                                suffix: "\(language.rawValue)-\(appearance.rawValue)")
                     }
@@ -51,7 +53,7 @@ extension OnboardingSpeechLLMTests {
         try await capture("speech-recognizing")
         speech.isBusy = false
         speech.testStatus = .success(
-            preview: OnboardingStrings.text("status.samplePreview", table: "OnboardingSpeech"),
+            preview: "Meeting tomorrow at 3 PM",
             latencyMs: 640
         )
         speech.canContinue = true
@@ -102,7 +104,7 @@ extension OnboardingSpeechLLMTests {
         try await capture("llm-testing")
         llm.isBusy = false
         llm.testStatus = .success(
-            preview: OnboardingStrings.text("status.sampleReply", table: "OnboardingLlm"),
+            preview: "Hello! I am ready to help.",
             latencyMs: 820
         )
         try await capture("llm-success")

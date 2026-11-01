@@ -1098,56 +1098,12 @@
 "workflow.vocabulary.autoAdded.multiple" = "%d 用語を語彙に追加しました。";
 
 "onboarding.window.title" = "Typeflux へようこそ";
-"onboarding.step.language" = "言語";
-"onboarding.step.models" = "モデル";
-"onboarding.step.permissions" = "権限";
-"onboarding.step.shortcuts" = "ショートカット";
 
-"onboarding.welcome.tagline" = "すべてのアプリに音声入力を。";
-"onboarding.welcome.feature1.title" = "押して話す";
-"onboarding.welcome.feature1.desc" = "ホットキーを押して録音し、離すと文字起こし — テキストがどのアプリにも入力されます。";
-"onboarding.welcome.feature2.title" = "どこでも使える";
-"onboarding.welcome.feature2.desc" = "アクセシビリティ API を使ってあらゆる macOS アプリにテキストを挿入します。";
-"onboarding.welcome.feature3.title" = "AI リライト";
-"onboarding.welcome.feature3.desc" = "オプションの言語モデルがディクテーションをリアルタイムで改善します。";
 
-"onboarding.language.title" = "言語を選択してください";
-"onboarding.language.subtitle" = "Typeflux インターフェイスの表示言語を選択します。";
-"onboarding.account.title" = "お帰りなさい";
-"onboarding.account.subtitle" = "クラウド音声認識と AI 推論機能を解放する";
-"onboarding.account.cloudReady" = "音声認識と大規模言語モデルサービスが利用可能です。追加の API キーは不要です。";
 
-"onboarding.models.title" = "モデルをセットアップする";
-"onboarding.models.subtitle" = "音声認識エンジンと言語モデルを選択します。これらは [設定] でいつでも変更できます。";
-"onboarding.models.stt.title" = "音声認識";
-"onboarding.models.stt.subtitle" = "スピーチをテキストに変換します";
-"onboarding.models.llm.title" = "言語モデル";
-"onboarding.models.llm.subtitle" = "ディクテーションを書き直し、改良します";
-"onboarding.models.stt.apple.description" = "デバイス上でセットアップは不要";
-"onboarding.models.stt.whisper.description" = "リモート API — エンドポイントとキーが必要です";
-"onboarding.models.stt.local.description" = "ダウンロードしてローカルで実行する";
-"onboarding.models.stt.local.hint" = "モデルは初めて使用するときに自動的にダウンロードされます。";
-"onboarding.models.llm.openai.title" = "OpenAI-Compatible";
-"onboarding.models.llm.openai.description" = "あらゆるリモート チャット API — OpenAI、クロード、ディープシーク…";
-"onboarding.models.llm.ollama.title" = "Local Ollama";
-"onboarding.models.llm.ollama.description" = "プライベート、完全に Mac で実行されます";
-"onboarding.models.badge.noSetup" = "セットアップがありません";
-"onboarding.models.badge.apiKey" = "API キー";
-"onboarding.models.badge.local" = "ローカル";
 
 "onboarding.models.getAPIKey" = "APIキーを取得";
 
-"onboarding.sttProvider.subtitle" = "音声をテキストに変換するエンジンを選択してください";
-"onboarding.sttConfig.subtitle" = "資格情報と設定を構成する";
-"onboarding.sttConfig.incomplete.message" = "続行する前に、選択した音声モデルの設定を完了してください。";
-"onboarding.sttConfig.incompleteAlert.title" = "音声モデルの設定が未完了です";
-"onboarding.sttConfig.incompleteAlert.message" = "次のステップに進む前に、選択した音声モデルの設定を完了してください。";
-"onboarding.llmProvider.subtitle" = "ディクテーションを書き直して改良するモデルを選択してください";
-"onboarding.llmConfig.subtitle" = "資格情報と設定を構成する";
-"onboarding.llmConfig.incompleteAlert.title" = "言語モデルの設定が未完了です";
-"onboarding.llmConfig.incompleteAlert.message" = "音声文字起こしは引き続き利用できますが、言語モデルが必要な書き換えや推敲機能は一時的に制限されます。";
-"onboarding.llmConfig.incompleteAlert.continueConfig" = "設定を続ける";
-"onboarding.llmConfig.incompleteAlert.skip" = "スキップ";
 
 "onboarding.permissions.title" = "権限を付与する";
 "onboarding.permissions.subtitle" = "Typeflux では、音声をキャプチャして他のアプリにテキストを挿入するには、いくつかのシステム権限が必要です。";
@@ -1158,37 +1114,7 @@
 "onboarding.permissions.privacyCallout.title" = "プライバシー重視";
 "onboarding.permissions.privacyCallout.subtitle" = "音声データは可能な限りローカルで処理されます。明確な同意がない限り、録音を保存することはありません。";
 
-"onboarding.shortcuts.title" = "キーボードショートカット";
-"onboarding.shortcuts.subtitle" = "これらはデフォルトのショートカットです。これで準備は完了です。変更は必要ありません。";
-"onboarding.shortcuts.globeKeyNotice.title" = "FN / 🌐（地球儀）キーを解放してください";
-"onboarding.shortcuts.globeKeyNotice.message" = "macOS はデフォルトで FN / 🌐 キーに「絵文字と記号」を割り当てており、Typeflux がこのキーを利用できません。キーボード設定を開き、「FN / 🌐 キーを押したとき」を「何もしない」に変更するだけで OK です。";
-"onboarding.shortcuts.globeKeyNotice.button" = "キーボード設定を開く";
-"onboarding.shortcuts.globeKeyNotice.ready.title" = "FN / 🌐 キーの準備ができました";
-"onboarding.shortcuts.globeKeyNotice.ready.message" = "キーボード設定は整っており、Typeflux が FN / 🌐 キーをホットキーとして使用できます。それでも反応しない場合は、一度サインアウトして再ログインするか、Mac を再起動してみてください。";
-"onboarding.shortcuts.externalKeyboard.title" = "外付けキーボードで FN キーが使えませんか？";
-"onboarding.shortcuts.externalKeyboard.message" = "右 Command または右 Option を代わりに使えます。Typeflux は音声入力をそのキーに、「チャット」をそのキーの素早い 2 回押しに変更します。";
-"onboarding.shortcuts.externalKeyboard.useRightCommand" = "右 Command を使う";
-"onboarding.shortcuts.externalKeyboard.useRightOption" = "右 Option を使う";
-"onboarding.shortcuts.replacement.rightCommand" = "右 Command";
-"onboarding.shortcuts.replacement.rightOption" = "右 Option";
-"onboarding.shortcuts.replacement.fn" = "FN / 🌐";
-"onboarding.shortcuts.replacement.active.title" = "%@ ショートカットが有効です";
-"onboarding.shortcuts.replacement.active.message" = "ショートカットが変更されました。音声入力は %@、「チャット」は %@×2 を使います。";
-"onboarding.shortcuts.replacement.restore" = "FN ショートカットに戻す";
-"onboarding.shortcuts.replacement.appliedAlert.title" = "ショートカットを更新しました";
-"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux は音声入力に %@、「チャット」に %@×2 を使うようになりました。";
-"onboarding.shortcuts.replacement.restoredAlert.message" = "Typeflux はデフォルトの FN / 🌐 ショートカットに戻りました。";
-"onboarding.shortcuts.activation.hint" = "話した内容を文字に変換";
-"onboarding.shortcuts.ask.hint" = "声で質問や選択文の編集";
-"onboarding.shortcuts.persona.hint" = "ペルソナ切替や選択文の書き換え";
-"onboarding.shortcuts.changeInSettings" = "「設定」→「音声ショートカット」でいつでもショートカットをカスタマイズできます。";
-"onboarding.shortcuts.history.hint" = "履歴を確認して貼り付け";
 
-"onboarding.action.back" = "前へ";
-"onboarding.action.continue" = "次へ";
-"onboarding.action.skip" = "スキップ";
-"onboarding.account.skip" = "スキップして自分のモデルを設定";
-"onboarding.action.getStarted" = "始めましょう";
 
 // MARK: - Agent Framework
 
@@ -1458,10 +1384,6 @@
 "settings.shortcuts.auxiliaryUpdated" = "補助ショートカットを更新しました";
 "settings.shortcuts.auxiliaryUnset" = "補助ショートカットを解除しました";
 "settings.shortcuts.recordingAuxiliary" = "補助ショートカットを押すか、単一キーをダブルタップしてください。";
-"onboarding.shortcuts.auxiliary.hint" = "別のペルソナで音声入力";
-"onboarding.shortcuts.auxiliary.unset" = "ショートカット未設定。設定画面で登録してください。";
-"onboarding.shortcuts.auxiliary.externalKeyboard" = "補助ショートカットは選択したキー + 左 Shift に切り替わります。独自の補助キー設定は保持されます。";
-"onboarding.shortcuts.auxiliary.active" = "補助ショートカット：%@";
 
 // Ask conversations
 "ask.allowOnce" = "今回のみ許可";
@@ -6668,7 +6590,6 @@
 /* Onboarding v2 (GUL-339) */
 "onboarding.v2.welcome.title" = "話す、探す、なぞる、聞く。\nすべてキーひとつで。";
 "onboarding.v2.welcome.lead" = "メニューバーに常駐し、どのアプリでもすぐ使えます。";
-"onboarding.v2.welcome.duration" = "約 2 分";
 "onboarding.v2.verb.voice" = "話す";
 "onboarding.v2.verb.launcher" = "探す";
 "onboarding.v2.verb.ring" = "なぞる";
@@ -6693,53 +6614,7 @@
 "onboarding.v2.hero.chat.question" = "どの月がいちばん伸びた？";
 "onboarding.v2.hero.chat.step" = "現在の画面を読み取りました";
 "onboarding.v2.hero.chat.answer" = "7 月です。前月比 +32%、主に App Store 経由です。";
-"onboarding.v2.action.start" = "はじめる";
-"onboarding.v2.action.continue" = "続ける";
-"onboarding.v2.action.back" = "戻る";
-"onboarding.v2.action.later" = "あとで";
-"onboarding.v2.action.finish" = "使いはじめる";
-"onboarding.v2.later.screen" = "画面収録";
-"onboarding.v2.later.ai" = "AI 接続";
-"onboarding.v2.permissions.title.ready" = "権限の設定が完了しました";
-"onboarding.v2.permissions.title.missing" = "あと %d 件の権限";
-"onboarding.v2.permissions.subtitle" = "現在の設定に必要な権限を確認します。";
-"onboarding.v2.permissions.later" = "必要になったら：";
-"onboarding.v2.permission.microphone.detail" = "音声入力を開始したときに録音";
-"onboarding.v2.permission.accessibility.detail" = "今のアプリに文字を入力";
-"onboarding.v2.permission.speechRecognition.detail" = "Apple 音声認識の予備";
-"onboarding.v2.globe.title" = "fn キーが macOS に使われています";
-"onboarding.v2.globe.detail" = "「何もしない」にすると押して話せます";
-"onboarding.v2.globe.conflict" = "そのキーは別のショートカットで使用中";
-"onboarding.v2.globe.open" = "キーボード設定";
-"onboarding.v2.globe.useOtherKey" = "別のキーを使う";
-"onboarding.feature.voice.title" = "音声入力";
-"onboarding.feature.voice.caption" = "押して話し、離すと入力";
-"onboarding.feature.launcher.title" = "ランチャー";
-"onboarding.feature.launcher.caption" = "アプリ・計算・クリップボード・スクショ";
-"onboarding.feature.tools.title" = "ツール";
-"onboarding.feature.tools.caption" = "翻訳・GIF 録画・ワークフロー";
-"onboarding.feature.ring.title" = "リング";
-"onboarding.feature.ring.caption" = "押して、向けて、離す";
-"onboarding.feature.chat.title" = "Agent チャット";
-"onboarding.feature.chat.caption" = "画面を見て、作業までこなす";
-"onboarding.tip.voice.talk" = "押して話す";
-"onboarding.tip.voice.rewrite" = "テキストを選んでから話すと書き直し";
-"onboarding.tip.launcher.open" = "ランチャーを開く";
-"onboarding.tip.launcher.clipboard" = "クリップボード履歴";
-"onboarding.tip.launcher.screenshot" = "スクリーンショット";
-"onboarding.tip.tools.translate" = "翻訳";
-"onboarding.tip.tools.record" = "画面録画・GIF";
-"onboarding.tip.tools.workflow" = "ワークフロー：キーワードを入力";
-"onboarding.tip.ring.swipe" = "リングを開く";
-"onboarding.tip.chat.ask" = "ランチャーで質問";
-"onboarding.tip.chat.window" = "チャットウィンドウを開く";
 "onboarding.v2.hero.tools" = "翻訳・録画・自動化";
-"onboarding.v2.action.next" = "次へ";
-"onboarding.v2.shortcut.notSet" = "設定で指定";
-"onboarding.v2.voice.practice.placeholder" = "ここをクリックして、%@ を押しながら話す";
-"onboarding.v2.voice.practice.done" = "できました";
-"onboarding.v2.finish.title" = "準備完了";
-"onboarding.v2.finish.subtitle" = "覚えるのはこのキーだけ。";
 "ask.history.syncPending" = "一部の会話が未同期です。自動的に再試行します。";
 
 "ask.storage.inUse" = "別の Typeflux プロセスがこの会話データを使用しています。そのプロセスを終了してから再試行してください。";
@@ -7651,38 +7526,11 @@
 
 
 // Service setup and feature availability.
-"setup.services.title" = "モデルの接続方法を選択";
-"setup.services.subtitle" = "音声入力と Agent にはモデルサービスが必要です。ランチャーはそのまま使えます。";
-"setup.services.cloud" = "ログインして Typeflux のモデルを使用。API キーは不要です。";
-"setup.services.custom.title" = "自分のモデルを使用";
-"setup.services.custom" = "ローカル音声モデルや、お使いのモデルサービスに接続します。";
-"setup.services.recommended" = "おすすめ";
-"setup.services.launcherOnly" = "まずはランチャーを使う";
-"setup.cloud.title" = "Typeflux Cloud に接続";
-"setup.cloud.subtitle" = "ログインして音声と AI サービスに接続します。";
-"setup.cloud.signInDetail" = "ログイン後、この画面に戻って設定を続けてください。";
 "setup.cloud.signIn" = "Typeflux Cloud にログイン";
-"setup.cloud.checking" = "利用可能なサービスを確認中…";
 "setup.cloud.checkFailed" = "アカウントを確認できませんでした。再試行するか、自分のモデルを設定してください。";
-"setup.cloud.aiReady" = "アカウントの既定 AI モデルを使用";
-"setup.cloud.speechReady" = "クラウド音声認識を利用できます";
-"setup.cloud.localNext" = "このアカウントにはクラウド音声認識が含まれません。次にローカルモデルか別の音声サービスを選べます。";
-"setup.cloud.useOwn" = "自分のモデルを使う";
-"setup.speech.title" = "音声認識を設定";
-"setup.speech.subtitle" = "話した言葉を文字に変換する方法を選びます。";
 "setup.speech.configure" = "音声モデルを設定";
-"setup.speech.hint" = "ローカルモデルはアカウント不要です。モデルの準備ができたら続けられます。";
 "setup.speech.cloudUnavailable" = "ログインしてクラウドの利用権限を確認するか、ローカル音声モデルを設定してください。";
 "setup.speech.required" = "録音前に音声認識を設定してください。%@";
-"setup.language.title" = "AI モデルを設定";
-"setup.language.subtitle" = "Agent、会話、音声による書き換えに使用します。";
-"setup.language.configure" = "モデルを追加・設定";
-"setup.language.hint" = "モデルを選んで接続テストを実行してください。後から設定で変更できます。";
-"setup.status.title" = "状態";
-"setup.status.configured" = "設定済み";
-"setup.status.notSetUp" = "未設定";
-"setup.status.downloading" = "ダウンロード中 · %d%%";
-"setup.status.testing" = "接続テスト中…";
 "setup.skip.title" = "後で設定しますか？";
 "setup.skip.allModels.message" = "ランチャーの検索、アプリ起動、計算は使えます。音声入力、Agent、AI 書き換えにはモデルの設定が必要です。後から設定できます。";
 "setup.skip.speech.message" = "音声入力と音声での質問は設定されません。AI を設定すれば、文字入力で Agent を使えます。";
@@ -7690,58 +7538,11 @@
 "setup.skip.permissions.message" = "マイクの許可がないと録音できません。アクセシビリティの許可がないと他のアプリへ入力できません。後から設定で許可できます。";
 "setup.skip.confirm" = "後で設定";
 "setup.skip.back" = "設定に戻る";
-"setup.action.skip" = "後で設定";
-"setup.action.retry" = "再試行";
-"setup.action.done" = "完了";
-"setup.action.configure" = "設定する";
 "setup.action.resume" = "設定を続ける…";
-"setup.finish.title" = "Typeflux を使い始める";
-"setup.finish.subtitle" = "現在の設定状況です。必要な機能は後から追加できます。";
-"setup.finish.launcher" = "アプリやファイルの検索、アプリの起動、計算";
-"setup.finish.speechSkipped" = "音声入力が必要になったら音声モデルを設定";
-"setup.finish.permissionsMissing" = "モデル設定済み・権限の許可が必要";
-"setup.finish.ai" = "Agent と AI 書き換え";
-"setup.stage.services" = "接続方法";
-"setup.stage.models" = "モデル接続";
-"setup.stage.permissions" = "権限";
-"setup.stage.practice" = "使い始める";
-"setup.cloud.signInShort" = "ログイン";
-"setup.speech.remoteHint" = "接続テスト後に続けてください。";
-"setup.status.testNeeded" = "未検証";
-"setup.language.choose" = "モデルを選択";
 "setup.permission.microphone.impact" = "マイクの許可がないと、音声入力と音声での質問は録音できません。";
 "setup.permission.accessibility.impact" = "アクセシビリティの許可がないと、他のアプリへの入力や一部のグローバルショートカットを使えません。";
 "setup.permission.speechRecognition.impact" = "Apple 音声認識には音声認識の許可が必要です。";
 "setup.permission.later" = "ランチャーの基本検索は使えます。後から設定で許可できます。";
-"setup.voice.permissionsFirst" = "音声入力を試す前に、権限とショートカットを設定してください。";
-"setup.action.permissions" = "権限を設定";
-"setup.launcher.permissionsHint" = "一部のグローバルショートカットにはアクセシビリティの許可が必要です。メニューバーからランチャーを開けます。";
 "setup.skip.existingModels" = "既存のモデル設定は保持されます。まずランチャーを使い、未設定の音声や AI サービスは後から設定できます。";
 "setup.skip.existingSpeech" = "音声モデルの設定は保持されます。音声ガイドをスキップし、後から設定でモデルを変更できます。";
 "setup.skip.existingAI" = "AI モデルの設定は保持されます。AI ガイドをスキップし、後から設定でモデルを変更できます。";
-"setup.finish.readySubtitle" = "モデルと権限の設定が完了しました。設定でいつでも変更できます。";
-"setup.permission.keyboardImpact" = "🌐 ショートカットが未設定のため、このキーで音声入力を開始できません。後から設定やキーの変更ができます。";
-"setup.finish.keyboardMissing" = "モデル設定済み · 🌐 ショートカットの設定が必要";
-"setup.permission.launcherAccessibility" = "グローバルショートカットと他のアプリの操作に使用";
-
-"setup.services.launcherImpact" = "設定するまで、音声入力と Agent は利用できません。";
-"setup.cloud.signInContinue" = "ログインして続ける";
-"setup.cloud.entitlementNote" = "利用できるサービスはアカウントにより異なります。";
-"setup.cloud.speechService" = "音声認識";
-"setup.action.testAndContinue" = "テストして続ける";
-"setup.rail.title" = "初期設定";
-"setup.rail.later" = "あとで設定を変更できます";
-"setup.rail.current" = "現在のステップ";
-"setup.rail.completed" = "完了済み";
-"setup.stage.complete" = "完了";
-"setup.speech.serviceLabel" = "音声認識サービス";
-"setup.speech.preview" = "考えを声にする";
-"setup.connection.configured" = "接続情報を入力済み";
-"setup.connection.edit" = "接続情報を編集";
-"setup.language.shortTitle" = "言語モデル";
-"setup.speech.manage" = "音声モデルを管理";
-"setup.status.ready" = "準備完了";
-"setup.rail.skipped" = "スキップ済み";
-"setup.services.existingImpact" = "既存のモデル設定は保持されます。";
-"setup.services.aiMissingImpact" = "Agent と AI リライトはあとで設定できます。";
-"setup.services.speechMissingImpact" = "音声入力はあとで設定できます。";

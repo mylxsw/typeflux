@@ -51,7 +51,6 @@
 "action.testHoldToTalk" = "按住說話測試";
 "status.listening" = "正在聽…放開結束";
 "status.recognizing" = "識別中…";
-"status.samplePreview" = "明天下午三點開會";
 "error.invalidKey" = "API Key 無效，請檢查後重試";
 "error.micPermissionDenied" = "需要麥克風權限才能測試";
 "action.openSettings" = "打開設定";

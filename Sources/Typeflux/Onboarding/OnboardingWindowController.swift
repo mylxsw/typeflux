@@ -9,6 +9,7 @@ final class OnboardingWindowController: NSObject {
     private(set) var window: NSWindow?
     private(set) var viewModel: OnboardingViewModel?
     private var onCompleteHandler: (() -> Void)?
+    private var closeConfirmation: NSAlert?
 
     func bringToFront() {
         if let window {
@@ -23,7 +24,6 @@ final class OnboardingWindowController: NSObject {
         historyStore: HistoryStore? = nil,
         resume: Bool = false,
         localModelManager: LocalModelManager? = nil,
-        notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared,
         permissionStatusAnalyticsMonitor: PermissionStatusAnalyticsMonitor? = nil,
         onComplete: @escaping () -> Void
@@ -47,11 +47,6 @@ final class OnboardingWindowController: NSObject {
         }
         if let historyStore {
             viewModel.historyStore = historyStore
-            viewModel.configurationModel = StudioViewModel(
-                settingsStore: settingsStore, historyStore: historyStore, initialSection: .models,
-                localModelManager: localModelManager ?? LocalModelManager(),
-                notificationService: notificationService, modelLibrary: viewModel.modelLibrary
-            )
         }
         if resume { viewModel.resumeDeferredSetup() }
 
@@ -99,12 +94,16 @@ final class OnboardingWindowController: NSObject {
 
         // Remove delegate before closing to avoid re-entrant delegate calls
         if let window {
+            if let sheet = window.attachedSheet {
+                window.endSheet(sheet, returnCode: .cancel)
+                sheet.close()
+            }
             DockVisibilityController.shared.windowDidHide(window)
         }
+        closeConfirmation = nil
         window?.delegate = nil
         window?.close()
         window = nil
-        viewModel?.languageTestTask?.cancel()
         viewModel?.cloudModel.endSession()
         viewModel = nil
 
@@ -113,6 +112,25 @@ final class OnboardingWindowController: NSObject {
 }
 
 extension OnboardingWindowController: NSWindowDelegate {
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        guard sender === window, onCompleteHandler != nil else { return true }
+        guard closeConfirmation == nil else { return false }
+        let alert = NSAlert()
+        alert.messageText = OnboardingStrings.text("close.title")
+        alert.informativeText = OnboardingStrings.text("close.message")
+        alert.addButton(withTitle: OnboardingStrings.text("close.continue"))
+        alert.addButton(withTitle: OnboardingStrings.text("close.quit"))
+        closeConfirmation = alert
+        alert.beginSheetModal(for: sender) { [weak self, weak sender] response in
+            guard let self, let sender, self.window === sender else { return }
+            self.closeConfirmation = nil
+            guard response == .alertSecondButtonReturn else { return }
+            self.viewModel?.skipWithoutAnimation()
+            self.handleComplete()
+        }
+        return false
+    }
+
     func windowWillClose(_: Notification) {
         // User closed the window manually without completing onboarding
         // Mark it complete so it doesn't show again, then call the handler

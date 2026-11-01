@@ -172,7 +172,9 @@ struct OnboardingTryPage: View {
             .buttonStyle(.plain)
         }
     }
+}
 
+extension OnboardingTryPage {
     private var voiceArea: some View {
         VStack(spacing: 18) {
             instructionView(
@@ -188,30 +190,8 @@ struct OnboardingTryPage: View {
                     .scrollContentBackground(.hidden)
                     .focused($voiceFocused)
                     .onAppear { voiceFocused = true }
-                    .onChange(of: viewModel.voicePracticeText) { _ in model.clearSimulation() }
-                    .opacity(model.isSimulating || !model.simulatedText.isEmpty ? 0 : 1)
 
-                if model.isSimulating {
-                    HStack(spacing: 2) {
-                        ForEach(0..<5) { index in
-                            Capsule()
-                                .fill(Color.accentColor)
-                                .frame(width: 2.5, height: [6.0, 10, 14, 10, 6][index])
-                        }
-                    }
-                    .frame(height: 14)
-                    .padding(.top, 4)
-                } else if !model.simulatedText.isEmpty {
-                    Text(model.simulatedText)
-                        .font(.system(size: 13))
-                        .padding(.top, 4).padding(.leading, 5)
-                        .onTapGesture {
-                            model.clearSimulation()
-                            voiceFocused = true
-                        }
-                }
-
-                if viewModel.voicePracticeText.isEmpty, model.simulatedText.isEmpty, !model.isSimulating {
+                if viewModel.voicePracticeText.isEmpty {
                     HStack(spacing: 2) {
                         Text(OnboardingStrings.text("voice.placeholder", table: "OnboardingTry"))
                             .font(.system(size: 13))
@@ -238,33 +218,6 @@ struct OnboardingTryPage: View {
                     .stroke(Color.primary.opacity(0.08), lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.22 : 0.08), radius: 14, y: 8)
-
-            Button(action: {}) {
-                HStack(spacing: 6) {
-                    Image(systemName: "mic")
-                        .font(.system(size: 12))
-                    Text(OnboardingStrings.text("voice.simulate", table: "OnboardingTry"))
-                        .font(.system(size: 12, weight: .semibold))
-                }
-                .padding(.horizontal, 13)
-                .frame(height: 30)
-                .background(Color.primary.opacity(0.06), in: Capsule())
-                .overlay(Capsule().stroke(Color.primary.opacity(0.12), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        if !model.isSimulating {
-                            model.beginSimulation()
-                        }
-                    }
-                    .onEnded { _ in
-                        model.endSimulation(
-                            sampleText: OnboardingStrings.text("voice.sampleText", table: "OnboardingTry")
-                        )
-                    }
-            )
         }
     }
 
@@ -354,8 +307,8 @@ struct OnboardingTryPage: View {
                 ]
                 ForEach(Array(sectors.enumerated()), id: \.offset) { index, title in
                     let angle = Double(index * 60 - 90) * Double.pi / 180.0
-                    let x = 66.0 * cos(angle)
-                    let y = 66.0 * sin(angle)
+                    let offsetX = 66.0 * cos(angle)
+                    let offsetY = 66.0 * sin(angle)
                     let isHighlighted = index == 2
                     Circle()
                         .fill(isHighlighted ? Color.accentColor : Color.primary
@@ -366,7 +319,7 @@ struct OnboardingTryPage: View {
                                 .font(.system(size: 11, weight: isHighlighted ? .semibold : .regular))
                                 .foregroundStyle(isHighlighted ? Color.white : Color.primary)
                         )
-                        .offset(x: x, y: y)
+                        .offset(x: offsetX, y: offsetY)
                 }
             }
             .frame(width: 186, height: 186)

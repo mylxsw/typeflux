@@ -51,7 +51,6 @@
 "action.testHoldToTalk" = "長押ししてテスト";
 "status.listening" = "聞き取り中…離して完了";
 "status.recognizing" = "認識中…";
-"status.samplePreview" = "明日午後3時にミーティング";
 "error.invalidKey" = "API Key が無効です。確認して再試行してください";
 "error.micPermissionDenied" = "テストにはマイクの権限が必要です";
 "action.openSettings" = "設定を開く";

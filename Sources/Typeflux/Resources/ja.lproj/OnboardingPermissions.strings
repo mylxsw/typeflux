@@ -33,4 +33,3 @@
 "fullDiskAccess.title" = "フルディスクアクセス";
 "fullDiskAccess.summary" = "保護されたファイルとブラウザのブックマークを検索";
 "missing" = "必須の許可があと %d 件";
-"guideOtherApp" = "Raycast";
