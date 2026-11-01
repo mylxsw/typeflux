@@ -41,7 +41,7 @@
 
 /* Ring practice */
 "ring.guideTitle" = "這樣使用圓環";
-"ring.hold" = "按住快速鍵";
+"ring.hold" = "按住";
 "ring.move" = "移向要用的動作";
 "ring.release" = "放開快速鍵執行";
 "ring.practiceHint" = "在這裡點選扇區練習，不會執行實際操作。";

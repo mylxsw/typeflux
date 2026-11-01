@@ -41,7 +41,7 @@
 
 /* Ring practice */
 "ring.guideTitle" = "Use the ring";
-"ring.hold" = "Hold the shortcut";
+"ring.hold" = "Hold";
 "ring.move" = "Move toward an action";
 "ring.release" = "Release to run";
 "ring.practiceHint" = "Click a slice here to practice. No action will run.";

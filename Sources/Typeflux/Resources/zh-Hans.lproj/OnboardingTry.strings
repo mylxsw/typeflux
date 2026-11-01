@@ -41,7 +41,7 @@
 
 /* Ring practice */
 "ring.guideTitle" = "这样使用圆环";
-"ring.hold" = "按住快捷键";
+"ring.hold" = "按住";
 "ring.move" = "移向想用的动作";
 "ring.release" = "松开快捷键执行";
 "ring.practiceHint" = "在这里点击扇区练习，不会执行实际操作。";

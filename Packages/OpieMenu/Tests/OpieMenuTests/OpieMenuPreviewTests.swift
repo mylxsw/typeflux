@@ -48,6 +48,29 @@ final class OpieMenuPreviewTests: XCTestCase {
     }
 
     @MainActor
+    func testSmallerPreviewKeepsPointerSelectionAndMaterialAligned() throws {
+        _ = NSApplication.shared
+        let preview = OpieMenuPreviewView(items: [.init(id: "top", title: "Top", icon: .systemSymbol("star")),
+                                                  .init(id: "bottom", title: "Bottom", icon: .systemSymbol("heart"))],
+                                          centerTitle: "Ring", style: .frosted, scale: 0.8)
+        defer { preview.stop() }
+        var selected: String?
+        preview.onSelect = { selected = $0.id }
+        let menu = preview.radialMenu
+        let visiblePoint = NSPoint(x: preview.bounds.midX, y: preview.bounds.midY + 80)
+        let localPoint = menu.convert(visiblePoint, from: preview)
+        menu.beginPointerPress(at: localPoint)
+        menu.releasePointerPress(at: localPoint)
+        XCTAssertEqual(selected, "top")
+        XCTAssertEqual(preview.frame.size, NSSize(width: 368, height: 320))
+        let surface = try XCTUnwrap(preview.subviews.first as? RadialMenuSurface)
+        let visibleCenter = surface.convert(NSPoint(x: surface.glassMaskBounds.midX,
+                                                     y: surface.glassMaskBounds.midY), to: preview)
+        XCTAssertEqual(visibleCenter.x, preview.bounds.midX, accuracy: 1)
+        XCTAssertEqual(visibleCenter.y, preview.bounds.midY, accuracy: 1)
+    }
+
+    @MainActor
     func testResizingKeepsTheMaterialAlignedWithTheRing() throws {
         _ = NSApplication.shared
         let preview = OpieMenuPreviewView(items: [], centerTitle: "Ring", style: .frosted)

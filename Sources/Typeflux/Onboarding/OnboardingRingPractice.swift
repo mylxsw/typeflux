@@ -13,12 +13,13 @@ struct OnboardingRingPractice: View {
     }
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 16) {
             OnboardingNativeRingPreview(configuration: model.ringConfiguration,
-                                  onHover: { id in
-                                      pointedTitle = model.ringConfiguration.actions.first { $0.id.uuidString == id }?
-                                          .title
-                                  }, onSelect: select)
+                                        onHover: { id in
+                                            pointedTitle = model.ringConfiguration.actions
+                                                .first { $0.id.uuidString == id }?
+                                                .title
+                                        }, onSelect: select)
                 .accessibilityRepresentation {
                     VStack {
                         ForEach(model.ringConfiguration.actions) { action in
@@ -26,10 +27,10 @@ struct OnboardingRingPractice: View {
                         }
                     }
                 }
-                .frame(width: 460, height: 400)
+                .frame(width: 368, height: 320)
             VStack(alignment: .leading, spacing: 16) {
                 Text(text("ring.guideTitle")).font(.system(size: 13, weight: .semibold))
-                VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
                     step("1", text("ring.hold"))
                     let keys = model.shortcutKeys(for: .ring)
                     if keys.isEmpty {
@@ -57,7 +58,7 @@ struct OnboardingRingPractice: View {
                 }
                 .buttonStyle(.plain)
             }
-            .frame(width: 112, alignment: .leading)
+            .frame(width: 196, alignment: .leading)
         }
     }
 
@@ -67,7 +68,8 @@ struct OnboardingRingPractice: View {
                 .frame(width: 17, height: 17)
                 .background(Color.primary.opacity(0.07), in: Circle())
             Text(title).font(.system(size: 12, weight: .medium))
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(1)
+                .minimumScaleFactor(0.9)
         }
     }
 
@@ -93,7 +95,7 @@ private struct OnboardingNativeRingPreview: NSViewRepresentable {
 
     func makeNSView(context: Context) -> OpieMenuPreviewView {
         let view = OpieMenuPreviewView(items: items, centerTitle: centerTitle,
-                                       style: OpieRingMenu.style(configuration.style))
+                                       style: OpieRingMenu.style(configuration.style), scale: 0.8)
         view.setAccessibilityIdentifier("onboarding.try.ring.preview")
         context.coordinator.configuration = configuration
         return view

@@ -331,6 +331,7 @@ struct OnboardingTryTests {
 
     @Test func `ring practice renders saved actions and pointer selection stays in onboarding`() async throws {
         try await UI.withFixture { settings in
+            settings.actionHotkeys[.ring] = RingConfiguration.defaultHotkey
             var action = RingAction.feature(.translate)
             action.title = "Practice translation"
             let configuration = RingConfiguration(actions: [action, .feature(.clipboard)], style: .classic,

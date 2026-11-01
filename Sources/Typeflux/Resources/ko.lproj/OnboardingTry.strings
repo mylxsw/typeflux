@@ -41,7 +41,7 @@
 
 /* Ring practice */
 "ring.guideTitle" = "링 사용 방법";
-"ring.hold" = "단축키를 길게 누르기";
+"ring.hold" = "길게 누르기";
 "ring.move" = "원하는 동작으로 이동";
 "ring.release" = "키를 놓아 실행";
 "ring.practiceHint" = "여기서 영역을 클릭해 연습하세요. 실제 동작은 실행되지 않습니다.";
