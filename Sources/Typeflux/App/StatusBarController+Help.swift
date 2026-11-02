@@ -9,6 +9,7 @@ extension StatusBarController {
         case .workflows: showLauncherSettings(.workflows)
         case .vocabulary: showSettings(section: .vocabulary)
         case .models: showSettings(section: .models)
+        case .ring: showSettings(section: .ring)
         }
     }
 }

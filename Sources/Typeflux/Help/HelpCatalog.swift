@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 /// The four pages of the usage guide.
 enum HelpPage: String, CaseIterable, Identifiable, Sendable {
@@ -32,6 +32,18 @@ enum HelpKeywordGroup: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
     var title: String { L("help.group.\(rawValue)") }
+
+    /// Marks the group's keywords across the guide, in the welcome screen's colors.
+    var tint: Color {
+        switch self {
+        case .text: HelpCoreAction.launcher.tint
+        case .search: OnboardingWelcomeHero.Scene.tools.tint
+        case .capture: HelpCoreAction.voice.tint
+        case .tools: HelpCoreAction.chat.tint
+        case .mine: HelpCoreAction.ring.tint
+        case .system: StudioTheme.textTertiary
+        }
+    }
 
     /// A keyword the user made (or a workflow) is theirs whatever plugin it uses.
     static func of(pluginID: String, isBuiltIn: Bool) -> HelpKeywordGroup {
@@ -138,6 +150,35 @@ struct HelpCommand: Identifiable, Equatable, Sendable {
     var id: String { name }
 }
 
+/// What the shortcuts page shows beside its list of windows.
+enum HelpShortcutContext: Hashable, Sendable {
+    case section(HelpShortcutSection)
+    case commands
+
+    /// Keys for typing and talking to the AI, listed before the tools' own windows.
+    static let conversation: [HelpShortcutContext] = [
+        .section(.launcher), .section(.result), .section(.chat), .commands, .section(.files)
+    ]
+
+    /// Every other window, in the order of the sections.
+    static let tools: [HelpShortcutContext] = HelpShortcutSection.allCases
+        .filter { ![.global, .keyword, .launcher, .result, .chat, .files].contains($0) }
+        .map(HelpShortcutContext.section)
+
+    var title: String {
+        switch self {
+        case let .section(section): section.title
+        case .commands: L("help.shortcuts.commands.short")
+        }
+    }
+
+    /// The window a shortcut belongs to; global and keyword shortcuts have their own cards.
+    init?(_ section: HelpShortcutSection) {
+        guard section != .global, section != .keyword else { return nil }
+        self = .section(section)
+    }
+}
+
 /// A settings page the guide links to.
 enum HelpSettingsDestination: Equatable, Sendable, Codable {
     case shortcuts
@@ -145,17 +186,50 @@ enum HelpSettingsDestination: Equatable, Sendable, Codable {
     case workflows
     case vocabulary
     case models
+    case ring
+}
+
+/// What a question on the FAQ page is about.
+enum HelpQuestionTopic: String, CaseIterable, Identifiable, Sendable {
+    case voice
+    case launcher
+    case keys
+    case privacy
+
+    var id: String { rawValue }
+    var title: String { L("help.faq.topic.\(rawValue)") }
+
+    var symbol: String {
+        switch self {
+        case .voice: "mic"
+        case .launcher: "magnifyingglass"
+        case .keys: "keyboard"
+        case .privacy: "lock"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .voice: HelpCoreAction.voice.tint
+        case .launcher: HelpCoreAction.launcher.tint
+        case .keys: HelpCoreAction.ring.tint
+        case .privacy: OnboardingWelcomeHero.Scene.tools.tint
+        }
+    }
 }
 
 /// A question on the FAQ page, with where to fix the problem it describes.
 struct HelpQuestion: Identifiable, Equatable, Sendable {
     var id: String
+    var topic: HelpQuestionTopic
     /// A missing permission that makes this question likely.
     var permission: PrivacyGuard.PermissionID?
     var destination: HelpSettingsDestination?
 
     var question: String { L("help.faq.\(id).q") }
     var answer: String { L("help.faq.\(id).a") }
+    /// The answer one step at a time; each step is a line of the localized text.
+    var steps: [String] { answer.split(separator: "\n").map(String.init) }
 }
 
 /// A permission's state on the FAQ page.
@@ -175,6 +249,17 @@ struct HelpCatalog: Equatable, Sendable {
     /// Keys of voice input and of the launcher (which is also Ask), for the start page.
     var voiceKeys: [String]?
     var launcherKeys: [String]?
+    var ringKeys: [String]?
+
+    /// The keys that start a core action. Asking is always ⌘↩ inside the launcher.
+    func keys(for action: HelpCoreAction) -> [String]? {
+        switch action {
+        case .voice: voiceKeys
+        case .launcher: launcherKeys
+        case .ring: ringKeys
+        case .chat: ["⌘", "↩"]
+        }
+    }
 
     func keywords(in group: HelpKeywordGroup) -> [HelpKeyword] {
         keywords.filter { $0.group == group }
@@ -252,7 +337,8 @@ extension HelpCatalog {
             shortcuts: globalShortcuts(input) + keywordShortcuts(input, keywords: keywords) + fixedShortcuts,
             commands: commands,
             voiceKeys: input.builtInHotkeys[.activation].map(HelpKeys.keys),
-            launcherKeys: input.builtInHotkeys[.ask].map(HelpKeys.keys)
+            launcherKeys: input.builtInHotkeys[.ask].map(HelpKeys.keys),
+            ringKeys: input.actionHotkeys[.ring].map(HelpKeys.keys)
         )
     }
 
@@ -359,14 +445,14 @@ extension HelpCatalog {
     }
 
     static let questions: [HelpQuestion] = [
-        HelpQuestion(id: "voiceNoResponse", permission: .accessibility, destination: .shortcuts),
-        HelpQuestion(id: "textNotInserted", permission: .accessibility, destination: nil),
-        HelpQuestion(id: "microphone", permission: .microphone, destination: nil),
-        HelpQuestion(id: "accuracy", destination: .vocabulary),
-        HelpQuestion(id: "keywordNoResponse", destination: .keywords),
-        HelpQuestion(id: "customKeyword", destination: .keywords),
-        HelpQuestion(id: "shortcutConflict", destination: .shortcuts),
-        HelpQuestion(id: "privacy", destination: .models)
+        HelpQuestion(id: "voiceNoResponse", topic: .voice, permission: .accessibility, destination: .shortcuts),
+        HelpQuestion(id: "textNotInserted", topic: .voice, permission: .accessibility, destination: nil),
+        HelpQuestion(id: "microphone", topic: .voice, permission: .microphone, destination: nil),
+        HelpQuestion(id: "accuracy", topic: .voice, destination: .vocabulary),
+        HelpQuestion(id: "keywordNoResponse", topic: .launcher, destination: .keywords),
+        HelpQuestion(id: "customKeyword", topic: .launcher, destination: .keywords),
+        HelpQuestion(id: "shortcutConflict", topic: .keys, destination: .shortcuts),
+        HelpQuestion(id: "privacy", topic: .privacy, destination: .models)
     ]
 }
 

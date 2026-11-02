@@ -25,7 +25,10 @@ struct HelpWindowView: View {
         }
         .frame(minWidth: Self.minimumSize.width, minHeight: Self.minimumSize.height)
         .foregroundStyle(StudioTheme.textPrimary)
-        // One surface for the whole window, as in the notebook and conversation windows.
+        // One surface for the whole window, as in the notebook and conversation windows, with
+        // the welcome screen's glow in the corner.
+        .background(RadialGradient(colors: [AskTheme.accent.opacity(0.13), .clear], center: .topTrailing,
+                                   startRadius: 0, endRadius: 460))
         .background(AskWindowBackdrop())
         .ignoresSafeArea(.container, edges: .top)
         .tint(AskTheme.accent)
@@ -98,6 +101,7 @@ struct HelpSidebar: View {
             ForEach(HelpPage.allCases) { page in
                 navRow(page)
             }
+            HelpProgressCard(model: model).padding(.top, 14)
             Spacer(minLength: 0)
             supportFooter
         }
@@ -213,6 +217,71 @@ struct HelpSidebar: View {
         .foregroundStyle(StudioTheme.textSecondary)
         .frame(width: (HelpWindowView.sidebarWidth - 28) / 2, height: 32)
         .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+/// How many core actions the user has found, and which to try next.
+struct HelpProgressCard: View {
+    @ObservedObject var model: HelpGuideModel
+    @Environment(\.interfaceStyle) private var style
+
+    var body: some View {
+        let learned = model.learnedActionCount
+        let total = HelpCoreAction.allCases.count
+        let shape = RoundedRectangle(cornerRadius: style.help.blockCorner, style: .continuous)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle().stroke(AskTheme.hoverFill, lineWidth: 4)
+                    Circle().trim(from: 0, to: CGFloat(learned) / CGFloat(total))
+                        .stroke(StudioTheme.success, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    Text("\(learned)/\(total)").font(.system(size: 10.5, weight: .semibold)).monospacedDigit()
+                }
+                .frame(width: 38, height: 38)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.system(size: 12.5, weight: .semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(L(learned == total ? "help.progress.detail.done" : "help.progress.detail"))
+                        .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            HStack(spacing: 4) {
+                ForEach(HelpCoreAction.allCases) { action in
+                    Capsule().fill(model.usageCount(action) > 0 ? action.tint : AskTheme.hoverFill).frame(height: 4)
+                }
+            }
+            if let next = model.nextAction {
+                Button { model.showAction(next) } label: {
+                    HStack(spacing: 5) {
+                        Text(L("help.progress.next")).foregroundStyle(StudioTheme.textSecondary)
+                        Text(next.verb).fontWeight(.semibold).foregroundStyle(next.tint)
+                        Text(next.name).foregroundStyle(StudioTheme.textSecondary)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                        Spacer(minLength: 0)
+                        Image(systemName: "arrow.right").font(.system(size: 10))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                    }
+                    .font(.system(size: 12))
+                    .padding(.horizontal, 10)
+                    .frame(height: 30)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AskTheme.hoverFill))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(12)
+        .background(shape.fill(HelpTheme.blockFill(style)))
+        .overlay(shape.strokeBorder(HelpTheme.blockBorder(style)))
+    }
+
+    private var title: String {
+        let learned = model.learnedActionCount
+        if learned == 0 { return L("help.progress.title.start") }
+        return learned == HelpCoreAction.allCases.count ? L("help.progress.title.done")
+            : L("help.progress.title.some", learned)
     }
 }
 

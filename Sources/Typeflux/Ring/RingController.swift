@@ -177,6 +177,7 @@ final class RingController {
     private func select(_ id: String) {
         guard let action = displayedActions.first(where: { $0.id.uuidString == id }) else { return }
         let previous = previousApplication
+        HelpCoreActionUsageStore.shared.record(.ring)
         Task { await executor.perform(action, previousApplication: previous) }
     }
 

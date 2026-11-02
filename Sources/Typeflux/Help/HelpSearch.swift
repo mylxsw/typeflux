@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 /// What a search on the guide found, grouped the way the results list shows them.
 struct HelpSearchResults: Equatable {
@@ -32,6 +32,17 @@ enum HelpSearch {
             commands: keys == nil ? catalog.commands.filter { matches([$0.name, $0.title]) } : [],
             questions: keys == nil ? catalog.questions.filter { matches([$0.question, $0.answer]) } : []
         )
+    }
+
+    /// `text` with the first match of `query` marked, for the results list. Keys like "cmd k"
+    /// and queries found only elsewhere (in an answer, say) mark nothing.
+    static func highlighted(_ text: String, matching query: String?) -> AttributedString {
+        var result = AttributedString(text)
+        guard let needle = query?.trimmingCharacters(in: .whitespacesAndNewlines), !needle.isEmpty,
+              let found = result.range(of: needle, options: [.caseInsensitive, .diacriticInsensitive])
+        else { return result }
+        result[found].backgroundColor = StudioTheme.warning.opacity(0.32)
+        return result
     }
 
     /// Lowercased with runs of spaces made one, so "Google  搜索" finds "google 搜索". Spaces are

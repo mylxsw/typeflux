@@ -81,8 +81,10 @@ struct OnboardingRingPractice: View {
     }
 }
 
-private struct OnboardingNativeRingPreview: NSViewRepresentable {
+/// The live ring renderer with saved actions; the guide practices on it too.
+struct OnboardingNativeRingPreview: NSViewRepresentable {
     let configuration: RingConfiguration
+    var scale: CGFloat = 0.8
     let onHover: (String) -> Void
     let onSelect: (String) -> Void
 
@@ -96,7 +98,7 @@ private struct OnboardingNativeRingPreview: NSViewRepresentable {
 
     func makeNSView(context: Context) -> OpieMenuPreviewView {
         let view = OpieMenuPreviewView(items: items, centerTitle: centerTitle,
-                                       style: OpieRingMenu.style(configuration.style), scale: 0.8)
+                                       style: OpieRingMenu.style(configuration.style), scale: scale)
         view.setAccessibilityIdentifier("onboarding.try.ring.preview")
         context.coordinator.configuration = configuration
         return view
