@@ -9,6 +9,34 @@ enum AskImageCapability: Equatable {
     /// A screenshot can be attached: the model reads images, or it is the user's own and gets a try.
     var canAttach: Bool { self == .supported || self == .untested }
 
+    /// Keep text observations and app actions available; only image-producing observations need vision.
+    func observationTools(_ tools: [AskToolDefinition]) -> [AskToolDefinition] {
+        guard !canAttach else { return tools }
+        return tools.compactMap { tool in
+            guard ["computer", "web_browser"].contains(tool.name),
+                  var schema = (try? JSONSerialization.jsonObject(with: tool.parameters.data)) as? [String: Any],
+                  var properties = schema["properties"] as? [String: Any],
+                  var action = properties["action"] as? [String: Any],
+                  let actions = action["enum"] as? [String], actions.contains("screenshot") else { return tool }
+            let remaining = actions.filter { $0 != "screenshot" }
+            guard !remaining.isEmpty else { return nil }
+            action["enum"] = remaining
+            properties["action"] = action
+            schema["properties"] = properties
+            guard let data = try? JSONSerialization.data(withJSONObject: schema, options: [.sortedKeys]) else { return nil }
+            var result = tool
+            result.parameters = JSONValue(data: data)
+            result.description += " Screenshot is unavailable for this model. Use text observations when relevant."
+            return result
+        }
+    }
+
+    /// Also guard stale/retried declarations and a model inventing an unavailable action.
+    func refusesObservation(_ call: AskToolCall) -> Bool {
+        !canAttach && ["computer", "web_browser"].contains(call.function.name)
+            && (try? AskLocalTools.jsonArguments(call.function.arguments)["action"] as? String) == "screenshot"
+    }
+
     var hint: String? {
         switch self {
         case .supported: return nil

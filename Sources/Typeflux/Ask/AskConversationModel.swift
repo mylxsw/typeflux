@@ -1691,7 +1691,7 @@ final class AskConversationModel: ObservableObject {
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     var request = AskSendRequest(clientToolApproval: true, id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
-                                                 tools: value.resolvedKind.offered(await tools.definitions(conversationId: id)), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
+                                                 tools: modelLibrary.imageCapability(value.modelRef ?? "cloud:default").observationTools(value.resolvedKind.offered(await tools.definitions(conversationId: id))), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
                                                  attachments: message.attachments)
                     request.executionMode = modelLibrary.settings.askAgentExecutionMode
                     request.maxSteps = modelLibrary.settings.askAgentRequestedMaxSteps
@@ -1793,8 +1793,8 @@ final class AskConversationModel: ObservableObject {
             defer { monitor.cancel() }
             do {
                 try checkOperation(id, operationId: operationId, account: current.account)
-                let definitions = AskSkillCatalog.applying(value.messages.last(where: { $0.role == "user" })?.skillCatalog,
-                    to: value.resolvedKind.offered(await tools.definitions(conversationId: id)))
+                let definitions = modelLibrary.imageCapability(modelRef).observationTools(AskSkillCatalog.applying(value.messages.last(where: { $0.role == "user" })?.skillCatalog,
+                    to: value.resolvedKind.offered(await tools.definitions(conversationId: id))))
                 try await validateModel(
                     modelRef, token: current.token,
                     hasImage: value.messages.contains(where: { $0.hasImage })
@@ -2071,6 +2071,14 @@ final class AskConversationModel: ObservableObject {
             if result == nil {
                 if !AskSkillCatalog.permits(call, catalog: value.messages.last(where: { $0.role == "user" })?.skillCatalog) {
                     let failure = AskToolPreparationFailure(AskLocalError.message(L("ask.skills.missing")))
+                    guard let rejected = try await rejectToolPreparation(failure, call: call, value: value,
+                                                                         identity: identity, current: current) else { return }
+                    value = try await deliverToolResult(rejected, identity: identity, current: current, operationId: operationId)
+                    continue
+                }
+                if modelLibrary.imageCapability(run.modelRef ?? value.modelRef ?? "cloud:default").refusesObservation(call) {
+                    let failure = AskToolPreparationFailure(AskLocalError.message(
+                        "MODEL_IMAGE_UNSUPPORTED: Screenshot was not captured. This model cannot read images. Answer from the supplied text, or use a relevant text observation only if the request needs app contents."))
                     guard let rejected = try await rejectToolPreparation(failure, call: call, value: value,
                                                                          identity: identity, current: current) else { return }
                     value = try await deliverToolResult(rejected, identity: identity, current: current, operationId: operationId)
@@ -3023,7 +3031,8 @@ extension AskConversationModel {
                 let offered = inline ? [] : Self.offeredTools(await tools.definitions(conversationId: id),
                                                              temporary: temporaryRun, kind: value.resolvedKind)
                 let scoped = AskSkillCatalog.applying(request.skillCatalog, to: offered)
-                request.tools = inline ? [] : recoveryCheck ? Self.recoveryObservationTools(scoped) : scoped
+                request.tools = modelLibrary.imageCapability(request.modelRef ?? "cloud:default").observationTools(
+                    inline ? [] : recoveryCheck ? Self.recoveryObservationTools(scoped) : scoped)
                 try checkOperation(id, operationId: operationId, account: current.account)
                 request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
                 pendingSends[id] = request

@@ -350,7 +350,8 @@ final class AskLocalTools: AskToolExecuting {
 
     private static func builtinDefinitions(computerWrites: Bool, browserWrites: Bool) -> [AskToolDefinition] {
         [definition("computer", description: computerWrites ? """
-        Observe or control the user's desktop after approval, one action per call. Start with screenshot or inspect \
+        Use only for requests that depend on the desktop or require app interaction, never for ordinary questions. \
+        Observe or control the user's desktop after approval, one action per call. Prefer inspect for text; use screenshot only for necessary visual evidence \
         (inspect lists the target app's accessibility elements with click coordinates). Every write requires a fresh \
         observation_id from this conversation; observe again after every action or needs-observation error. Coordinates \
         are fractions (0...1) of the observed display and must fall inside the observed window. Actions: click, double_click, right_click, drag (x,y to to_x,to_y), type, \
@@ -358,7 +359,8 @@ final class AskLocalTools: AskToolExecuting {
         (e.g. "cmd+c", "cmd+shift+t"), scroll (requires x,y and amount), wait (seconds up to 5). Event dispatch does \
         not prove the business effect.
         """ : """
-        Observe the user's desktop after approval, one action per call. screenshot captures the screen; inspect lists \
+        Use only when the request needs desktop contents; source app metadata alone is not a reason. \
+        Observe the user's desktop after approval, one action per call. Prefer inspect for text; screenshot is for necessary visual evidence. inspect lists \
         the target app's accessibility elements; wait pauses for up to 5 seconds. Only observation is available. \
         Desktop control is unavailable; do not request click, typing, keyboard, drag or scroll actions.
         """, properties: [
@@ -372,12 +374,14 @@ final class AskLocalTools: AskToolExecuting {
             "amount": ["type": "integer", "minimum": -10, "maximum": 10], "seconds": ["type": "number", "minimum": 0, "maximum": 5]
         ]),
         definition("browser", description: browserWrites ? """
+        Use only when the request depends on the front tab or requires interacting with it; being launched from a browser is not a reason. \
         Read or interact with the front Safari or Chrome tab after approval, one action per call. read returns URL, \
         visible text and links; snapshot lists interactive elements with versioned string refs. Every write requires \
         observation_id from the latest read/snapshot in this conversation. click/fill take an observed ref (or an \
         observed CSS selector); open navigates to an http(s) URL; back goes back; scroll moves by screens. Observe \
         again after every action or needs-observation error. Event dispatch does not prove the business effect.
         """ : """
+        Use only when the request depends on the front tab; being launched from a browser is not a reason. \
         Read the front Safari or Chrome tab after approval, one action per call. read returns URL, visible text and \
         links; snapshot lists interactive elements with versioned string refs. Only observation is available. \
         Browser interaction is unavailable; do not request navigation, click, fill, back or scroll actions.

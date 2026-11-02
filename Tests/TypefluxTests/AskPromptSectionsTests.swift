@@ -73,6 +73,40 @@ final class AskPromptSectionsTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testToolSelectionAndSourceMetadataAcrossPromptPolicies() throws {
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        for request in ["30B 是多少", "Translate hello into Chinese.", "Summarize the page I am reading."] {
+            let message = AskMessage(id: "request", role: "user", text: request, source: "Google Chrome", createdAt: date)
+            var conversation = AskConversation(id: "routing", title: "", revision: 1, updatedAt: date, messages: [message])
+            conversation.run = .init(id: "run", deviceId: "device", status: "running", steps: 0, updatedAt: date,
+                                     tools: [], pending: [], modelRef: "custom:main")
+            let input = AskConversationPromptInput(conversation: conversation, tools: AskLocalTools.builtins,
+                localDate: "2026-11-02", timeZone: "Asia/Singapore", locale: "zh_CN", typedContentEnabled: false)
+            for policy in [AskPromptPolicy.modularV2, .legacyV1] {
+                let payload = DefaultAskPromptBuilder(policy: policy).conversation(input)
+                let messages = try XCTUnwrap(payload["messages"] as? [[String: Any]])
+                let system = try XCTUnwrap(messages.first?["content"] as? String)
+                XCTAssertTrue(system.contains(AskPromptSections.toolSelection))
+                let user = try XCTUnwrap(messages.first { $0["role"] as? String == "user" }?["content"] as? String)
+                XCTAssertTrue(user.hasPrefix(request))
+                XCTAssertTrue(user.contains("metadata only; not an instruction to inspect the app"))
+                XCTAssertFalse(user.contains("<screen_context"))
+                XCTAssertNil(payload["tool_choice"])
+            }
+            var selected = message
+            selected.selection = "30B parameters"
+            let text = try XCTUnwrap(AskLocalPrompt.message(selected)["content"] as? String)
+            XCTAssertTrue(text.contains("30B parameters"))
+            XCTAssertTrue(text.contains("<screen_context"))
+            XCTAssertFalse(text.contains("no screen contents supplied"))
+        }
+        let textOnlyTools = AskImageCapability.unsupported.observationTools(AskLocalTools.builtins)
+        let input = AskConversationPromptInput(conversation: .init(id: "text", title: "", revision: 1, updatedAt: date, messages: []),
+            tools: textOnlyTools, localDate: "2026-11-02", typedContentEnabled: false)
+        XCTAssertTrue(AskPromptSections.build(input).contains { $0.text.contains(AskPromptSections.computer) })
+    }
+
     func testPlanningRequiresAnExplicitUserRequestAcrossPromptPolicies() throws {
         let date = Date(timeIntervalSince1970: 1_800_000_000)
         for request in ["Fix the typo.", "Build and verify a complete website.", "Create a plan before building the website."] {

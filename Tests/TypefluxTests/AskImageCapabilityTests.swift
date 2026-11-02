@@ -7,6 +7,69 @@ import Testing
 struct AskImageCapabilityTests {
     static let image = "data:image/jpeg;base64,YQ=="
 
+    @Test func observationToolsAndDispatchRespectImageCapability() throws {
+        let browser = AskToolDefinition(name: "web_browser", description: "Browser", parameters: JSONValue(data:
+            Data(#"{"type":"object","properties":{"action":{"type":"string","enum":["read","screenshot","open"]}},"required":["action"]}"#.utf8)))
+        let screenshotOnly = AskToolDefinition(name: "web_browser", description: "Capture", parameters: JSONValue(data:
+            Data(#"{"properties":{"action":{"enum":["screenshot"]}}}"#.utf8)))
+        let original = AskLocalTools.builtins + [browser]
+        for capability in [AskImageCapability.supported, .untested, .unsupported, .unknown, .unavailable] {
+            let filtered = capability.observationTools(original)
+            for tool in filtered where ["computer", "web_browser"].contains(tool.name) {
+                let schema = try #require(JSONSerialization.jsonObject(with: tool.parameters.data) as? [String: Any])
+                let properties = try #require(schema["properties"] as? [String: Any])
+                let action = try #require(properties["action"] as? [String: Any])
+                let actions = try #require(action["enum"] as? [String])
+                #expect(actions.contains("screenshot") == capability.canAttach)
+                #expect(actions.contains(tool.name == "computer" ? "inspect" : "read"))
+                #expect(schema["required"] as? [String] == ["action"])
+                for name in ["computer", "web_browser", "browser", "files"] {
+                    let call = AskToolCall(id: "capture", function: .init(name: name, arguments: #"{"action":"screenshot"}"#))
+                    #expect(capability.refusesObservation(call) == (!capability.canAttach && ["computer", "web_browser"].contains(name)))
+                }
+                let text = AskToolCall(id: "inspect", function: .init(name: tool.name, arguments: #"{"action":"inspect"}"#))
+                #expect(!capability.refusesObservation(text))
+                let malformed = AskToolCall(id: "bad", function: .init(name: tool.name, arguments: "{"))
+                #expect(!capability.refusesObservation(malformed))
+            }
+            #expect(capability.observationTools([screenshotOnly]).isEmpty == !capability.canAttach)
+            if capability.canAttach { #expect(filtered == original) }
+            #expect(filtered.first { $0.name == "browser" } == original.first { $0.name == "browser" })
+        }
+        let computer = try #require(AskLocalTools.builtins.first { $0.name == "computer" })
+        #expect(computer.description.contains("source app metadata alone is not a reason"))
+        let frontTab = try #require(AskLocalTools.builtins.first { $0.name == "browser" })
+        #expect(frontTab.description.contains("being launched from a browser is not a reason"))
+    }
+
+    @Test(arguments: [true, false])
+    func screenshotDispatchChecksTheRunModelBeforeApproval(vision: Bool) async throws {
+        let f = try await fixture()
+        defer { f.model.resetSession() }
+        f.model.selectModel(vision ? "cloud:vision" : "cloud:text", launcher: true)
+        f.model.setPermissionMode(.strict, launcher: true)
+        let call = AskToolCall(id: "capture", function: .init(name: "computer", arguments: #"{"action":"screenshot"}"#))
+        await f.api.setTool(call)
+        f.model.launcherDraft.text = "30B 是多少"
+        f.model.submitLauncher()
+        if vision {
+            try await f.wait { !f.model.pendingApprovals.isEmpty }
+            let id = try #require(f.model.selectedId)
+            f.model.approve(conversationId: id, allowed: true)
+        }
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.tools.executions == (vision ? 1 : 0))
+        let receipt = try #require(await f.api.results.first)
+        #expect(receipt.isError == !vision)
+        if !vision {
+            #expect(receipt.content.contains("MODEL_IMAGE_UNSUPPORTED"))
+            #expect(receipt.harness?.outcome?.eventDispatched == false)
+            #expect(f.model.imageRecoveryTarget == nil)
+        }
+        #expect(f.model.selected?.run?.status == "completed")
+        #expect(f.model.pendingApprovals.isEmpty)
+    }
+
     @Test func screenshotNormalizationPreservesSelectedReferences() async throws {
         let f = try await fixture()
         defer { f.model.resetSession() }
