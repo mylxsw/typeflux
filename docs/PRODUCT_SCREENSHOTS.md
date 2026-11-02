@@ -1,6 +1,8 @@
 # Product screenshot capture
 
-The README and screenshot gallery share the 24 PNGs in `assets/product/`.
+The 24 original PNGs live in `assets/product/`. The README and screenshot
+gallery load JPEG copies from `assets/product/previews/` and link each preview
+to its full-resolution PNG.
 They are native production views rendered at Retina resolution, arranged on a
 consistent presentation background. This is an isolated UI render, not a capture
 of the developer’s desktop or a recording of live recognition.
@@ -42,3 +44,16 @@ Translation uses the production panel with three hand-authored example results;
 no translation provider is called. Chat uses the production workspace with a
 synthetic conversation and sidebar history, isolated preferences and a signed-out
 auth fixture. No personal conversation or account profile is used.
+
+## Lightweight previews
+
+After generating or replacing the original screenshots, run:
+
+```sh
+python3 scripts/generate_product_previews.py
+```
+
+The script uses macOS `sips`, preserves the PNG originals, and writes 1600-pixel-wide
+JPEG previews at quality 78. Previews keep the original aspect ratio. Review text
+readability after compression. Both READMEs and the gallery use linked images:
+`[![Description](path/to/previews/image.jpg)](path/to/image.png)`.

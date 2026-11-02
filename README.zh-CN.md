@@ -14,25 +14,27 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 </div>
 
+<sub>点击图片可查看高清原图。</sub>
+
 ## 从一个输入框开始
 
 唤出启动器，输入应用名、文件名，或直接写下问题。打开应用、切到浏览器标签页、寻找文件里的内容，无需先想“该去哪个应用”。
 
 | 亮色 | 暗色 |
 | --- | --- |
-| ![亮色启动器](assets/product/launcher-light.png) | ![暗色启动器](assets/product/launcher-dark.png) |
+| [![亮色启动器](assets/product/previews/launcher-light.jpg)](assets/product/launcher-light.png) | [![暗色启动器](assets/product/previews/launcher-dark.jpg)](assets/product/launcher-dark.png) |
 
 **顺手算一下。** 买东西算折扣、分摊费用、换算数字，输入算式就能看到结果，再一键复制。
 
 | 亮色 | 暗色 |
 | --- | --- |
-| ![在亮色启动器中计算折扣](assets/product/calculator-light.png) | ![在暗色启动器中计算折扣](assets/product/calculator-dark.png) |
+| [![在亮色启动器中计算折扣](assets/product/previews/calculator-light.jpg)](assets/product/calculator-light.png) | [![在暗色启动器中计算折扣](assets/product/previews/calculator-dark.jpg)](assets/product/calculator-dark.png) |
 
 **用关键词直达功能。** 输入 `clip` 查找剪贴板历史，`note` 记一条系统备忘录，`remind` 添加提醒事项。输入 `prefix`，还能浏览可用的关键词。常用操作也可以设成自己的关键词。
 
 | 亮色 | 暗色 |
 | --- | --- |
-| ![亮色启动器使用 clip 关键词查找灵感](assets/product/keyword-light.png) | ![暗色启动器使用 clip 关键词查找灵感](assets/product/keyword-dark.png) |
+| [![亮色启动器使用 clip 关键词查找灵感](assets/product/previews/keyword-light.jpg)](assets/product/keyword-light.png) | [![暗色启动器使用 clip 关键词查找灵感](assets/product/previews/keyword-dark.jpg)](assets/product/keyword-dark.png) |
 
 ## 说出来，文字就到光标处
 
@@ -42,9 +44,9 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 | 展示方式 | 亮色桌面 | 暗色桌面 |
 | --- | --- | --- |
-| 屏幕底部 | ![底部语音输入，亮色桌面](assets/product/voice-bottom-light.png) | ![底部语音输入，暗色桌面](assets/product/voice-bottom-dark.png) |
-| 屏幕右上角 | ![右上角语音输入，亮色桌面](assets/product/voice-corner-light.png) | ![右上角语音输入，暗色桌面](assets/product/voice-corner-dark.png) |
-| 灵动岛 | ![灵动岛语音输入，亮色桌面](assets/product/voice-island-light.png) | ![灵动岛语音输入，暗色桌面](assets/product/voice-island-dark.png) |
+| 屏幕底部 | [![底部语音输入，亮色桌面](assets/product/previews/voice-bottom-light.jpg)](assets/product/voice-bottom-light.png) | [![底部语音输入，暗色桌面](assets/product/previews/voice-bottom-dark.jpg)](assets/product/voice-bottom-dark.png) |
+| 屏幕右上角 | [![右上角语音输入，亮色桌面](assets/product/previews/voice-corner-light.jpg)](assets/product/voice-corner-light.png) | [![右上角语音输入，暗色桌面](assets/product/previews/voice-corner-dark.jpg)](assets/product/voice-corner-dark.png) |
+| 灵动岛 | [![灵动岛语音输入，亮色桌面](assets/product/previews/voice-island-light.jpg)](assets/product/voice-island-light.png) | [![灵动岛语音输入，暗色桌面](assets/product/previews/voice-island-dark.jpg)](assets/product/voice-island-dark.png) |
 
 ## 常用操作，就在鼠标旁
 
@@ -52,7 +54,7 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 | 亮色 | 暗色 |
 | --- | --- |
-| ![亮色操作圆环](assets/product/ring-light.png) | ![暗色操作圆环](assets/product/ring-dark.png) |
+| [![亮色操作圆环](assets/product/previews/ring-light.jpg)](assets/product/ring-light.png) | [![暗色操作圆环](assets/product/previews/ring-dark.jpg)](assets/product/ring-dark.png) |
 
 ## 复制过的，不用重新找
 
@@ -60,7 +62,7 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 | 亮色 | 暗色 |
 | --- | --- |
-| ![亮色剪贴板与文字预览](assets/product/clipboard-light.png) | ![暗色剪贴板与文字预览](assets/product/clipboard-dark.png) |
+| [![亮色剪贴板与文字预览](assets/product/previews/clipboard-light.jpg)](assets/product/clipboard-light.png) | [![暗色剪贴板与文字预览](assets/product/previews/clipboard-dark.jpg)](assets/product/clipboard-dark.png) |
 
 ## 截下来，说明白
 
@@ -68,7 +70,7 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 | 亮色 | 暗色 |
 | --- | --- |
-| ![亮色截图标注工具](assets/product/screenshot-light.png) | ![暗色截图标注工具](assets/product/screenshot-dark.png) |
+| [![亮色截图标注工具](assets/product/previews/screenshot-light.jpg)](assets/product/screenshot-light.png) | [![暗色截图标注工具](assets/product/previews/screenshot-dark.jpg)](assets/product/screenshot-dark.png) |
 
 ## 录一段，比解释半天更直接
 
@@ -76,7 +78,7 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 | 亮色 | 暗色 |
 | --- | --- |
-| ![亮色录屏工具](assets/product/recording-light.png) | ![暗色录屏工具](assets/product/recording-dark.png) |
+| [![亮色录屏工具](assets/product/previews/recording-light.jpg)](assets/product/recording-light.png) | [![暗色录屏工具](assets/product/previews/recording-dark.jpg)](assets/product/recording-dark.png) |
 
 ## 划一下，读懂另一种语言
 
@@ -84,7 +86,7 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 | 亮色 | 暗色 |
 | --- | --- |
-| ![亮色翻译面板，对照多种译文](assets/product/translation-light.png) | ![暗色翻译面板，对照多种译文](assets/product/translation-dark.png) |
+| [![亮色翻译面板，对照多种译文](assets/product/previews/translation-light.jpg)](assets/product/translation-light.png) | [![暗色翻译面板，对照多种译文](assets/product/previews/translation-dark.jpg)](assets/product/translation-dark.png) |
 
 ## 和 Chat 一起，把想法往前推进
 
@@ -94,7 +96,7 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 | 亮色 | 暗色 |
 | --- | --- |
-| ![亮色 Chat 工作区与示例对话](assets/product/chat-light.png) | ![暗色 Chat 工作区与示例对话](assets/product/chat-dark.png) |
+| [![亮色 Chat 工作区与示例对话](assets/product/previews/chat-light.jpg)](assets/product/chat-light.png) | [![暗色 Chat 工作区与示例对话](assets/product/previews/chat-dark.jpg)](assets/product/chat-dark.png) |
 
 ## 按自己的习惯使用
 
