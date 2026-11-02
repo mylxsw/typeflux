@@ -1,8 +1,27 @@
+import AppKit
 import Foundation
 @testable import Typeflux
 import XCTest
 
 final class LocalizationResourceTests: XCTestCase {
+    func testClipboardTabLabelsFitInEveryLanguage() throws {
+        let font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            for category in ClipboardCategory.allCases {
+                let key = "clipboard.tab.\(category.rawValue).compact"
+                let value = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(value, key, "Missing \(key) in \(language.rawValue)")
+                XCTAssertFalse(value.isEmpty)
+                XCTAssertLessThanOrEqual((value as NSString).size(withAttributes: [.font: font]).width, 64,
+                                        "Tab too wide: \(value) in \(language.rawValue)")
+            }
+            for key in ["clipboard.tab.screenshot", "clipboard.screenshot.search", "clipboard.screenshot.empty"] {
+                XCTAssertNotEqual(bundle.localizedString(forKey: key, value: nil, table: nil), key)
+            }
+        }
+    }
+
     func testQuickNoteCaptureCopyExistsInEveryLanguage() throws {
         let keys = ["title", "placeholder", "untitled", "saved", "continue", "local", "saving", "clear", "save",
                     "retry", "hint", "deleted", "destination", "choose", "characters", "newNote", "newDetail", "emptyDetail",

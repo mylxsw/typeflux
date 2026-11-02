@@ -92,6 +92,9 @@ enum ClipboardFeed {
                 guard case .voice = entry.origin else { return false }
             case .snippet:
                 guard entry.snippet != nil else { return false }
+            case .screenshot:
+                guard case .clipboard = entry.origin, entry.snippet == nil,
+                      entry.kind == .image || entry.kind == .images else { return false }
             }
             guard sourceBundleID == nil || entry.sourceBundleID == sourceBundleID else { return false }
             guard !needle.isEmpty else { return true }

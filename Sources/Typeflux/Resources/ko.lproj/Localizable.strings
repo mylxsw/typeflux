@@ -4606,6 +4606,13 @@
 "clipboard.tab.clipboard" = "클립보드";
 "clipboard.tab.transcription" = "받아쓰기";
 "clipboard.tab.snippet" = "스니펫";
+"clipboard.tab.screenshot" = "스크린샷";
+"clipboard.tab.all.compact" = "클립보드";
+"clipboard.tab.snippet.compact" = "스니펫";
+"clipboard.tab.voice.compact" = "받아쓰기";
+"clipboard.tab.screenshot.compact" = "스크린샷";
+"clipboard.screenshot.search" = "스크린샷 검색";
+"clipboard.screenshot.empty" = "스크린샷이나 이미지를 복사하면 여기에 표시됩니다.";
 "clipboard.transcription.search" = "받아쓰기 기록 검색";
 "clipboard.transcription.empty" = "받아쓰기 기록이 없습니다";
 "clipboard.action.saveSnippet" = "스니펫으로 저장…";

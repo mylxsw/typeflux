@@ -121,6 +121,26 @@ final class ClipboardFeedTests: XCTestCase {
         XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "safari").count, 1)
     }
 
+    func testScreenshotTabFiltersImagesAndKeepsSearchAndClipboardHistory() {
+        let screenshot = ClipboardTestSupport.entry(.image, imagePath: "/store/shot.png", sourceAppName: "Typeflux")
+        let images = ClipboardTestSupport.entry(.images, filePaths: ["/photos/one.png", "/photos/two.png"])
+        let text = ClipboardTestSupport.entry(.text, text: "Screenshot notes")
+        let voice = ClipboardTestSupport.entry(.voice, text: "Screenshot narration")
+        var snippet = ClipboardTestSupport.entry(.image, imagePath: "/store/snippet.png")
+        snippet.snippet = ClipboardSnippet(name: "Saved", alias: "")
+        let entries = [screenshot, images, text, voice, snippet]
+        XCTAssertEqual(ClipboardCategory.allCases, [.all, .snippet, .voice, .screenshot])
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .screenshot, query: "").map(\.id),
+                       [screenshot.id, images.id])
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .screenshot, query: " Typeflux ").map(\.id),
+                       [screenshot.id])
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .screenshot, query: "two.png").map(\.id),
+                       [images.id])
+        XCTAssertTrue(ClipboardFeed.filter(entries, category: .screenshot, query: "missing").isEmpty)
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "").map(\.id),
+                       [screenshot.id, images.id, text.id])
+    }
+
     func testSections() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "UTC")!

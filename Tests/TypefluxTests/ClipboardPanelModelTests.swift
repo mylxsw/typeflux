@@ -83,13 +83,15 @@ final class ClipboardPanelModelTests: XCTestCase {
     func testCycleCategoryWrapsBothWays() {
         model.reset(entries: entries)
         model.cycleCategory(forward: false)
-        XCTAssertEqual(model.category, .snippet)
-        model.cycleCategory(forward: true)
-        XCTAssertEqual(model.category, .all)
-        model.cycleCategory(forward: true)
-        XCTAssertEqual(model.category, .voice)
-        model.cycleCategory(forward: true)
-        XCTAssertEqual(model.category, .snippet)
+        XCTAssertEqual(model.category, .screenshot)
+        for category: ClipboardCategory in [.all, .snippet, .voice, .screenshot, .all] {
+            model.cycleCategory(forward: true)
+            XCTAssertEqual(model.category, category)
+        }
+        for category: ClipboardCategory in [.screenshot, .voice, .snippet, .all] {
+            model.cycleCategory(forward: false)
+            XCTAssertEqual(model.category, category)
+        }
     }
 
     func testReplaceEntriesKeepsTheSelectedRow() {

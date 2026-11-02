@@ -165,7 +165,7 @@ final class ClipboardSnippetTests: XCTestCase {
             "clipboard.snippet.voiceAlias",
             "my address"
         )))
-        XCTAssertEqual(ClipboardCategory.allCases, [.all, .voice, .snippet])
+        XCTAssertEqual(ClipboardCategory.allCases, [.all, .snippet, .voice, .screenshot])
     }
 
     func testExplicitVoiceCommandNormalization() {

@@ -183,6 +183,11 @@ struct ClipboardCategoryTabs: View {
                 let selected = model.category == category
                 Text(category.title)
                     .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 64)
+                    .help(category.fullTitle)
+                    .accessibilityLabel(category.fullTitle)
                     .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)

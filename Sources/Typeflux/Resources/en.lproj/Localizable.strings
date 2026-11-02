@@ -4671,6 +4671,13 @@
 "clipboard.tab.clipboard" = "Clipboard";
 "clipboard.tab.transcription" = "Transcriptions";
 "clipboard.tab.snippet" = "Snippets";
+"clipboard.tab.screenshot" = "Screenshots";
+"clipboard.tab.all.compact" = "Clips";
+"clipboard.tab.snippet.compact" = "Snippets";
+"clipboard.tab.voice.compact" = "Voice";
+"clipboard.tab.screenshot.compact" = "Shots";
+"clipboard.screenshot.search" = "Search screenshots";
+"clipboard.screenshot.empty" = "No screenshots yet. Copy a screenshot or image to see it here.";
 "clipboard.transcription.search" = "Search transcriptions";
 "clipboard.transcription.empty" = "No transcriptions yet";
 "clipboard.action.saveSnippet" = "Save as Snippet…";
