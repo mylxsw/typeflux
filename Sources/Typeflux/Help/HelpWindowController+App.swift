@@ -18,7 +18,12 @@ extension HelpWindowController {
                 }
             },
             refreshWorkflows: { [weak ask] in await ask?.model.refreshLauncherWorkflows() },
-            workflowChanges: workflowChanges ?? Empty().eraseToAnyPublisher()
+            workflowChanges: workflowChanges ?? Empty().eraseToAnyPublisher(),
+            coreUsage: { [weak ask] in
+                let keywordUses = ask?.model.helpKeywordUsage.values.reduce(0, +) ?? 0
+                return HelpCoreActionUsageStore.shared.counts(keywordUses: keywordUses, stats: .shared)
+            },
+            recordCoreAction: { HelpCoreActionUsageStore.shared.record($0) }
         ))
         let controller = HelpWindowController(settingsStore: settings, model: model)
         model.actions = HelpGuideModel.Actions(

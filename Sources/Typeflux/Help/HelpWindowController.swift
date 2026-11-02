@@ -76,8 +76,9 @@ final class HelpWindowController: NSObject, NSWindowDelegate {
         keyObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main
         ) { [weak self] _ in
-            // Back from System Settings: a permission may have been granted meanwhile.
-            MainActor.assumeIsolated { self?.model.reloadPermissions() }
+            // Back from System Settings or another app: a permission may have been granted,
+            // or a core action used, meanwhile.
+            MainActor.assumeIsolated { self?.model.refreshLiveState() }
         }
         self.window = window
         return window

@@ -343,6 +343,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
             return
         }
+        HelpCoreActionUsageStore.shared.record(.launcher)
         // Already open (its context may still be arriving): just bring the editor back.
         if launcher?.isVisible == true || launchTask != nil {
             if launcher?.isVisible == true {

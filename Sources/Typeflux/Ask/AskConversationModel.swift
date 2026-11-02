@@ -1537,6 +1537,7 @@ final class AskConversationModel: ObservableObject {
         value.modelRef = request.modelRef
         Self.applyMemoryChoice(submitted, newConversation: newConversation, request: &request, conversation: &value)
         pendingSends[id] = request
+        HelpCoreActionUsageStore.shared.record(.chat)
         admitted = true
         if temporary, !launcher { temporaryDraft = nil }
         if launcher, !inline, newConversation { detachChatDraft() }

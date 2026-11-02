@@ -16,6 +16,9 @@ final class HelpGuideModel: ObservableObject {
         /// Fires when the workflow list changes.
         var workflowChanges: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
         var language: @MainActor () -> AppLanguage = { AppLocalization.shared.language }
+        /// How often each core action was used; `usage` is the keywords' counterpart.
+        var coreUsage: @MainActor () -> [HelpCoreAction: Int] = { [:] }
+        var recordCoreAction: @MainActor (HelpCoreAction) -> Void = { _ in }
     }
 
     /// What the guide asks the app to do. Only an explicit close dismisses the guide.
@@ -50,6 +53,14 @@ final class HelpGuideModel: ObservableObject {
     @Published private(set) var focusRequest = 0
     @Published private(set) var catalog = HelpCatalog()
     @Published private(set) var permissions: [HelpPermissionStatus] = []
+    /// The core action the start page is showing.
+    @Published var selectedAction: HelpCoreAction = .voice
+    /// The action being practiced on the stage instead of its animation.
+    @Published private(set) var practicingAction: HelpCoreAction?
+    @Published private(set) var coreUsage: [HelpCoreAction: Int] = [:]
+    @Published var shortcutContext: HelpShortcutContext = .section(.launcher)
+    /// Nil shows every question.
+    @Published var questionTopic: HelpQuestionTopic?
 
     let sources: Sources
     var actions = Actions()
@@ -77,8 +88,11 @@ final class HelpGuideModel: ObservableObject {
         self.query = query
         filter = nil
         openQuestionID = nil
+        questionTopic = nil
+        practicingAction = nil
         if query.isEmpty { page = .start }
         reload()
+        selectedAction = nextAction ?? .voice
         focusRequest += 1
         Task { [weak self] in
             await self?.sources.refreshWorkflows()
@@ -95,6 +109,7 @@ final class HelpGuideModel: ObservableObject {
             keywords: sources.keywords(sources.language()), settings: sources.settings, usage: sources.usage()
         ))
         reloadPermissions()
+        reloadUsage()
         if selectedKeywordID.flatMap(catalog.keyword(id:)) == nil {
             selectedKeywordID = visibleKeywords.first?.id
         }
@@ -105,6 +120,16 @@ final class HelpGuideModel: ObservableObject {
 
     func reloadPermissions() {
         permissions = sources.permissions()
+    }
+
+    func reloadUsage() {
+        coreUsage = sources.coreUsage()
+    }
+
+    /// What can change while the user is elsewhere, read again when the window comes back.
+    func refreshLiveState() {
+        reloadPermissions()
+        reloadUsage()
     }
 
     private func reloadIfPresented() {
@@ -143,12 +168,73 @@ final class HelpGuideModel: ObservableObject {
         relevantQuestions.contains(question)
     }
 
+    /// The questions of the chosen topic, the ones a missing permission explains first.
+    var visibleQuestions: [HelpQuestion] {
+        let relevant = relevantQuestions
+        let ordered = relevant + catalog.questions.filter { !relevant.contains($0) }
+        return ordered.filter { questionTopic == nil || $0.topic == questionTopic }
+    }
+
+    func usageCount(_ action: HelpCoreAction) -> Int {
+        coreUsage[action] ?? 0
+    }
+
+    /// Used once counts as learned: the point is that the user has found it.
+    var learnedActionCount: Int {
+        HelpCoreAction.allCases.filter { usageCount($0) > 0 }.count
+    }
+
+    /// The first core action the user has not tried.
+    var nextAction: HelpCoreAction? {
+        HelpCoreAction.allCases.first { usageCount($0) == 0 }
+    }
+
     // MARK: - Navigation
 
     func show(_ page: HelpPage) {
         query = ""
         self.page = page
         if page == .keywords, selectedKeyword == nil { selectedKeywordID = visibleKeywords.first?.id }
+    }
+
+    /// Shows a core action on the start page, from its row or the sidebar's "next" link.
+    func showAction(_ action: HelpCoreAction) {
+        query = ""
+        page = .start
+        guard action != selectedAction else { return }
+        selectedAction = action
+        practicingAction = nil
+    }
+
+    /// The action's main button. Voice and the ring are practiced in place; the others are
+    /// reached through the launcher itself.
+    func tryAction(_ action: HelpCoreAction) {
+        switch action {
+        case .voice, .ring: practicingAction = practicingAction == action ? nil : action
+        case .launcher, .chat: openLauncher()
+        }
+    }
+
+    /// The action's secondary link: where to learn more about it or change it.
+    func openMore(_ action: HelpCoreAction) {
+        switch action {
+        case .voice: openSettings(.shortcuts)
+        case .launcher: show(.keywords)
+        case .ring: openSettings(.ring)
+        case .chat:
+            shortcutContext = .section(.chat)
+            show(.shortcuts)
+        }
+    }
+
+    /// A practice run on the stage counts as having used the action.
+    func recordPractice(_ action: HelpCoreAction) {
+        sources.recordCoreAction(action)
+        reloadUsage()
+    }
+
+    func setQuestionTopic(_ topic: HelpQuestionTopic?) {
+        questionTopic = topic
     }
 
     func setFilter(_ group: HelpKeywordGroup?) {
@@ -194,9 +280,11 @@ final class HelpGuideModel: ObservableObject {
         case let .keyword(keyword): showKeyword(keyword.id)
         case let .shortcut(shortcut):
             selectedShortcutID = shortcut.id
+            if let context = HelpShortcutContext(shortcut.section) { shortcutContext = context }
             show(.shortcuts)
         case .command:
             selectedShortcutID = "commands"
+            shortcutContext = .commands
             show(.shortcuts)
         case let .question(question): showQuestion(question.id)
         }
@@ -210,7 +298,12 @@ final class HelpGuideModel: ObservableObject {
     }
 
     func askAI() {
-        let question = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        askAI(query)
+    }
+
+    /// Asks about something the guide could not answer; blank text asks nothing.
+    func askAI(_ text: String) {
+        let question = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty else { return }
         actions.askAI(question)
     }

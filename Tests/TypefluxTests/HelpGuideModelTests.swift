@@ -74,7 +74,8 @@ struct HelpGuideModelTests {
         #expect(kit.model.selectedShortcutID == "commands")
     }
 
-    func harness() throws -> Harness {
+    func harness(coreUsage: @escaping @MainActor () -> [HelpCoreAction: Int] = { [:] },
+                 recordCoreAction: @escaping @MainActor (HelpCoreAction) -> Void = { _ in }) throws -> Harness {
         let defaults = try #require(UserDefaults(suiteName: "help-model-" + UUID().uuidString))
         let settings = SettingsStore(defaults: defaults)
         let center = NotificationCenter()
@@ -86,7 +87,9 @@ struct HelpGuideModelTests {
             settings: settings,
             permissions: { state.permissions },
             refreshWorkflows: { state.refreshes += 1 },
-            workflowChanges: workflows.eraseToAnyPublisher()
+            workflowChanges: workflows.eraseToAnyPublisher(),
+            coreUsage: coreUsage,
+            recordCoreAction: recordCoreAction
         ), center: center)
         let recorder = Recorder()
         model.actions = .init(
@@ -369,7 +372,7 @@ struct HelpGuideModelTests {
     }
 
     @Test(arguments: InterfaceStyle.allCases)
-    func `the start page has a static voice card and a working launcher card`(style: InterfaceStyle) async throws {
+    func `the start page teaches each core action and tries it`(style: InterfaceStyle) async throws {
         try await SettingsBehaviorTestSupport.withFixture { _ in
             let kit = try harness()
             kit.model.prepare(query: "")
@@ -377,11 +380,11 @@ struct HelpGuideModelTests {
                 HelpWindowView(model: kit.model).environment(\.interfaceStyle, style), width: 1120, height: 740
             ) { _, host in
                 let ui = SettingsBehaviorTestSupport.self
-                try await ui.wait { ui.contains(L("help.start.voice.title"), in: host) }
-                #expect(!ui.elements(in: host).contains {
-                    $0.role == NSAccessibility.Role.button.rawValue && $0.label == L("help.start.voice.title")
-                })
-                try ui.button(L("help.start.launcher.title"), in: host).press()
+                try await ui.wait { ui.contains(HelpCoreAction.voice.steps[0].title, in: host) }
+                try ui.button(HelpCoreAction.launcher.verb + " " + HelpCoreAction.launcher.name, in: host).press()
+                #expect(kit.model.selectedAction == .launcher)
+                try await ui.wait { ui.contains(HelpCoreAction.launcher.steps[0].title, in: host) }
+                try ui.button(HelpCoreAction.launcher.tryTitle, in: host).press()
                 #expect(kit.recorder.launcherOpens == 1 && kit.recorder.closes == 0)
                 if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_HELP_RENDER_SNAPSHOT"] {
                     host.layoutSubtreeIfNeeded()
@@ -391,6 +394,270 @@ struct HelpGuideModelTests {
                         to: URL(fileURLWithPath: directory).appendingPathComponent(style.rawValue + "-start.png")
                     )
                 }
+            }
+        }
+    }
+
+    @Test func `opening starts on the first core action not tried and clears practice and topic`() throws {
+        var usage: [HelpCoreAction: Int] = [.voice: 3, .launcher: 1]
+        let kit = try harness(coreUsage: { usage })
+        kit.model.tryAction(.voice)
+        kit.model.setQuestionTopic(.privacy)
+        kit.model.prepare(query: "")
+        #expect(kit.model.selectedAction == .ring && kit.model.nextAction == .ring)
+        #expect(kit.model.learnedActionCount == 2 && kit.model.practicingAction == nil)
+        #expect(kit.model.questionTopic == nil)
+        usage = Dictionary(uniqueKeysWithValues: HelpCoreAction.allCases.map { ($0, 1) })
+        kit.model.prepare(query: "")
+        #expect(kit.model.nextAction == nil && kit.model.selectedAction == .voice)
+        #expect(kit.model.learnedActionCount == HelpCoreAction.allCases.count)
+    }
+
+    @Test func `core actions try in place or through the launcher and lead further`() throws {
+        var recorded: [HelpCoreAction] = []
+        let kit = try harness(recordCoreAction: { recorded.append($0) })
+        kit.model.prepare(query: "")
+        kit.model.tryAction(.voice)
+        #expect(kit.model.practicingAction == .voice)
+        kit.model.tryAction(.voice)
+        #expect(kit.model.practicingAction == nil, "the same button ends the practice")
+        kit.model.tryAction(.ring)
+        #expect(kit.model.practicingAction == .ring)
+        kit.model.showAction(.chat)
+        #expect(kit.model.practicingAction == nil && kit.model.selectedAction == .chat)
+        kit.model.tryAction(.launcher)
+        kit.model.tryAction(.chat)
+        #expect(kit.recorder.launcherOpens == 2 && kit.model.practicingAction == nil)
+        kit.model.openMore(.voice)
+        kit.model.openMore(.ring)
+        #expect(kit.recorder.settings == [.shortcuts, .ring])
+        kit.model.openMore(.launcher)
+        #expect(kit.model.page == .keywords)
+        kit.model.openMore(.chat)
+        #expect(kit.model.page == .shortcuts && kit.model.shortcutContext == .section(.chat))
+        kit.model.recordPractice(.ring)
+        #expect(recorded == [.ring])
+    }
+
+    @Test func `showing an action from another page returns to the start page`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "")
+        kit.model.tryAction(.voice)
+        kit.model.show(.faq)
+        kit.model.query = "x"
+        kit.model.showAction(.voice)
+        #expect(kit.model.page == .start && !kit.model.isSearching)
+        #expect(kit.model.practicingAction == .voice, "coming back to the same action keeps its practice")
+    }
+
+    @Test func `search results choose the window a shortcut lives in`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "")
+        let inChat = try #require(kit.model.catalog.shortcuts(in: .chat).first)
+        kit.model.open(.shortcut(inChat))
+        #expect(kit.model.shortcutContext == .section(.chat))
+        let global = try #require(kit.model.catalog.shortcuts(in: .global).first)
+        kit.model.open(.shortcut(global))
+        #expect(kit.model.shortcutContext == .section(.chat), "global shortcuts stay on their cards above")
+        #expect(kit.model.selectedShortcutID == global.id)
+        kit.model.open(.command(HelpCommand(name: "/help", title: "")))
+        #expect(kit.model.shortcutContext == .commands)
+    }
+
+    @Test func `topics filter the questions and missing permissions still come first`() throws {
+        let kit = try harness()
+        kit.state.permissions = [HelpPermissionStatus(id: .microphone, title: "Mic", detail: "", granted: false)]
+        kit.model.prepare(query: "")
+        #expect(kit.model.visibleQuestions.first?.id == "microphone")
+        #expect(kit.model.visibleQuestions.count == kit.model.catalog.questions.count)
+        kit.model.setQuestionTopic(.voice)
+        #expect(kit.model.visibleQuestions.first?.id == "microphone")
+        #expect(kit.model.visibleQuestions.allSatisfy { $0.topic == .voice })
+        kit.model.setQuestionTopic(.privacy)
+        #expect(kit.model.visibleQuestions.map(\.id) == ["privacy"])
+    }
+
+    @Test func `the ask box sends trimmed text and ignores blanks`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "")
+        kit.model.askAI("   ")
+        #expect(kit.recorder.asked.isEmpty)
+        kit.model.askAI("  no text appears \n")
+        #expect(kit.recorder.asked == ["no text appears"] && kit.recorder.closes == 0)
+    }
+
+    @Test func `live state reads permissions and usage again`() throws {
+        var usage: [HelpCoreAction: Int] = [:]
+        let kit = try harness(coreUsage: { usage })
+        kit.model.prepare(query: "")
+        #expect(kit.model.usageCount(.ring) == 0)
+        usage[.ring] = 2
+        kit.state.permissions = [HelpPermissionStatus(id: .microphone, title: "Mic", detail: "", granted: false)]
+        kit.model.refreshLiveState()
+        #expect(kit.model.usageCount(.ring) == 2 && kit.model.missingPermissions.count == 1)
+    }
+
+    @Test(arguments: InterfaceStyle.allCases, HelpPage.allCases)
+    func `every page lays out at the smallest window`(style: InterfaceStyle, page: HelpPage) async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            let kit = try harness()
+            kit.state.permissions = [HelpPermissionStatus(id: .accessibility, title: "AX", detail: "Required",
+                                                          granted: false)]
+            kit.model.prepare(query: "")
+            kit.model.show(page)
+            try await SettingsBehaviorTestSupport.withWindow(
+                HelpWindowView(model: kit.model).environment(\.interfaceStyle, style),
+                width: HelpWindowView.minimumSize.width, height: HelpWindowView.minimumSize.height
+            ) { window, host in
+                host.layoutSubtreeIfNeeded()
+                #expect(window.frame.width >= HelpWindowView.minimumSize.width)
+                #expect(host.fittingSize.width <= HelpWindowView.minimumSize.width + 1,
+                        "\(page.rawValue) must not force the window wider than its minimum")
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases, HelpCoreAction.allCases)
+    func `every core action draws its scene and steps`(style: InterfaceStyle, action: HelpCoreAction) async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            let kit = try harness()
+            kit.model.prepare(query: "")
+            kit.model.showAction(action)
+            try await SettingsBehaviorTestSupport.withWindow(
+                HelpWindowView(model: kit.model).environment(\.interfaceStyle, style), width: 1120, height: 740
+            ) { _, host in
+                let ui = SettingsBehaviorTestSupport.self
+                try await ui.wait { ui.contains(action.caption, in: host) }
+                for step in action.steps { #expect(ui.contains(step.title, in: host)) }
+                #expect(ui.contains(L("help.action.untried"), in: host))
+            }
+        }
+    }
+
+    @Test func `the ring is practiced on the saved actions and counts as used`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            var recorded: [HelpCoreAction] = []
+            let kit = try harness(recordCoreAction: { recorded.append($0) })
+            let action = try #require(kit.settings.ringConfiguration.actions.first)
+            kit.model.prepare(query: "")
+            kit.model.showAction(.ring)
+            kit.model.tryAction(.ring)
+            try await SettingsBehaviorTestSupport.withWindow(
+                HelpWindowView(model: kit.model), width: 1120, height: 740
+            ) { _, host in
+                let ui = SettingsBehaviorTestSupport.self
+                try await ui.wait { ui.contains(L("help.action.ring.practice.hint"), in: host) }
+                try ui.button(action.title, in: host).press()
+                try await ui.wait { ui.contains(L("help.action.ring.practice.selected", action.title), in: host) }
+                #expect(recorded == [.ring] && kit.recorder.closes == 0)
+            }
+        }
+    }
+
+    @Test func `the shortcuts page opens settings and switches windows`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            let kit = try harness()
+            kit.settings.setHotkey(HelpCatalogTests.controlOptionR, for: .openHelp)
+            kit.model.prepare(query: "")
+            kit.model.show(.shortcuts)
+            try await SettingsBehaviorTestSupport.withWindow(
+                HelpWindowView(model: kit.model), width: HelpWindowView.minimumSize.width, height: 740
+            ) { _, host in
+                let ui = SettingsBehaviorTestSupport.self
+                try await ui.wait { ui.contains(L("help.shortcuts.hero.title"), in: host) }
+                let chat = HelpShortcutSection.chat.title
+                try ui.button(chat, in: host).press()
+                #expect(kit.model.shortcutContext == .section(.chat))
+                let openHelp = try #require(kit.model.catalog.shortcuts(in: .global).first { $0.target == .action(.openHelp) })
+                try ui.button(openHelp.title, in: host).press()
+                #expect(kit.recorder.settings == [.shortcuts] && kit.recorder.closes == 0)
+                try ui.button(HelpShortcutContext.commands.title, in: host).press()
+                try await ui.wait { ui.contains(L("help.shortcuts.commands"), in: host) }
+            }
+        }
+    }
+
+    @Test func `hovering a shortcut's keys changes the keyboard drawing`() throws {
+        func pixels(_ lit: Set<String>) throws -> Data {
+            let host = NSHostingView(rootView: HelpKeyboardDrawing(lit: lit, tint: .red).transaction { $0.animation = nil })
+            host.frame = NSRect(x: 0, y: 0, width: 320, height: 160)
+            host.layoutSubtreeIfNeeded()
+            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_HELP_SNAPSHOT"], !lit.isEmpty {
+                try #require(bitmap.representation(using: .png, properties: [:])).write(
+                    to: URL(fileURLWithPath: directory).appendingPathComponent("keyboard-lit.png")
+                )
+            }
+            return try #require(bitmap.tiffRepresentation)
+        }
+        #expect(try pixels([]) != pixels(HelpKeyboardMap.keyIDs(for: ["⌘", "Space"])))
+    }
+
+    @Test func `the practice ring takes the largest size that fits`() {
+        #expect(HelpRingPractice.scale(for: CGSize(width: 512, height: 344)) == 0.8)
+        #expect(HelpRingPractice.scale(for: CGSize(width: 512, height: 336)) == 0.7)
+        #expect(HelpRingPractice.scale(for: CGSize(width: 322, height: 336)) == 0.7)
+        #expect(HelpRingPractice.scale(for: CGSize(width: 300, height: 336)) == 0.6)
+        #expect(HelpRingPractice.scale(for: CGSize(width: 512, height: 200)) == 0.6)
+    }
+
+    @Test func `nothing found shows a way to ask the AI`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            let kit = try harness()
+            kit.model.prepare(query: "zzzz no such thing")
+            try await SettingsBehaviorTestSupport.withWindow(
+                HelpWindowView(model: kit.model), width: 1120, height: 740
+            ) { _, host in
+                let ui = SettingsBehaviorTestSupport.self
+                try await ui.wait { ui.contains(L("help.search.empty.detail"), in: host) }
+                try ui.button(L("help.search.askAI"), in: host).press()
+                #expect(kit.recorder.asked == ["zzzz no such thing"])
+            }
+        }
+    }
+
+    @Test(arguments: [false, true])
+    func `the status card and permission banner follow what is missing`(missing: Bool) async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            let kit = try harness()
+            kit.state.permissions = [HelpPermissionStatus(id: .accessibility, title: "AX", detail: "Needed",
+                                                          granted: !missing)]
+            kit.model.prepare(query: "")
+            try await SettingsBehaviorTestSupport.withWindow(
+                HelpWindowView(model: kit.model), width: 1120, height: 740
+            ) { _, host in
+                let ui = SettingsBehaviorTestSupport.self
+                let banner = L("help.start.permission.title", "AX")
+                try await ui.wait { ui.contains(HelpCoreAction.voice.tryTitle, in: host) }
+                #expect(ui.contains(banner, in: host) == missing)
+                kit.model.show(.faq)
+                let title = missing ? L("help.faq.attention.title", 1) : L("help.faq.ready.title")
+                try await ui.wait { ui.contains(title, in: host) }
+                #expect(ui.contains(L("help.faq.relevant"), in: host) == missing)
+                if missing {
+                    try ui.button(L("help.faq.fix"), in: host).press()
+                    #expect(kit.recorder.fixed == [.accessibility])
+                }
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
+    func `practice replaces the scene and returns from it`(style: InterfaceStyle) async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            let kit = try harness()
+            kit.model.prepare(query: "")
+            try await SettingsBehaviorTestSupport.withWindow(
+                HelpWindowView(model: kit.model).environment(\.interfaceStyle, style), width: 1120, height: 740
+            ) { _, host in
+                let ui = SettingsBehaviorTestSupport.self
+                try await ui.wait { ui.contains(HelpCoreAction.voice.tryTitle, in: host) }
+                try ui.button(HelpCoreAction.voice.tryTitle, in: host).press()
+                try await ui.wait { ui.contains(L("help.action.practice.done"), in: host) }
+                try ui.button(L("help.action.practice.done"), in: host).press()
+                try await ui.wait { ui.contains(HelpCoreAction.voice.tryTitle, in: host) }
+                #expect(kit.model.practicingAction == nil)
             }
         }
     }
@@ -543,6 +810,12 @@ struct HelpGuideModelTests {
                     try capture(model, settings: settings, query: "", page: page,
                                 to: Self.snapshotURL(directory, style: style, dark: dark, name: page.rawValue))
                 }
+                for action in [HelpCoreAction.launcher, .ring, .chat] {
+                    try capture(model, settings: settings, query: "", page: .start, action: action,
+                                to: Self.snapshotURL(directory, style: style, dark: dark, name: "start-" + action.rawValue))
+                }
+                try capture(model, settings: settings, query: "", page: .start, action: .ring, practicing: true,
+                            to: Self.snapshotURL(directory, style: style, dark: dark, name: "start-ring-practice"))
                 try capture(model, settings: settings, query: "截图", page: .start,
                             to: Self.snapshotURL(directory, style: style, dark: dark, name: "search"))
             }
@@ -550,13 +823,15 @@ struct HelpGuideModelTests {
     }
 
     private func capture(_ model: HelpGuideModel, settings: SettingsStore, query: String, page: HelpPage,
-                         to url: URL) throws {
+                         action: HelpCoreAction? = nil, practicing: Bool = false, to url: URL) throws {
         let controller = HelpWindowController(settingsStore: settings, model: model)
         controller.show(query: query)
         defer { controller.dismiss() }
         if query.isEmpty { model.show(page) }
+        if let action { model.showAction(action) }
+        if practicing, let action { model.tryAction(action) }
         let panel = try #require(controller.presentedWindow)
-        RunLoop.main.run(until: Date().addingTimeInterval(1.0))
+        RunLoop.main.run(until: Date().addingTimeInterval(action == nil ? 1.0 : 4.5))
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
         process.arguments = ["-x", "-o", "-l\(panel.windowNumber)", url.path]
