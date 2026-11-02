@@ -20,7 +20,6 @@ struct HelpWindowView: View {
             VStack(spacing: 0) {
                 header
                 content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                footer
             }
         }
         .frame(minWidth: Self.minimumSize.width, minHeight: Self.minimumSize.height)
@@ -36,19 +35,19 @@ struct HelpWindowView: View {
         .accessibilityLabel(L("help.title"))
     }
 
-    /// The page title in the title bar row, level with the traffic lights.
+    /// The page title in the title bar row, level with the traffic lights. The start page's
+    /// title is what it teaches.
     private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(model.isSearching ? L("help.search.title") : model.page.title)
-                .font(.system(size: 20, weight: .semibold))
-            Text(model.isSearching ? L("help.search.count", model.searchResults.count) : model.page.subtitle)
-                .font(.system(size: 12.5))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 28)
-        .frame(height: AskMetrics.titleBarRowHeight + 8)
+        Text(title)
+            .font(.system(size: 20, weight: .semibold))
+            .padding(.horizontal, 28)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: AskMetrics.titleBarRowHeight + 8)
+    }
+
+    private var title: String {
+        if model.isSearching { return L("help.search.title") }
+        return model.page == .start ? L("help.start.title") : model.page.title
     }
 
     @ViewBuilder private var content: some View {
@@ -62,23 +61,6 @@ struct HelpWindowView: View {
             case .faq: HelpQuestionsPage(model: model)
             }
         }
-    }
-
-    private var footer: some View {
-        HStack {
-            Text(footerHint).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 28)
-        .frame(height: 36)
-        .overlay(alignment: .top) { Rectangle().fill(AskTheme.separator).frame(height: 1) }
-    }
-
-    private var footerHint: String {
-        if model.isSearching {
-            return L(model.searchResults.isEmpty ? "help.hint.searchEmpty" : "help.hint.search")
-        }
-        return L(model.page == .keywords ? "help.hint.keywords" : "help.hint.default")
     }
 }
 
@@ -101,8 +83,8 @@ struct HelpSidebar: View {
             ForEach(HelpPage.allCases) { page in
                 navRow(page)
             }
-            HelpProgressCard(model: model).padding(.top, 14)
             Spacer(minLength: 0)
+            HelpProgressBar(model: model).padding(.horizontal, 8).padding(.bottom, 10)
             supportFooter
         }
         .padding(.horizontal, 10)
@@ -119,33 +101,32 @@ struct HelpSidebar: View {
     }
 
     private var supportFooter: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
-            HStack(spacing: 8) {
-                Button {
-                    model.open(HelpGuideModel.documentationURL)
-                } label: {
-                    footerLinkLabel(L("help.link.website.short"), symbol: "arrow.up.right.square")
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L("help.link.website"))
-                .help(L("help.link.website"))
-
-                Menu {
-                    HelpFeedbackOptions(model: model)
-                } label: {
-                    footerLinkLabel(L("help.link.feedback.short"), symbol: "bubble.left")
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .tint(StudioTheme.textSecondary)
-                .accessibilityLabel(L("help.link.feedback"))
-                .help(L("help.link.feedback"))
-            }
+        HStack(spacing: 2) {
             Text(Self.version)
                 .font(.system(size: 11.5))
                 .foregroundStyle(StudioTheme.textTertiary)
-                .padding(.horizontal, 4)
+                .padding(.leading, 8)
+            Spacer(minLength: 0)
+            Button {
+                model.open(HelpGuideModel.documentationURL)
+            } label: {
+                footerIcon("arrow.up.right.square")
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L("help.link.website"))
+            .help(L("help.link.website"))
+
+            Menu {
+                HelpFeedbackOptions(model: model)
+            } label: {
+                footerIcon("bubble.left")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .tint(StudioTheme.textSecondary)
+            .accessibilityLabel(L("help.link.feedback"))
+            .help(L("help.link.feedback"))
         }
     }
 
@@ -209,79 +190,43 @@ struct HelpSidebar: View {
         }
     }
 
-    private func footerLinkLabel(_ title: String, symbol: String) -> some View {
-        return HStack(spacing: 6) {
-            Image(systemName: symbol).font(.system(size: 11))
-            Text(title).font(.system(size: 12)).lineLimit(1).minimumScaleFactor(0.85)
-        }
-        .foregroundStyle(StudioTheme.textSecondary)
-        .frame(width: (HelpWindowView.sidebarWidth - 28) / 2, height: 32)
-        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    private func footerIcon(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 12))
+            .foregroundStyle(StudioTheme.textTertiary)
+            .frame(width: 26, height: 26)
+            .contentShape(Rectangle())
     }
 }
 
-/// How many core actions the user has found, and which to try next.
-struct HelpProgressCard: View {
+/// How many core actions the user has found, quietly. Clicking goes to the next one; once all
+/// are found it is gone.
+struct HelpProgressBar: View {
     @ObservedObject var model: HelpGuideModel
-    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
-        let learned = model.learnedActionCount
-        let total = HelpCoreAction.allCases.count
-        let shape = RoundedRectangle(cornerRadius: style.help.blockCorner, style: .continuous)
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                ZStack {
-                    Circle().stroke(AskTheme.hoverFill, lineWidth: 4)
-                    Circle().trim(from: 0, to: CGFloat(learned) / CGFloat(total))
-                        .stroke(StudioTheme.success, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                    Text("\(learned)/\(total)").font(.system(size: 10.5, weight: .semibold)).monospacedDigit()
-                }
-                .frame(width: 38, height: 38)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.system(size: 12.5, weight: .semibold))
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(L(learned == total ? "help.progress.detail.done" : "help.progress.detail"))
-                        .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            HStack(spacing: 4) {
-                ForEach(HelpCoreAction.allCases) { action in
-                    Capsule().fill(model.usageCount(action) > 0 ? action.tint : AskTheme.hoverFill).frame(height: 4)
-                }
-            }
-            if let next = model.nextAction {
-                Button { model.showAction(next) } label: {
-                    HStack(spacing: 5) {
-                        Text(L("help.progress.next")).foregroundStyle(StudioTheme.textSecondary)
-                        Text(next.verb).fontWeight(.semibold).foregroundStyle(next.tint)
-                        Text(next.name).foregroundStyle(StudioTheme.textSecondary)
-                            .lineLimit(1).minimumScaleFactor(0.8)
-                        Spacer(minLength: 0)
-                        Image(systemName: "arrow.right").font(.system(size: 10))
-                            .foregroundStyle(StudioTheme.textTertiary)
+        if let next = model.nextAction {
+            let label = L("help.progress.next") + " " + next.verb + " " + next.name
+            Button { model.showAction(next) } label: {
+                HStack(spacing: 8) {
+                    HStack(spacing: 3) {
+                        ForEach(HelpCoreAction.allCases) { action in
+                            Capsule().fill(model.usageCount(action) > 0 ? action.tint : AskTheme.hoverFill)
+                                .frame(height: 4)
+                        }
                     }
-                    .font(.system(size: 12))
-                    .padding(.horizontal, 10)
-                    .frame(height: 30)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AskTheme.hoverFill))
-                    .contentShape(Rectangle())
+                    Text("\(model.learnedActionCount)/\(HelpCoreAction.allCases.count)")
+                        .font(.system(size: 11))
+                        .monospacedDigit()
+                        .foregroundStyle(StudioTheme.textTertiary)
                 }
-                .buttonStyle(.plain)
+                .frame(height: 22)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .help(label)
+            .accessibilityLabel(label)
         }
-        .padding(12)
-        .background(shape.fill(HelpTheme.blockFill(style)))
-        .overlay(shape.strokeBorder(HelpTheme.blockBorder(style)))
-    }
-
-    private var title: String {
-        let learned = model.learnedActionCount
-        if learned == 0 { return L("help.progress.title.start") }
-        return learned == HelpCoreAction.allCases.count ? L("help.progress.title.done")
-            : L("help.progress.title.some", learned)
     }
 }
 

@@ -1,23 +1,23 @@
 import SwiftUI
 
-/// The global shortcuts first, with the keys the user set drawn on a keyboard; then keyword
-/// shortcuts; then, one window at a time, the keys the app fixes and the `/` commands.
+/// A keyboard that lights the keys of the shortcut under the pointer, the shortcuts themselves
+/// with the set ones first, then, one window at a time, the keys the app fixes and `/` commands.
 struct HelpShortcutsPage: View {
     @ObservedObject var model: HelpGuideModel
     @State private var hoveredKeys: [String]?
-    @State private var hoveredTint: Color = AskTheme.accent
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    hero
-                    cards(model.catalog.shortcuts(in: .global))
-                    keywordShortcuts
-                    HelpSectionHeader(title: L("help.shortcuts.windows.title"),
-                                      detail: L("help.shortcuts.windows.detail"))
+                    HelpKeyboardDrawing(lit: HelpKeyboardMap.keyIDs(for: hoveredKeys ?? []))
+                        .frame(maxWidth: 480)
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 16)
+                    cards
+                    HelpSectionHeader(title: L("help.shortcuts.windows.title"))
                     HStack(alignment: .top, spacing: 16) {
-                        contextList.frame(width: 172)
+                        contextList.frame(width: 160)
                         contextContent.frame(maxWidth: .infinity)
                     }
                 }
@@ -32,109 +32,49 @@ struct HelpShortcutsPage: View {
         }
     }
 
-    private var hero: some View {
-        HStack(spacing: 20) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(L("help.shortcuts.hero.eyebrow"))
-                    .font(.system(size: 9.5, weight: .semibold))
-                    .tracking(1.6)
-                    .foregroundStyle(AskTheme.accentText)
-                Text(L("help.shortcuts.hero.title")).font(.studioDisplay(22, weight: .bold))
-                Text(L("help.shortcuts.hero.detail"))
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // Narrow enough to stay beside the text at the smallest window.
-            HelpKeyboardDrawing(lit: HelpKeyboardMap.keyIDs(for: hoveredKeys ?? []), tint: hoveredTint)
-                .frame(width: 320)
-        }
-        .padding(.bottom, 14)
-    }
-
-    private func cards(_ shortcuts: [HelpShortcut]) -> some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 186), spacing: 10)], spacing: 10) {
-            ForEach(shortcuts) { shortcut in
+    private var cards: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 240), spacing: 8)], spacing: 8) {
+            ForEach(model.catalog.shortcutCards) { shortcut in
                 HelpShortcutCard(shortcut: shortcut, selected: model.selectedShortcutID == shortcut.id) {
                     model.openSettings(.shortcuts)
                 } onHover: { hovering in
                     hoveredKeys = hovering ? shortcut.keys : nil
-                    if hovering { hoveredTint = shortcut.tint }
                 }
                 .id(shortcut.id)
             }
         }
     }
 
-    @ViewBuilder private var keywordShortcuts: some View {
-        let rows = model.catalog.shortcuts(in: .keyword)
-        HelpGroupTitle(title: HelpShortcutSection.keyword.title,
-                       action: (title: L("help.shortcuts.add"), run: { model.openSettings(.shortcuts) }))
-        if rows.isEmpty {
-            HelpBlock {
-                HelpRow(symbol: nil, title: L("help.shortcuts.keyword.empty"), showsDivider: false) { EmptyView() }
-            }
-        } else {
-            cards(rows)
-        }
-    }
-
     private var contextList: some View {
         VStack(alignment: .leading, spacing: 1) {
-            contextGroup(L("help.shortcuts.group.conversation"), HelpShortcutContext.conversation)
-            contextGroup(L("help.shortcuts.group.tools"), HelpShortcutContext.tools).padding(.top, 10)
-        }
-    }
-
-    private func contextGroup(_ title: String, _ contexts: [HelpShortcutContext]) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(title)
-                .font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .padding(.horizontal, 10)
-                .padding(.bottom, 4)
-            ForEach(contexts, id: \.self) { context in
-                HelpContextRow(title: context.title, count: count(context),
-                               selected: model.shortcutContext == context) {
+            ForEach(HelpShortcutContext.all, id: \.self) { context in
+                HelpContextRow(title: context.title, note: note(context), selected: model.shortcutContext == context) {
                     model.shortcutContext = context
                 }
             }
         }
     }
 
-    private func count(_ context: HelpShortcutContext) -> Int {
-        switch context {
-        case let .section(section): model.catalog.shortcuts(in: section).count
-        case .commands: model.catalog.commands.count
-        }
+    /// When a window's keys apply, for the few where that is not obvious.
+    private func note(_ context: HelpShortcutContext) -> String? {
+        guard case let .section(section) = context,
+              [.result, .recording, .notes, .terminal, .editing].contains(section) else { return nil }
+        return L("help.shortcuts.context." + section.rawValue)
     }
 
     @ViewBuilder private var contextContent: some View {
         switch model.shortcutContext {
         case .commands:
-            VStack(alignment: .leading, spacing: 0) {
-                HelpGroupTitle(title: L("help.shortcuts.commands")).id("commands")
-                commands
-            }
+            commands.id("commands")
         case let .section(section):
-            VStack(alignment: .leading, spacing: 8) {
-                if [.result, .recording, .notes, .terminal, .editing].contains(section) {
-                    Text(L("help.shortcuts.context." + section.rawValue))
-                        .font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 4)
-                }
-                HelpBlock {
-                    let rows = model.catalog.shortcuts(in: section)
-                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, shortcut in
-                        HelpRow(symbol: nil, title: shortcut.title, detail: shortcut.detail,
-                                selected: model.selectedShortcutID == shortcut.id, showsDivider: index > 0) {
-                            HelpKeycaps(keys: shortcut.keys) { model.openSettings(.shortcuts) }
-                        }
-                        .id(shortcut.id)
+            HelpBlock {
+                let rows = model.catalog.shortcuts(in: section)
+                ForEach(Array(rows.enumerated()), id: \.element.id) { index, shortcut in
+                    HelpRow(symbol: nil, title: shortcut.title, detail: shortcut.detail,
+                            selected: model.selectedShortcutID == shortcut.id, showsDivider: index > 0) {
+                        HelpKeycaps(keys: shortcut.keys) { model.openSettings(.shortcuts) }
                     }
+                    .id(shortcut.id)
                 }
             }
         }
@@ -166,7 +106,7 @@ struct HelpShortcutsPage: View {
 }
 
 extension HelpShortcut {
-    /// The symbol and color of the feature a global shortcut starts.
+    /// The symbol of the feature a global shortcut starts.
     var symbol: String {
         switch target {
         case .builtIn(.activation), .builtIn(.auxiliary): "mic"
@@ -185,21 +125,9 @@ extension HelpShortcut {
         default: "keyboard"
         }
     }
-
-    var tint: Color {
-        switch target {
-        case .builtIn(.activation), .builtIn(.auxiliary), .builtIn(.persona): HelpCoreAction.voice.tint
-        case .builtIn(.ask), .action(.translate), .action(.screenshotTranslation): HelpCoreAction.launcher.tint
-        case .action(.ring): HelpCoreAction.ring.tint
-        case .action(.openChat), .builtIn(.screenshot), .action(.screenshotText): HelpCoreAction.chat.tint
-        case .builtIn(.history), .action(.openNotes), .action(.openWordBook):
-            OnboardingWelcomeHero.Scene.tools.tint
-        default: AskTheme.accent
-        }
-    }
 }
 
-/// A shortcut with its keys large enough to read at a glance; an unset one offers to set them.
+/// A shortcut and its keys on one line; what it does is its tooltip. Clicking changes it.
 struct HelpShortcutCard: View {
     var shortcut: HelpShortcut
     var selected: Bool
@@ -209,34 +137,33 @@ struct HelpShortcutCard: View {
     @State private var hovering = false
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: style.help.blockCorner, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: style.help.rowCorner + 2, style: .continuous)
         Button(action: open) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 10) {
-                    HelpSymbolTile(symbol: shortcut.symbol, tint: shortcut.tint)
-                    Text(shortcut.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
-                    Spacer(minLength: 0)
-                    if hovering, shortcut.keys != nil {
-                        Text(L("help.shortcuts.edit")).font(.system(size: 11.5)).foregroundStyle(AskTheme.accentText)
-                    }
-                }
-                Text(shortcut.detail)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .topLeading)
+            HStack(spacing: 10) {
+                Image(systemName: shortcut.symbol)
+                    .font(.system(size: 13))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(width: 18)
+                    .accessibilityHidden(true)
+                Text(shortcut.title)
+                    .font(.system(size: 13))
+                    .foregroundStyle(shortcut.keys == nil ? StudioTheme.textSecondary : StudioTheme.textPrimary)
+                    .lineLimit(1)
+                Spacer(minLength: 6)
                 if shortcut.keys != nil {
-                    HelpKeycaps(keys: shortcut.keys, large: true)
+                    HelpKeycaps(keys: shortcut.keys)
                 } else {
-                    Label(L("help.shortcuts.setUp"), systemImage: "plus")
-                        .font(.system(size: 12))
-                        .foregroundStyle(AskTheme.accentText)
-                        .frame(height: 28)
+                    Image(systemName: "plus")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(hovering ? AskTheme.accentText : StudioTheme.textTertiary)
+                        .accessibilityHidden(true)
                 }
             }
-            .padding(13)
-            .background(shape.fill(selected ? HelpTheme.selection(style) : HelpTheme.blockFill(style)))
-            .overlay(shape.strokeBorder(hovering ? shortcut.tint.opacity(0.5) : HelpTheme.blockBorder(style)))
+            .padding(.horizontal, 12)
+            .frame(height: 40)
+            .background(shape.fill(selected ? HelpTheme.selection(style)
+                    : hovering ? AskTheme.hoverFill : HelpTheme.blockFill(style)))
+            .overlay(shape.strokeBorder(HelpTheme.blockBorder(style)))
             .contentShape(shape)
         }
         .buttonStyle(.plain)
@@ -244,6 +171,7 @@ struct HelpShortcutCard: View {
             hovering = $0
             onHover($0)
         }
+        .help(shortcut.detail)
         .accessibilityLabel(shortcut.title)
         .accessibilityValue(shortcut.keys?.joined(separator: " ") ?? L("help.shortcuts.unset"))
         .accessibilityHint(shortcut.detail)
@@ -253,11 +181,8 @@ struct HelpShortcutCard: View {
 /// A keyboard with the keys of the hovered shortcut lit.
 struct HelpKeyboardDrawing: View {
     var lit: Set<String>
-    var tint: Color
-    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: style.help.blockCorner, style: .continuous)
         VStack(spacing: 3) {
             ForEach(Array(HelpKeyboardMap.rows.enumerated()), id: \.offset) { _, row in
                 GeometryReader { proxy in
@@ -270,9 +195,6 @@ struct HelpKeyboardDrawing: View {
                 .frame(height: 20)
             }
         }
-        .padding(10)
-        .background(shape.fill(HelpTheme.blockFill(style)))
-        .overlay(shape.strokeBorder(HelpTheme.blockBorder(style)))
         .accessibilityHidden(true)
     }
 
@@ -285,8 +207,8 @@ struct HelpKeyboardDrawing: View {
             .minimumScaleFactor(0.6)
             .foregroundStyle(on ? Color.white : StudioTheme.textTertiary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(shape.fill(on ? tint : AskTheme.hoverFill))
-            .shadow(color: on ? tint.opacity(0.6) : .clear, radius: 6)
+            .background(shape.fill(on ? AskTheme.accent : AskTheme.hoverFill))
+            .shadow(color: on ? AskTheme.accent.opacity(0.6) : .clear, radius: 6)
             .animation(.easeOut(duration: 0.15), value: on)
     }
 }
@@ -294,7 +216,7 @@ struct HelpKeyboardDrawing: View {
 /// One window in the shortcuts page's list.
 struct HelpContextRow: View {
     var title: String
-    var count: Int
+    var note: String?
     var selected: Bool
     var action: () -> Void
     @Environment(\.interfaceStyle) private var style
@@ -303,23 +225,21 @@ struct HelpContextRow: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: style.help.rowCorner, style: .continuous)
         Button(action: action) {
-            HStack(spacing: 8) {
-                Text(title)
-                    .font(.system(size: 12.5, weight: selected ? .medium : .regular))
-                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                Text("\(count)").font(.system(size: 11)).monospacedDigit().foregroundStyle(StudioTheme.textTertiary)
-            }
-            .padding(.horizontal, 10)
-            .frame(height: 30)
-            .background(shape.fill(selected ? HelpTheme.selection(style) : hovering ? AskTheme.hoverFill : .clear))
-            .contentShape(shape)
+            Text(title)
+                .font(.system(size: 12.5))
+                .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .lineLimit(1)
+                .padding(.horizontal, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: 28)
+                .background(shape.fill(selected ? AskTheme.pressFill : hovering ? AskTheme.hoverFill : .clear))
+                .contentShape(shape)
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
+        .help(note ?? "")
         .accessibilityLabel(title)
-        .accessibilityValue("\(count)")
+        .accessibilityHint(note ?? "")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

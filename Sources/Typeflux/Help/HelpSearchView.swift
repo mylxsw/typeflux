@@ -17,7 +17,6 @@ struct HelpSearchView: View {
                     .accessibilityHidden(true)
                 Text(L("help.search.empty", model.query.trimmingCharacters(in: .whitespaces)))
                     .font(.system(size: 15)).foregroundStyle(StudioTheme.textPrimary)
-                Text(L("help.search.empty.detail")).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
                 HelpButton(title: L("help.search.askAI"), symbol: "sparkles", trailing: "⌘↩", prominent: true) {
                     model.askAI()
                 }
@@ -32,7 +31,7 @@ struct HelpSearchView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         let groups = grouped(items)
                         ForEach(groups, id: \.title) { group in
-                            HelpGroupTitle(title: group.title, count: group.items.count)
+                            HelpGroupTitle(title: group.title)
                             HelpBlock {
                                 ForEach(group.items, id: \.offset) { entry in
                                     row(entry.element, index: entry.offset,
@@ -64,7 +63,7 @@ struct HelpSearchView: View {
             case let .shortcut(shortcut):
                 HelpShortcutContext(shortcut.section) == nil
                     ? L("help.search.group.global") : L("help.search.group.window")
-            case .command: L("help.shortcuts.commands")
+            case .command: L("help.shortcuts.commands.short")
             case .question: L("help.page.faq")
             }
             if groups.last?.title == title {
