@@ -113,5 +113,3 @@ Typeflux 应用开源免费，云端服务可能产生费用。使用远程模�
 问题反馈：[GitHub Issues](https://github.com/mylxsw/typeflux/issues) · 社交媒体：[Twitter（X）](https://x.com/mylxsw)
 
 欢迎参与改进，开发资料见 [贡献指南](CLAUDE.md)。代码采用 [AGPL-3.0](LICENSE) 许可证。
-
-<sub>截图由真实应用界面使用虚构示例内容生成，不包含个人剪贴板、对话或文件。语音浮层会保留自身的深色样式，图中同时展示了它在亮、暗桌面下的效果。</sub>

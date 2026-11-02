@@ -1,6 +1,6 @@
 # Typeflux · 产品截图
 
-应用真实界面，亮色与暗色对照。点击图片可查看原图。所有内容均为虚构演示数据。
+应用真实界面，亮色与暗色对照。点击图片可查看原图。
 
 [返回中文介绍](../README.zh-CN.md) · [English overview](../README.md)
 
@@ -75,5 +75,3 @@
 | Light · 亮色 | Dark · 暗色 |
 | --- | --- |
 | [![亮色 Chat 工作区](../assets/product/previews/chat-light.jpg)](../assets/product/chat-light.png) | [![暗色 Chat 工作区](../assets/product/previews/chat-dark.jpg)](../assets/product/chat-dark.png) |
-
-语音浮层保留应用自身的深色样式，以上展示其在亮色、暗色桌面背景下的效果。

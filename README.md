@@ -113,5 +113,3 @@ The Typeflux app is free and open source. Cloud services may incur charges. When
 Questions and feedback: [GitHub Issues](https://github.com/mylxsw/typeflux/issues) · Follow on [Twitter (X)](https://x.com/mylxsw)
 
 Contributions are welcome; see the [development guide](CLAUDE.md). Licensed under [AGPL-3.0](LICENSE).
-
-<sub>Screenshots use real application views with fictional sample content, without personal clipboard history, conversations, or files. Voice overlays retain their own dark styling; both light and dark desktop contexts are shown. Interface text in these screenshots is Simplified Chinese.</sub>
