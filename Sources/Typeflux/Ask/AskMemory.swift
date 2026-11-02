@@ -50,12 +50,12 @@ struct AskMemory: Codable, Equatable, Sendable {
         return self
     }
 
-    /// Remove only the generated memory system message, preserving conversation history.
+    /// Remove only the generated memory context message, preserving conversation history.
     static func removingInjection(from payload: String) -> String {
         guard var object = (try? JSONSerialization.jsonObject(with: Data(payload.utf8))) as? [String: Any],
               let messages = object["messages"] as? [[String: Any]] else { return payload }
         object["messages"] = messages.filter {
-            !(($0["role"] as? String) == "system" && ($0["content"] as? String)?.hasPrefix("<user_memory>\n") == true)
+            !(AskPromptContext.isHistorical($0) && ($0["content"] as? String)?.hasPrefix(AskPromptPolicyText.memoryPrefix) == true)
         }
         guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
         else { return payload }

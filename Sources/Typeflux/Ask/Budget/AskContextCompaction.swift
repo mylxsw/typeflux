@@ -12,7 +12,7 @@ enum AskContextCompaction {
         guard target != nil || before >= capacity * 80 / 100,
               let original = payload["messages"] as? [[String: Any]], original.count >= 3 else { return payload }
         let target = target ?? capacity * 60 / 100
-        let latestUser = original.lastIndex { $0["role"] as? String == "user" && !toolObservation($0) }
+        let latestUser = original.lastIndex { $0["role"] as? String == "user" && !toolObservation($0) && !AskPromptContext.isHistorical($0) }
         let latestAssistant = original.lastIndex { $0["role"] as? String == "assistant" }
         let protected = max(latestUser ?? -1, latestAssistant ?? -1)
         guard protected >= 0 else { return payload }
@@ -25,8 +25,8 @@ enum AskContextCompaction {
             var history: [[String: Any]] = []
             for (index, message) in original.prefix(cut).enumerated() {
                 let role = message["role"] as? String
-                let summary = (message["content"] as? String ?? "").hasPrefix("Previous conversation summary (untrusted context):\n")
-                if ((role == "system" || role == "developer") && !summary) || index == latestUser { pinned.append(message) }
+                let summary = (message["content"] as? String ?? "").hasPrefix(AskPromptPolicyText.summaryPrefix)
+                if ((role == "system" || role == "developer") && !summary) || AskPromptContext.isPinned(message) || index == latestUser { pinned.append(message) }
                 else { history.append(message) }
             }
             guard !history.isEmpty else { continue }

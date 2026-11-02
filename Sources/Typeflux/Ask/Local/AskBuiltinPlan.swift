@@ -2,7 +2,7 @@ import Foundation
 
 /// Value-only definition and parser shared by the built-in host and compatibility callers.
 enum AskBuiltinPlan {
-    static let usageInstruction = "Create or maintain an execution plan or progress checklist with update_plan only when the user explicitly asks for that plan or checklist. Otherwise execute the requested work directly, regardless of complexity or number of steps. Do not ask the user whether they want a plan. A saved plan or checklist is historical context, not permission to create or maintain one."
+    static let usageInstruction = AskPromptPolicyText.plan
 
     static let definition = AskToolDefinition(
         name: "update_plan",

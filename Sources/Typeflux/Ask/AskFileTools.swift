@@ -4,7 +4,7 @@ import Foundation
 
 /// Bounded file operations under the trusted host's current folder grants.
 struct AskFileTools: Sendable {
-    static let workspaceInstruction = "Create new projects and generated files in this conversation's workspace (work/ for project sources, outputs/ for final exports), unless the user explicitly requests another destination. Authorized folders are access grants, not default output locations: do not choose Downloads, Desktop or the home folder just because they are accessible. Keep changes to an existing user-selected project in its original folder. Use the exact workspace path supplied by the host; never invent one. When the user has not selected an external project, check the current workspace before reusing project paths from history."
+    static let workspaceInstruction = AskPromptPolicyText.workspace
 
     static let maximumReadCharacters = 60000 // Compatibility name; measured in UTF-8 bytes.
     static let maximumWriteBytes = 1_000_000

@@ -30,7 +30,7 @@ An audit leaves no production engine calls to those default payload wrappers.
 Both production application factories inherit the new default parameter while
 continuing to compose one local engine with their existing API/registry route.
 
-The modular default composes trusted rules from effective declarations. The legacy policy preserves historical wording. Both retain the memory envelope,
+The modular default composes generated host-owned rules from effective declarations. See `prompt-policy.md` for policy generation and historical-context roles. The legacy policy is frozen. Both retain memory content,
 message/tool order, typed/media projection, original-history references, pinned
 latest user, summary cut, model and reasoning fields. Swift and Go have separate
 baseline fixtures because their prior payloads are not identical.

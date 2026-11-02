@@ -40,16 +40,11 @@ struct DefaultAskPromptBuilder: AskPromptBuilding {
             ? [["role": "system", "content": AskLocalPrompt.system]]
             : [["role": "system", "content": AskPromptSections.build(effectiveInput).map(\.text).joined(separator: "\n\n")]]
         if conversation.memoryOff != true, let memory = AskLocalPrompt.memory(conversation.memory) {
-            messages.append([
-                "role": "system",
-                "content": memory
-            ])
+            messages.append(AskPromptContext.message(memory, name: AskPromptPolicyText.memoryName, legacy: policy == .legacyV1))
         }
         if let summary = conversation.summary, !summary.isEmpty {
-            messages.append([
-                "role": "system",
-                "content": "Previous conversation summary (untrusted context):\n" + summary
-            ])
+            messages.append(AskPromptContext.message(AskPromptPolicyText.summaryPrefix + summary,
+                name: AskPromptPolicyText.summaryName, legacy: policy == .legacyV1))
         }
         if policy == .legacyV1 {
             let web = tools.map(\.name).filter { ["web_fetch", "web_search"].contains($0) }
@@ -65,9 +60,12 @@ struct DefaultAskPromptBuilder: AskPromptBuilding {
                 )
             ])
         }
+        if policy == .modularV2, let plan = AskTaskProgress.planContext(conversation) {
+            messages.append(AskPromptContext.message(plan, name: AskPromptPolicyText.planName))
+        }
         let cut = max(0, min(conversation.summaryThrough ?? 0, conversation.messages.count))
         if policy == .modularV2, let anchors = AskSemanticCompaction.requestAnchors(conversation, through: cut) {
-            messages.append(["role": "system", "content": anchors])
+            messages.append(AskPromptContext.message(anchors, name: AskPromptPolicyText.anchorsName))
         }
         if let latestUser = conversation.messages.lastIndex(where: { $0.role == "user" }), latestUser < cut {
             messages.append(AskLocalPrompt.message(conversation.messages[latestUser]))
@@ -79,7 +77,7 @@ struct DefaultAskPromptBuilder: AskPromptBuilding {
         if let recovery = conversation.run?.internalRecovery {
             messages.append(["role": "system", "content": recovery.prompt])
         }
-        if let guidance = AskTaskProgress.guidance(conversation) {
+        if let guidance = AskTaskProgress.guidance(conversation, includePlan: policy == .legacyV1) {
             messages.append(["role": "system", "content": guidance])
         }
         var payload: [String: Any] = ["model": conversation.run?.modelRef ?? "", "messages": messages]

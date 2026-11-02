@@ -159,10 +159,9 @@ final class AskPromptBuilderTests: XCTestCase {
             XCTAssertEqual(try JSONSerialization.jsonObject(with: modularData) as? NSDictionary,
                            try canonical(JSONSerialization.jsonObject(with: Data(contentsOf: modularURL))) as? NSDictionary)
             let legacyMessages = try XCTUnwrap((value["conversation"] as? [String: Any])?["messages"] as? [[String: Any]])
-            let context = Array(legacyMessages.dropFirst()).filter { !(($0["content"] as? String)?.hasPrefix("<environment>") == true) }
             let modularMessages = try XCTUnwrap(modularPayload["messages"] as? [[String: Any]])
-            XCTAssertEqual(try canonical(context) as? NSArray,
-                           try canonical(Array(modularMessages.dropFirst()).filter { !(($0["content"] as? String)?.hasPrefix("Original user requests (quoted historical context") == true) }) as? NSArray)
+            XCTAssertEqual(try canonical(promptContextMessages(Array(legacyMessages.dropFirst()))) as? NSArray,
+                           try canonical(promptContextMessages(Array(modularMessages.dropFirst()))) as? NSArray)
 
         }
     }
@@ -423,5 +422,17 @@ extension AskPromptBuilderTests {
         XCTAssertLessThan(payload["typeflux_summary_through"] as? Int ?? 10, 10)
         XCTAssertEqual(payload["model"] as? String, "custom:main")
         XCTAssertEqual(conversation, original)
+    }
+}
+
+/// Provider roles change for historical data; the retained conversation bytes do not.
+func promptContextMessages(_ messages: [[String: Any]]) -> [[String: Any]] {
+    messages.filter {
+        let text = $0["content"] as? String ?? ""
+        return !(($0["role"] as? String) == "system" && text.hasPrefix("<environment>")) && !(AskPromptContext.isHistorical($0) && text.hasPrefix(AskPromptPolicyText.anchorsPrefix))
+    }.map { message in
+        var result = message
+        if AskPromptContext.isHistorical(message) { result["role"] = "user"; result.removeValue(forKey: "name") }
+        return result
     }
 }

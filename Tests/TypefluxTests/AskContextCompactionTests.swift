@@ -4,6 +4,27 @@ import Testing
 
 @Suite("Ask automatic context compaction")
 struct AskContextCompactionTests {
+    @Test func contextRolesKeepMemoryAndCurrentQuestionOutsideTheArchive() throws {
+        let memory: [String: Any] = AskPromptContext.message(AskPromptPolicyText.memoryPrefix + "Saved preference", name: AskPromptPolicyText.memoryName)
+        let anchors: [String: Any] = AskPromptContext.message(AskPromptPolicyText.anchorsPrefix + " Original goal", name: AskPromptPolicyText.anchorsName)
+        let plan: [String: Any] = AskPromptContext.message(AskTaskProgress.planContextPrefix + "Pending step", name: AskPromptPolicyText.planName)
+        var messages: [[String: Any]] = [["role": "system", "content": "Host policy"], memory, anchors, plan]
+        for _ in 0..<20 {
+            messages.append(["role": "assistant", "content": String(repeating: "Earlier evidence ", count: 200)])
+        }
+        messages.append(["role": "user", "content": "Current question"])
+        messages.append(AskPromptContext.message(AskPromptPolicyText.summaryPrefix + "Historical summary", name: AskPromptPolicyText.summaryName))
+        let compacted = AskContextCompaction.compact(["messages": messages], window: 4096, target: 1800)
+        let projected = try #require(compacted["messages"] as? [[String: Any]])
+        #expect(projected.contains { ($0["content"] as? String) == "Current question" })
+        #expect(projected.contains { ($0["content"] as? String) == (memory["content"] as? String) })
+        #expect(projected.contains { ($0["content"] as? String) == (anchors["content"] as? String) })
+        #expect(projected.contains { ($0["content"] as? String) == (plan["content"] as? String) })
+        let purged = AskMemory.removingInjection(from: AskLocalPrompt.json(compacted))
+        #expect(!purged.contains("Saved preference"))
+        #expect(purged.contains("Current question"))
+    }
+
     @Test func denseSchemasDoNotEraseTheMiddleOfAFreshRead() throws {
         let evidence = "first line\n" + String(repeating: "page content ", count: 140)
             + "\n[data-category] must be changed here\n" + String(repeating: "page content ", count: 140) + "\nlast line"
