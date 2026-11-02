@@ -58,40 +58,85 @@ struct AskLauncherNumberShortcutTests {
 
     @Test func consumedRingReleaseClearsHintsWithoutAnAppKitEvent() {
         let monitor = AskLauncherCommandMonitor.MonitorView()
-        var physical: NSEvent.ModifierFlags = []
-        monitor.physicalModifiers = { physical }
+        var session: NSEvent.ModifierFlags = []
+        monitor.readModifiers = { _ in session }
         defer { monitor.stop() }
 
         // Opening Chat after Ring must not inherit cached Command flags.
         monitor.refresh(isKeyWindow: true)
         #expect(!monitor.showing)
-        physical = .command
+        session = .command
         monitor.refresh(isKeyWindow: true)
         #expect(monitor.showing)
-        physical = []
+        session = []
         monitor.refresh(isKeyWindow: true)
         #expect(!monitor.showing)
-        physical = [.command, .shift]
+        session = [.command, .shift]
         monitor.refresh(isKeyWindow: true)
         #expect(!monitor.showing)
-        physical = .command
+        session = .command
         monitor.refresh(isKeyWindow: false)
         #expect(!monitor.showing)
     }
 
-    @Test func visibleHintsRecheckPhysicalReleaseOnTimer() async throws {
+    @Test func visibleHintsRecheckSessionReleaseOnTimer() async throws {
         let monitor = AskLauncherCommandMonitor.MonitorView()
-        var physicalReads = 0
-        monitor.physicalModifiers = {
-            physicalReads += 1
+        var sessionReads = 0
+        monitor.readModifiers = { _ in
+            sessionReads += 1
             return []
         }
         defer { monitor.stop() }
         monitor.update(modifiers: .command, isKeyWindow: true)
         #expect(monitor.showing)
         try await Task.sleep(for: .milliseconds(250))
-        #expect(physicalReads > 0)
+        #expect(sessionReads > 0)
         #expect(!monitor.showing)
+    }
+
+    @Test func hintsFollowTheSessionWhenRemoteInputAndHardwareDisagree() {
+        let monitor = AskLauncherCommandMonitor.MonitorView()
+        defer { monitor.stop() }
+        let cases: [(NSEvent.ModifierFlags, NSEvent.ModifierFlags, Bool)] = [
+            ([], [], false),
+            (.command, [], false), // Remote release must override a held local hardware key.
+            ([], .command, true), // Remote Command must work without a local hardware press.
+            (.command, .command, true),
+            ([.command, .shift], .command, true),
+            (.command, [.command, .option], false),
+            (.command, [.command, .control], false),
+            (.command, [.command, .shift], false)
+        ]
+        for (hardware, session, expected) in cases {
+            monitor.readModifiers = { source in
+                source == .hidSystemState ? hardware : session
+            }
+            monitor.refresh(isKeyWindow: true)
+            #expect(monitor.showing == expected)
+        }
+    }
+
+    @Test func remoteReleaseClearsHintsOnTimerWithoutALocalAppKitEvent() async throws {
+        let monitor = AskLauncherCommandMonitor.MonitorView()
+        var session: NSEvent.ModifierFlags = .command
+        var changes: [Bool] = []
+        monitor.readModifiers = { source in
+            source == .hidSystemState ? .command : session
+        }
+        monitor.onChange = { changes.append($0) }
+        let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100),
+                                        styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = monitor
+        window.makeKeyAndOrderFront(nil)
+        defer { monitor.stop(); window.close() }
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(window.isKeyWindow)
+        #expect(monitor.showing)
+        session = []
+        try await Task.sleep(for: .milliseconds(250))
+        #expect(!monitor.showing)
+        #expect(changes == [true, false])
     }
 
     @Test(arguments: [AskLauncherChatAction.openChat, .askAI, .execute("Open Notes")])

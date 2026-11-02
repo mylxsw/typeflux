@@ -72,8 +72,8 @@ struct AskLauncherCommandMonitor: NSViewRepresentable {
         private var monitor: Any?
         private var observers: [NSObjectProtocol] = []
         private var releaseTimer: Timer?
-        var physicalModifiers: () -> NSEvent.ModifierFlags = {
-            NSEvent.ModifierFlags(rawValue: UInt(CGEventSource.flagsState(.hidSystemState).rawValue))
+        var readModifiers: (CGEventSourceStateID) -> NSEvent.ModifierFlags = { source in
+            NSEvent.ModifierFlags(rawValue: UInt(CGEventSource.flagsState(source).rawValue))
         }
         private(set) var showing = false
 
@@ -94,9 +94,11 @@ struct AskLauncherCommandMonitor: NSViewRepresentable {
             onChange(next)
         }
 
-        /// Read hardware state because AppKit's cached flags can outlive a consumed Ring gesture.
+        /// Remote input has its own event source and does not update the HID table.
+        /// The combined session table includes it and is refreshed even when Ring
+        /// consumes an event before AppKit can update its cached modifier flags.
         func refresh(isKeyWindow: Bool? = nil) {
-            update(modifiers: physicalModifiers(), isKeyWindow: isKeyWindow ?? (window?.isKeyWindow == true))
+            update(modifiers: readModifiers(.combinedSessionState), isKeyWindow: isKeyWindow ?? (window?.isKeyWindow == true))
         }
 
         override func viewDidMoveToWindow() {
