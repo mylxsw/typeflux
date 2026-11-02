@@ -33,24 +33,22 @@ struct HelpShortcutsPage: View {
     }
 
     private var hero: some View {
-        let text = VStack(alignment: .leading, spacing: 6) {
-            Text(L("help.shortcuts.hero.eyebrow"))
-                .font(.system(size: 9.5, weight: .semibold))
-                .tracking(1.6)
-                .foregroundStyle(AskTheme.accentText)
-            Text(L("help.shortcuts.hero.title")).font(.studioDisplay(22, weight: .bold))
-            Text(L("help.shortcuts.hero.detail"))
-                .font(.system(size: 12.5))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        return ViewThatFits(in: .horizontal) {
-            HStack(spacing: 20) {
-                text.frame(minWidth: 220, maxWidth: .infinity, alignment: .leading)
-                HelpKeyboardDrawing(lit: HelpKeyboardMap.keyIDs(for: hoveredKeys ?? []), tint: hoveredTint)
-                    .frame(width: 340)
+        HStack(spacing: 20) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L("help.shortcuts.hero.eyebrow"))
+                    .font(.system(size: 9.5, weight: .semibold))
+                    .tracking(1.6)
+                    .foregroundStyle(AskTheme.accentText)
+                Text(L("help.shortcuts.hero.title")).font(.studioDisplay(22, weight: .bold))
+                Text(L("help.shortcuts.hero.detail"))
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            text.frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // Narrow enough to stay beside the text at the smallest window.
+            HelpKeyboardDrawing(lit: HelpKeyboardMap.keyIDs(for: hoveredKeys ?? []), tint: hoveredTint)
+                .frame(width: 320)
         }
         .padding(.bottom, 14)
     }
@@ -320,6 +318,8 @@ struct HelpContextRow: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
+        .accessibilityLabel(title)
+        .accessibilityValue("\(count)")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

@@ -12,6 +12,8 @@ struct HelpCoreActionScene: View {
         RoundedRectangle(cornerRadius: style.usesGlass ? 18 : style.help.blockCorner, style: .continuous)
     }
 
+    private var practicing: Bool { model.practicingAction == action }
+
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             shape.fill(colorScheme == .dark ? Color(red: 0.06, green: 0.07, blue: 0.09)
@@ -20,7 +22,7 @@ struct HelpCoreActionScene: View {
                            startRadius: 10, endRadius: 420)
                 .clipShape(shape)
             Group {
-                if model.practicingAction == action {
+                if practicing {
                     practice
                 } else {
                     scene.accessibilityHidden(true)
@@ -28,13 +30,16 @@ struct HelpCoreActionScene: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 24)
-            .padding(.top, 24)
-            .padding(.bottom, 40)
+            .padding(.top, practicing ? 8 : 24)
+            .padding(.bottom, practicing ? 8 : 40)
             .id(action)
-            Text(action.caption)
-                .font(.studioBody(12.5))
-                .foregroundStyle(colorScheme == .dark ? Color.white : StudioTheme.textPrimary)
-                .padding(16)
+            // Practice says what to do itself and needs the room.
+            if !practicing {
+                Text(action.caption)
+                    .font(.studioBody(12.5))
+                    .foregroundStyle(colorScheme == .dark ? Color.white : StudioTheme.textPrimary)
+                    .padding(16)
+            }
         }
         .overlay(alignment: .topTrailing) { usageTag.padding(14) }
         .overlay(shape.stroke(colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)))
@@ -266,7 +271,7 @@ struct HelpRingPractice: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let scale: CGFloat = proxy.size.width < 368 || proxy.size.height < 320 ? 0.6 : 0.8
+            let scale = Self.scale(for: proxy.size)
             VStack(spacing: 6) {
                 if configuration.actions.isEmpty {
                     Text(OnboardingStrings.text("ring.empty", table: "OnboardingTry"))
@@ -299,6 +304,12 @@ struct HelpRingPractice: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    /// The largest size of the live ring that fits with its hint; its labels stand outside it.
+    static func scale(for size: CGSize) -> CGFloat {
+        if size.width >= 368, size.height >= 344 { return 0.8 }
+        return size.width >= 322 && size.height >= 304 ? 0.7 : 0.6
     }
 
     private func title(_ id: String) -> String? {

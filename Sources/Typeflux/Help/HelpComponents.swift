@@ -313,6 +313,7 @@ struct HelpButton: View {
             .contentShape(shape)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 
     private var shape: RoundedRectangle {
