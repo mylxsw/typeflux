@@ -1,6 +1,6 @@
 # Typeflux · 产品截图
 
-应用真实界面，亮色与暗色对照。点击图片可查看原图。
+亮色与暗色界面。
 
 [返回中文介绍](../README.zh-CN.md) · [English overview](../README.md)
 

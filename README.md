@@ -14,8 +14,6 @@ English | [简体中文](./README.zh-CN.md)
 
 </div>
 
-<sub>Click any screenshot to view the full-resolution original.</sub>
-
 ## Start with one search box
 
 Open the launcher and type an app name, a file name, or a question. Launch apps, jump to browser tabs, and search inside files without first deciding where to look.
