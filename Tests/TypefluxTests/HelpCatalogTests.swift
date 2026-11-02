@@ -52,9 +52,7 @@ struct HelpCatalogTests {
         #expect(group(Self.workflow) == .mine)
         #expect(group(Self.japanese) == .mine, "a keyword with options of its own was made by the user")
         let japanese = catalog.keywords.first { $0.keyword == Self.japanese }
-        #expect(japanese?.isBuiltIn == false && japanese?.origin == L("help.keyword.origin.custom"))
-        #expect(catalog.keywords.first { $0.keyword == Self.workflow }?.origin == L("help.keyword.origin.workflow"))
-        #expect(catalog.keywords.first { $0.keyword == Self.lock }?.origin == L("help.keyword.origin.system"))
+        #expect(japanese?.isBuiltIn == false)
         #expect(catalog.keywords(in: .text).map(\.keyword.keyword) == ["fy", "rw", "sum"])
         #expect(catalog.keyword(id: AskTranslatePlugin.id + ":fy")?.usageCount == 4)
         #expect(catalog.keyword(id: "missing") == nil)
@@ -182,7 +180,7 @@ struct HelpCatalogTests {
 
     @Test func `pages and groups have titles`() {
         for page in HelpPage.allCases {
-            #expect(!page.title.hasPrefix("help.") && !page.subtitle.hasPrefix("help.") && !page.symbol.isEmpty)
+            #expect(!page.title.hasPrefix("help.") && !page.symbol.isEmpty)
         }
         for group in HelpKeywordGroup.allCases { #expect(!group.title.hasPrefix("help.")) }
         for section in HelpShortcutSection.allCases { #expect(!section.title.hasPrefix("help.")) }

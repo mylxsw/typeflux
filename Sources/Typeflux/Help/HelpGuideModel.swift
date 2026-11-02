@@ -59,8 +59,6 @@ final class HelpGuideModel: ObservableObject {
     @Published private(set) var practicingAction: HelpCoreAction?
     @Published private(set) var coreUsage: [HelpCoreAction: Int] = [:]
     @Published var shortcutContext: HelpShortcutContext = .section(.launcher)
-    /// Nil shows every question.
-    @Published var questionTopic: HelpQuestionTopic?
 
     let sources: Sources
     var actions = Actions()
@@ -88,7 +86,6 @@ final class HelpGuideModel: ObservableObject {
         self.query = query
         filter = nil
         openQuestionID = nil
-        questionTopic = nil
         practicingAction = nil
         if query.isEmpty { page = .start }
         reload()
@@ -168,11 +165,10 @@ final class HelpGuideModel: ObservableObject {
         relevantQuestions.contains(question)
     }
 
-    /// The questions of the chosen topic, the ones a missing permission explains first.
-    var visibleQuestions: [HelpQuestion] {
+    /// The questions, the ones a missing permission explains first.
+    var orderedQuestions: [HelpQuestion] {
         let relevant = relevantQuestions
-        let ordered = relevant + catalog.questions.filter { !relevant.contains($0) }
-        return ordered.filter { questionTopic == nil || $0.topic == questionTopic }
+        return relevant + catalog.questions.filter { !relevant.contains($0) }
     }
 
     func usageCount(_ action: HelpCoreAction) -> Int {
@@ -215,26 +211,10 @@ final class HelpGuideModel: ObservableObject {
         }
     }
 
-    /// The action's secondary link: where to learn more about it or change it.
-    func openMore(_ action: HelpCoreAction) {
-        switch action {
-        case .voice: openSettings(.shortcuts)
-        case .launcher: show(.keywords)
-        case .ring: openSettings(.ring)
-        case .chat:
-            shortcutContext = .section(.chat)
-            show(.shortcuts)
-        }
-    }
-
     /// A practice run on the stage counts as having used the action.
     func recordPractice(_ action: HelpCoreAction) {
         sources.recordCoreAction(action)
         reloadUsage()
-    }
-
-    func setQuestionTopic(_ topic: HelpQuestionTopic?) {
-        questionTopic = topic
     }
 
     func setFilter(_ group: HelpKeywordGroup?) {

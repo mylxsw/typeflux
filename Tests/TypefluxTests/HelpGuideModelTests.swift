@@ -398,22 +398,20 @@ struct HelpGuideModelTests {
         }
     }
 
-    @Test func `opening starts on the first core action not tried and clears practice and topic`() throws {
+    @Test func `opening starts on the first core action not tried and clears practice`() throws {
         var usage: [HelpCoreAction: Int] = [.voice: 3, .launcher: 1]
         let kit = try harness(coreUsage: { usage })
         kit.model.tryAction(.voice)
-        kit.model.setQuestionTopic(.privacy)
         kit.model.prepare(query: "")
         #expect(kit.model.selectedAction == .ring && kit.model.nextAction == .ring)
         #expect(kit.model.learnedActionCount == 2 && kit.model.practicingAction == nil)
-        #expect(kit.model.questionTopic == nil)
         usage = Dictionary(uniqueKeysWithValues: HelpCoreAction.allCases.map { ($0, 1) })
         kit.model.prepare(query: "")
         #expect(kit.model.nextAction == nil && kit.model.selectedAction == .voice)
         #expect(kit.model.learnedActionCount == HelpCoreAction.allCases.count)
     }
 
-    @Test func `core actions try in place or through the launcher and lead further`() throws {
+    @Test func `core actions try in place or through the launcher`() throws {
         var recorded: [HelpCoreAction] = []
         let kit = try harness(recordCoreAction: { recorded.append($0) })
         kit.model.prepare(query: "")
@@ -428,13 +426,6 @@ struct HelpGuideModelTests {
         kit.model.tryAction(.launcher)
         kit.model.tryAction(.chat)
         #expect(kit.recorder.launcherOpens == 2 && kit.model.practicingAction == nil)
-        kit.model.openMore(.voice)
-        kit.model.openMore(.ring)
-        #expect(kit.recorder.settings == [.shortcuts, .ring])
-        kit.model.openMore(.launcher)
-        #expect(kit.model.page == .keywords)
-        kit.model.openMore(.chat)
-        #expect(kit.model.page == .shortcuts && kit.model.shortcutContext == .section(.chat))
         kit.model.recordPractice(.ring)
         #expect(recorded == [.ring])
     }
@@ -464,17 +455,12 @@ struct HelpGuideModelTests {
         #expect(kit.model.shortcutContext == .commands)
     }
 
-    @Test func `topics filter the questions and missing permissions still come first`() throws {
+    @Test func `questions a missing permission explains come first`() throws {
         let kit = try harness()
         kit.state.permissions = [HelpPermissionStatus(id: .microphone, title: "Mic", detail: "", granted: false)]
         kit.model.prepare(query: "")
-        #expect(kit.model.visibleQuestions.first?.id == "microphone")
-        #expect(kit.model.visibleQuestions.count == kit.model.catalog.questions.count)
-        kit.model.setQuestionTopic(.voice)
-        #expect(kit.model.visibleQuestions.first?.id == "microphone")
-        #expect(kit.model.visibleQuestions.allSatisfy { $0.topic == .voice })
-        kit.model.setQuestionTopic(.privacy)
-        #expect(kit.model.visibleQuestions.map(\.id) == ["privacy"])
+        #expect(kit.model.orderedQuestions.first?.id == "microphone")
+        #expect(kit.model.orderedQuestions.count == kit.model.catalog.questions.count)
     }
 
     @Test func `the ask box sends trimmed text and ignores blanks`() throws {
@@ -527,9 +513,8 @@ struct HelpGuideModelTests {
                 HelpWindowView(model: kit.model).environment(\.interfaceStyle, style), width: 1120, height: 740
             ) { _, host in
                 let ui = SettingsBehaviorTestSupport.self
-                try await ui.wait { ui.contains(action.caption, in: host) }
+                try await ui.wait { ui.contains(action.steps[0].title, in: host) }
                 for step in action.steps { #expect(ui.contains(step.title, in: host)) }
-                #expect(ui.contains(L("help.action.untried"), in: host))
             }
         }
     }
@@ -546,9 +531,8 @@ struct HelpGuideModelTests {
                 HelpWindowView(model: kit.model), width: 1120, height: 740
             ) { _, host in
                 let ui = SettingsBehaviorTestSupport.self
-                try await ui.wait { ui.contains(L("help.action.ring.practice.hint"), in: host) }
+                try await ui.wait { ui.elements(in: host).contains { $0.label == action.title } }
                 try ui.button(action.title, in: host).press()
-                try await ui.wait { ui.contains(L("help.action.ring.practice.selected", action.title), in: host) }
                 #expect(recorded == [.ring] && kit.recorder.closes == 0)
             }
         }
@@ -564,7 +548,7 @@ struct HelpGuideModelTests {
                 HelpWindowView(model: kit.model), width: HelpWindowView.minimumSize.width, height: 740
             ) { _, host in
                 let ui = SettingsBehaviorTestSupport.self
-                try await ui.wait { ui.contains(L("help.shortcuts.hero.title"), in: host) }
+                try await ui.wait { ui.contains(HelpPage.shortcuts.title, in: host) }
                 let chat = HelpShortcutSection.chat.title
                 try ui.button(chat, in: host).press()
                 #expect(kit.model.shortcutContext == .section(.chat))
@@ -572,14 +556,15 @@ struct HelpGuideModelTests {
                 try ui.button(openHelp.title, in: host).press()
                 #expect(kit.recorder.settings == [.shortcuts] && kit.recorder.closes == 0)
                 try ui.button(HelpShortcutContext.commands.title, in: host).press()
-                try await ui.wait { ui.contains(L("help.shortcuts.commands"), in: host) }
+                let command = try #require(kit.model.catalog.commands.first)
+                try await ui.wait { ui.contains(command.title, in: host) }
             }
         }
     }
 
     @Test func `hovering a shortcut's keys changes the keyboard drawing`() throws {
         func pixels(_ lit: Set<String>) throws -> Data {
-            let host = NSHostingView(rootView: HelpKeyboardDrawing(lit: lit, tint: .red).transaction { $0.animation = nil })
+            let host = NSHostingView(rootView: HelpKeyboardDrawing(lit: lit).transaction { $0.animation = nil })
             host.frame = NSRect(x: 0, y: 0, width: 320, height: 160)
             host.layoutSubtreeIfNeeded()
             let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
@@ -610,7 +595,7 @@ struct HelpGuideModelTests {
                 HelpWindowView(model: kit.model), width: 1120, height: 740
             ) { _, host in
                 let ui = SettingsBehaviorTestSupport.self
-                try await ui.wait { ui.contains(L("help.search.empty.detail"), in: host) }
+                try await ui.wait { ui.contains(L("help.search.empty", "zzzz no such thing"), in: host) }
                 try ui.button(L("help.search.askAI"), in: host).press()
                 #expect(kit.recorder.asked == ["zzzz no such thing"])
             }
@@ -618,7 +603,7 @@ struct HelpGuideModelTests {
     }
 
     @Test(arguments: [false, true])
-    func `the status card and permission banner follow what is missing`(missing: Bool) async throws {
+    func `the status strip and permission banner follow what is missing`(missing: Bool) async throws {
         try await SettingsBehaviorTestSupport.withFixture { _ in
             let kit = try harness()
             kit.state.permissions = [HelpPermissionStatus(id: .accessibility, title: "AX", detail: "Needed",
@@ -632,9 +617,9 @@ struct HelpGuideModelTests {
                 try await ui.wait { ui.contains(HelpCoreAction.voice.tryTitle, in: host) }
                 #expect(ui.contains(banner, in: host) == missing)
                 kit.model.show(.faq)
-                let title = missing ? L("help.faq.attention.title", 1) : L("help.faq.ready.title")
-                try await ui.wait { ui.contains(title, in: host) }
-                #expect(ui.contains(L("help.faq.relevant"), in: host) == missing)
+                let question = try #require(kit.model.catalog.questions.first)
+                try await ui.wait { ui.contains(question.question, in: host) }
+                #expect(ui.elements(in: host).contains { $0.label == L("help.faq.fix") } == missing)
                 if missing {
                     try ui.button(L("help.faq.fix"), in: host).press()
                     #expect(kit.recorder.fixed == [.accessibility])

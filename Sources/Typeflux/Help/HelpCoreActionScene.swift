@@ -15,7 +15,7 @@ struct HelpCoreActionScene: View {
     private var practicing: Bool { model.practicingAction == action }
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
+        ZStack {
             shape.fill(colorScheme == .dark ? Color(red: 0.06, green: 0.07, blue: 0.09)
                 : Color(red: 0.88, green: 0.9, blue: 0.94))
             RadialGradient(colors: [action.tint.opacity(0.36), .clear], center: UnitPoint(x: 0.3, y: 0.05),
@@ -29,33 +29,10 @@ struct HelpCoreActionScene: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 24)
-            .padding(.top, practicing ? 8 : 24)
-            .padding(.bottom, practicing ? 8 : 40)
+            .padding(practicing ? 8 : 24)
             .id(action)
-            // Practice says what to do itself and needs the room.
-            if !practicing {
-                Text(action.caption)
-                    .font(.studioBody(12.5))
-                    .foregroundStyle(colorScheme == .dark ? Color.white : StudioTheme.textPrimary)
-                    .padding(16)
-            }
         }
-        .overlay(alignment: .topTrailing) { usageTag.padding(14) }
         .overlay(shape.stroke(colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)))
-    }
-
-    private var usageTag: some View {
-        let count = model.usageCount(action)
-        return HStack(spacing: 6) {
-            Circle().fill(count > 0 ? StudioTheme.success : action.tint).frame(width: 7, height: 7)
-            Text(count > 0 ? L("help.action.used", count) : L("help.action.untried"))
-                .font(.system(size: 11))
-                .foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.85) : StudioTheme.textSecondary)
-        }
-        .padding(.horizontal, 10)
-        .frame(height: 24)
-        .background(Capsule().fill(colorScheme == .dark ? Color.black.opacity(0.28) : Color.white.opacity(0.7)))
     }
 
     @ViewBuilder private var scene: some View {
@@ -69,7 +46,7 @@ struct HelpCoreActionScene: View {
 
     @ViewBuilder private var practice: some View {
         switch action {
-        case .voice: HelpVoicePractice(keys: model.catalog.voiceKeys) { model.reloadUsage() }
+        case .voice: HelpVoicePractice { model.reloadUsage() }
         case .ring: HelpRingPractice(configuration: model.sources.settings.ringConfiguration) {
                 model.recordPractice(.ring)
             }
@@ -231,31 +208,27 @@ struct HelpChatScene: View {
 
 /// A real text area: holding the voice key writes into it, as it would in any other app.
 struct HelpVoicePractice: View {
-    var keys: [String]?
     var onText: () -> Void
     @State private var text = ""
     @FocusState private var focused: Bool
 
     var body: some View {
-        VStack(spacing: 18) {
-            HelpSceneDocument {
-                ZStack(alignment: .topLeading) {
-                    if text.isEmpty {
-                        Text(L("help.action.voice.practice.placeholder"))
-                            .font(.studioBody(14))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .padding(.leading, 5)
-                            .allowsHitTesting(false)
-                    }
-                    TextEditor(text: $text)
+        HelpSceneDocument {
+            ZStack(alignment: .topLeading) {
+                if text.isEmpty {
+                    Text(L("help.action.voice.practice.placeholder"))
                         .font(.studioBody(14))
-                        .scrollContentBackground(.hidden)
-                        .focused($focused)
-                        .accessibilityLabel(L("help.action.voice.practice.placeholder"))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .padding(.leading, 5)
+                        .allowsHitTesting(false)
                 }
-                .frame(height: 96)
+                TextEditor(text: $text)
+                    .font(.studioBody(14))
+                    .scrollContentBackground(.hidden)
+                    .focused($focused)
+                    .accessibilityLabel(L("help.action.voice.practice.placeholder"))
             }
-            HelpKeycaps(keys: keys)
+            .frame(height: 96)
         }
         .onAppear { focused = true }
         .onChange(of: text) { _ in onText() }
@@ -295,8 +268,8 @@ struct HelpRingPractice: View {
                             }
                         }
                     }
-                    Text(selected.map { L("help.action.ring.practice.selected", $0) } ?? pointed
-                        ?? L("help.action.ring.practice.hint"))
+                    // Holds its line so the ring does not move when a name appears.
+                    Text(selected ?? pointed ?? " ")
                         .font(.studioBody(12, weight: .medium))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(1)

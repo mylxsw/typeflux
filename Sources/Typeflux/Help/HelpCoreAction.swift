@@ -21,13 +21,12 @@ enum HelpCoreAction: String, CaseIterable, Identifiable, Sendable {
 
     var verb: String { scene.verb }
     var name: String { scene.featureName }
-    var caption: String { scene.caption }
     var symbol: String { scene.symbol }
     var tint: Color { scene.tint }
     var tryTitle: String { L("help.action.\(rawValue).try") }
-    var moreTitle: String { L("help.action.\(rawValue).more") }
 
-    /// How to use it, in three steps. The keys are drawn beside the action, so steps never name them.
+    /// How to use it, in three short steps; the detail is shown on hover. The keys are drawn
+    /// beside the action, so steps never name them.
     var steps: [(title: String, detail: String)] {
         (1 ... 3).map { step in
             let base = "help.action.\(rawValue).step\(step)"

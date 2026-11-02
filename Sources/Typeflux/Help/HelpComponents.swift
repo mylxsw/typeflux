@@ -119,13 +119,11 @@ struct HelpKeywordLabel: View {
 /// A group title above a block, with an optional link on the right.
 struct HelpGroupTitle: View {
     var title: String
-    var count: Int?
     var action: (title: String, run: () -> Void)?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(StudioTheme.textSecondary)
-            if let count { Text("\(count)").font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary) }
             Spacer(minLength: 0)
             if let action {
                 Button(action.title, action: action.run).buttonStyle(.plain)
@@ -138,69 +136,36 @@ struct HelpGroupTitle: View {
     }
 }
 
-/// A section's heading with a line about it and an optional link, on the page's larger scale.
+/// A section's heading on the page's larger scale.
 struct HelpSectionHeader: View {
     var title: String
-    var detail: String?
-    var action: (String, () -> Void)?
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(title).font(.system(size: 15, weight: .semibold))
-            if let detail {
-                Text(detail).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
-            }
-            Spacer(minLength: 8)
-            if let action {
-                Button(action.0, action: action.1).buttonStyle(.plain)
-                    .font(.system(size: 12.5)).foregroundStyle(AskTheme.accentText).fixedSize()
-            }
-        }
-        .padding(.top, 28)
-        .padding(.bottom, 12)
+        Text(title)
+            .font(.system(size: 14, weight: .semibold))
+            .padding(.top, 26)
+            .padding(.bottom, 10)
     }
 }
 
-/// A symbol on a small tile of its tint, marking what kind of thing a row or card is.
-struct HelpSymbolTile: View {
-    var symbol: String
-    var tint: Color
-    var size: CGFloat = 30
-
-    var body: some View {
-        Image(systemName: symbol)
-            .font(.system(size: size * 0.48))
-            .foregroundStyle(tint)
-            .frame(width: size, height: size)
-            .background(RoundedRectangle(cornerRadius: size * 0.3, style: .continuous).fill(tint.opacity(0.16)))
-            .accessibilityHidden(true)
-    }
-}
-
-/// A filter that is on or off, with how many things it shows.
+/// A filter that is on or off.
 struct HelpFilterChip: View {
     var title: String
-    var count: Int?
     var selected: Bool
     var action: () -> Void
     @State private var hovering = false
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 5) {
-                Text(title).font(.system(size: 12.5))
-                if let count {
-                    Text("\(count)").font(.system(size: 11)).monospacedDigit().opacity(0.6)
-                }
-            }
-            .lineLimit(1)
-            .fixedSize()
-            .foregroundStyle(selected ? Color.white : StudioTheme.textSecondary)
-            .padding(.horizontal, 10)
-            .frame(height: 28)
-            .background(Capsule().fill(selected ? AskTheme.accent : hovering ? AskTheme.hoverFill : .clear))
-            .overlay(Capsule().strokeBorder(selected ? .clear : AskTheme.border))
-            .contentShape(Capsule())
+            Text(title)
+                .font(.system(size: 12.5))
+                .lineLimit(1)
+                .fixedSize()
+                .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .padding(.horizontal, 10)
+                .frame(height: 26)
+                .background(Capsule().fill(selected ? AskTheme.pressFill : hovering ? AskTheme.hoverFill : .clear))
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }

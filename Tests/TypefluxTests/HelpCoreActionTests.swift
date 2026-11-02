@@ -35,22 +35,17 @@ struct HelpCoreActionTests {
     @Test func `every action has its words in every language`() {
         for action in HelpCoreAction.allCases {
             #expect(action.steps.count == 3)
-            for text in action.steps.flatMap({ [$0.title, $0.detail] }) + [action.tryTitle, action.moreTitle] {
+            for text in action.steps.flatMap({ [$0.title, $0.detail] }) + [action.tryTitle] {
                 #expect(!text.hasPrefix("help."), "\(text)")
             }
-            #expect(!action.verb.isEmpty && !action.name.isEmpty && !action.caption.isEmpty)
+            #expect(!action.verb.isEmpty && !action.name.isEmpty)
             #expect(action.scene.key == action.rawValue)
         }
     }
 
-    @Test func `every answer reads as steps`() {
+    @Test func `questions and answers have their words`() {
         for question in HelpCatalog.questions {
-            #expect(!question.steps.isEmpty)
-            #expect(question.steps.joined(separator: "\n") == question.answer)
-        }
-        for topic in HelpQuestionTopic.allCases {
-            #expect(HelpCatalog.questions.contains { $0.topic == topic }, "\(topic.rawValue) has no questions")
-            #expect(!topic.title.hasPrefix("help.") && !topic.symbol.isEmpty)
+            #expect(!question.question.hasPrefix("help.") && !question.answer.hasPrefix("help."))
         }
     }
 
@@ -98,7 +93,7 @@ struct HelpCoreActionTests {
     }
 
     @Test func `shortcut contexts cover every window once`() {
-        let contexts = HelpShortcutContext.conversation + HelpShortcutContext.tools
+        let contexts = HelpShortcutContext.all
         #expect(Set(contexts).count == contexts.count)
         let windows = HelpShortcutSection.allCases.filter { $0 != .global && $0 != .keyword }
         for window in windows {
@@ -119,22 +114,16 @@ struct HelpCoreActionTests {
         }
     }
 
-    @Test func `a keyword's how to follows what it can do`() throws {
-        let catalog = HelpCatalog.build(HelpCatalogInput(
-            keywords: [HelpCatalogTests.source(HelpCatalogTests.translate, selection: true),
-                       HelpCatalogTests.source(HelpCatalogTests.lock, selection: false)],
-            builtInHotkeys: [:], actionHotkeys: [:], keywordHotkeys: [], usage: [:]
-        ))
-        let translate = try #require(catalog.keywords.first { $0.keyword == HelpCatalogTests.translate })
-        #expect(HelpKeywordDetail.howTo(translate) == [
-            L("help.keyword.howto.typed", "fy"), L("help.keyword.howto.selection", "fy"), L("help.keyword.howto.complete")
-        ])
-        let lock = try #require(catalog.keywords.first { $0.keyword == HelpCatalogTests.lock })
-        #expect(HelpKeywordDetail.howTo(lock).first == L("help.keyword.howto.run", lock.keyword.keyword))
-        #expect(HelpKeywordDetail.howTo(lock).count == 2)
+    @Test func `set shortcuts come first, keyword shortcuts among them`() {
+        let keyword = HelpShortcut(id: "k", section: .keyword, title: "k", detail: "", keys: ["⌘", "K"])
+        let unset = HelpShortcut(id: "u", section: .global, title: "u", detail: "")
+        let set = HelpShortcut(id: "s", section: .global, title: "s", detail: "", keys: ["⌥"])
+        let window = HelpShortcut(id: "w", section: .chat, title: "w", detail: "", keys: ["↩"])
+        let catalog = HelpCatalog(shortcuts: [unset, set, keyword, window])
+        #expect(catalog.shortcutCards.map(\.id) == ["s", "k", "u"])
     }
 
-    @Test func `global shortcuts have a symbol and a tint for every target`() {
+    @Test func `global shortcuts have a symbol for every target`() {
         let shortcuts = HelpCatalog.globalShortcuts(HelpCatalogInput(keywords: [], builtInHotkeys: [:],
                                                                      actionHotkeys: [:], keywordHotkeys: [], usage: [:]))
         #expect(shortcuts.allSatisfy { $0.symbol != "keyboard" })
