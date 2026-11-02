@@ -455,9 +455,9 @@ private extension OnboardingSpeechPage {
 
     private func badge(for provider: STTProvider) -> String? {
         switch provider {
-        case .localModel: OnboardingStrings.text("badge.recommended", table: "OnboardingSpeech")
+        case .doubaoRealtime: OnboardingStrings.text("badge.recommended", table: "OnboardingSpeech")
         case .freeModel: OnboardingStrings.text("badge.free", table: "OnboardingSpeech")
-        case .soniox, .aliCloud, .doubaoRealtime, .whisperAPI, .groq:
+        case .soniox, .aliCloud, .whisperAPI, .groq:
             OnboardingStrings.text("badge.apiKey", table: "OnboardingSpeech")
         case .googleCloud: OnboardingStrings.text("badge.auth", table: "OnboardingSpeech")
         case .multimodalLLM: OnboardingStrings.text("badge.advanced", table: "OnboardingSpeech")

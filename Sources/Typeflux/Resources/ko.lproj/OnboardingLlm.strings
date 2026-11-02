@@ -52,7 +52,7 @@
 "model.autoFetch" = "확인 후 자동 가져오기";
 "model.default" = "기본 모델";
 "action.getKey" = "API Key 받기";
-"action.testConnection" = "연결 테스트";
+"action.testConnection" = "연결 테스트 (선택)";
 "status.testing" = "테스트 중…";
 "error.invalidKey" = "API Key가 유효하지 않습니다";
 "error.ollamaNotFound" = "Ollama가 감지되지 않았습니다";

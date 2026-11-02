@@ -7277,7 +7277,7 @@
 "help.action.voice.practice.placeholder" = "按住快捷键说话";
 "help.action.launcher.try" = "打开启动器";
 "help.action.ring.try" = "练习一次";
-"help.action.chat.try" = "问一个问题";
+"help.action.chat.try" = "打开启动器";
 "help.action.voice.step1.title" = "按住快捷键";
 "help.action.voice.step1.detail" = "光标放在任何应用的输入框里";
 "help.action.voice.step2.title" = "说话";
@@ -7296,12 +7296,12 @@
 "help.action.ring.step2.detail" = "指向翻译、截图、剪贴板…";
 "help.action.ring.step3.title" = "松开";
 "help.action.ring.step3.detail" = "执行所指的动作，也可以按数字键";
-"help.action.chat.step1.title" = "写下问题";
-"help.action.chat.step1.detail" = "选中的文字会一起带上";
-"help.action.chat.step2.title" = "按 ⌘↩";
-"help.action.chat.step2.detail" = "交给 AI，⌘K 还能附上网页或截图";
-"help.action.chat.step3.title" = "⌘O 继续";
-"help.action.chat.step3.detail" = "在独立的对话窗口里接着聊";
+"help.action.chat.step1.title" = "打开启动器";
+"help.action.chat.step1.detail" = "用启动器快捷键唤出输入框";
+"help.action.chat.step2.title" = "输入 chat";
+"help.action.chat.step2.detail" = "在启动器输入 chat";
+"help.action.chat.step3.title" = "按 ↩ 开始聊";
+"help.action.chat.step3.detail" = "打开独立的对话窗口";
 "help.progress.next" = "下一个：";
 "help.start.tip.calculator.title" = "直接算";
 "help.start.tip.calculator.detail" = "输入算式，按 ↩ 复制结果";

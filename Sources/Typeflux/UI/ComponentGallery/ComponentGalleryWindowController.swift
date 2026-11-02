@@ -3,19 +3,17 @@ import SwiftUI
 
 /// Where the developer component gallery can be opened from.
 enum ComponentGalleryAccess {
-    static let environmentKey = "TYPEFLUX_COMPONENT_GALLERY"
     static let launchArgument = "--component-gallery"
 
-    /// Debug builds always offer the gallery; release builds only when asked for explicitly.
-    static func isAvailable(environment: [String: String] = ProcessInfo.processInfo.environment,
-                            arguments: [String] = ProcessInfo.processInfo.arguments,
-                            isDebugBuild: Bool = isDebugBuild) -> Bool {
-        isDebugBuild || environment[environmentKey] == "1" || arguments.contains(launchArgument)
+    /// The gallery is a development tool and is never available in production builds.
+    static func isAvailable(isDebugBuild: Bool = isDebugBuild) -> Bool {
+        isDebugBuild
     }
 
-    /// `--component-gallery` opens the gallery right after launch (used for screenshots).
-    static func opensAtLaunch(arguments: [String] = ProcessInfo.processInfo.arguments) -> Bool {
-        arguments.contains(launchArgument)
+    /// `--component-gallery` opens the gallery for development screenshots only.
+    static func opensAtLaunch(arguments: [String] = ProcessInfo.processInfo.arguments,
+                              isDebugBuild: Bool = isDebugBuild) -> Bool {
+        isAvailable(isDebugBuild: isDebugBuild) && arguments.contains(launchArgument)
     }
 
     static var isDebugBuild: Bool {
@@ -68,6 +66,7 @@ final class ComponentGalleryWindowController: NSObject, NSWindowDelegate {
     }
 
     func show() {
+        guard ComponentGalleryAccess.isAvailable() else { return }
         if let window {
             window.makeKeyAndOrderFront(nil)
             activate()

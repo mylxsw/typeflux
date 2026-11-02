@@ -52,7 +52,7 @@
 "model.autoFetch" = "検証後に自動取得";
 "model.default" = "デフォルトモデル";
 "action.getKey" = "API Key を取得";
-"action.testConnection" = "接続テスト";
+"action.testConnection" = "接続テスト（任意）";
 "status.testing" = "テスト中…";
 "error.invalidKey" = "API Key が無効です";
 "error.ollamaNotFound" = "Ollama が検出されませんでした";

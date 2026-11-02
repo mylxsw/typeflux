@@ -21,7 +21,7 @@ extension OnboardingViewModel {
 
     var pageReadiness: Bool? {
         switch currentStep {
-        case .welcome: nil
+        case .welcome, .recall: nil
         case .route: routeModel.canContinue
         case .cloud: cloudModel.canContinue
         case .speech: speechModel.canContinue
@@ -34,7 +34,7 @@ extension OnboardingViewModel {
 
     var isPageBusy: Bool {
         switch currentStep {
-        case .welcome: false
+        case .welcome, .recall: false
         case .route: routeModel.isBusy
         case .cloud: cloudModel.isBusy
         case .speech: speechModel.isBusy
@@ -47,7 +47,7 @@ extension OnboardingViewModel {
 
     var pagePrimaryAction: (() -> Void)? {
         switch currentStep {
-        case .welcome: nil
+        case .welcome, .recall: nil
         case .route: routeModel.primaryAction
         case .cloud: cloudModel.primaryAction
         case .speech: speechModel.primaryAction

@@ -1,0 +1,7 @@
+/* A single takeaway after onboarding. */
+"eyebrow" = "いつでも確認";
+"title" = "覚えるのは、これだけ";
+"subtitle" = "まずはランチャーを開きましょう。";
+"open" = "ランチャーを開く";
+"menu" = "設定 → ショートカットでランチャーのキーを設定";
+"help" = "help と入力して Return。使い方とショートカットを確認できます。";

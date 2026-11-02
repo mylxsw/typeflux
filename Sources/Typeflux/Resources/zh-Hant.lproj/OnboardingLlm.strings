@@ -52,7 +52,7 @@
 "model.autoFetch" = "驗證後自動獲取";
 "model.default" = "預設模型";
 "action.getKey" = "獲取 API Key";
-"action.testConnection" = "測試連線";
+"action.testConnection" = "測試連線（選填）";
 "status.testing" = "測試中…";
 "error.invalidKey" = "API Key 無效";
 "error.ollamaNotFound" = "未檢測到 Ollama";

@@ -7279,7 +7279,7 @@
 "help.action.voice.practice.placeholder" = "按住快捷鍵說話";
 "help.action.launcher.try" = "打開啟動器";
 "help.action.ring.try" = "練習一次";
-"help.action.chat.try" = "問一個問題";
+"help.action.chat.try" = "打開啟動器";
 "help.action.voice.step1.title" = "按住快捷鍵";
 "help.action.voice.step1.detail" = "游標放在任何 App 的輸入框裡";
 "help.action.voice.step2.title" = "說話";
@@ -7298,12 +7298,12 @@
 "help.action.ring.step2.detail" = "指向翻譯、截圖、剪貼簿…";
 "help.action.ring.step3.title" = "放開";
 "help.action.ring.step3.detail" = "執行所指的動作，也可以按數字鍵";
-"help.action.chat.step1.title" = "寫下問題";
-"help.action.chat.step1.detail" = "選取的文字會一起帶上";
-"help.action.chat.step2.title" = "按 ⌘↩";
-"help.action.chat.step2.detail" = "交給 AI，⌘K 還能附上網頁或截圖";
-"help.action.chat.step3.title" = "⌘O 繼續";
-"help.action.chat.step3.detail" = "在獨立的對話視窗裡接著聊";
+"help.action.chat.step1.title" = "打開啟動器";
+"help.action.chat.step1.detail" = "用啟動器快捷鍵叫出輸入框";
+"help.action.chat.step2.title" = "輸入 chat";
+"help.action.chat.step2.detail" = "在啟動器輸入 chat";
+"help.action.chat.step3.title" = "按 ↩ 開始聊";
+"help.action.chat.step3.detail" = "打開獨立的對話視窗";
 "help.progress.next" = "下一個：";
 "help.start.tip.calculator.title" = "直接算";
 "help.start.tip.calculator.detail" = "輸入算式，按 ↩ 複製結果";

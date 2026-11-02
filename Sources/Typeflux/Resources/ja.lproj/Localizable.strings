@@ -7278,7 +7278,7 @@
 "help.action.voice.practice.placeholder" = "ショートカットを押しながら話す";
 "help.action.launcher.try" = "ランチャーを開く";
 "help.action.ring.try" = "一度練習する";
-"help.action.chat.try" = "質問する";
+"help.action.chat.try" = "ランチャーを開く";
 "help.action.voice.step1.title" = "ショートカットを押し続ける";
 "help.action.voice.step1.detail" = "任意のアプリの入力欄にカーソルを置いて";
 "help.action.voice.step2.title" = "話す";
@@ -7297,12 +7297,12 @@
 "help.action.ring.step2.detail" = "翻訳、スクリーンショット、クリップボードなどへ";
 "help.action.ring.step3.title" = "離す";
 "help.action.ring.step3.detail" = "指したアクションを実行。数字キーも使えます";
-"help.action.chat.step1.title" = "質問を書く";
-"help.action.chat.step1.detail" = "選択したテキストも一緒に渡されます";
-"help.action.chat.step2.title" = "⌘↩ を押す";
-"help.action.chat.step2.detail" = "AI に渡します。⌘K で Web ページやスクリーンショットも添付";
-"help.action.chat.step3.title" = "⌘O で続ける";
-"help.action.chat.step3.detail" = "チャットウインドウで続けられます";
+"help.action.chat.step1.title" = "ランチャーを開く";
+"help.action.chat.step1.detail" = "ランチャーのショートカットを押します";
+"help.action.chat.step2.title" = "chat と入力";
+"help.action.chat.step2.detail" = "ランチャーに chat と入力します";
+"help.action.chat.step3.title" = "↩ でチャット";
+"help.action.chat.step3.detail" = "専用のチャットウィンドウを開きます";
 "help.progress.next" = "次：";
 "help.start.tip.calculator.title" = "そのまま計算";
 "help.start.tip.calculator.detail" = "式を入力し、↩ で結果をコピー";

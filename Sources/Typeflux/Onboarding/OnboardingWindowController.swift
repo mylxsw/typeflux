@@ -133,7 +133,7 @@ extension OnboardingWindowController: NSWindowDelegate {
 
     func windowWillClose(_: Notification) {
         // User closed the window manually without completing onboarding
-        // Mark it complete so it doesn't show again, then call the handler
+        // Save deferred setup and call the handler; the next launch will offer onboarding again.
         if let window {
             DockVisibilityController.shared.windowDidHide(window)
         }

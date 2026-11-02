@@ -250,7 +250,7 @@ struct OnboardingTryTests {
         }
     }
 
-    @Test func `try page renders and completes onboarding through finish button`() async throws {
+    @Test func `try page renders and continues to recall before completion`() async throws {
         try await UI.withFixture { settings in
             var completed = false
             let library = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
@@ -323,7 +323,13 @@ struct OnboardingTryTests {
                 try triedButton3.press()
                 try await UI.wait { viewModel.tryModel.isTried(.chat) }
 
-                // Click finish button in footer
+                // Practice advances to the takeaway; completion remains a separate action.
+                try UI.button(OnboardingStrings.text("continue"), in: host).press()
+                try await UI.wait { viewModel.currentStep == .recall }
+                #expect(!completed && !settings.isOnboardingCompleted)
+                try await UI.wait {
+                    UI.contains(OnboardingStrings.text("title", table: "OnboardingRecall"), in: host)
+                }
                 let finishTitle = OnboardingStrings.text("finish")
                 try UI.button(finishTitle, in: host).press()
 

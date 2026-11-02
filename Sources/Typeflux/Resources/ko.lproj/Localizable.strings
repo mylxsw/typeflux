@@ -7278,7 +7278,7 @@
 "help.action.voice.practice.placeholder" = "단축키를 누른 채 말하기";
 "help.action.launcher.try" = "런처 열기";
 "help.action.ring.try" = "한 번 연습하기";
-"help.action.chat.try" = "질문하기";
+"help.action.chat.try" = "런처 열기";
 "help.action.voice.step1.title" = "단축키 누르기";
 "help.action.voice.step1.detail" = "아무 앱의 입력란에 커서를 두고";
 "help.action.voice.step2.title" = "말하기";
@@ -7297,12 +7297,12 @@
 "help.action.ring.step2.detail" = "번역, 스크린샷, 클립보드 등으로";
 "help.action.ring.step3.title" = "떼기";
 "help.action.ring.step3.detail" = "가리킨 동작을 실행합니다. 숫자 키도 됩니다";
-"help.action.chat.step1.title" = "질문 쓰기";
-"help.action.chat.step1.detail" = "선택한 텍스트가 함께 전달됩니다";
-"help.action.chat.step2.title" = "⌘↩ 누르기";
-"help.action.chat.step2.detail" = "AI에게 전달합니다. ⌘K로 웹 페이지나 스크린샷도 첨부";
-"help.action.chat.step3.title" = "⌘O로 계속";
-"help.action.chat.step3.detail" = "채팅 창에서 이어 갑니다";
+"help.action.chat.step1.title" = "런처 열기";
+"help.action.chat.step1.detail" = "런처 단축키를 누르세요";
+"help.action.chat.step2.title" = "chat 입력";
+"help.action.chat.step2.detail" = "런처에 chat을 입력하세요";
+"help.action.chat.step3.title" = "↩ 눌러 대화";
+"help.action.chat.step3.detail" = "별도의 대화 창을 엽니다";
 "help.progress.next" = "다음:";
 "help.start.tip.calculator.title" = "바로 계산";
 "help.start.tip.calculator.detail" = "수식을 입력하고 ↩로 결과 복사";

@@ -1,7 +1,7 @@
 /* Onboarding v3: OnboardingSpeech */
 "eyebrow" = "Voice Recognition";
 "title" = "Voice Recognition";
-"subtitle" = "Choose a service and say a sentence to test.";
+"subtitle" = "Choose a service and finish setup. Testing is optional.";
 "configEyebrow" = "Configuration";
 
 "provider.local.title" = "Local Model";
@@ -48,7 +48,7 @@
 "placeholder.pasteApiKey" = "Paste API Key";
 "placeholder.pasteAccessToken" = "Paste Access Token";
 "action.getKey" = "Get %@";
-"action.testHoldToTalk" = "Hold to Talk Test";
+"action.testHoldToTalk" = "Hold to Talk Test (Optional)";
 "status.listening" = "Listening… release to finish";
 "status.recognizing" = "Recognizing…";
 "error.invalidKey" = "Invalid API Key, please check and retry";

@@ -141,14 +141,13 @@ private extension OnboardingLLMPage {
 
     private var ollamaFields: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if model.isOllamaRunning {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(OnboardingStrings.text("field.model", table: "OnboardingLlm"))
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                    modelSelectorMenu(models: model.availableModels, enabled: model.validationStatus == .valid)
-                }
-            } else {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(OnboardingStrings.text("field.model", table: "OnboardingLlm"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                modelField
+            }
+            if !model.isOllamaRunning {
                 HStack(spacing: 10) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
@@ -241,12 +240,25 @@ private extension OnboardingLLMPage {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
 
-                modelSelectorMenu(
-                    models: model.availableModels,
-                    enabled: model.validationStatus == .valid
-                )
+                modelField
             }
             .frame(maxWidth: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private var modelField: some View {
+        if model.availableModels.isEmpty {
+            TextField(OnboardingStrings.text("field.model", table: "OnboardingLlm"),
+                      text: Binding(get: { model.selectedModel }, set: model.selectModel))
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 10)
+                .frame(height: 34)
+                .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(.primary.opacity(0.08), lineWidth: 1))
+                .accessibilityIdentifier("onboarding.llm.model")
+        } else {
+            modelSelectorMenu(models: model.availableModels, enabled: true)
         }
     }
 
@@ -334,8 +346,8 @@ private extension OnboardingLLMPage {
                 .overlay(Capsule().stroke(.primary.opacity(0.08), lineWidth: 1))
             }
             .buttonStyle(.plain)
-            .disabled(model.validationStatus != .valid || model.isBusy)
-            .opacity(model.validationStatus == .valid ? 1 : 0.4)
+            .disabled(!model.isConfigurationComplete || model.isBusy)
+            .opacity(model.isConfigurationComplete ? 1 : 0.4)
         }
         .padding(.top, 10)
         .overlay(alignment: .top) {

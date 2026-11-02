@@ -1,7 +1,7 @@
 /* Onboarding v3: OnboardingSpeech */
 "eyebrow" = "Voice Recognition";
 "title" = "語音識別";
-"subtitle" = "選擇一個服務，說一句話測試。";
+"subtitle" = "選擇一個服務並完成設定，測試可選。";
 "configEyebrow" = "Configuration";
 
 "provider.local.title" = "本機模型";
@@ -48,7 +48,7 @@
 "placeholder.pasteApiKey" = "貼上 API Key";
 "placeholder.pasteAccessToken" = "貼上 Access Token";
 "action.getKey" = "獲取 %@";
-"action.testHoldToTalk" = "按住說話測試";
+"action.testHoldToTalk" = "按住說話測試（選填）";
 "status.listening" = "正在聽…放開結束";
 "status.recognizing" = "識別中…";
 "error.invalidKey" = "API Key 無效，請檢查後重試";

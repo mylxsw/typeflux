@@ -238,18 +238,14 @@ struct TFComponentLogicTests {
         #expect(TFStatusDot(level: .neutral).color == TFColors.textTertiary)
     }
 
-    @Test func galleryAccessIsDebugOrExplicit() {
-        #expect(ComponentGalleryAccess.isAvailable(environment: [:], arguments: [], isDebugBuild: true))
-        #expect(!ComponentGalleryAccess.isAvailable(environment: [:], arguments: [], isDebugBuild: false))
-        #expect(ComponentGalleryAccess.isAvailable(environment: ["TYPEFLUX_COMPONENT_GALLERY": "1"], arguments: [],
-                                                   isDebugBuild: false))
-        #expect(!ComponentGalleryAccess.isAvailable(environment: ["TYPEFLUX_COMPONENT_GALLERY": "0"], arguments: [],
-                                                    isDebugBuild: false))
-        #expect(ComponentGalleryAccess.isAvailable(environment: [:], arguments: ["app", "--component-gallery"],
-                                                   isDebugBuild: false))
-        #expect(ComponentGalleryAccess.opensAtLaunch(arguments: ["app", "--component-gallery"]))
-        #expect(!ComponentGalleryAccess.opensAtLaunch(arguments: ["app"]))
-        _ = ComponentGalleryAccess.isDebugBuild
+    @Test func galleryAccessIsRestrictedToDevelopmentBuilds() {
+        #expect(ComponentGalleryAccess.isAvailable(isDebugBuild: true))
+        #expect(!ComponentGalleryAccess.isAvailable(isDebugBuild: false))
+        for debug in [true, false] {
+            #expect(ComponentGalleryAccess.opensAtLaunch(arguments: ["app", "--component-gallery"],
+                                                        isDebugBuild: debug) == debug)
+            #expect(!ComponentGalleryAccess.opensAtLaunch(arguments: ["app"], isDebugBuild: debug))
+        }
     }
 
     @Test func galleryAppearancesAndSectionsAreComplete() {

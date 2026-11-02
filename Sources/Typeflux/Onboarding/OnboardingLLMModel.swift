@@ -184,7 +184,10 @@ extension OnboardingLLMModel {
                 customBaseURL = store.llmBaseURL(for: remote)
             }
             selectedModel = store.llmModel(for: remote)
-            availableModels = []
+            availableModels = remote.suggestedModels
+            if !selectedModel.isEmpty, !availableModels.contains(selectedModel) {
+                availableModels.insert(selectedModel, at: 0)
+            }
         }
         isSyncing = false
         if selectedProvider == .remote(.freeModel) {
@@ -208,17 +211,19 @@ extension OnboardingLLMModel {
         guard selectedProvider != .remote(.freeModel) else { return }
         // Published values arrive before storage changes; yield before reading the signature.
         validationStatus = .validating
-        isBusy = true
         let token = generation
         validationTask = Task { @MainActor [weak self] in
             do {
-                let delay = self?.validationDelay ?? 0.6
+                await Task.yield()
+                guard !Task.isCancelled, let self, generation == token else { return }
+                commitCurrentSelection()
+                let delay = validationDelay
                 if delay > 0 {
                     try await Task.sleep(for: .milliseconds(Int(delay * 1000)))
                 } else {
                     await Task.yield()
                 }
-                guard !Task.isCancelled, let self, generation == token else { return }
+                guard !Task.isCancelled, generation == token else { return }
                 let (provider, config) = connectionConfiguration()
                 let isOllama = selectedProvider == .ollama
                 guard isOllama || (selectedProvider == .remote(.custom) && !config.baseURL.isEmpty) || !config.apiKey
@@ -235,7 +240,7 @@ extension OnboardingLLMModel {
                 guard !Task.isCancelled, let self, generation == token else { return }
                 isOllamaRunning = selectedProvider != .ollama
                 validationStatus = .invalid(message: error.localizedDescription)
-                canContinue = false
+                commitCurrentSelection()
                 isBusy = false
             }
         }
@@ -243,12 +248,12 @@ extension OnboardingLLMModel {
 
     private func applyCatalog(_ models: [RegisteredModel]) {
         let ids = models.filter { $0.exclusionReason == nil }.map(\.id)
-        // An empty Ollama catalog means no installed model; never invent installed models.
+        // Keep the entered model usable even when the optional catalog lookup returns nothing.
         isOllamaRunning = true
         guard !ids.isEmpty else {
             availableModels = []
             validationStatus = .invalid(message: L("models.noModels"))
-            canContinue = false
+            commitCurrentSelection()
             isBusy = false
             return
         }
@@ -277,12 +282,13 @@ extension OnboardingLLMModel {
     }
 
     func selectModel(_ model: String) {
-        guard availableModels.contains(model) else { return }
         testTask?.cancel()
+        validationTask?.cancel()
         generation = UUID()
         testStatus = .idle
         isBusy = false
-        selectedModel = model
+        selectedModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
+        if validationStatus == .validating { validationStatus = .idle }
         commitCurrentSelection()
     }
 
@@ -301,8 +307,13 @@ extension OnboardingLLMModel {
     }
 
     func testConnection() {
-        guard validationStatus == .valid, !selectedModel.isEmpty, !isBusy else { return }
+        guard isConfigurationComplete, !isBusy else { return }
+        commitCurrentSelection()
+        guard canContinue == true else { return }
         testTask?.cancel()
+        validationTask?.cancel()
+        generation = UUID()
+        if validationStatus == .validating { validationStatus = .idle }
         let token = generation
         let (provider, configuration) = connectionConfiguration()
         let probe = connectionProbe
@@ -341,8 +352,20 @@ extension OnboardingLLMModel {
         }
     }
 
+    var isConfigurationComplete: Bool {
+        guard !selectedModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        switch selectedProvider {
+        case .remote(.freeModel): return FreeLLMModelRegistry.suggestedModelNames.contains(selectedModel)
+        case .ollama, .remote(.custom):
+            return !customBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .remote:
+            return !customBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
     func commitCurrentSelection() {
-        guard validationStatus == .valid, !selectedModel.isEmpty,
+        guard isConfigurationComplete,
               let session else { canContinue = false; return }
         let store = session.settingsStore
         let library = session.modelLibrary

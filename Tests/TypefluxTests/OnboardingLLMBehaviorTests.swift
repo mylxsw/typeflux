@@ -6,7 +6,48 @@ import Testing
 @testable import Typeflux
 
 extension OnboardingSpeechLLMTests {
-    @Test func `LLM has every remaining provider and validates before committing real registry references`(
+    @Test func `configured LLM advances before optional network lookup or connection test`() async throws {
+        try await fixture { settings, session, _, catalog, _ in
+            session.currentStep = .llm
+            let model = session.llmModel
+            model.validationDelay = 60
+            model.selectProvider(.remote(.openAI))
+            #expect(!session.canAdvance)
+            model.apiKey = " configured-key "
+            try await Controls.wait { session.canAdvance }
+            #expect(catalog.calls == 0)
+            #expect(model.testStatus == .idle)
+            #expect(model.validationStatus == .validating)
+            #expect(settings.llmAPIKey(for: .openAI) == "configured-key")
+            #expect(session.modelLibrary.registry.resolve(session.modelLibrary.rewriteReference)?.1.id
+                == model.selectedModel)
+            session.advance()
+            #expect(session.currentStep == .permissions)
+            #expect(!settings.onboardingAIDeferred)
+        }
+    }
+
+    @Test func `manual custom LLM configuration survives optional test failures`() async throws {
+        try await fixture { _, session, _, catalog, _ in
+            session.currentStep = .llm
+            let model = session.llmModel
+            catalog.fails = true
+            model.selectProvider(.remote(.custom))
+            model.customBaseURL = "https://example.com/v1"
+            model.selectModel("manual-model")
+            #expect(session.canAdvance)
+            #expect(model.testStatus == .idle)
+            model.connectionProbe = { _, _ in throw AskLocalError.message("Offline") }
+            model.testConnection()
+            try await Controls.wait { if case .failure = model.testStatus { return true }; return false }
+            #expect(session.canAdvance)
+            model.customBaseURL = "  "
+            try await Controls.wait { model.canContinue == false }
+            #expect(!session.canAdvance)
+        }
+    }
+
+    @Test func `LLM has every remaining provider and commits configured registry references`(
     ) async throws {
         try await fixture { settings, session, _, catalog, _ in
             let model = session.llmModel
@@ -46,7 +87,7 @@ extension OnboardingSpeechLLMTests {
             catalog.fails = true
             model.selectProvider(.ollama)
             try await Controls.wait { !model.isOllamaRunning }
-            #expect(model.canContinue == false)
+            #expect(model.canContinue == true)
             catalog.fails = false
             catalog.ids = []
             model.checkOllama()
@@ -120,8 +161,8 @@ extension OnboardingSpeechLLMTests {
             model.selectProvider(.remote(.freeModel))
             #expect(model.selectedProvider == .remote(.openAI))
             model.activate()
-            try await Controls.wait { !model.isBusy }
-            #expect(model.availableModels.isEmpty)
+            try await Controls.wait { model.validationStatus == .idle }
+            #expect(!model.availableModels.isEmpty)
             #expect(model.canContinue == false)
             #expect(!session.languageConfigured)
             #expect(model.validationStatus == .idle)
@@ -183,7 +224,7 @@ extension OnboardingSpeechLLMTests {
         }
     }
 
-    @Test func `every remote provider can commit a fetched model and errors block verification`() async throws {
+    @Test func `every remote provider can commit a model and optional lookup errors allow continuation`() async throws {
         try await fixture { _, session, _, catalog, _ in
             session.currentStep = .llm
             let model = session.llmModel
@@ -204,7 +245,7 @@ extension OnboardingSpeechLLMTests {
                     return true
                 }; return false
             }
-            #expect(model.canContinue == false)
+            #expect(model.canContinue == true)
             catalog.fails = false
             model.selectProvider(.remote(.openAI))
             model.apiKey = "fixture"
@@ -235,7 +276,7 @@ extension OnboardingSpeechLLMTests {
             settings.sonioxAPIKey = "external-change"
             speechReply?.resume(returning: "outdated")
             try await Controls.wait { !speech.isBusy }
-            #expect(speech.canContinue == false)
+            #expect(speech.canContinue == true)
             #expect(speech.testStatus == .idle)
             session.currentStep = .llm
             let llm = session.llmModel
@@ -269,7 +310,7 @@ extension OnboardingSpeechLLMTests {
             session.goBack()
             #expect(speech.canTest)
             try await record(speech)
-            try await Controls.wait { speech.canContinue == true }
+            try await Controls.wait { if case .success = speech.testStatus { return true }; return false }
             #expect(!settings.onboardingSpeechDeferred)
             session.advance()
             llm.selectProvider(.ollama)

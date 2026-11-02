@@ -10,7 +10,7 @@ extension OnboardingViewModel {
     }
 
     var isLastStep: Bool {
-        currentStep == .try
+        currentStep == .recall
     }
 
     var canAdvance: Bool {

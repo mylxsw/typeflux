@@ -68,6 +68,7 @@ struct OnboardingView: View {
         case .permissions: OnboardingPermissionsPage(viewModel: viewModel, model: viewModel.permissionsModel)
         case .shortcuts: OnboardingShortcutsPage(viewModel: viewModel, model: viewModel.shortcutsModel)
         case .try: OnboardingTryPage(viewModel: viewModel, model: viewModel.tryModel)
+        case .recall: OnboardingRecallPage(viewModel: viewModel)
         }
     }
 
@@ -90,7 +91,7 @@ struct OnboardingView: View {
 
     private var primary: OnboardingFooterAction {
         let step = viewModel.currentStep
-        return .init(title: OnboardingStrings.text(step == .welcome ? "start" : step == .try ? "finish" : "continue"),
+        return .init(title: OnboardingStrings.text(step == .welcome ? "start" : step == .recall ? "finish" : "continue"),
                      enabled: !viewModel.isSetupActionRunning
                          && (viewModel.canAdvance || viewModel.pagePrimaryAction != nil)) {
             viewModel.performSetupAction()

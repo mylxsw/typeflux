@@ -52,7 +52,7 @@
 "model.autoFetch" = "Auto-fetched after verification";
 "model.default" = "Default Model";
 "action.getKey" = "Get API Key";
-"action.testConnection" = "Test Connection";
+"action.testConnection" = "Test Connection (Optional)";
 "status.testing" = "Testing…";
 "error.invalidKey" = "Invalid API Key";
 "error.ollamaNotFound" = "Ollama not detected";

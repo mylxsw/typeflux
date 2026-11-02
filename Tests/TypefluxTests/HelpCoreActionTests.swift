@@ -81,7 +81,7 @@ struct HelpCoreActionTests {
         #expect(Set(ids).count == ids.count, "the drawing's keys must be unique for its identity")
     }
 
-    @Test func `the ring's and the launcher's keys come from the catalog and asking is fixed`() {
+    @Test func `the ring and launcher use configured keys and chat teaches its keyword`() {
         var input = HelpCatalogInput(keywords: [], builtInHotkeys: [:], actionHotkeys: [:], keywordHotkeys: [],
                                      usage: [:])
         input.actionHotkeys[.ring] = HelpCatalogTests.controlOptionR
@@ -89,7 +89,7 @@ struct HelpCoreActionTests {
         let catalog = HelpCatalog.build(input)
         #expect(catalog.keys(for: .ring) == ["⌃", "⌥", "R"] && catalog.keys(for: .launcher) == ["⌃", "⌥", "R"])
         #expect(catalog.keys(for: .voice) == nil, "an unset voice key stays unset")
-        #expect(catalog.keys(for: .chat) == ["⌘", "↩"])
+        #expect(catalog.keys(for: .chat) == ["chat"])
     }
 
     @Test func `shortcut contexts cover every window once`() {

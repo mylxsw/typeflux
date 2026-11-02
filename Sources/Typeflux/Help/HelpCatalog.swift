@@ -195,13 +195,13 @@ struct HelpCatalog: Equatable, Sendable {
     var launcherKeys: [String]?
     var ringKeys: [String]?
 
-    /// The keys that start a core action. Asking is always ⌘↩ inside the launcher.
+    /// The keys or keyword that start a core action.
     func keys(for action: HelpCoreAction) -> [String]? {
         switch action {
         case .voice: voiceKeys
         case .launcher: launcherKeys
         case .ring: ringKeys
-        case .chat: ["⌘", "↩"]
+        case .chat: ["chat"]
         }
     }
 

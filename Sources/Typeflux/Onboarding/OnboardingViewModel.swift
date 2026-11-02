@@ -127,8 +127,8 @@ final class OnboardingViewModel: ObservableObject {
         setupObservers.forEach(NotificationCenter.default.removeObserver)
     }
 
-    /// Marks onboarding as complete without triggering the completion callback.
-    /// Used when the window is closed externally (e.g., user clicks the close button).
+    /// Saves deferred setup without recording completion or triggering the callback.
+    /// Closing early must leave onboarding pending for the next launch.
     func skipWithoutAnimation() {
         reportAbandonedIfNeeded()
         settingsStore.onboardingSpeechDeferred = speechSkipped || !speechConfigured
@@ -136,7 +136,7 @@ final class OnboardingViewModel: ObservableObject {
         settingsStore.onboardingPermissionsDeferred = settingsStore.onboardingPermissionsDeferred
             || !allRequiredPermissionsGranted
         if !aiSkipped && languageConfigured { settingsStore.applyDefaultPersonaIfLLMConfigured() }
-        settingsStore.isOnboardingCompleted = true
+        settingsStore.isOnboardingCompleted = false
     }
 
     // MARK: - Practice

@@ -1,0 +1,7 @@
+/* A single takeaway after onboarding. */
+"eyebrow" = "언제든 다시 확인";
+"title" = "이것 하나만 기억하세요";
+"subtitle" = "런처에서 시작하세요.";
+"open" = "런처 열기";
+"menu" = "설정 → 단축키에서 런처 단축키를 지정하세요";
+"help" = "help 입력 후 Return을 누르면 사용법과 단축키를 볼 수 있어요.";

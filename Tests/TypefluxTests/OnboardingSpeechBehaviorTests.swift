@@ -6,7 +6,36 @@ import Testing
 @testable import Typeflux
 
 extension OnboardingSpeechLLMTests {
-    @Test func `speech records the held audio and only success enables continuation`() async throws {
+    @Test func `speech configuration can advance without recording or microphone permission`() async throws {
+        try await fixture { settings, session, manager, _, _ in
+            let model = session.speechModel
+            model.selectProvider(.doubaoRealtime)
+            model.audioAuthorizationProvider = { .denied }
+            model.refreshMicrophoneStatus()
+            #expect(!session.canAdvance)
+            model.doubaoAppID = "app"
+            #expect(!session.canAdvance)
+            model.doubaoAccessToken = "token"
+            #expect(session.canAdvance)
+            #expect(!model.canTest)
+            #expect(model.testStatus == .idle)
+            session.advance()
+            #expect(session.currentStep == .llm)
+            #expect(!settings.onboardingSpeechDeferred)
+            #expect(settings.doubaoAppID == "app" && settings.doubaoAccessToken == "token")
+
+            session.goBack()
+            model.doubaoAccessToken = "  "
+            #expect(!session.canAdvance)
+            model.selectProvider(.localModel)
+            manager.available = false
+            session.currentStep = .llm
+            session.currentStep = .speech
+            #expect(!session.canAdvance)
+        }
+    }
+
+    @Test func `speech testing remains optional and records the held audio`() async throws {
         try await fixture { settings, session, _, _, recorder in
             let model = session.speechModel
             settings.onboardingSpeechDeferred = true
@@ -15,9 +44,9 @@ extension OnboardingSpeechLLMTests {
                 #expect(FileManager.default.fileExists(atPath: audio.fileURL.path))
                 return "Actual audio reached the recognizer"
             }) }
-            #expect(!session.canAdvance)
+            #expect(session.canAdvance)
             try await record(model)
-            try await Controls.wait { model.canContinue == true }
+            try await Controls.wait { if case .success = model.testStatus { return true }; return false }
             #expect(recorder.stopped)
             #expect(!FileManager.default.fileExists(atPath: recorder.url.path))
             #expect(!settings.onboardingSpeechDeferred)
@@ -55,7 +84,7 @@ extension OnboardingSpeechLLMTests {
                     return true
                 }; return false
             }
-            #expect(model.canContinue == false)
+            #expect(model.canContinue == true)
             recorder.failsStart = false
             recorder.failsStop = true
             try await record(model)
@@ -68,7 +97,7 @@ extension OnboardingSpeechLLMTests {
                     return true
                 }; return false
             }
-            #expect(model.canContinue == false)
+            #expect(model.canContinue == true)
         }
     }
 
@@ -93,7 +122,7 @@ extension OnboardingSpeechLLMTests {
                 }
                 if model.canTest {
                     try await record(model)
-                    try await Controls.wait { model.canContinue == true }
+                    try await Controls.wait { if case .success = model.testStatus { return true }; return false }
                 }
             }
             #expect(settings.aliCloudAPIKey == "key")
@@ -104,9 +133,9 @@ extension OnboardingSpeechLLMTests {
             #expect(settings.doubaoAccessToken == "token")
             model.selectProvider(.soniox)
             try await record(model)
-            try await Controls.wait { model.canContinue == true }
+            try await Controls.wait { if case .success = model.testStatus { return true }; return false }
             model.apiKey = "changed"
-            #expect(model.canContinue == false)
+            #expect(model.canContinue == true)
             #expect(model.testStatus == .idle)
             model.selectProvider(.whisperAPI)
             model.whisperBaseURL = "https://example.com/v1"
@@ -132,7 +161,7 @@ extension OnboardingSpeechLLMTests {
             pending?.resume(returning: "stale")
             await Task.yield()
             #expect(model.testStatus == .idle)
-            #expect(model.canContinue == false)
+            #expect(model.canContinue == true)
             pending = nil
             try await record(model)
             try await Controls.wait { pending != nil }
@@ -141,7 +170,7 @@ extension OnboardingSpeechLLMTests {
             await Task.yield()
             #expect(session.currentStep == .llm)
             #expect(settings.onboardingSpeechDeferred)
-            #expect(model.canContinue == false)
+            #expect(model.canContinue == true)
         }
     }
 
@@ -227,9 +256,9 @@ extension OnboardingSpeechLLMTests {
                 return Engine()
             }
             try await record(model)
-            try await Controls.wait { model.canContinue == true }
+            try await Controls.wait { if case .success = model.testStatus { return true }; return false }
             model.doubaoResourceID = "volc.bigasr.sauc.duration"
-            #expect(model.testStatus == .idle && model.canContinue == false)
+            #expect(model.testStatus == .idle && model.canContinue == true)
             #expect(settings.doubaoResourceID == "volc.bigasr.sauc.duration")
             model.selectProvider(.localModel)
             model.selectProvider(.doubaoRealtime)

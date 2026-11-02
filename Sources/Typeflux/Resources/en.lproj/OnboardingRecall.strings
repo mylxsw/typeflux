@@ -1,0 +1,7 @@
+/* A single takeaway after onboarding. */
+"eyebrow" = "Always within reach";
+"title" = "Just remember one thing";
+"subtitle" = "Start with the launcher.";
+"open" = "Open the launcher";
+"menu" = "Set a launcher shortcut in Settings → Shortcuts";
+"help" = "Type help and press Return for tips and shortcuts.";

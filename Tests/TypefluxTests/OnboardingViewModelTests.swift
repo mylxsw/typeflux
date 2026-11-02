@@ -17,6 +17,46 @@ struct OnboardingViewModelTests {
         }
     }
 
+    @Test func `completion is scoped to the 1_0_0 onboarding experience`() async throws {
+        try await fixture { settings, model, _ in
+            let defaults = settings.defaults
+            defaults.removeObject(forKey: "onboarding.completed")
+            defaults.removeObject(forKey: "onboarding.completedVersion")
+            #expect(!settings.isOnboardingCompleted)
+
+            // Upgrading from the voice-only app must not inherit its completion flag.
+            defaults.set(true, forKey: "onboarding.completed")
+            #expect(!settings.isOnboardingCompleted)
+            defaults.set("0.9.0", forKey: "onboarding.completedVersion")
+            #expect(!settings.isOnboardingCompleted)
+
+            settings.activationHotkey = .rightCommandActivation
+            settings.sttProvider = .whisperAPI
+            #expect(model.currentStep == .welcome)
+            model.currentStep = .recall
+            model.advance()
+            #expect(settings.isOnboardingCompleted)
+            #expect(defaults.string(forKey: "onboarding.completedVersion") == "1.0.0")
+            #expect(SettingsStore(defaults: defaults).isOnboardingCompleted)
+            #expect(settings.activationHotkey == .rightCommandActivation)
+            #expect(settings.sttProvider == .whisperAPI)
+
+            settings.isOnboardingCompleted = false
+            #expect(defaults.object(forKey: "onboarding.completedVersion") == nil)
+            #expect(!SettingsStore(defaults: defaults).isOnboardingCompleted)
+        }
+    }
+
+    @Test func `closing early leaves the current onboarding pending`() async throws {
+        try await fixture { settings, model, _ in
+            settings.defaults.set(true, forKey: "onboarding.completed")
+            model.skipWithoutAnimation()
+            #expect(!settings.isOnboardingCompleted)
+            #expect(settings.defaults.object(forKey: "onboarding.completedVersion") == nil)
+            #expect(!SettingsStore(defaults: settings.defaults).isOnboardingCompleted)
+        }
+    }
+
     @Test func `skip cancels pending navigation and explains each affected capability`() async throws {
         try await fixture { _, model, _ in
             model.chooseRoute(.custom)
@@ -45,7 +85,7 @@ struct OnboardingViewModelTests {
             #expect(model.speechModel.testStatus == .idle)
             #expect(settings.sttProvider == .whisperAPI)
             #expect(settings.onboardingSpeechDeferred)
-            #expect(!model.canAdvance)
+            #expect(model.canAdvance)
         }
     }
 
@@ -79,7 +119,7 @@ struct OnboardingViewModelTests {
             #expect(model.serviceRoute == .launcherOnly)
             #expect(model.currentStep == .permissions)
             #expect(settings.onboardingSpeechDeferred && settings.onboardingAIDeferred)
-            #expect(model.visibleSteps.suffix(3) == [.permissions, .shortcuts, .try])
+            #expect(model.visibleSteps.suffix(4) == [.permissions, .shortcuts, .try, .recall])
             #expect(model.requiredPermissionIDs == [.accessibility])
             #expect(manager.prepareCount == 0)
         }
@@ -188,7 +228,7 @@ struct OnboardingViewModelTests {
     @Test func `finish does not require skipped configuration`() async throws {
         try await fixture { settings, model, _ in
             model.skipConfirmation = .allModels; model.confirmSkip()
-            model.currentStep = .try; model.advance()
+            model.currentStep = .recall; model.advance()
             #expect(settings.isOnboardingCompleted)
             #expect(settings.onboardingAIDeferred)
         }
@@ -241,7 +281,7 @@ struct OnboardingViewModelTests {
         try await fixture { settings, model, _ in
             settings.llmRemoteProvider = .typefluxCloud
             #expect(settings.isLLMConfigured)
-            model.aiSkipped = true; model.currentStep = .try; model.advance()
+            model.aiSkipped = true; model.currentStep = .recall; model.advance()
             #expect(!settings.personaRewriteEnabled)
             #expect(settings.onboardingAIDeferred)
         }
@@ -280,7 +320,7 @@ struct OnboardingViewModelTests {
             model.currentStep = .route
             model.skipConfirmation = .allModels; model.confirmSkip()
             #expect(recorder.events.last?.properties == ["step": "route", "skipped": "true"])
-            model.currentStep = .try; model.advance(); model.advance()
+            model.currentStep = .recall; model.advance(); model.advance()
             #expect(recorder.events.count(where: { $0.name == "onboarding_completed" }) == 1)
             #expect(settings.isOnboardingCompleted)
 

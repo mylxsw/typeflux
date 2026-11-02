@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import SwiftUI
 import Foundation
 import SwiftUI
 import Testing
@@ -59,6 +60,26 @@ struct HelpGuideModelTests {
         let workflows: PassthroughSubject<Void, Never>
         let recorder: Recorder
         let state: HelpModelTestState
+    }
+
+    @Test func `chat introduction shows the launcher keyword in both appearances`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            AppLocalization.shared.setLanguage(.simplifiedChinese)
+            let kit = try harness()
+            kit.model.prepare(query: "")
+            kit.model.showAction(.chat)
+            for dark in [false, true] {
+                try await SettingsBehaviorTestSupport.withWindow(
+                    HelpWindowView(model: kit.model).environment(\.colorScheme, dark ? .dark : .light),
+                    width: 1120, height: 740
+                ) { _, host in
+                    try await SettingsBehaviorTestSupport.wait {
+                        SettingsBehaviorTestSupport.contains(L("help.action.chat.step2.title"), in: host)
+                    }
+                    try SettingsBehaviorTestSupport.snapshot(host, name: "help-chat-\(dark ? "dark" : "light")")
+                }
+            }
+        }
     }
 
     @Test func `opening a shortcut search result preserves its scroll destination`() throws {

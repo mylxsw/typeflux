@@ -31,6 +31,32 @@ struct OnboardingBehaviorTests {
         try UI.snapshot(host, name: name)
     }
 
+    @Test func `recall shows configured keys and completes only after the final action`() async throws {
+        for appearance in [AppearanceMode.light, .dark] {
+            try await fixture(language: .simplifiedChinese, appearance: appearance) { settings, model, host in
+                settings.askHotkey = HotkeyBinding(keyCode: 15,
+                                                         modifierFlags: NSEvent.ModifierFlags.control.union(.option).rawValue)
+                model.currentStep = .try
+                model.advance()
+                #expect(model.currentStep == .recall && model.isLastStep)
+                #expect(!settings.isOnboardingCompleted)
+                try await UI.wait { UI.contains("help", in: host) && UI.contains("⌃ ⌥ R", in: host) }
+                #expect(!UI.contains("Space", in: host))
+                try await capture(host, name: "recall-custom-\(appearance.rawValue)")
+                model.goBack()
+                #expect(model.currentStep == .try && !model.isLastStep)
+                model.advance()
+                settings.askHotkey = nil
+                model.objectWillChange.send()
+                try await UI.wait {
+                    UI.contains(OnboardingStrings.text("menu", table: "OnboardingRecall"), in: host)
+                }
+                try UI.button(OnboardingStrings.text("finish"), in: host).press()
+                #expect(settings.isOnboardingCompleted)
+            }
+        }
+    }
+
     @Test func `welcome route selection back and skip are wired through native buttons`() async throws {
         try await fixture { settings, model, host in
             try UI.button(OnboardingStrings.text("start"), in: host).press()
@@ -86,6 +112,12 @@ struct OnboardingBehaviorTests {
                 model.currentStep == .try
                     && UI.contains(OnboardingStrings.text("title", table: OnboardingStep.try.table), in: host)
             }
+            try UI.button(OnboardingStrings.text("continue"), in: host).press()
+            try await UI.wait {
+                model.currentStep == .recall
+                    && UI.contains(OnboardingStrings.text("title", table: OnboardingStep.recall.table), in: host)
+            }
+            #expect(!settings.isOnboardingCompleted)
             try UI.button(OnboardingStrings.text("finish"), in: host).press()
             #expect(settings.isOnboardingCompleted)
             #expect(settings.onboardingSpeechDeferred && settings.onboardingAIDeferred)
@@ -107,7 +139,7 @@ struct OnboardingBehaviorTests {
                         }
                         #expect(host.bounds.size == NSSize(width: 960, height: 664))
                         let primary = try UI.button(OnboardingStrings.text(
-                            step == .welcome ? "start" : step == .try ? "finish" : "continue"
+                            step == .welcome ? "start" : step == .recall ? "finish" : "continue"
                         ), in: host)
                         #expect(primary.frame.height >= 38)
                         try await capture(host, name: "\(step.rawValue)-\(language.rawValue)-\(appearance.rawValue)")

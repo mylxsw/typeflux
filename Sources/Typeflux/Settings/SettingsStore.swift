@@ -1419,9 +1419,22 @@ final class SettingsStore {
         "\(name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())::\(prompt.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())"
     }
 
+    // Bump only when the onboarding experience must be repeated, not for every app update.
+    static let requiredOnboardingVersion = "1.0.0"
+
     var isOnboardingCompleted: Bool {
-        get { defaults.object(forKey: "onboarding.completed") as? Bool ?? false }
-        set { defaults.set(newValue, forKey: "onboarding.completed") }
+        get {
+            defaults.bool(forKey: "onboarding.completed")
+                && defaults.string(forKey: "onboarding.completedVersion") == Self.requiredOnboardingVersion
+        }
+        set {
+            defaults.set(newValue, forKey: "onboarding.completed")
+            if newValue {
+                defaults.set(Self.requiredOnboardingVersion, forKey: "onboarding.completedVersion")
+            } else {
+                defaults.removeObject(forKey: "onboarding.completedVersion")
+            }
+        }
     }
 
     private func llmRemoteKey(_ provider: LLMRemoteProvider, suffix: String) -> String {

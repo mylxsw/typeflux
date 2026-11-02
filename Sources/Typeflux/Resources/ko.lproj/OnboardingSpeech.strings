@@ -1,7 +1,7 @@
 /* Onboarding v3: OnboardingSpeech */
 "eyebrow" = "Voice Recognition";
 "title" = "음성 인식";
-"subtitle" = "서비스를 선택하고 한 마디 말하여 테스트하세요.";
+"subtitle" = "서비스를 선택하고 설정하세요. 테스트는 선택 사항입니다.";
 "configEyebrow" = "Configuration";
 
 "provider.local.title" = "로컬 모델";
@@ -48,7 +48,7 @@
 "placeholder.pasteApiKey" = "API Key 붙여넣기";
 "placeholder.pasteAccessToken" = "Access Token 붙여넣기";
 "action.getKey" = "%@ 받기";
-"action.testHoldToTalk" = "길게 눌러 말하기 테스트";
+"action.testHoldToTalk" = "길게 눌러 말하기 테스트 (선택)";
 "status.listening" = "듣는 중… 손을 떼면 완료";
 "status.recognizing" = "인식 중…";
 "error.invalidKey" = "API Key가 유효하지 않습니다. 확인 후 다시 시도하세요";

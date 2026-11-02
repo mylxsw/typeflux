@@ -23,7 +23,7 @@ extension OnboardingSpeechLLMTests {
                 try await Controls.wait { Controls.contains(download, in: host) }
                 try Controls.button(download, in: host).press()
                 try await Controls.wait { manager.available }
-                #expect(session.speechModel.canContinue == false)
+                #expect(session.speechModel.canContinue == true)
                 session.currentStep = .llm
                 try await Controls.wait {
                     Controls.contains(OnboardingStrings.text("title", table: "OnboardingLlm"), in: host)
@@ -190,7 +190,7 @@ extension OnboardingSpeechLLMTests {
         }
     }
 
-    @Test func `native LLM menu updates the registry and disables an empty catalog`() async throws {
+    @Test func `native LLM menu updates the registry and empty catalogs allow manual entry`() async throws {
         try await fixture { _, session, _, catalog, _ in
             session.currentStep = .llm
             let model = session.llmModel
@@ -213,17 +213,14 @@ extension OnboardingSpeechLLMTests {
                 catalog.ids = []
                 model.apiKey = "another-fixture"
                 try await Controls.wait { model.validationStatus == .invalid(message: L("models.noModels")) }
-                try await Controls.wait { nativeButtons(host).contains {
+                try await Controls.wait { !nativeButtons(host).contains {
                     $0.accessibilityIdentifier() == "onboarding.llm.model"
-                        && !$0.isEnabled && $0.numberOfItems == 0
                 } }
-                let empty = try #require(nativeButtons(host).first {
-                    $0.accessibilityIdentifier() == "onboarding.llm.model"
-                })
-                #expect(empty.selectedItem == nil && model.canContinue == false)
-                let reference = session.modelLibrary.rewriteReference
-                _ = try NSApp.sendAction(#require(empty.action), to: empty.target, from: empty)
-                #expect(session.modelLibrary.rewriteReference == reference)
+                #expect(model.canContinue == true)
+                #expect(!model.selectedModel.isEmpty)
+                model.selectModel("manually-entered-model")
+                #expect(session.modelLibrary.registry.resolve(session.modelLibrary.rewriteReference)?.1.id
+                    == "manually-entered-model")
             }
         }
     }

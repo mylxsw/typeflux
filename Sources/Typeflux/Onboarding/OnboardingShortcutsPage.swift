@@ -13,7 +13,7 @@ struct OnboardingShortcutsPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             OnboardingEditorialHeader(eyebrow: text("eyebrow"), title: text("title"),
-                                      subtitle: text("subtitle"), pill: "03 / 04")
+                                      subtitle: text("subtitle"), pill: OnboardingStep.shortcuts.pill)
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     group("voice", targets: Array(OnboardingShortcutsModel.targets.prefix(3)))

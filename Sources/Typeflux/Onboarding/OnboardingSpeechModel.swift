@@ -44,7 +44,9 @@ final class OnboardingSpeechModel: ObservableObject {
         didSet { credentialsChanged() }
     }
 
-    @Published var isGoogleAuthorized = false
+    @Published var isGoogleAuthorized = false {
+        didSet { canContinue = isConfigurationComplete }
+    }
     @Published private(set) var isAuthorizingGoogle = false
     @Published var isMicrophoneDenied = false
     @Published var testStatus: TestStatus = .idle
@@ -98,6 +100,7 @@ final class OnboardingSpeechModel: ObservableObject {
             .sink { [weak self] _ in self?.refreshDownloadProgress() }
             .store(in: &subscriptions)
         session.$currentStep.dropFirst().sink { [weak self] step in
+            if step == .speech { self?.refreshDownloadProgress() }
             if step != .speech, self?.testTask != nil || self?.authorizationTask != nil {
                 self?.cancelTest()
             }
@@ -156,9 +159,9 @@ final class OnboardingSpeechModel: ObservableObject {
             downloadProgress = progress
         case let .failed(model, message) where model == selectedLocalModel && selectedProvider == .localModel:
             testStatus = .failure(message: message)
-            canContinue = false
         default: break
         }
+        canContinue = isConfigurationComplete
     }
 
     func startDownload() {
@@ -221,7 +224,7 @@ final class OnboardingSpeechModel: ObservableObject {
         guard !isAuthorizingGoogle else { return }
         isAuthorizingGoogle = true
         testStatus = .idle
-        canContinue = false
+        canContinue = isConfigurationComplete
         let authorize = authorizeGoogle
         authorizationTask = Task { @MainActor [weak self] in
             guard !Task.isCancelled else { return }
@@ -319,7 +322,7 @@ extension OnboardingSpeechModel {
                     guard !Task.isCancelled, let self, generation == token else { return }
                     guard configurationSignature == signature else { cancelTest(); return }
                     testStatus = .failure(message: error.localizedDescription)
-                    canContinue = false
+                    canContinue = isConfigurationComplete
                     isBusy = false
                 }
             }
@@ -351,7 +354,7 @@ extension OnboardingSpeechModel {
         recorder = nil
         recordingSignature = nil
         testStatus = .idle
-        canContinue = false
+        canContinue = isConfigurationComplete
         isBusy = false
     }
 
@@ -361,16 +364,16 @@ extension OnboardingSpeechModel {
         }
     }
 
-    var canTest: Bool {
-        if isMicrophoneDenied {
-            return false
-        }
+    var canTest: Bool { !isMicrophoneDenied && isConfigurationComplete }
+
+    var isConfigurationComplete: Bool {
         switch selectedProvider {
         case .localModel: return isLocalModelAvailable
         case .freeModel: return !FreeSTTModelRegistry.suggestedModelNames.isEmpty
         case .googleCloud: return isGoogleAuthorized && !trimmed(googleProjectID).isEmpty
         case .doubaoRealtime: return !trimmed(doubaoAppID).isEmpty && !trimmed(doubaoAccessToken).isEmpty
-        case .whisperAPI, .aliCloud, .groq, .soniox: return !trimmed(apiKey).isEmpty
+        case .whisperAPI: return !trimmed(apiKey).isEmpty && !trimmed(whisperBaseURL).isEmpty
+        case .aliCloud, .groq, .soniox: return !trimmed(apiKey).isEmpty
         case .multimodalLLM:
             guard let store = session?.settingsStore else { return false }
             return !trimmed(store.multimodalLLMBaseURL).isEmpty && !trimmed(store.multimodalLLMModel).isEmpty
@@ -404,7 +407,7 @@ extension OnboardingSpeechModel {
 
     func commitCredentials() {
         guard let store = session?.settingsStore else { return }
-        // Do not clear deferral until an explicit test succeeds.
+        // Advancing the page clears deferral; testing is optional.
         switch selectedProvider {
         case .aliCloud: store.aliCloudAPIKey = trimmed(apiKey)
         case .groq: store.groqSTTAPIKey = trimmed(apiKey)

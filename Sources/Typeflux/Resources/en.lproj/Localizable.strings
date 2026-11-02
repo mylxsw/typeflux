@@ -7277,7 +7277,7 @@
 "help.action.voice.practice.placeholder" = "Hold your shortcut and speak";
 "help.action.launcher.try" = "Open launcher";
 "help.action.ring.try" = "Practice once";
-"help.action.chat.try" = "Ask a question";
+"help.action.chat.try" = "Open the launcher";
 "help.action.voice.step1.title" = "Hold your shortcut";
 "help.action.voice.step1.detail" = "With the cursor in any app’s text field";
 "help.action.voice.step2.title" = "Speak";
@@ -7296,12 +7296,12 @@
 "help.action.ring.step2.detail" = "Toward translate, screenshot, clipboard…";
 "help.action.ring.step3.title" = "Release";
 "help.action.ring.step3.detail" = "Runs what you point at; number keys work too";
-"help.action.chat.step1.title" = "Write a question";
-"help.action.chat.step1.detail" = "Selected text comes along by itself";
-"help.action.chat.step2.title" = "Press ⌘↩";
-"help.action.chat.step2.detail" = "⌘K adds a web page or screenshot too";
-"help.action.chat.step3.title" = "Press ⌘O to continue";
-"help.action.chat.step3.detail" = "Carry on in the chat window";
+"help.action.chat.step1.title" = "Open launcher";
+"help.action.chat.step1.detail" = "Press your launcher shortcut";
+"help.action.chat.step2.title" = "Type chat";
+"help.action.chat.step2.detail" = "Type chat in the launcher";
+"help.action.chat.step3.title" = "Press ↩ to chat";
+"help.action.chat.step3.detail" = "Open the dedicated chat window";
 "help.progress.next" = "Next:";
 "help.start.tip.calculator.title" = "Do the math";
 "help.start.tip.calculator.detail" = "Type a sum; ↩ copies the result";

@@ -259,7 +259,7 @@ extension OnboardingPermissionsTests {
                         try await withPermissionWindow(session, dark: dark) { window, host in
                             try await Task.sleep(for: .milliseconds(100))
                             #expect(TestUI.contains(OnboardingPermissionsPage.text("title"), in: host))
-                            #expect(TestUI.contains("02 / 04", in: host))
+                            #expect(TestUI.contains("02 / 05", in: host))
                             if state == "initial" {
                                 let toggle = try #require(TestUI.elements(in: host).first {
                                     $0.value("accessibilityIdentifier") as? String == "onboarding.permissions.optional"

@@ -1,7 +1,7 @@
 /* Onboarding v3: OnboardingSpeech */
 "eyebrow" = "Voice Recognition";
 "title" = "音声認識";
-"subtitle" = "サービスを選択し、一言話してテストしてください。";
+"subtitle" = "サービスを選択して設定してください。テストは任意です。";
 "configEyebrow" = "Configuration";
 
 "provider.local.title" = "ローカルモデル";
@@ -48,7 +48,7 @@
 "placeholder.pasteApiKey" = "API Key を貼り付け";
 "placeholder.pasteAccessToken" = "Access Token を貼り付け";
 "action.getKey" = "%@ を取得";
-"action.testHoldToTalk" = "長押ししてテスト";
+"action.testHoldToTalk" = "長押ししてテスト（任意）";
 "status.listening" = "聞き取り中…離して完了";
 "status.recognizing" = "認識中…";
 "error.invalidKey" = "API Key が無効です。確認して再試行してください";

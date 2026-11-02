@@ -40,7 +40,9 @@ struct HelpCoreActionScene: View {
         case .voice: HelpVoiceScene()
         case .launcher: HelpLauncherScene()
         case .ring: HelpRingScene()
-        case .chat: HelpChatScene()
+        case .chat:
+            LauncherGuidePreview(keyword: "chat", title: L("ask.openChat"))
+                .frame(maxWidth: 440)
         }
     }
 

@@ -208,7 +208,7 @@ extension OnboardingComponentTests {
                     window.endSheet(exit, returnCode: .alertSecondButtonReturn)
                     exit.close()
                     try await UI.wait { controller.window == nil }
-                    #expect(settings.isOnboardingCompleted && completions == 1)
+                    #expect(!settings.isOnboardingCompleted && completions == 1)
                     #expect(settings.onboardingSpeechDeferred && settings.onboardingAIDeferred
                         && settings.onboardingPermissionsDeferred)
                 }
