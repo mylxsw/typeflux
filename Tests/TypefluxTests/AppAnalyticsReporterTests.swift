@@ -220,6 +220,29 @@ final class AppAnalyticsReporterTests: XCTestCase {
         XCTAssertNil(requests.values[1].value(forHTTPHeaderField: "Authorization"))
     }
 
+    func testTransportUsesFastestEndpointAndFailsOverWithoutChangingProbeLatency() async throws {
+        let requests = AnalyticsRequestRecorder()
+        AnalyticsTransportURLProtocol.handler = { request in
+            requests.append(request)
+            return HTTPURLResponse(url: request.url!, statusCode: request.url!.host == "fast.test" ? 503 : 202,
+                                   httpVersion: nil, headerFields: nil)!
+        }
+        defer { AnalyticsTransportURLProtocol.handler = nil }
+        let primary = URL(string: "https://primary.test")!, fast = URL(string: "https://fast.test")!
+        let selector = CloudEndpointSelector(baseURLs: [primary, fast], prober: AnalyticsUnusedProber())
+        await selector.reportSuccess(primary, latencyMs: 100)
+        await selector.reportSuccess(fast, latencyMs: 10)
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AnalyticsTransportURLProtocol.self]
+        let transport = URLSessionAppAnalyticsTransport(selector: selector, session: URLSession(configuration: configuration),
+            clientInfoProvider: TypefluxCloudClientInfoProvider { Self.clientInfo }, accessTokenProvider: { nil })
+        try await transport.send(events: [event(named: "app_login")])
+        XCTAssertEqual(requests.values.map { $0.url!.host! }, ["fast.test", "primary.test"])
+        let states = await selector.snapshot()
+        XCTAssertEqual(states.first(where: { $0.baseURL == fast })?.consecutiveFailures, 1)
+        XCTAssertEqual(states.first(where: { $0.baseURL == primary })?.latencyMs, 100)
+    }
+
     private func makeReporter(
         defaults: UserDefaults,
         transport: AppAnalyticsTransporting,
@@ -331,4 +354,10 @@ private final class AnalyticsTransportURLProtocol: URLProtocol, @unchecked Senda
         client?.urlProtocolDidFinishLoading(self)
     }
     override func stopLoading() {}
+}
+
+private struct AnalyticsUnusedProber: CloudEndpointProbing {
+    func probe(baseURL: URL, nonce: String, timeout: TimeInterval) async throws -> CloudEndpointProbeResult {
+        throw CloudEndpointProbeError.timedOut
+    }
 }

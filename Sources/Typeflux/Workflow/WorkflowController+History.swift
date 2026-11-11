@@ -127,6 +127,9 @@ extension WorkflowController {
         historyPanelModel.singleClickPastes = settingsStore.clipboardSingleClickPastes
         historyPanelModel.reset(entries: entries, selectFirstUnpinned: settingsStore.clipboardSelectsFirstUnpinned)
         ShortcutLatency.record(.modelUpdateFinished)
+        if !isHistoryPickerPresented {
+            FeatureUsageAnalytics(reporter: analyticsReporter).event(.clipboard, "opened", properties: ["entry_point": "clipboard"])
+        }
         isHistoryPickerPresented = true
         clipboardPanelPresenter?.present(historyPanelModel)
     }
@@ -304,6 +307,8 @@ extension WorkflowController {
     }
 
     func performHistoryAction(_ action: ClipboardEntryAction, on entry: ClipboardEntry) {
+        FeatureUsageAnalytics(reporter: analyticsReporter).event(.clipboard, "action_executed",
+            properties: ["entry_point": "clipboard", "action": action.rawValue, "content_type": entry.kind.rawValue])
         switch action {
         case .paste:
             pasteHistoryEntry(entry, plainText: false)

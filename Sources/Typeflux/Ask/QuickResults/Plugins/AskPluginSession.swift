@@ -56,6 +56,9 @@ final class AskPluginSession: ObservableObject {
     var recordWordBook: (@MainActor (AskWordBookLookup) -> Void)?
     /// A new keyword mode began: the word book counts every word again.
     var beginWordBookSession: (@MainActor () -> Void)?
+    var analytics = FeatureUsageAnalytics()
+    private var recordedLiveUse = false
+    private var analyticsRuns: [Int: FeatureUsageAnalytics.Run] = [:]
     /// A keyword was entered, typed or chosen: the launcher counts it to offer it later.
     var onActivate: (@MainActor (AskKeyword) -> Void)?
     var onRunInput: (@MainActor (AskKeyword, String, String) -> Void)?
@@ -132,11 +135,13 @@ final class AskPluginSession: ObservableObject {
     }
 
     private func activate(_ found: AskKeyword) {
+        recordedLiveUse = false
         (plugin(for: found) as? AskTranslatePlugin)?.fanout?.reset()
         overrides = [:]
         chained = nil
         waitingForInput = false
         beginWordBookSession?()
+        analytics.event(.keyword, "activated", properties: analyticsProperties(for: found))
         onActivate?(found)
         set(\.keyword, found)
         set(\.phase, .waiting)
@@ -329,6 +334,24 @@ final class AskPluginSession: ObservableObject {
             plan.values["submitted"] = "true"
             set(\.phase, .running(plan))
         }
+        guard !Task.isCancelled else { return }
+        let metadata = analyticsProperties(for: request.keyword).merging([
+            "execution_kind": shown != nil ? "refresh" : (!request.chain.isEmpty ? "workflow_chain" : (submitted || original.mode == .onSubmit ? "submitted" : "live"))
+        ]) { _, new in new }
+        let explicitRun = shown == nil && (submitted || original.mode == .onSubmit)
+        if explicitRun {
+            recordedLiveUse = true
+            analytics.event(.keyword, "executed", properties: metadata)
+            analytics.event(.launcher, "action_executed", properties: metadata.merging(["result_type": "keyword"]) { _, new in new })
+        }
+        let feature: FeatureUsageAnalytics.Feature? = plugin is AskWorkflowPlugin ? .workflow
+            : (plugin.id == AskTranslatePlugin.id && !AskTranslatePlugin.opensWordBook(request.options) && explicitRun ? .translation : nil)
+        let run = feature.map { analytics.start($0, properties: metadata) }
+        if let run { analyticsRuns[current] = run }
+        defer {
+            run?.finish(.cancelled)
+            analyticsRuns.removeValue(forKey: current)
+        }
         do {
             if !Task.isCancelled, current == generation, request.origin == .argument, request.chain.isEmpty {
                 onRunInput?(request.keyword, request.text, plugin.title)
@@ -354,6 +377,8 @@ final class AskPluginSession: ObservableObject {
                 self.set(\.partial, partial)
                 SemanticSearchTrace.current?.mark("file-partial-published")
             }
+            if let run { output.followUp?.analyticsFlowID = run.id }
+            if !Task.isCancelled { run?.finish(output.analyticsOutcome, properties: output.analyticsResultProperties) }
             if let sink = handoffSinks.removeValue(forKey: current) {
                 sink(Task.isCancelled ? .cancelled : .done(output))
                 return
@@ -389,12 +414,14 @@ final class AskPluginSession: ObservableObject {
             handoffSinks.removeValue(forKey: current)?(.cancelled)
             return
         } catch {
+            run?.finish(Task.isCancelled ? .cancelled : .failed, properties: ["error_kind": "execution_failed"])
             if let sink = handoffSinks.removeValue(forKey: current) {
                 sink(.failed(error as? AskPluginFailure ?? AskPluginFailure(message: error.localizedDescription)))
                 return
             }
             guard !Task.isCancelled, current == generation else { return }
-            let failure = AskPluginFailure.presenting(error)
+            var failure = AskPluginFailure.presenting(error)
+            failure.followUp?.analyticsFlowID = run?.id
             set(\.previous, nil)
             set(\.phase, .failed(plan, failure))
         }
@@ -495,6 +522,7 @@ final class AskPluginSession: ObservableObject {
     }
 
     private func cancel() {
+        analyticsRuns[generation]?.finish(.cancelled)
         task?.cancel()
         task = nil
         shownAt = nil
@@ -639,5 +667,43 @@ extension AskPluginSession {
     func showNoteSaved(_ saved: Bool) {
         guard case let .done(plan, output) = phase, output.starred != nil else { return }
         set(\.phase, .done(plan, output.noteSaving(saved)))
+    }
+}
+
+extension AskPluginSession {
+    func analyticsProperties(for keyword: AskKeyword) -> [String: String] {
+        var values = ["entry_point": "launcher", "plugin_id": "custom", "keyword_kind": "custom"]
+        if AskPluginRegistry.pluginIDs.contains(keyword.pluginID) {
+            values["plugin_id"] = keyword.pluginID
+            if let builtIn = AskPluginRegistry.defaultKeywords.first(where: {
+                $0.pluginID == keyword.pluginID && $0.contains(keyword.keyword) && $0.options == keyword.options
+            }) {
+                values["keyword_id"] = builtIn.id
+                values["keyword_kind"] = "builtin"
+            }
+        }
+        if let workflow = plugin(for: keyword) as? AskWorkflowPlugin {
+            values["plugin_id"] = "workflow"
+            values["keyword_kind"] = "workflow"
+            values["workflow_source"] = "custom"
+            values["runtime"] = workflow.manifest?.command.runtime.rawValue ?? "unknown"
+            if let id = workflow.manifest?.origin?.gallery,
+               Self.analyticsGalleryIDs.contains(id) {
+                values["workflow_source"] = "gallery"
+                values["workflow_id"] = id
+            }
+        }
+        return values
+    }
+
+    private static let analyticsGalleryIDs = Set(AskWorkflowGallery.bundled.items.map(\.id))
+
+    func recordResultUse() {
+        guard !recordedLiveUse, let keyword,
+              currentOutput != nil || (isPlanCurrent && plan?.actions.isEmpty == false) else { return }
+        recordedLiveUse = true
+        var properties = analyticsProperties(for: keyword)
+        properties["execution_kind"] = "result_action"
+        analytics.event(.keyword, "executed", properties: properties)
     }
 }

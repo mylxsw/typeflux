@@ -90,6 +90,7 @@ struct AskWorkflowActionOutcome: Equatable, Sendable {
 
 /// The actions to take after one run, and whether the launcher closes when they are done.
 struct AskWorkflowFollowUp: Equatable, Sendable {
+    var analyticsFlowID: String? = nil
     /// Tells this run's actions from the next one's, so they run once.
     var id = UUID()
     var steps: [AskWorkflowActionStep]

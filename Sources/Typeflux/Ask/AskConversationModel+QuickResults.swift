@@ -33,6 +33,7 @@ extension AskConversationModel {
         let recordsInput = plugins.request?.chain.isEmpty != false
         do {
             try await browserSearch.focus(target)
+            featureAnalytics.event(.launcher, "action_executed", properties: ["entry_point": "launcher", "result_type": "browser_tab"])
             if recordsInput {
                 recordLauncherInput(destination: .web, label: target.browser.title, text: input, keyword: keyword)
             }
@@ -58,6 +59,7 @@ extension AskConversationModel {
 
     /// Opens an application or settings pane from the launcher and ranks it higher next time.
     func openQuickApp(_ app: AskAppEntry) {
+        featureAnalytics.event(.launcher, "action_executed", properties: ["entry_point": "launcher", "result_type": "application"])
         recordLauncherInput(destination: .application, label: app.name)
         appIndex.recordLaunch(app)
         if let settingsURL = app.settingsURL { openURL(settingsURL) } else { openApplication(app.url) }
@@ -112,6 +114,7 @@ extension AskConversationModel {
             openQuickApp(app)
             return .close
         }
+        featureAnalytics.event(.launcher, "action_executed", properties: ["entry_point": "launcher", "result_type": "application_action"])
         recordLauncherInput(destination: .application, label: app.name)
         finishQuickResult()
         return .close
@@ -131,6 +134,7 @@ extension AskConversationModel {
             confirm(L("ask.quick.file.gone"), for: .seconds(3))
             return .stay
         }
+        defer { if action != .openWith { featureAnalytics.event(.launcher, "action_executed", properties: ["entry_point": "launcher", "result_type": "file_action"]) } }
         switch action {
         case .open:
             fileIndex.recordOpen(file.path)

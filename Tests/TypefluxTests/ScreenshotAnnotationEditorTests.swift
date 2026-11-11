@@ -19,6 +19,22 @@ final class ScreenshotAnnotationEditorTests: XCTestCase {
         return editor
     }
 
+    func testMetricsCountCommittedShapesAndSuccessfulEditsOnly() {
+        var editor = self.editor(with: .rect)
+        var operations: [String] = []
+        editor.onOperation = { operations.append($0) }
+        XCTAssertFalse(editor.undo())
+        _ = editor.mouseDown(at: CGPoint(x: 10, y: 10), crop: crop, cropHit: .inside)
+        for x in 11...110 { editor.mouseDragged(to: CGPoint(x: x, y: 100)) }
+        XCTAssertTrue(operations.isEmpty)
+        editor.mouseUp(at: CGPoint(x: 110, y: 100))
+        XCTAssertEqual(operations, ["screenshot.annotation.rect"])
+        XCTAssertTrue(editor.undo())
+        XCTAssertFalse(editor.undo())
+        XCTAssertTrue(editor.redo())
+        XCTAssertEqual(operations, ["screenshot.annotation.rect", "screenshot.edit.undo", "screenshot.edit.redo"])
+    }
+
     // MARK: Tools
 
     func testToolKeysAndShortcuts() {

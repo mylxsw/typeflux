@@ -254,6 +254,8 @@ struct AskPluginImage: Equatable, Sendable, Hashable {
 /// put their actions on the plan instead and never produce one.
 struct AskPluginOutput: Equatable, Sendable {
     var body: String
+    /// A bounded failure category for partial results that still render successfully.
+    var analyticsFailureKind: String? = nil
     var original: String
     var meta: [AskPluginMeta]
     /// Where the result came from: "On this Mac", "AI · model".

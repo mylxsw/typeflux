@@ -29,6 +29,10 @@ final class ScreenshotOverlayView: NSView {
 
     let display: ScreenSnapshot.Display
     private(set) var selection: ScreenshotSelection
+    var onOperation: (String) -> Void {
+        get { editor.onOperation }
+        set { editor.onOperation = newValue }
+    }
     private(set) var editor: ScreenshotAnnotationEditor
     /// Keeps each tool's style for the next screenshot.
     private let toolStyles: ScreenshotToolStyleStore

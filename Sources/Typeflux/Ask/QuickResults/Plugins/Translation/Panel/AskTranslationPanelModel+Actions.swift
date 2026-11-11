@@ -34,6 +34,7 @@ extension AskTranslationPanelModel {
     func copy(number: Int, closes: Bool = false) {
         guard number > 0, stack.results.indices.contains(number - 1),
               let text = stack.results[number - 1].completedText else { return }
+        analytics.event(.translation, "action_executed", properties: ["entry_point": source.rawValue, "action": "copy"])
         onCopy(text)
         flash(L("ask.translation.panel.copied", stack.results[number - 1].name))
         if closes, !pinned {
@@ -137,6 +138,7 @@ extension AskTranslationPanelModel {
     }
 
     func perform(_ action: AskPluginAction) {
+        analytics.event(.translation, "action_executed", properties: ["entry_point": source.rawValue, "action": action.kind.analyticsName])
         switch action.kind {
         case let .copy(text):
             onCopy(text)

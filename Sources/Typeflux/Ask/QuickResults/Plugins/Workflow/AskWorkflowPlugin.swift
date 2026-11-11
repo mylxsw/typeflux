@@ -173,6 +173,7 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
             try Task.checkCancellation()
         }
         if result.truncated {
+            shown.analyticsFailureKind = "output_limit"
             shown.note = L("ask.workflow.truncated")
             // Cut short is a failure for the actions: the output they would use is incomplete.
             shown.followUp = followUp(manifest.output.onFailure, closes: false, result: result, request: request,

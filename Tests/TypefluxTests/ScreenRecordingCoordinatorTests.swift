@@ -94,7 +94,8 @@ struct ScreenRecordingCoordinatorTests {
         let model: ScreenRecordingCoordinator
         init(exportFails: Bool = false, authorize: @escaping (ScreenRecordingOptions) async throws -> Void = { _ in },
              wait: @escaping () async throws -> Void = {}, playback: ClipboardAudioPlayback? = nil,
-             exporter: (any ScreenRecordingExporting)? = nil) {
+             exporter: (any ScreenRecordingExporting)? = nil,
+             analytics: FeatureUsageAnalytics = FeatureUsageAnalytics()) {
             model = ScreenRecordingCoordinator(
                 permission: permission,
                 capture: capture,
@@ -124,7 +125,7 @@ struct ScreenRecordingCoordinatorTests {
                         var request = request; request.timeout = 10
                         return try ManagedProcess().runBlocking(request, isCancelled: { false })
                     })
-                })
+                }), analytics: analytics
             )
             model.present = { [weak self] _ in self?.presentations += 1 }
             model.dismiss = { [weak self] in self?.dismissals += 1 }
@@ -151,6 +152,20 @@ struct ScreenRecordingCoordinatorTests {
             for _ in 0..<300 { if predicate() { return }; try await Task.sleep(for: .milliseconds(10)) }
             #expect(predicate())
         }
+    }
+
+    @Test func `recording metrics count accepted actions and one cancellation`() async {
+        let reporter = RecordingMetricSpy()
+        let fixture = Fixture(analytics: FeatureUsageAnalytics(reporter: reporter))
+        await fixture.recording()
+        fixture.model.start()
+        fixture.model.togglePause()
+        fixture.model.togglePause()
+        fixture.model.cancel()
+        await fixture.model.pendingTask?.value
+        fixture.model.cancel()
+        #expect(reporter.metrics == ["recording.video.started", "recording.video.pause", "recording.video.resume", "recording.video.cancelled"].compactMap { UsageMetricCatalog.ids[$0] })
+        await fixture.clean()
     }
 
     @Test func `denied permission only prompts on explicit open`() async {
@@ -315,4 +330,15 @@ struct ScreenRecordingCoordinatorTests {
             #expect(failure.errorDescription != "recording.error." + failure.rawValue)
         }
     }
+}
+
+private final class RecordingMetricSpy: AnalyticsEventReporting, @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [Int] = []
+    var metrics: [Int] { lock.withLock { values } }
+    func report(eventName: String, properties: [String: String]) {
+        guard eventName == "usage_counter", let id = properties["metric"].flatMap(Int.init) else { return }
+        lock.withLock { values.append(id) }
+    }
+    func reportFirstOpenIfNeeded() {}
 }

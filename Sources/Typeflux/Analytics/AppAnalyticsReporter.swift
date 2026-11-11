@@ -21,6 +21,9 @@ enum AnalyticsPropertyKeys {
     static let sessionID = "session_id"
 
     static let allowedEventProperties: Set<String> = [
+        "feature", "analytics_schema", "entry_point", "action", "parent_flow_id",
+        "plugin_id", "keyword_id", "keyword_kind", "execution_kind", "workflow_id", "workflow_source", "runtime",
+        "content_type", "capture_mode", "target_language", "result_type",
         "attempt_id", "job_id", "model_kind", "model_type", "model_identifier",
         "download_source", "source_host", "normalized_path", "retry_index",
         "duration_ms", "job_duration_ms", "status", "error_category",
@@ -121,12 +124,14 @@ enum AppAnalyticsTransportError: Error, Equatable {
 
 struct URLSessionAppAnalyticsTransport: AppAnalyticsTransporting {
     let baseURLs: [String]
+    let selector: CloudEndpointSelector?
     let session: URLSession
     let clientInfoProvider: TypefluxCloudClientInfoProvider
     let accessTokenProvider: @Sendable () -> String?
 
     init(
-        baseURLs: [String] = AppServerConfiguration.apiBaseURLs,
+        baseURLs: [String]? = nil,
+        selector: CloudEndpointSelector? = nil,
         session: URLSession = .shared,
         clientInfoProvider: TypefluxCloudClientInfoProvider = .live,
         accessTokenProvider: @escaping @Sendable () -> String? = {
@@ -136,7 +141,8 @@ struct URLSessionAppAnalyticsTransport: AppAnalyticsTransporting {
             return stored.token
         }
     ) {
-        self.baseURLs = baseURLs
+        self.baseURLs = baseURLs ?? AppServerConfiguration.apiBaseURLs
+        self.selector = selector ?? (baseURLs == nil ? CloudEndpointRegistry.shared : nil)
         self.session = session
         self.clientInfoProvider = clientInfoProvider
         self.accessTokenProvider = accessTokenProvider
@@ -145,8 +151,11 @@ struct URLSessionAppAnalyticsTransport: AppAnalyticsTransporting {
     func send(events: [AppAnalyticsEvent]) async throws {
         let body = try JSONEncoder.analyticsEncoder.encode(EventBatch(events: events))
         var lastError: Error = URLError(.badURL)
-        for rawBaseURL in baseURLs {
-            guard let baseURL = URL(string: rawBaseURL) else { continue }
+        let endpoints: [URL]
+        if let selector { endpoints = await selector.latencyOptimizedEndpoints() }
+        else { endpoints = baseURLs.compactMap(URL.init(string:)) }
+        for baseURL in endpoints {
+            try Task.checkCancellation()
             var request = URLRequest(
                 url: AuthEndpointResolver.resolve(baseURL: baseURL, path: "/api/v1/analytics/events/batch")
             )
@@ -166,13 +175,18 @@ struct URLSessionAppAnalyticsTransport: AppAnalyticsTransporting {
                     (_, response) = try await session.data(for: request)
                 }
                 guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
-                if (200..<300).contains(http.statusCode) { return }
+                if (200..<300).contains(http.statusCode) {
+                    await selector?.reportRequestSuccess(baseURL)
+                    return
+                }
                 if (400..<500).contains(http.statusCode), http.statusCode != 408, http.statusCode != 429 {
                     throw AppAnalyticsTransportError.permanent(statusCode: http.statusCode)
                 }
                 throw AppAnalyticsTransportError.transient(statusCode: http.statusCode)
             } catch {
                 if case AppAnalyticsTransportError.permanent = error { throw error }
+                if Task.isCancelled { throw CancellationError() }
+                await selector?.reportFailure(baseURL, error: error)
                 lastError = error
             }
         }
@@ -188,6 +202,7 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
     private static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "AppAnalyticsReporter")
     private let defaults: UserDefaults
     private let transport: AppAnalyticsTransporting
+    private let counterReporter: UsageCounterReporter
     private let clientInfoProvider: TypefluxCloudClientInfoProvider
     private let now: @Sendable () -> Date
     private let lock = NSLock()
@@ -215,6 +230,7 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
     ) {
         self.defaults = defaults
         self.transport = transport
+        self.counterReporter = UsageCounterReporter(defaults: defaults, transport: transport, clientInfoProvider: clientInfoProvider, prefix: queueKey + ".counters", now: now)
         self.clientInfoProvider = clientInfoProvider
         self.queueKey = queueKey
         self.firstOpenKey = firstOpenKey
@@ -225,6 +241,7 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
     }
 
     func setEnabled(_ enabled: Bool) {
+        counterReporter.setEnabled(enabled)
         lock.withLock {
             guard isEnabled != enabled else { return }
             isEnabled = enabled
@@ -251,6 +268,13 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
     }
 
     func report(eventName: String, properties: [String: String] = [:]) {
+        if eventName == "usage_counter" {
+            if let metric = properties["metric"].flatMap(Int.init) { counterReporter.increment(metric, amount: properties["amount"].flatMap(Int.init) ?? 1) }
+            return
+        }
+        for metric in UsageMetricCatalog.metrics(eventName: eventName, properties: properties) {
+            counterReporter.increment(metric)
+        }
         let filteredProperties = properties.filter { key, _ in
             let allowed = AnalyticsPropertyKeys.allowedEventProperties.contains(key)
             if !allowed { Self.logger.debug("Dropping non-allowlisted analytics property: \(key, privacy: .public)") }

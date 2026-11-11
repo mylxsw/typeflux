@@ -295,6 +295,27 @@ extension AskConversationModel {
             default: break
             }
         }
+        switch action.kind {
+        case .copy, .copyRich, .writeBack, .open, .openIn, .reveal, .fileAction, .openApplication,
+             .pasteClipboard, .copyClipboard, .previewClipboard, .focusBrowserTab, .speak,
+             .toggleStar, .toggleNote, .capture, .screenshotFollowUp, .translate, .askAI, .emoji, .systemCommand,
+             .openChat, .openSettings, .openHelp, .openConversation, .openNotes, .openNote, .createNote,
+             .openWordBook, .lookUpInWordBook, .openInWindow, .copyImage, .killApp:
+            plugins.recordResultUse()
+        default: break
+        }
+        switch action.kind {
+        case .openApplication, .fileAction, .focusBrowserTab: break // The shared action handler records these.
+        default: featureAnalytics.event(.launcher, "action_executed", properties: ["entry_point": "launcher", "action": action.kind.analyticsName])
+        }
+        switch action.kind {
+        case .pasteClipboard, .copyClipboard, .previewClipboard:
+            featureAnalytics.event(.clipboard, "action_executed", properties: ["entry_point": "launcher", "action": action.kind.analyticsName])
+        default: break
+        }
+        if plugins.plugin?.id == AskTranslatePlugin.id {
+            featureAnalytics.event(.translation, "action_executed", properties: ["entry_point": "launcher", "action": action.kind.analyticsName])
+        }
         // Using a result is what makes a word typed on the fly count as looked up.
         if case .toggleStar = action.kind {
             // Recording and starring are sequenced in one admitted task below.

@@ -602,6 +602,7 @@ struct AskComposer: View {
         }
         guard results.isEnabled(row), let value = results.value(of: row) else { return }
         AskQuickResults.copy(value)
+        model.featureAnalytics.event(.launcher, "action_executed", properties: ["entry_point": "launcher", "result_type": "calculation"])
         model.recordLauncherInput(destination: .calculation, label: "= " + value)
         if close {
             model.finishQuickResult()

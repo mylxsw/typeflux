@@ -98,6 +98,8 @@ final class ScreenRecordingCoordinator: ObservableObject {
     private let engine: any ScreenRecordingEngine
     private let exporter: any ScreenRecordingExporting
     private let files: ScreenRecordingFiles
+    private let analytics: FeatureUsageAnalytics
+    private var analyticsPrefix: String?
     private let defaults: UserDefaults
     private let saveDirectory: () -> URL
     private let authorizeDevices: (ScreenRecordingOptions) async throws -> Void
@@ -119,8 +121,10 @@ final class ScreenRecordingCoordinator: ObservableObject {
              .authorize,
          loadChoices: @escaping () async throws -> [ScreenRecordingChoice] = ScreenRecordingCoordinator.catalog,
          waitSecond: @escaping () async throws -> Void = { try await Task.sleep(for: .seconds(1)) },
-         playback: ClipboardAudioPlayback? = nil) {
+         playback: ClipboardAudioPlayback? = nil,
+         analytics: FeatureUsageAnalytics = FeatureUsageAnalytics()) {
         self.playback = playback ?? ClipboardAudioPlayback(video: true, open: { try await ClipboardPlaybackProcess.open($0, video: true, recording: true) })
+        self.analytics = analytics
         self.permission = permission
         self.capture = capture
         self.overlay = overlay ?? ScreenshotOverlayController()
@@ -163,6 +167,8 @@ extension ScreenRecordingCoordinator {
         defaults.set(sourceKind.rawValue, forKey: "screenshot.recording.sourceKind")
         pendingTask?.cancel()
         isLoadingSources = false
+        analyticsPrefix = "recording." + (options.format == .gif ? "gif" : "video")
+        analytics.count(analyticsPrefix! + ".started")
         state = .countdown
         countdown = max(0, min(10, options.countdown))
         error = nil
@@ -208,6 +214,7 @@ extension ScreenRecordingCoordinator {
             files.discard(sessionDirectory)
         }
         sessionDirectory = nil
+        finishUsage(error is CancellationError ? "cancelled" : "failed")
         state = .setup
         self.error = error is CancellationError ? nil : error.localizedDescription
         permissionFailure = (error as? ScreenRecordingFailure).flatMap {
@@ -236,6 +243,7 @@ extension ScreenRecordingCoordinator {
     func togglePause() {
         guard state == .recording || state == .paused else { return }
         let paused = state == .recording
+        if let analyticsPrefix { analytics.count(analyticsPrefix + (paused ? ".pause" : ".resume")) }
         engine.setPaused(paused)
         state = paused ? .paused : .recording
     }
@@ -278,8 +286,11 @@ extension ScreenRecordingCoordinator {
                 try Task.checkCancellation()
                 guard generation == token else { return }
                 try await preparePreview(url)
+                if let analyticsPrefix { analytics.count(analyticsPrefix + ".duration_seconds", amount: Int(max(0, duration))) }
+                finishUsage(interruption == nil ? "completed" : "failed")
             } catch {
                 guard generation == token else { return }
+                finishUsage(error is CancellationError ? "cancelled" : "failed")
                 self.error = error.localizedDescription
                 state = .setup
             }
@@ -425,6 +436,7 @@ extension ScreenRecordingCoordinator {
         catch { self.error = L("recording.publicationUnavailable"); return }
         pendingTask?.cancel()
         playback.stop()
+        analytics.count("recording." + (options.format == .gif ? "gif" : "video") + ".export_started")
         state = .exporting
         error = nil
         progress = 0
@@ -461,6 +473,7 @@ extension ScreenRecordingCoordinator {
             } catch {
                 monitor.cancel(); await monitor.value
                 guard let self, generation == token else { return }
+                if !(error is CancellationError) { analytics.count("recording." + (format == .gif ? "gif" : "video") + ".export_failed") }
                 // Preserve generated/partial bytes and any uncertain publication receipt.
                 self.error = error is CancellationError ? nil : error.localizedDescription
                 state = .preview
@@ -469,6 +482,7 @@ extension ScreenRecordingCoordinator {
     }
 
     private func completeExport(_ published: URL, copy: Bool, session: URL, token: Int, discardSession: Bool) async {
+        analytics.count("recording." + (published.pathExtension == "gif" ? "gif" : "video") + ".export_completed")
         savedURL = published
         if copy {
             copyPublishedFile(published)
@@ -484,6 +498,12 @@ extension ScreenRecordingCoordinator {
         state = .completed
     }
 
+    private func finishUsage(_ outcome: String) {
+        guard let prefix = analyticsPrefix else { return }
+        analyticsPrefix = nil
+        analytics.count(prefix + "." + outcome)
+    }
+
     func cancelExport() {
         if state == .exporting {
             pendingTask?.cancel()
@@ -493,6 +513,7 @@ extension ScreenRecordingCoordinator {
     func cancel() {
         Self.captureLog.notice("Cancel requested state=\(String(describing: self.state), privacy: .public)")
         guard state != .idle else { return }
+        finishUsage("cancelled")
         generation += 1
         retirePreview()
         let previous = pendingTask

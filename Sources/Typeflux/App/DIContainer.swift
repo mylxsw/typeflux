@@ -71,7 +71,8 @@ final class DIContainer {
         let sessions = ScreenRecordingSessionController(settings: settingsStore) { [unowned self] in
             ScreenRecordingCoordinator(permission: screenCapturePermission, capture: screenCapture,
                                        defaults: settingsStore.defaults,
-                                       saveDirectory: { [settingsStore] in settingsStore.screenshotSaveDirectory })
+                                       saveDirectory: { [settingsStore] in settingsStore.screenshotSaveDirectory },
+                                       analytics: FeatureUsageAnalytics(reporter: analyticsReporter))
         }
         sessions.isOtherCaptureActive = { [weak self] in self?.screenshotCoordinator.state != .idle }
         return sessions
@@ -80,11 +81,12 @@ final class DIContainer {
     lazy var screenshotCoordinator: ScreenshotCoordinator = { [settingsStore, sensitiveInfoScanner] in
         // One store, so a style picked in the region editor is there in the long image editor too.
         let toolStyles = ScreenshotToolStyleStore(defaults: settingsStore.defaults)
-        return ScreenshotCoordinator(
+        let coordinator = ScreenshotCoordinator(
             capture: screenCapture,
             permission: screenCapturePermission,
             overlay: ScreenshotOverlayController(textMeasurer: VisionTextHeightMeasurer(),
-                                                 sensitiveScanner: sensitiveInfoScanner, toolStyles: toolStyles),
+                                                 sensitiveScanner: sensitiveInfoScanner, toolStyles: toolStyles,
+                                                 analytics: FeatureUsageAnalytics(reporter: analyticsReporter)),
             permissionGuide: ScreenshotPermissionGuideController(),
             toast: ScreenshotToastController(),
             output: screenshotOutput,
@@ -92,9 +94,12 @@ final class DIContainer {
             relaunch: { ScreenshotAppRelauncher.relaunch() },
             longImageEditor: ScreenshotLongImageEditorController(textMeasurer: VisionTextHeightMeasurer(),
                                                                  sensitiveScanner: sensitiveInfoScanner,
-                                                                 toolStyles: toolStyles),
+                                                                 toolStyles: toolStyles,
+                                                                 analytics: FeatureUsageAnalytics(reporter: analyticsReporter)),
             makeScrollCapture: ScreenshotCoordinator.scrollCapture(for:)
         )
+        coordinator.analytics = FeatureUsageAnalytics(reporter: analyticsReporter)
+        return coordinator
     }()
 
     lazy var translationEngines = AskTranslationEngineFactory(settings: settingsStore, textProcessing: llmService)
@@ -107,6 +112,7 @@ final class DIContainer {
             engines: { factory.engine(for: $0) }, serviceName: { factory.name(for: $0) },
             secondLanguage: { settings.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: $0) })
         let model = AskTranslationPanelModel(settings: settings, plugin: plugin, copy: { [clipboard] in clipboard.write(text: $0) })
+        model.analytics = FeatureUsageAnalytics(reporter: analyticsReporter)
         model.onSpeak = { AskSpeaker.shared.speak($0, language: $1) }
         model.onWordBook = { AskWordBookWindowController.shared.show(selecting: $0) }
         return model
@@ -134,7 +140,7 @@ final class DIContainer {
             clipboardHistoryStore: clipboardHistoryStore,
             filePreviewLoader: AskFilePreviewLoader(),
             conversationCache: conversationCache,
-            wordBookStore: wordBookStore, noteStore: noteStore
+            wordBookStore: wordBookStore, noteStore: noteStore, analyticsReporter: analyticsReporter
         ) } catch {
             ErrorLogStore.shared
                 .log("Ask conversation storage could not be initialized: \(error.localizedDescription)"); return nil
@@ -222,7 +228,9 @@ final class DIContainer {
         mcpRegistry = MCPRegistry(onToolsChanged: { definitions, identities in
             await MainActor.run { permissionSettings.registerToolPermissions(definitions, identities: identities) }
         })
-        analyticsReporter = SettingsAwareAnalyticsEventReporter(settingsStore: settingsStore)
+        analyticsReporter = FeatureProcess.enabled && FeatureProcess.role != .host
+            ? FeatureProcessAnalyticsReporter()
+            : SettingsAwareAnalyticsEventReporter(settingsStore: settingsStore)
         permissionStatusAnalyticsMonitor = PermissionStatusAnalyticsMonitor(
             defaults: settingsStore.defaults,
             reporter: analyticsReporter

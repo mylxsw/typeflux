@@ -175,6 +175,33 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         ], windows: [])
     }
 
+    func testAnalyticsCopyAndCancellationEachHaveOneTerminalEvent() async {
+        let coordinator = makeCoordinator()
+        let spy = FeatureAnalyticsSpy()
+        coordinator.analytics = FeatureUsageAnalytics(reporter: spy)
+        await started(coordinator)
+        overlay.finish(.copy)
+        await coordinator.pendingTask?.value
+        coordinator.cancel()
+        XCTAssertEqual(spy.events.filter { $0.name == "screenshot_completed" }.count, 1)
+        XCTAssertEqual(spy.events.filter { $0.name == "screenshot_cancelled" }.count, 0)
+        await started(coordinator)
+        coordinator.cancel()
+        coordinator.cancel()
+        XCTAssertEqual(spy.events.filter { $0.name == "screenshot_started" }.count, 2)
+        XCTAssertEqual(spy.events.filter { $0.name == "screenshot_cancelled" }.count, 1)
+    }
+
+    func testAnalyticsPermissionDenialHasFailedTerminal() {
+        let coordinator = makeCoordinator(permission: FakeScreenCapturePermission(granted: false))
+        let spy = FeatureAnalyticsSpy()
+        coordinator.analytics = FeatureUsageAnalytics(reporter: spy)
+        coordinator.start()
+        coordinator.cancel()
+        XCTAssertEqual(spy.events.map(\.name), ["screenshot_started", "screenshot_failed"])
+        XCTAssertEqual(spy.events.last?.properties["error_kind"], "permission_denied")
+    }
+
     private func makeCoordinator(capturer: any ScreenCapturing = FakeScreenCapturer(.success(snapshot())),
                                  permission: FakeScreenCapturePermission = FakeScreenCapturePermission(granted: true),
                                  encode: ScreenshotCoordinator.Encoder? = nil,

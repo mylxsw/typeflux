@@ -48,6 +48,8 @@ final class AskTranslationPanelModel: ObservableObject {
     private(set) var dismissedAt: Date?
     private var submittedText: String?
     private(set) var wordBookTask: Task<Void, Never>?
+    var analytics = FeatureUsageAnalytics()
+    private var analyticsRun: FeatureUsageAnalytics.Run?
     private var translationTask: Task<Void, Never>?
     private var generation = UUID()
     private var confirmedStar: (generation: UUID, key: String, starred: Bool)?
@@ -288,7 +290,10 @@ final class AskTranslationPanelModel: ObservableObject {
         autoCopy = settings.askTranslationSettings.autoCopy
         history.record(original)
         historyIndex = nil
+        let run = analytics.start(.translation, properties: ["entry_point": source.rawValue, "execution_kind": "submitted"])
+        analyticsRun = run
         translationTask = Task { [weak self, plugin] in
+            defer { run.finish(.cancelled) }
             var plan = await plugin.plan(request)
             guard let self, generation == current, !Task.isCancelled else { return }
             plan.values["submitted"] = "true"
@@ -298,12 +303,14 @@ final class AskTranslationPanelModel: ObservableObject {
                     receive(output)
                 }
                 guard generation == current, !Task.isCancelled else { return }
+                run.finish(result.analyticsOutcome, properties: result.analyticsResultProperties)
                 receive(result)
                 if let lookup = result.wordBook, settings.askWordBookRecordsHistory {
                     recordWordBook(lookup)
                 }
             } catch {
                 guard generation == current, !Task.isCancelled else { return }
+                run.finish(.failed, properties: ["error_kind": "execution_failed"])
                 notice = L("ask.translation.stack.failed")
             }
             running = false
@@ -330,6 +337,8 @@ final class AskTranslationPanelModel: ObservableObject {
     }
 
     private func cancelTranslation() {
+        analyticsRun?.finish(.cancelled)
+        analyticsRun = nil
         generation = UUID()
         translationTask?.cancel()
         translationTask = nil

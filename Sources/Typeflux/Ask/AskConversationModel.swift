@@ -150,10 +150,14 @@ final class AskConversationModel: ObservableObject {
     /// The monitor's own window (⌘O from the launcher); tests use their own.
     lazy var systemMonitorWindow: SystemMonitorWindowController = .shared
     /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.
+    var featureAnalytics = FeatureUsageAnalytics() {
+        didSet { plugins.analytics = featureAnalytics }
+    }
     lazy var plugins: AskPluginSession = {
         let session = AskPluginSession(plugins: makeLauncherPlugins()) { [weak self] in
             self?.launcherKeywords ?? AskPluginRegistry.defaultKeywords
         }
+        session.analytics = featureAnalytics
         connectWordBook(to: session)
         connectNotes(to: session)
         session.launcherIconCache = launcherIconCache

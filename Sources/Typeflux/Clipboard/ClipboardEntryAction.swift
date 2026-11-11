@@ -1,7 +1,7 @@
 import Foundation
 
 /// Something the user can do with a clipboard panel row.
-enum ClipboardEntryAction: Equatable, CaseIterable {
+enum ClipboardEntryAction: String, Equatable, CaseIterable {
     case paste
     /// Text: same as paste. Files: pastes their paths as text.
     case pastePlainText

@@ -49,6 +49,7 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
     /// Finds sensitive text to suggest mosaics for.
     private let sensitiveScanner: (any ScreenshotSensitiveInfoScanning)?
     /// Each tool's style, shared by every display and kept for the next screenshot.
+    private let analytics: FeatureUsageAnalytics
     private let toolStyles: ScreenshotToolStyleStore
 
     init(primaryDisplayHeight: @escaping () -> CGFloat = { NSScreen.screens.first?.frame.height ?? 0 },
@@ -58,13 +59,15 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
          modifierFlags: @escaping () -> NSEvent.ModifierFlags = { NSEvent.modifierFlags },
          textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
          sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil,
-         toolStyles: ScreenshotToolStyleStore = ScreenshotToolStyleStore()) {
+         toolStyles: ScreenshotToolStyleStore = ScreenshotToolStyleStore(),
+         analytics: FeatureUsageAnalytics = FeatureUsageAnalytics()) {
         self.primaryDisplayHeight = primaryDisplayHeight
         self.pointerLocation = pointerLocation
         self.modifierFlags = modifierFlags
         self.textMeasurer = textMeasurer
         self.sensitiveScanner = sensitiveScanner
         self.toolStyles = toolStyles
+        self.analytics = analytics
     }
 
     var isPresented: Bool { !panels.isEmpty }
@@ -150,6 +153,7 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
                                              initialModifierFlags: initialModifierFlags, textMeasurer: textMeasurer,
                                              sensitiveScanner: sensitiveScanner, toolStyles: toolStyles)
             ShortcutLatency.record(.displayViewFinished, itemIndex: index + 1, itemCount: snapshot.displays.count)
+            view.onOperation = { [analytics] in analytics.count($0) }
             view.onActivate = { [weak self] view in self?.activate(view) ?? true }
             view.onEvent = { [weak self] view, event in self?.forward(event, from: view) }
             ShortcutLatency.record(.displayPanelStarted, itemIndex: index + 1, itemCount: snapshot.displays.count)

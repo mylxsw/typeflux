@@ -46,6 +46,7 @@ enum ScreenshotAnnotationTool: String, CaseIterable, Equatable {
 /// overlay feeds it pointer and key input in the display's own points and draws the result.
 // swiftlint:disable:next type_body_length
 struct ScreenshotAnnotationEditor {
+    var onOperation: (String) -> Void = { _ in }
     enum MosaicShape: String, CaseIterable, Equatable, Codable {
         case rect, ellipse, brush
     }
@@ -288,6 +289,7 @@ struct ScreenshotAnnotationEditor {
                 finished.kind = .path(ScreenshotStrokeSmoothing.smoothed(points))
             }
             document.add(finished)
+            if let tool { onOperation("screenshot.annotation." + tool.rawValue) }
             return true
         case let .moving(_, _, before), let .resizing(_, _, before), let .bending(_, before):
             document.commit(from: before)
@@ -402,6 +404,7 @@ struct ScreenshotAnnotationEditor {
             guard !trimmed.isEmpty, case let .callout(anchor, boxOrigin, _, fontSize) = callout.kind else { return }
             callout.kind = .callout(anchor: anchor, origin: boxOrigin, text, fontSize: fontSize)
             document.add(callout)
+            onOperation("screenshot.annotation.callout")
             return
         }
         if let id = editingTextID, var edited = document.annotation(id: id) {
@@ -424,6 +427,7 @@ struct ScreenshotAnnotationEditor {
         guard !trimmed.isEmpty else { return }
         let style = toolStyles[.text]
         document.add(ScreenshotAnnotation(kind: .text(origin: origin, text, fontSize: style.fontSize), style: style))
+        onOperation("screenshot.annotation.text")
     }
 
     mutating func cancelText() {
@@ -703,7 +707,9 @@ struct ScreenshotAnnotationEditor {
     mutating func deleteSelected() -> Bool {
         guard let selectedID, drag == nil else { return false }
         self.selectedID = nil
-        return document.remove(id: selectedID)
+        let removed = document.remove(id: selectedID)
+        if removed { onOperation("screenshot.edit.delete") }
+        return removed
     }
 
     /// Arrow keys move the selected annotation.
@@ -716,6 +722,7 @@ struct ScreenshotAnnotationEditor {
     @discardableResult
     mutating func undo() -> Bool {
         guard drag == nil, document.undo() else { return false }
+        onOperation("screenshot.edit.undo")
         dropMissingSelection()
         return true
     }
@@ -723,6 +730,7 @@ struct ScreenshotAnnotationEditor {
     @discardableResult
     mutating func redo() -> Bool {
         guard drag == nil, document.redo() else { return false }
+        onOperation("screenshot.edit.redo")
         dropMissingSelection()
         return true
     }
@@ -739,6 +747,7 @@ struct ScreenshotAnnotationEditor {
                                  style: toolStyles[.mosaic])
         }
         document.add(added)
+        if !added.isEmpty { onOperation("screenshot.annotation.mosaic") }
         return added.map(\.id)
     }
 

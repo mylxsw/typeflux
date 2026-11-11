@@ -16,6 +16,10 @@ final class ScreenshotLongImageCanvas: NSView {
     let image: CGImage
     /// Pixels per point of the image.
     let scale: CGFloat
+    var onOperation: (String) -> Void {
+        get { editor.onOperation }
+        set { editor.onOperation = newValue }
+    }
     private(set) var editor: ScreenshotAnnotationEditor
     private let toolStyles: ScreenshotToolStyleStore
     /// The color button's panel is open.

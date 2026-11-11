@@ -221,12 +221,17 @@ final class RingControllerTests: XCTestCase {
 
     func testSelectingAnActionRunsItAndUnknownIDsAreIgnored() async throws {
         let controller = makeController()
+        let spy = FeatureAnalyticsSpy()
+        controller.analytics = FeatureUsageAnalytics(reporter: spy)
         defer { withExtendedLifetime(controller) {} }
         let action = store.ringConfiguration.actions[2]
         menu.onSelect(action.id.uuidString)
         menu.onSelect("unknown")
         try await waitUntil { self.features == [.translate] }
         XCTAssertEqual(features, [.translate])
+        XCTAssertEqual(spy.events.map(\.name), ["ring_action_triggered", "usage_counter"])
+        XCTAssertEqual(spy.events.last?.properties["metric"], UsageMetricCatalog.ids["ring.feature.translate"].map(String.init))
+        XCTAssertEqual(spy.events.first?.properties["action"], "feature")
     }
 
     func testOpieStyleMapping() {

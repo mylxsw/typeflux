@@ -225,8 +225,16 @@ extension AskConversationModel {
         let workflow = plugins.plugin as? AskWorkflowPlugin
         let host = AskWorkflowLauncherActionHost(model: self, workflowID: workflow?.workflow.id,
                                                  workflowName: workflow?.title ?? "", dismiss: dismiss)
+        let analytics = featureAnalytics
+        var analyticsProperties = workflow.flatMap { _ in
+            plugins.keyword.map { plugins.analyticsProperties(for: $0) }
+        } ?? ["entry_point": "launcher", "workflow_source": "custom"]
+        if let flowID = followUp.analyticsFlowID { analyticsProperties["parent_flow_id"] = flowID }
         Task { @MainActor [weak self] in
             let outcomes = await AskWorkflowActionRunner.run(followUp.steps, host: host)
+            if !outcomes.isEmpty {
+                analytics.event(.workflow, outcomes.allSatisfy(\.succeeded) ? "actions_completed" : "actions_failed", properties: analyticsProperties)
+            }
             guard let self, workflowActions?.id == followUp.id else { return }
             workflowActions = AskWorkflowActionsState(id: followUp.id, outcomes: outcomes, clipboard: host.clipboard)
             AskAnnouncer.announce(AskWorkflowActionRunner.summary(outcomes))

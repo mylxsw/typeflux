@@ -127,6 +127,8 @@ final class RingController {
         settingsStore.actionHotkeys[.ring] != nil && configuration.isUsable
     }
 
+    var analytics = FeatureUsageAnalytics()
+
     func pressBegan() {
         let location = pointerLocation()
         guard canOpen, !isRecordingActive() else { ShortcutLatency.record(.blocked); return }
@@ -143,6 +145,7 @@ final class RingController {
             let takesFocus = settingsStore.actionHotkeys[.ring]?.isSingleModifierTrigger != true
             ShortcutLatency.measure(.ringShowStarted, .ringShowFinished) {
                 menu.show(at: location, takesKeyboardFocus: takesFocus)
+                analytics.event(.ring, "opened", properties: ["entry_point": "hotkey"])
             }
             ShortcutLatency.presentationOrdered { [weak menu] in menu?.isVisible == true }
         case .dismiss:
@@ -177,6 +180,8 @@ final class RingController {
     private func select(_ id: String) {
         guard let action = displayedActions.first(where: { $0.id.uuidString == id }) else { return }
         let previous = previousApplication
+        analytics.event(.ring, "action_triggered", properties: ["entry_point": "ring", "action": action.kind.type.rawValue])
+        if case let .feature(feature) = action.kind { analytics.count("ring.feature." + feature.rawValue) }
         HelpCoreActionUsageStore.shared.record(.ring)
         Task { await executor.perform(action, previousApplication: previous) }
     }

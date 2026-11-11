@@ -29,6 +29,8 @@ final class ScreenshotCoordinator {
     typealias Encoder = @Sendable (CGImage, CGFloat) throws -> Data
     typealias Renderer = (ScreenSnapshot.Display, CGRect, [ScreenshotAnnotation]) throws -> CGImage
 
+    var analytics = FeatureUsageAnalytics()
+    private var analyticsRun: FeatureUsageAnalytics.Run?
     private(set) var state: State = .idle
     /// The frozen displays, held only while the overlay shows.
     private(set) var snapshot: ScreenSnapshot?
@@ -144,7 +146,10 @@ final class ScreenshotCoordinator {
             toast.show(.busy)
             return
         }
+        analyticsRun = analytics.start(.screenshot, properties: ["capture_mode": mode.rawValue, "entry_point": "screenshot"])
         guard permission.isGranted else {
+            analyticsRun?.finish(.failed, properties: ["error_kind": "permission_denied"])
+            analyticsRun = nil
             ShortcutLatency.record(.blocked)
             presentPermissionGuide(mode: mode, followUp: followUp)
             return
@@ -157,6 +162,7 @@ final class ScreenshotCoordinator {
             do { try await Task.sleep(for: captureTimeout) } catch { return }
             guard let self, self.session == session, self.state == .capturing else { return }
             ShortcutLatency.record(.failed)
+            self.analyticsRun?.finish(.failed, properties: ["error_kind": "capture_timeout"])
             self.teardown()
             self.toast.show(.captureTimedOut)
         }
@@ -260,6 +266,7 @@ final class ScreenshotCoordinator {
             }
         case let .failure(error):
             ShortcutLatency.record(.failed)
+            analyticsRun?.finish(.failed, properties: ["error_kind": "capture_failed"])
             teardown()
             if (error as? ScreenCaptureError) == .permissionDenied {
                 presentPermissionGuide(mode: mode, followUp: followUp)
@@ -276,6 +283,7 @@ final class ScreenshotCoordinator {
         if action == .record {
             guard state != .editingLongImage, annotations.isEmpty else { return }
             let region = ScreenRecordingTarget.region(displayID: displayID, rect: rect.intersection(display.frame))
+            analyticsRun?.finish(.completed, properties: ["action": "record"])
             teardown()
             onRecordingRequested?(.mp4, region)
             return
@@ -292,6 +300,7 @@ final class ScreenshotCoordinator {
             }
             image = try ScreenshotBeautificationRenderer.render(base, scale: display.scale, settings: beautification)
         } catch {
+            analyticsRun?.finish(.failed, properties: ["error_kind": "render_failed"])
             teardown()
             toast.show(.failed)
             return
@@ -304,17 +313,23 @@ final class ScreenshotCoordinator {
                          y: rect.midY - CGFloat(image.height) / display.scale / 2,
                          width: CGFloat(image.width) / display.scale, height: CGFloat(image.height) / display.scale)
                 : rect
+            analyticsRun?.finish(.completed, properties: ["action": "pin"])
+            analytics.event(.screenshot, "action_executed", properties: ["action": "pin"])
             teardown()
             pins.pin(image, scale: display.scale, at: pinRect) { [weak self] event in self?.handlePin(event) }
             return
         }
         if case let .followUp(followUp) = action {
             let isLongImage = state == .editingLongImage
-            teardown()
             guard let followUpHandler else {
+                analyticsRun?.finish(.failed, properties: ["error_kind": "follow_up_unavailable"])
+                teardown()
                 toast.show(.failed)
                 return
             }
+            analyticsRun?.finish(.completed, properties: ["action": followUp.rawValue])
+            analytics.event(.screenshot, "action_executed", properties: ["action": followUp.rawValue])
+            teardown()
             followUpHandler.handle(followUp, image: ScreenshotFollowUpImage(image: image, scale: display.scale,
                                                                            isLongImage: isLongImage))
             return
@@ -335,17 +350,21 @@ final class ScreenshotCoordinator {
         guard session == self.session, state == .finishing else { return }
         defer { teardown() }
         guard let png else {
+            analyticsRun?.finish(.failed, properties: ["error_kind": "encoding_failed"])
             toast.show(.failed)
             return
         }
-        send(png, action: action)
+        send(png, action: action, run: analyticsRun)
     }
 
     /// Copies or saves an encoded screenshot and says how it went.
-    private func send(_ png: Data, action: ScreenshotOutputAction) {
+    private func send(_ png: Data, action: ScreenshotOutputAction, run: FeatureUsageAnalytics.Run? = nil) {
+        analytics.event(.screenshot, "action_executed", properties: ["action": action.analyticsName])
         switch action {
         case .copy:
-            toast.show(output.copy(png) ? .copied : .failed)
+            let copied = output.copy(png)
+            run?.finish(copied ? .completed : .failed, properties: ["action": "copy", "result_type": copied ? "copied" : "copy_failed"])
+            toast.show(copied ? .copied : .failed)
         case .followUp, .pin, .record:
             // Handed over in `finish` without encoding; never delivered here.
             break
@@ -353,10 +372,14 @@ final class ScreenshotCoordinator {
             let copied = action == .copyAndSave && output.copy(png)
             do {
                 let url = try output.save(png, in: saveDirectory(), date: now())
+                run?.finish(.completed, properties: ["action": action.analyticsName, "result_type": "saved"])
                 toast.show(.saved(url))
             } catch {
                 // Never lose the shot: it goes to the clipboard instead, with the reason.
-                toast.show(copied || output.copy(png) ? .savedAsCopy(reason: error.localizedDescription) : .failed)
+                let recovered = copied || output.copy(png)
+                run?.finish(.failed, properties: ["action": action.analyticsName, "error_kind": "save_failed",
+                                                 "result_type": recovered ? "clipboard_fallback" : "failed"])
+                toast.show(recovered ? .savedAsCopy(reason: error.localizedDescription) : .failed)
             }
         }
     }
@@ -442,6 +465,7 @@ final class ScreenshotCoordinator {
         case .cancelled:
             teardown()
         case .failed:
+            analyticsRun?.finish(.failed, properties: ["error_kind": "scroll_capture_failed"])
             teardown()
             toast.show(.failed)
         }
@@ -457,6 +481,8 @@ final class ScreenshotCoordinator {
     }
 
     private func teardown() {
+        analyticsRun?.finish(.cancelled)
+        analyticsRun = nil
         captureTimeoutTask?.cancel()
         captureTimeoutTask = nil
         pendingTask?.cancel()

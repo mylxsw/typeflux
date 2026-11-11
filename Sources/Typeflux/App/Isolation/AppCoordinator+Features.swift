@@ -158,6 +158,12 @@ extension AppCoordinator {
     }
 
     func handleFeatureCommand(_ command: FeatureCommand) async throws -> Data {
+        if command.action == "analyticsEvent" {
+            guard FeatureProcess.role == .host, command.payload.count <= 16_384 else { throw FeatureRPC.Failure.invalidMessage }
+            let event = try JSONDecoder().decode(FeatureProcessAnalyticsReporter.Message.self, from: command.payload)
+            di.analyticsReporter.report(eventName: event.eventName, properties: event.properties)
+            return Data()
+        }
         #if DEBUG
         if FeatureIsolationProbe.enabled {
             if command.action == "probeSetChatDraft" {

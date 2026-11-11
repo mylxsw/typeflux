@@ -126,7 +126,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
          clipboardHistoryStore: (any ClipboardHistoryStore)? = nil,
          filePreviewLoader: (any AskFilePreviewLoading)? = nil,
          conversationCache: (any AskCaching)? = nil,
-         wordBookStore: (any AskWordBookStoring)? = nil, noteStore: (any AskNoteStoring)? = nil) throws {
+         wordBookStore: (any AskWordBookStoring)? = nil, noteStore: (any AskNoteStoring)? = nil,
+         analyticsReporter: any AnalyticsEventReporting = NoopAnalyticsEventReporter.shared) throws {
         self.filePreview = AskFilePreviewController(loader: filePreviewLoader)
         self.dockVisibility = dockVisibility
         self.settings = settings
@@ -167,6 +168,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             AskRoutedAPI.session(token: AuthState.shared.accessToken, owner: AuthState.shared.userProfile?.id)
         }, modelClient: AskDeviceModelClient())
         super.init()
+        model.featureAnalytics = FeatureUsageAnalytics(reporter: analyticsReporter)
         // Offline, a composer on a Cloud model offers the user's own models instead.
         if services == nil { model.startNetworkMonitor() }
         maintenanceTasks.append(Task.detached(priority: .utility) { sandbox.pruneWorkspaces() })
@@ -363,6 +365,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
             return
         }
+        model.featureAnalytics.event(.launcher, "opened", properties: ["entry_point": "launcher"])
         ShortcutLatency.record(.statePreparationStarted)
         let restoredInput = model.resetLauncherForPresentation(at: launcherNow(), preservingScreenshot: prepared != nil)
         model.launcherWindowMode = settings.askLauncherWindowMode
