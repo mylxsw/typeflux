@@ -97,11 +97,6 @@ final class OnboardingCloudModel: ObservableObject {
     func start() async {
         guard active, !signedIn, session?.currentStep == .cloud else { return }
         error = nil
-        guard login.configuration.enabled else {
-            phase = .failed(.restartRequired)
-            updateReadiness()
-            return
-        }
         session?.authState.webLoginCoordinator.cancel()
         Self.activeLogin = login
         await login.start()

@@ -129,15 +129,11 @@ struct LoginView: View {
 
     var body: some View {
         Group {
-            if authState.webLoginCoordinator.configuration.enabled {
-                WebLoginView(coordinator: authState.webLoginCoordinator, onDismiss: onDismiss)
-            } else {
-                switch presentationStyle {
-                case .card:
-                    cardBody
-                case .plain:
-                    plainBody
-                }
+            switch presentationStyle {
+            case .card:
+                cardBody
+            case .plain:
+                plainBody
             }
         }
         .animation(.easeInOut(duration: 0.2), value: step)

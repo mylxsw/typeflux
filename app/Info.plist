@@ -41,8 +41,6 @@
 
     <key>LSUIElement</key>
     <true/>
-    <key>TYPEFLUX_WEB_AUTH_ENABLED</key>
-    <string>false</string>
     <key>TYPEFLUX_WEB_AUTH_CHANNEL</key>
     <string>production</string>
 

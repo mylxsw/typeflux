@@ -62,7 +62,7 @@ final class WebLoginCoordinator: ObservableObject {
     }
 
     func start() async {
-        guard configuration.enabled, !isBusy else { return }
+        guard !isBusy else { return }
         clear()
         let id = UUID()
         attempt = id
@@ -127,7 +127,7 @@ final class WebLoginCoordinator: ObservableObject {
     /// The application URL router delivers the default browser callback here.
     /// The callback has no transaction ID: state identifies the sole active transaction.
     func receive(_ url: URL) async {
-        guard configuration.enabled, configuration.matchesCallback(url) else { return }
+        guard configuration.matchesCallback(url) else { return }
         guard phase == .waiting, let id = attempt, let expectedGeneration = generation,
               isCurrent(id), let pending = store.pending else {
             // Ignore duplicates during/after exchange; cold launch must explicitly restart.

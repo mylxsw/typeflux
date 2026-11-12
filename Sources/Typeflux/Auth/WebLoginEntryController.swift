@@ -5,16 +5,14 @@ import Foundation
 @MainActor
 final class WebLoginEntryController {
     private let coordinator: WebLoginCoordinator
-    private let showNative: () -> Void
     private let reportSuccess: () -> Void
     private let reportFailure: (WebLoginFailure) -> Void
     private var observation: AnyCancellable?
     private var reportedFailure = false
 
-    init(coordinator: WebLoginCoordinator, showNative: @escaping () -> Void,
+    init(coordinator: WebLoginCoordinator,
          reportFailure: @escaping (WebLoginFailure) -> Void, reportSuccess: @escaping () -> Void = {}) {
         self.coordinator = coordinator
-        self.showNative = showNative
         self.reportFailure = reportFailure
         self.reportSuccess = reportSuccess
         observation = coordinator.$phase.removeDuplicates().sink { [weak self, weak coordinator] phase in
@@ -31,7 +29,6 @@ final class WebLoginEntryController {
     }
 
     func show() {
-        guard coordinator.configuration.enabled else { showNative(); return }
         if coordinator.phase == .waiting { coordinator.reopen(); return }
         guard !coordinator.isBusy else { return }
         reportedFailure = false

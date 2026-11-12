@@ -120,7 +120,7 @@ struct WebLoginPresentationTests {
     }
 
     @Test func loginClickStartsBrowserWithoutWindowAndRetainsPendingTransaction() async throws {
-        let configuration = WebLoginConfiguration.resolve(environment: ["TYPEFLUX_WEB_AUTH_ENABLED": "true"], info: [:])
+        let configuration = WebLoginConfiguration.resolve(environment: [:], info: [:])
         let api = PresentationWebAPI()
         let store = WebLoginMemoryStore()
         var opened: [URL] = []
@@ -130,19 +130,18 @@ struct WebLoginPresentationTests {
             browserFactory: { url, scheme, callback in
                 WebLoginBrowser(url: url, scheme: scheme, completion: callback, open: { opened.append($0); return true })
             }, authGeneration: { 0 }, accept: { _, _ in accepted += 1 })
-        var nativeWindows = 0
         var failures: [WebLoginFailure] = []
-        let entry = WebLoginEntryController(coordinator: coordinator, showNative: { nativeWindows += 1 },
+        let entry = WebLoginEntryController(coordinator: coordinator,
                                            reportFailure: { failures.append($0) }, reportSuccess: { successes += 1 })
         entry.show()
         entry.show()
         try await Task.sleep(for: .milliseconds(30))
-        #expect(nativeWindows == 0 && opened.count == 1 && store.pending != nil)
+        #expect(opened.count == 1 && store.pending != nil)
         entry.show()
         #expect(opened.count == 2 && opened[0] == opened[1])
         await AppLoginURLRouter.handle([api.callback], login: coordinator, isLoggedIn: { accepted > 0 },
                                       showLogin: { entry.showCurrentFailure() }, handleBilling: {})
-        #expect(accepted == 1 && store.pending == nil && nativeWindows == 0 && failures.isEmpty)
+        #expect(accepted == 1 && store.pending == nil && failures.isEmpty)
         try await Task.sleep(for: .milliseconds(30))
         #expect(successes == 1)
         await coordinator.receive(api.callback)
@@ -151,37 +150,30 @@ struct WebLoginPresentationTests {
         coordinator.cancel()
     }
 
-    @Test func entryReportsFailureOnceAndKeepsNativeFallback() async throws {
-        let config = WebLoginConfiguration.resolve(environment: ["TYPEFLUX_WEB_AUTH_ENABLED": "true"], info: [:])
+    @Test func entryReportsFailureOncePerAttempt() async throws {
+        let config = WebLoginConfiguration.resolve(environment: [:], info: [:])
         let api = PresentationWebAPI()
         api.createFailure = .networkUnavailable
         let coordinator = WebLoginCoordinator(configuration: config, api: api, store: WebLoginMemoryStore(),
             browserFactory: { _, _, _ in Issue.record("Failed creation must not open a browser"); return PresentationBrowser() },
             authGeneration: { 0 }, accept: { _, _ in })
-        var nativeWindows = 0
         var successes = 0
         var failures: [WebLoginFailure] = []
-        let entry = WebLoginEntryController(coordinator: coordinator, showNative: { nativeWindows += 1 },
+        let entry = WebLoginEntryController(coordinator: coordinator,
                                            reportFailure: { failures.append($0) }, reportSuccess: { successes += 1 })
         entry.show()
         try await Task.sleep(for: .milliseconds(30))
         entry.showCurrentFailure()
-        #expect(failures == [.networkUnavailable] && nativeWindows == 0)
+        #expect(failures == [.networkUnavailable])
         entry.show()
         try await Task.sleep(for: .milliseconds(30))
         #expect(failures == [.networkUnavailable, .networkUnavailable])
-        let disabled = WebLoginCoordinator(configuration: .resolve(environment: [:], info: [:]), api: api,
-            store: WebLoginMemoryStore(), browserFactory: { _, _, _ in PresentationBrowser() },
-            authGeneration: { 0 }, accept: { _, _ in })
-        let fallback = WebLoginEntryController(coordinator: disabled, showNative: { nativeWindows += 1 }, reportFailure: { _ in })
-        fallback.show()
-        #expect(nativeWindows == 1 && disabled.phase == .idle)
         #expect(successes == 0)
     }
 
     @Test func waitingAndRecoveryViewsTrackCoordinator() async throws {
         _ = NSApplication.shared
-        let configuration = WebLoginConfiguration.resolve(environment: ["TYPEFLUX_WEB_AUTH_ENABLED": "true"], info: [:])
+        let configuration = WebLoginConfiguration.resolve(environment: [:], info: [:])
         let api = PresentationWebAPI()
         let coordinator = WebLoginCoordinator(configuration: configuration, api: api, store: WebLoginMemoryStore(),
             browserFactory: { _, _, _ in PresentationBrowser() }, authGeneration: { 0 }, accept: { _, _ in })
@@ -221,7 +213,7 @@ struct WebLoginPresentationTests {
         defer { AppLocalization.shared.setLanguage(oldLanguage) }
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         #expect(L("auth.web.continue") == "在浏览器中继续")
-        let configuration = WebLoginConfiguration.resolve(environment: ["TYPEFLUX_WEB_AUTH_ENABLED": "true"], info: [:])
+        let configuration = WebLoginConfiguration.resolve(environment: [:], info: [:])
         let coordinator = WebLoginCoordinator(
             configuration: configuration,
             api: WebLoginHTTPAPI(configuration: configuration),

@@ -335,7 +335,7 @@ extension OnboardingRouteCloudTests {
                 let global = coordinator(api: globalAPI, browser: CloudFixtureBrowser())
                 state.webLoginCoordinator = global
                 var presentations = 0
-                let entry = WebLoginEntryController(coordinator: global, showNative: { presentations += 1 },
+                let entry = WebLoginEntryController(coordinator: global,
                                                     reportFailure: { _ in presentations += 1 },
                                                     reportSuccess: { presentations += 1 })
                 let existingWindows = Set(NSApp.windows.map(ObjectIdentifier.init))
@@ -408,18 +408,23 @@ extension OnboardingRouteCloudTests {
         }
     }
 
-    @Test func `disabled web rollout fails inline without opening a browser`() async throws {
+    @Test func `legacy disabled setting cannot stop onboarding browser login`() async throws {
         try await TestUI.withFixture { settings in
             let state = auth()
             state.isLoggedIn = false
             let session = session(settings, auth: state)
             session.currentStep = .cloud
             let browser = CloudFixtureBrowser()
-            let login = coordinator(api: CloudFixtureAPI(), browser: browser, enabled: false)
+            let configuration = WebLoginConfiguration.resolve(
+                environment: ["TYPEFLUX_WEB_AUTH_ENABLED": "false"],
+                info: ["TYPEFLUX_WEB_AUTH_ENABLED": "false"]
+            )
+            let login = coordinator(api: CloudFixtureAPI(), browser: browser, configuration: configuration)
             let model = OnboardingCloudModel(session: session, login: login)
             await model.start()
-            #expect(model.phase == .failed(.restartRequired) && model.canContinue == false)
-            #expect(browser.starts == 0 && OnboardingCloudModel.activeLogin == nil)
+            #expect(model.phase == .waiting && model.canContinue == false)
+            #expect(browser.starts == 1 && OnboardingCloudModel.activeLogin === login)
+            model.endSession()
         }
     }
 
@@ -564,7 +569,6 @@ extension OnboardingRouteCloudTests {
                         "waiting",
                         "exchanging",
                         "failed",
-                        "disabled",
                         "cancelled",
                         "paid",
                         "entitlement-loading",
@@ -586,7 +590,7 @@ extension OnboardingRouteCloudTests {
                         let session = session(settings, auth: state, manager: manager)
                         session.currentStep = .cloud
                         let api = CloudFixtureAPI()
-                        let login = coordinator(api: api, browser: CloudFixtureBrowser(), enabled: kind != "disabled")
+                        let login = coordinator(api: api, browser: CloudFixtureBrowser())
                         let model = OnboardingCloudModel(session: session, login: login)
                         session.cloudModel = model
                         defer {
@@ -711,11 +715,12 @@ extension OnboardingRouteCloudTests {
         )!
     }
 
-    private func coordinator(api: CloudFixtureAPI, browser: CloudFixtureBrowser, enabled: Bool = true,
+    private func coordinator(api: CloudFixtureAPI, browser: CloudFixtureBrowser,
+                             configuration: WebLoginConfiguration = .resolve(environment: [:], info: [:]),
                              accept: @escaping (LoginResponse, Int) async throws -> Void = { _, _ in })
         -> WebLoginCoordinator {
         WebLoginCoordinator(
-            configuration: .resolve(environment: ["TYPEFLUX_WEB_AUTH_ENABLED": enabled ? "true" : "false"], info: [:]),
+            configuration: configuration,
             api: api,
             store: WebLoginMemoryStore(),
             browserFactory: { _, _, _ in browser },

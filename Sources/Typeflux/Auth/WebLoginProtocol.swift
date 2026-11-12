@@ -3,7 +3,6 @@ import Foundation
 import Security
 
 struct WebLoginConfiguration {
-    let enabled: Bool
     let clientID: String
     let redirectURI: String
     let websiteOrigin: URL
@@ -15,7 +14,6 @@ struct WebLoginConfiguration {
         }
         let development = value("TYPEFLUX_WEB_AUTH_CHANNEL", "production") == "development"
         return Self(
-            enabled: value("TYPEFLUX_WEB_AUTH_ENABLED", "false") == "true",
             clientID: development ? "typeflux-macos-dev" : "typeflux-macos",
             redirectURI: development ? "ai.gulu.app.typeflux.dev://auth/callback" :
                 "ai.gulu.app.typeflux://auth/callback",

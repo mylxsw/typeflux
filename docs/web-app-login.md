@@ -3,18 +3,17 @@
 This implementation depends on [typeflux-api PR #139](https://github.com/mylxsw/typeflux-api/pull/139),
 head `bb0c9622423d5418829670fa219bbf9b03fc81ce`, and its
 [frozen contract](https://github.com/mylxsw/typeflux-api/blob/bb0c9622423d5418829670fa219bbf9b03fc81ce/docs/web-app-auth.md).
-The Homepage implementation is GUL-359. Do not enable the production entry until both are deployed and the
-real-provider/browser acceptance tests pass. No iOS behavior changes.
+The Homepage implementation is GUL-359. The production API and Homepage must be deployed and pass
+real-provider/browser acceptance tests before releasing the client. No iOS behavior changes.
 
 ## Rollout configuration
 
-The feature is **off by default**. Environment values take precedence over identically named
-Info.plist strings. Release packaging copies `app/Info.plist`; set release values there before
-signing. Both development launch scripts copy the configuration into their bundle before signing.
+macOS always uses website sign-in. Environment values take precedence over identically named
+Info.plist strings for channel and origin configuration. Release packaging copies `app/Info.plist`.
+Both development launch scripts copy the configuration into their bundle before signing.
 
 | Key | Default | Purpose |
 | --- | --- | --- |
-| `TYPEFLUX_WEB_AUTH_ENABLED` | `false` | Only the exact string `true` enables the new entry. |
 | `TYPEFLUX_WEB_AUTH_ORIGIN` | `https://typeflux.app` | Trusted website origin; API login URL must match HTTP(S) origin, `/login`, and the sole expected transaction query. |
 | `TYPEFLUX_WEB_AUTH_API_ORIGIN` | First configured `AppServerConfiguration.apiBaseURLs` entry | Reachable, pinned API HTTP(S) origin; no endpoint rotation or retry for the one-use code. Set explicitly for staging. |
 | `TYPEFLUX_WEB_AUTH_CHANNEL` | `production` | `development` selects the separate development client and callback. Dev scripts set it automatically. |
@@ -76,13 +75,10 @@ closed and requires a fresh login in the intended app.
 - Failures are shown only when they occur, in five languages. Creation errors distinguish network,
   ATS, endpoint/proxy, rejected client configuration, rate limiting and server failures. Raw response
   bodies are never displayed. Ambiguous token exchange failures still require a fresh transaction.
-- With Web auth disabled, the original native login window remains available. Existing logged-in
-  users are not signed out when the feature changes.
 - Onboarding owns a separate coordinator and registers its active transaction through a weak
   routing reference. App callbacks stay inline; global login alerts and Cloud defaults prompts
   are suppressed until onboarding closes, including resumed setup. Continue applies the selected
-  Cloud defaults explicitly. The rollout flag still applies: disabled Web auth fails inline
-  without opening a browser, while other login entries retain the native fallback.
+  Cloud defaults explicitly.
 
 The default-browser adapter uses AppKit and preserves the macOS deployment target and the shipped
 macOS 13.4+ dependency/binary policy.
@@ -101,12 +97,9 @@ Safari/Chrome/Firefox session behavior, browser cookie loss, user cancellation, 
 delivery, development/production coexistence, real Keychain permissions and macOS 13.4 hardware.
 Mocked tests and rendered screenshots do not establish these real-world acceptance results.
 
-Rollback by setting `TYPEFLUX_WEB_AUTH_ENABLED=false` and restarting the app (or distributing
-a bundle with the flag disabled). The original login UI returns; existing Keychain sessions
-are untouched. Preserve native API/provider configuration. API/Homepage rollback follows
-the API document; no user, refresh token or session data needs deleting.
+Rollback requires distributing a previous client build. Preserve existing Keychain sessions.
 
 For local Docker, set both Web origins and `TYPEFLUX_API_URL` to
-`http://localhost:5174`, enable Web auth, and run `make run`. Use the API
+`http://localhost:5174`, and run `make run`. Use the API
 repository's `docs/web-app-local-http.md` and Compose override with the matching
 Homepage `Dockerfile.local`. Pending state, PKCE and strict origin matching are unchanged.

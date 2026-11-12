@@ -1,34 +1,11 @@
 import AppKit
-import SwiftUI
 
 @MainActor
-final class LoginWindowController: NSObject {
+final class LoginWindowController {
     static let shared = LoginWindowController()
-    static let defaultWindowSize = NSSize(width: 520, height: 620)
-
-    private var window: NSWindow?
-    private var hostingView: NSHostingView<AnyView>?
-    private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: settingsStore)
-    private var appearanceObserver: NSObjectProtocol?
-    private let settingsStore = SettingsStore()
-
-    override init() {
-        super.init()
-        appearanceObserver = NotificationCenter.default.addObserver(
-            forName: .appearanceModeDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                guard let self, let window = self.window else { return }
-                window.appearance = AppAppearance.nsAppearance(for: self.settingsStore.appearanceMode)
-            }
-        }
-    }
 
     private lazy var webEntry = WebLoginEntryController(
         coordinator: AuthState.shared.webLoginCoordinator,
-        showNative: { [weak self] in self?.showNativeWindow() },
         reportFailure: { failure in
             guard Self.shouldPresentWebLoginAlerts else { return }
             let alert = NSAlert()
@@ -76,66 +53,4 @@ final class LoginWindowController: NSObject {
     }
 
     func showWebLoginFailure() { webEntry.showCurrentFailure() }
-
-    private func showNativeWindow() {
-        if let window {
-            DockVisibilityController.shared.windowDidShow(window)
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-
-        let contentRect = NSRect(origin: .zero, size: Self.defaultWindowSize)
-        let window = NSWindow(
-            contentRect: contentRect,
-            styleMask: [.titled, .closable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        let loginView = LoginView(
-            onDismiss: { [weak self] in
-                self?.window?.close()
-            }
-        )
-        let hosting = NSHostingView(rootView: AnyView(loginView.interfaceStyle(following: interfaceStyleObserver)))
-        // Prevent NSHostingView from driving the window size via intrinsic content size
-        hosting.sizingOptions = []
-        hosting.translatesAutoresizingMaskIntoConstraints = true
-        hosting.autoresizingMask = [.width, .height]
-
-        window.title = L("auth.login.windowTitle")
-        window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
-        window.titlebarSeparatorStyle = .none
-        window.isMovableByWindowBackground = true
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.contentView = hosting
-        // Lock the window to a fixed size (no resizing)
-        window.minSize = Self.defaultWindowSize
-        window.maxSize = Self.defaultWindowSize
-        window.center()
-        window.isReleasedWhenClosed = false
-        window.delegate = self
-        window.appearance = AppAppearance.nsAppearance(for: settingsStore.appearanceMode)
-
-        hostingView = hosting
-        self.window = window
-        DockVisibilityController.shared.windowDidShow(window)
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-}
-
-extension LoginWindowController: NSWindowDelegate {
-    func windowWillClose(_: Notification) {
-        if !AuthState.shared.isLoggedIn {
-            AuthState.shared.webLoginCoordinator.cancel()
-        }
-        if let window {
-            DockVisibilityController.shared.windowDidHide(window)
-        }
-        window = nil
-        hostingView = nil
-    }
 }

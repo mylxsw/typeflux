@@ -5,9 +5,8 @@ import Testing
 private let opaque = String(repeating: "a", count: 43)
 private let proof = WebLoginProof(state: String(repeating: "s", count: 43), verifier: String(repeating: "v", count: 43))
 private let clock = Date(timeIntervalSince1970: 1_800_000_000)
-private func config(enabled: Bool = true, development: Bool = false) -> WebLoginConfiguration {
-    .resolve(environment: ["TYPEFLUX_WEB_AUTH_ENABLED": enabled ? "true" : "false",
-                           "TYPEFLUX_WEB_AUTH_CHANNEL": development ? "development" : "production"], info: [:])
+private func config(development: Bool = false) -> WebLoginConfiguration {
+    .resolve(environment: ["TYPEFLUX_WEB_AUTH_CHANNEL": development ? "development" : "production"], info: [:])
 }
 
 private func transaction(url: String? = nil, expiry: TimeInterval = 1_800_000_600) -> WebLoginTransaction {
@@ -33,19 +32,12 @@ struct WebLoginProtocolTests {
         }
     }
 
-    @Test func `configuration is off by default and separates clients`() {
+    @Test func `configuration defaults to production and separates clients`() {
         let production = WebLoginConfiguration.resolve(environment: [:], info: [:])
-        #expect(!production.enabled)
         #expect(production.clientID == "typeflux-macos")
         #expect(config(development: true).redirectURI == "ai.gulu.app.typeflux.dev://auth/callback")
         #expect(config(development: true).clientID == "typeflux-macos-dev")
         #expect(!config(development: true).matchesCallback(callback()))
-        let override = WebLoginConfiguration.resolve(
-            environment: ["TYPEFLUX_WEB_AUTH_ENABLED": "false"],
-            info: ["TYPEFLUX_WEB_AUTH_ENABLED": "true"]
-        )
-        #expect(!override.enabled)
-        #expect(WebLoginConfiguration.resolve(environment: [:], info: ["TYPEFLUX_WEB_AUTH_ENABLED": "true"]).enabled)
     }
 
     @Test(arguments: [
@@ -63,7 +55,7 @@ struct WebLoginProtocolTests {
     @Test(arguments: ["http://localhost:5174", "http://127.0.0.1:5174", "http://[::1]:5174", "http://typeflux.test", "http://typeflux.test:80"])
     func `HTTP transaction preserves exact configured origin`(origin: String) throws {
         let configuration = WebLoginConfiguration.resolve(environment: [
-            "TYPEFLUX_WEB_AUTH_ENABLED": "true", "TYPEFLUX_WEB_AUTH_ORIGIN": origin,
+            "TYPEFLUX_WEB_AUTH_ORIGIN": origin,
             "TYPEFLUX_WEB_AUTH_API_ORIGIN": origin
         ], info: [:])
         let login = transaction(url: "\(origin)/login?transaction=\(opaque)")
@@ -357,7 +349,6 @@ struct WebLoginCoordinatorTests {
         for invalidOrigin in [true, false] {
             let h = Harness()
             let configuration = WebLoginConfiguration.resolve(environment: [
-                "TYPEFLUX_WEB_AUTH_ENABLED": "true",
                 "TYPEFLUX_WEB_AUTH_ORIGIN": invalidOrigin ? "file:///tmp" : "https://typeflux.app"
             ], info: [:])
             let coordinator = WebLoginCoordinator(configuration: configuration, api: h.api, store: h.store,
@@ -369,15 +360,8 @@ struct WebLoginCoordinatorTests {
         }
     }
 
-    @Test func `disabled feature and unrelated callback do nothing`() async throws {
+    @Test func `unrelated callback leaves the current attempt waiting`() async throws {
         let h = Harness()
-        let disabled = WebLoginCoordinator(configuration: config(enabled: false), api: h.api, store: h.store,
-                                           browserFactory: { _, _, _ in h.browser }, authGeneration: { 0 },
-                                           accept: { _, _ in })
-        await disabled.start()
-        await disabled.receive(callback())
-        disabled.reopen()
-        #expect(h.api.creates == 0 && disabled.phase == .idle)
         await h.coordinator.start()
         try await h.coordinator.receive(#require(URL(string: "typeflux://billing/return")))
         #expect(h.coordinator.phase == .waiting)
