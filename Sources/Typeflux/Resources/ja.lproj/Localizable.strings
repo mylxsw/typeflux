@@ -4611,8 +4611,8 @@
 "clipboard.tab.snippet.compact" = "定型文";
 "clipboard.tab.voice.compact" = "音声";
 "clipboard.tab.screenshot.compact" = "スクショ";
-"clipboard.screenshot.search" = "スクリーンショットを検索";
-"clipboard.screenshot.empty" = "スクリーンショットや画像をコピーすると、ここに表示されます。";
+"clipboard.screenshot.search" = "スクリーンショットと画面収録を検索";
+"clipboard.screenshot.empty" = "コピーした画像や動画、書き出した画面収録がここに表示されます。";
 "clipboard.transcription.search" = "文字起こしを検索";
 "clipboard.transcription.empty" = "文字起こし履歴はありません";
 "clipboard.action.saveSnippet" = "スニペットとして保存…";

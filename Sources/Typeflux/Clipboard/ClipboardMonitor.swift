@@ -119,6 +119,15 @@ final class ClipboardMonitor {
         return true
     }
 
+    /// Adds a successfully exported recording by reference, without changing the pasteboard.
+    func recordScreenRecording(_ url: URL, source: ClipboardSource) {
+        let policy = policy()
+        guard isEnabled(), policy.isRecording, !policy.plainTextOnly,
+              source.bundleID.map({ !policy.ignoredBundleIDs.contains($0) }) ?? true else { return }
+        store.record(.files([url]), source: source, at: now())
+        Self.applyLimits(of: policy, to: store)
+    }
+
     private func enqueue(_ worker: any ClipboardCaptureWorking, changeCount: Int, generation: UUID,
                          policy: ClipboardCapturePolicy, source: ClipboardSource?) {
         let date = now(), store = store, budget = workBudget

@@ -4676,8 +4676,8 @@
 "clipboard.tab.snippet.compact" = "片段";
 "clipboard.tab.voice.compact" = "转写";
 "clipboard.tab.screenshot.compact" = "截图";
-"clipboard.screenshot.search" = "搜索截图";
-"clipboard.screenshot.empty" = "还没有截图，复制截图或图片后会显示在这里。";
+"clipboard.screenshot.search" = "搜索截图和录屏";
+"clipboard.screenshot.empty" = "复制的图片、视频和导出的录屏会显示在这里。";
 "clipboard.transcription.search" = "搜索转写历史";
 "clipboard.transcription.empty" = "还没有转写记录";
 "clipboard.action.saveSnippet" = "保存为片段…";

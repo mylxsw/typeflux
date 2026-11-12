@@ -1,6 +1,6 @@
 import Foundation
 
-/// The panel separates copied items, permanent snippets, voice results and screenshots.
+/// The panel separates copied items, permanent snippets, voice results and screen captures.
 enum ClipboardCategory: String, CaseIterable, Identifiable {
     case all
     case snippet

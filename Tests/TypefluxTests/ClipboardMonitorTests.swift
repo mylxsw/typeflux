@@ -175,6 +175,38 @@ final class ClipboardMonitorTests: XCTestCase {
         XCTAssertEqual(store.trimCounts, [ClipboardMonitor.maximumItemCount])
     }
 
+    func testExportedRecordingIsRecordedWithoutReadingThePasteboard() throws {
+        let url = URL(fileURLWithPath: "/tmp/recording.mp4")
+        let source = ClipboardSource(bundleID: "ai.gulu.app.typeflux", appName: "Typeflux")
+
+        monitor.recordScreenRecording(url, source: source)
+
+        let item = try XCTUnwrap(store.storedItems.first)
+        XCTAssertEqual(item.filePaths, [url.path])
+        XCTAssertEqual(item.sourceBundleID, source.bundleID)
+        XCTAssertEqual(pasteboard.changeCount, 0)
+        XCTAssertEqual(pasteboard.readCount, 0)
+        XCTAssertEqual(store.trimCounts, [ClipboardMonitor.maximumItemCount])
+    }
+
+    func testExportedRecordingRespectsHistorySettings() {
+        let url = URL(fileURLWithPath: "/tmp/recording.mp4")
+        let source = ClipboardSource(bundleID: "ai.gulu.app.typeflux", appName: "Typeflux")
+        enabled = false
+        monitor.recordScreenRecording(url, source: source)
+        XCTAssertTrue(store.storedItems.isEmpty)
+
+        for policy in [
+            ClipboardCapturePolicy(isRecording: false),
+            ClipboardCapturePolicy(plainTextOnly: true),
+            ClipboardCapturePolicy(ignoredBundleIDs: ["ai.gulu.app.typeflux"])
+        ] {
+            let monitor = ClipboardMonitor(pasteboard: pasteboard, store: store, isEnabled: { true }, policy: { policy })
+            monitor.recordScreenRecording(url, source: source)
+            XCTAssertTrue(store.storedItems.isEmpty)
+        }
+    }
+
     func testUnchangedPasteboardIsNotReadAgain() {
         monitor.start()
         pasteboard.copy(PasteboardContents(string: "once"))

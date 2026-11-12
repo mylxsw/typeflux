@@ -69,10 +69,19 @@ final class DIContainer {
     )
     lazy var screenRecordingSessions: ScreenRecordingSessionController = {
         let sessions = ScreenRecordingSessionController(settings: settingsStore) { [unowned self] in
-            ScreenRecordingCoordinator(permission: screenCapturePermission, capture: screenCapture,
-                                       defaults: settingsStore.defaults,
-                                       saveDirectory: { [settingsStore] in settingsStore.screenshotSaveDirectory },
-                                       analytics: FeatureUsageAnalytics(reporter: analyticsReporter))
+            let coordinator = ScreenRecordingCoordinator(
+                permission: screenCapturePermission,
+                capture: screenCapture,
+                defaults: settingsStore.defaults,
+                saveDirectory: { [settingsStore] in settingsStore.screenshotSaveDirectory },
+                analytics: FeatureUsageAnalytics(reporter: analyticsReporter)
+            )
+            coordinator.onPublished = { [clipboardMonitor] url in
+                clipboardMonitor.recordScreenRecording(
+                    url, source: ClipboardSource(bundleID: Bundle.main.bundleIdentifier, appName: "Typeflux")
+                )
+            }
+            return coordinator
         }
         sessions.isOtherCaptureActive = { [weak self] in self?.screenshotCoordinator.state != .idle }
         return sessions

@@ -121,24 +121,28 @@ final class ClipboardFeedTests: XCTestCase {
         XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "safari").count, 1)
     }
 
-    func testScreenshotTabFiltersImagesAndKeepsSearchAndClipboardHistory() {
+    func testScreenshotTabIncludesImagesAndRecordingsAndKeepsSearchAndClipboardHistory() {
         let screenshot = ClipboardTestSupport.entry(.image, imagePath: "/store/shot.png", sourceAppName: "Typeflux")
         let images = ClipboardTestSupport.entry(.images, filePaths: ["/photos/one.png", "/photos/two.png"])
+        let recording = ClipboardFeed.entry(for: item(.files, filePaths: ["/store/demo.mp4"], offset: 0))
+        let gif = ClipboardFeed.entry(for: item(.files, filePaths: ["/store/demo.gif"], offset: 0))
         let text = ClipboardTestSupport.entry(.text, text: "Screenshot notes")
         let voice = ClipboardTestSupport.entry(.voice, text: "Screenshot narration")
         var snippet = ClipboardTestSupport.entry(.image, imagePath: "/store/snippet.png")
         snippet.snippet = ClipboardSnippet(name: "Saved", alias: "")
-        let entries = [screenshot, images, text, voice, snippet]
+        let entries = [screenshot, images, recording, gif, text, voice, snippet]
         XCTAssertEqual(ClipboardCategory.allCases, [.all, .snippet, .voice, .screenshot])
         XCTAssertEqual(ClipboardFeed.filter(entries, category: .screenshot, query: "").map(\.id),
-                       [screenshot.id, images.id])
+                       [screenshot.id, images.id, recording.id, gif.id])
         XCTAssertEqual(ClipboardFeed.filter(entries, category: .screenshot, query: " Typeflux ").map(\.id),
                        [screenshot.id])
         XCTAssertEqual(ClipboardFeed.filter(entries, category: .screenshot, query: "two.png").map(\.id),
                        [images.id])
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .screenshot, query: "demo").map(\.id),
+                       [recording.id, gif.id])
         XCTAssertTrue(ClipboardFeed.filter(entries, category: .screenshot, query: "missing").isEmpty)
         XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "").map(\.id),
-                       [screenshot.id, images.id, text.id])
+                       [screenshot.id, images.id, recording.id, gif.id, text.id])
     }
 
     func testSections() {

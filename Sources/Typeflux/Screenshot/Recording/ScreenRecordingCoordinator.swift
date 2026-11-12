@@ -89,6 +89,7 @@ final class ScreenRecordingCoordinator: ObservableObject {
     var onRecoverRequested: ((URL) -> Void)?
     var present: (ScreenRecordingCoordinator) -> Void = { _ in }
     var dismiss: () -> Void = {}
+    var onPublished: (URL) -> Void = { _ in }
     var copyPublishedFile: (URL) -> Void = ScreenRecordingCoordinator.copyFile
     var updateIndicator: (String?) -> Void = { _ in }
     var showBorder: (ScreenRecordingTarget?) -> Void = { _ in }
@@ -484,6 +485,7 @@ extension ScreenRecordingCoordinator {
     private func completeExport(_ published: URL, copy: Bool, session: URL, token: Int, discardSession: Bool) async {
         analytics.count("recording." + (published.pathExtension == "gif" ? "gif" : "video") + ".export_completed")
         savedURL = published
+        onPublished(published)
         if copy {
             copyPublishedFile(published)
         }

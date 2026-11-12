@@ -4662,8 +4662,8 @@
 "clipboard.tab.snippet.compact" = "片段";
 "clipboard.tab.voice.compact" = "轉寫";
 "clipboard.tab.screenshot.compact" = "截圖";
-"clipboard.screenshot.search" = "搜尋截圖";
-"clipboard.screenshot.empty" = "尚無截圖，複製截圖或圖片後會顯示在這裡。";
+"clipboard.screenshot.search" = "搜尋截圖和錄影";
+"clipboard.screenshot.empty" = "複製的圖片、影片和匯出的螢幕錄影會顯示在這裡。";
 "clipboard.transcription.search" = "搜尋轉寫記錄";
 "clipboard.transcription.empty" = "尚無轉寫記錄";
 "clipboard.action.saveSnippet" = "儲存為片段…";

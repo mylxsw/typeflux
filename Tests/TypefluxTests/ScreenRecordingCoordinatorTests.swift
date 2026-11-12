@@ -89,6 +89,7 @@ struct ScreenRecordingCoordinatorTests {
         let capture = FakeScreenCapturer(.success(ScreenSnapshot(displays: [], windows: [])))
         var presentations = 0
         var dismissals = 0
+        var publishedURLs: [URL] = []
         var copiedURL: URL?
         var borders: [ScreenRecordingTarget?] = []
         let model: ScreenRecordingCoordinator
@@ -129,6 +130,7 @@ struct ScreenRecordingCoordinatorTests {
             )
             model.present = { [weak self] _ in self?.presentations += 1 }
             model.dismiss = { [weak self] in self?.dismissals += 1 }
+            model.onPublished = { [weak self] in self?.publishedURLs.append($0) }
             model.copyPublishedFile = { [weak self] in self?.copiedURL = $0 }
             model.showBorder = { [weak self] target in self?.borders.append(target) }
         }
@@ -248,6 +250,8 @@ struct ScreenRecordingCoordinatorTests {
         #expect(fixture.model.state == .completed)
         let url = try #require(fixture.model.savedURL)
         #expect(FileManager.default.fileExists(atPath: url.path))
+        #expect(fixture.publishedURLs == [url])
+        #expect(fixture.copiedURL == nil)
         #expect(fixture.model.sourceURL == nil)
         await fixture.clean()
     }
@@ -268,6 +272,7 @@ struct ScreenRecordingCoordinatorTests {
         #expect(fixture.model.state == .preview)
         #expect(fixture.model.error != nil)
         #expect(FileManager.default.fileExists(atPath: source.path))
+        #expect(fixture.publishedURLs.isEmpty)
         await fixture.clean()
         #expect(!FileManager.default.fileExists(atPath: source.path))
     }
