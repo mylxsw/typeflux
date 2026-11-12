@@ -3,8 +3,8 @@ import SwiftUI
 import WebKit
 
 enum AskMermaidResources {
-    static var hostURL: URL? { Bundle.module.url(forResource: "mermaid-host", withExtension: "html") }
-    static var resourceURL: URL? { Bundle.module.resourceURL }
+    static var hostURL: URL? { Bundle.appResources.url(forResource: "mermaid-host", withExtension: "html") }
+    static var resourceURL: URL? { Bundle.appResources.resourceURL }
 }
 
 private final class MermaidWKWebView: WKWebView {

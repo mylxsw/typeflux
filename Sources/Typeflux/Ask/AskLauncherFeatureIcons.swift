@@ -82,8 +82,8 @@ enum AskLauncherFeatureIcons {
             return image
         }
         // Extended keyword artwork uses the selected sculpted family; the original light set remains switchable.
-        guard let url = Bundle.module.url(forResource: resource, withExtension: "png")
-            ?? Bundle.module.url(forResource: "launcher-feature-sculpted-" + name, withExtension: "png"),
+        guard let url = Bundle.appResources.url(forResource: resource, withExtension: "png")
+            ?? Bundle.appResources.url(forResource: "launcher-feature-sculpted-" + name, withExtension: "png"),
             let image = NSImage(contentsOf: url) else { return nil }
         cache[resource] = image
         return image

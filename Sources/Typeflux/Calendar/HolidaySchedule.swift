@@ -37,7 +37,7 @@ struct HolidaySchedule: Decodable, Sendable {
     }
 
     static let bundled: Self = {
-        guard let url = Bundle.module.url(forResource: "cn", withExtension: "json"),
+        guard let url = Bundle.appResources.url(forResource: "cn", withExtension: "json"),
               let data = try? Data(contentsOf: url), let result = try? JSONDecoder().decode(Self.self, from: data)
         else { return Self(years: [:]) }
         return result

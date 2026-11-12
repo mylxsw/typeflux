@@ -90,7 +90,7 @@ actor AppleProductivityBrowser: AppleProductivityBrowsing {
     }
 
     static func script() throws -> String {
-        guard let url = Bundle.module.url(forResource: "AppleProductivityBrowse", withExtension: "js") else {
+        guard let url = Bundle.appResources.url(forResource: "AppleProductivityBrowse", withExtension: "js") else {
             throw Failure.invalid
         }
         return try String(contentsOf: url, encoding: .utf8)
