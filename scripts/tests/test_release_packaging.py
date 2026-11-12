@@ -1,7 +1,8 @@
-"""Exercise release signing order without building, models or real signing identities."""
+"""Check installed resource access and exercise release signing without a real build."""
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -11,6 +12,20 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ReleasePackagingTests(unittest.TestCase):
+    def test_main_app_uses_installed_resource_resolver(self):
+        sources = ROOT / 'Sources' / 'Typeflux'
+        resolver = sources / 'App' / 'AppResourceBundle.swift'
+        direct_accessor = re.compile(r'\bBundle\s*\.\s*module\b|\bBundle\s*(?:=|\?\?)\s*\.\s*module\b')
+        offenders = []
+        for source in sorted(sources.rglob('*.swift')):
+            if source == resolver:
+                continue
+            for line_number, line in enumerate(source.read_text().splitlines(), 1):
+                code = line.partition('//')[0]
+                if direct_accessor.search(code):
+                    offenders.append(f'{source.relative_to(ROOT)}:{line_number}')
+        self.assertFalse(offenders, 'Use Bundle.appResources in the main app:\n' + '\n'.join(offenders))
+
     def run_release(self, fail_tokenizer=False):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

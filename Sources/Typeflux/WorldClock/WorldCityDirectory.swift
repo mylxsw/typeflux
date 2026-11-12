@@ -197,7 +197,7 @@ struct WorldCityDirectory: Sendable {
         return (sign == "+" ? 1 : -1) * (hours * 60 + minutes)
     }
 
-    static func bundledCities(bundle: Bundle = .module) -> [WorldClockCity] {
+    static func bundledCities(bundle: Bundle = .appResources) -> [WorldClockCity] {
         guard let url = bundle.url(forResource: "world-cities", withExtension: "json"),
               let data = try? Data(contentsOf: url) else { return [] }
         return decode(data)
