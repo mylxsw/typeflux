@@ -7539,7 +7539,7 @@
 
 // Service setup and feature availability.
 "setup.cloud.signIn" = "登录 Typeflux Cloud";
-"setup.cloud.checkFailed" = "未能获取账号的服务状态，请重试或自行配置模型。";
+"setup.cloud.checkFailed" = "未能获取账号的服务状态，你可以重试，也可以继续完成设置。";
 "setup.speech.configure" = "配置语音模型";
 "setup.speech.cloudUnavailable" = "请登录并检查云端服务权限，或配置本地语音模型。";
 "setup.speech.required" = "请先设置语音识别。%@";

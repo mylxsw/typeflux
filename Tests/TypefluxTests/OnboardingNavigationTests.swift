@@ -80,28 +80,23 @@ struct OnboardingNavigationTests {
             var calls = 0
             let action = { calls += 1 }
             model.routeModel.canContinue = false; model.routeModel.primaryAction = action
-            model.cloudModel.canContinue = false; model.cloudModel.primaryAction = action
             model.speechModel.canContinue = false; model.speechModel.primaryAction = action
             model.llmModel.canContinue = false; model.llmModel.primaryAction = action
             model.permissionsModel.canContinue = false; model.permissionsModel.primaryAction = action
             model.shortcutsModel.canContinue = false; model.shortcutsModel.primaryAction = action
             model.tryModel.canContinue = false; model.tryModel.primaryAction = action
-            for step in OnboardingStep.allCases where step != .welcome && step != .recall {
+            for step in OnboardingStep.allCases where step != .welcome && step != .recall && step != .cloud {
                 model.currentStep = step
                 #expect(!model.canAdvance)
                 #expect(!model.isPageBusy)
                 model.performSetupAction()
             }
-            #expect(calls == 7)
-            model.cloudModel.isBusy = true
+            #expect(calls == 6)
             model.currentStep = .cloud
-            #expect(model.isSetupActionRunning)
+            model.cloudModel.isBusy = true
+            #expect(!model.isSetupActionRunning && model.canAdvance)
             model.performSetupAction()
-            #expect(calls == 7)
-            model.cloudModel.canContinue = true
-            #expect(!model.canAdvance)
-            model.cloudModel.isBusy = false
-            #expect(model.canAdvance)
+            #expect(model.currentStep == .permissions && calls == 6)
             let count = changes
             model.tryModel.canContinue = true
             await Task.yield()
@@ -114,10 +109,9 @@ struct OnboardingNavigationTests {
     @Test func `missing page readiness never falls back to the removed editor flow`() async throws {
         try await SettingsBehaviorTestSupport.withFixture { settings in
             let model = OnboardingViewModel(settingsStore: settings, onComplete: {})
-            model.cloudModel.canContinue = nil
             model.speechModel.canContinue = nil
             model.llmModel.canContinue = nil
-            for step in [OnboardingStep.cloud, .speech, .llm] {
+            for step in [OnboardingStep.speech, .llm] {
                 model.currentStep = step
                 #expect(!model.canAdvance)
                 model.performSetupAction()

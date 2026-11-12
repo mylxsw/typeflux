@@ -7539,7 +7539,7 @@
 
 // Service setup and feature availability.
 "setup.cloud.signIn" = "Sign in to Typeflux Cloud";
-"setup.cloud.checkFailed" = "Couldn’t check your account. Retry or use your own models.";
+"setup.cloud.checkFailed" = "Couldn’t check your account. You can retry or continue setup.";
 "setup.speech.configure" = "Configure speech model";
 "setup.speech.cloudUnavailable" = "Sign in and check Cloud access, or configure a local speech model.";
 "setup.speech.required" = "Set up speech recognition before recording. %@";

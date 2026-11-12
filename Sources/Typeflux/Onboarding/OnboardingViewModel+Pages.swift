@@ -23,7 +23,7 @@ extension OnboardingViewModel {
         switch currentStep {
         case .welcome, .recall: nil
         case .route: routeModel.canContinue
-        case .cloud: cloudModel.canContinue
+        case .cloud: true
         case .speech: speechModel.canContinue
         case .llm: llmModel.canContinue
         case .permissions: permissionsModel.canContinue
@@ -36,7 +36,7 @@ extension OnboardingViewModel {
         switch currentStep {
         case .welcome, .recall: false
         case .route: routeModel.isBusy
-        case .cloud: cloudModel.isBusy
+        case .cloud: false
         case .speech: speechModel.isBusy
         case .llm: llmModel.isBusy
         case .permissions: permissionsModel.isBusy
@@ -49,7 +49,7 @@ extension OnboardingViewModel {
         switch currentStep {
         case .welcome, .recall: nil
         case .route: routeModel.primaryAction
-        case .cloud: cloudModel.primaryAction
+        case .cloud: nil
         case .speech: speechModel.primaryAction
         case .llm: llmModel.primaryAction
         case .permissions: permissionsModel.primaryAction

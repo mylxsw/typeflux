@@ -7538,7 +7538,7 @@
 
 // Service setup and feature availability.
 "setup.cloud.signIn" = "Typeflux Cloud 로그인";
-"setup.cloud.checkFailed" = "계정 상태를 확인하지 못했습니다. 다시 시도하거나 내 모델을 설정하세요.";
+"setup.cloud.checkFailed" = "계정 상태를 확인하지 못했습니다. 다시 시도하거나 설정을 계속할 수 있습니다.";
 "setup.speech.configure" = "음성 모델 설정";
 "setup.speech.cloudUnavailable" = "로그인하여 클라우드 이용 권한을 확인하거나 로컬 음성 모델을 설정하세요.";
 "setup.speech.required" = "녹음 전에 음성 인식을 설정하세요. %@";

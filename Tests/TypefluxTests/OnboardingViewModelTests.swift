@@ -100,13 +100,13 @@ struct OnboardingViewModelTests {
         }
     }
 
-    @Test func `cloud is recommended but login is not bypassed`() async throws {
+    @Test func `cloud is recommended and login can be deferred`() async throws {
         try await fixture { _, model, _ in
             #expect(model.serviceRoute == .cloud)
             model.currentStep = .cloud
-            #expect(!model.canAdvance)
+            #expect(model.canAdvance)
             model.advance()
-            #expect(model.currentStep == .cloud)
+            #expect(model.currentStep == .permissions)
         }
     }
 
@@ -371,7 +371,7 @@ struct OnboardingViewModelTests {
             let model = OnboardingViewModel(settingsStore: settings, authState: auth, modelLibrary: library,
                                             localModelManager: manager, onComplete: {})
             model.currentStep = .cloud
-            #expect(!model.canAdvance)
+            #expect(model.cloudModel.canContinue == false)
             model.cloudModel.canContinue = true
             #expect(model.canAdvance)
             model.advance()

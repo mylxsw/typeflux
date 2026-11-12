@@ -19,7 +19,7 @@ extension OnboardingViewModel {
             return ready
         }
         switch currentStep {
-        case .cloud, .speech, .llm: return false
+        case .speech, .llm: return false
         case .permissions: return allRequiredPermissionsGranted
         default: return true
         }
@@ -59,8 +59,9 @@ extension OnboardingViewModel {
             skipConfirmation = .allModels
             return
         }
-        reportCurrentStepCompleted(skipped: false)
-        if currentStep == .cloud {
+        let cloudSetupDeferred = currentStep == .cloud && (cloudModel.isBusy || cloudModel.canContinue != true)
+        reportCurrentStepCompleted(skipped: cloudSetupDeferred)
+        if currentStep == .cloud, !cloudSetupDeferred {
             applyCloudSelection()
         }
         if currentStep == .speech {

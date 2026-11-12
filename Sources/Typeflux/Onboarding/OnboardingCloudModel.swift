@@ -11,7 +11,6 @@ final class OnboardingCloudModel: ObservableObject {
     let login: WebLoginCoordinator
     @Published var canContinue: Bool? = false
     @Published var isBusy = false
-    @Published var primaryAction: (() -> Void)?
     @Published private(set) var phase: WebLoginCoordinator.Phase = .idle
     @Published private(set) var entitlementReady = false
     @Published private(set) var error: String?

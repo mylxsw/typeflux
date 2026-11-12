@@ -67,12 +67,12 @@ struct OnboardingRouteCloudTests {
         }
     }
 
-    @Test func `entitlement gates continuation and hands off cloud defaults explicitly`() async throws {
+    @Test func `verified entitlement applies cloud defaults when continuing`() async throws {
         try await TestUI.withFixture { settings in
             let state = auth()
             let session = session(settings, auth: state)
             session.currentStep = .cloud
-            #expect(!session.canAdvance)
+            #expect(session.canAdvance && session.cloudModel.canContinue == false)
             session.cloudModel.refresh()
             session.cloudModel.refresh() // Coalesce an in-flight refresh.
             try await TestUI.wait { session.cloudModel.entitlementReady }
@@ -82,10 +82,10 @@ struct OnboardingRouteCloudTests {
             #expect(session.currentStep == .cloud)
             state.subscriptionError = "fixture"
             try await TestUI.wait { session.cloudModel.error != nil }
-            #expect(!session.canAdvance)
+            #expect(session.canAdvance && session.cloudModel.canContinue == false)
             state.subscriptionError = nil
             session.cloudModel.retry()
-            try await TestUI.wait { session.canAdvance }
+            try await TestUI.wait { session.cloudModel.canContinue == true }
             session.advance()
             #expect(session.currentStep == .permissions)
             #expect(settings.sttProvider == .typefluxOfficial)
@@ -106,11 +106,11 @@ struct OnboardingRouteCloudTests {
             let model = session.cloudModel
             model.refresh()
             try await TestUI.wait { model.entitlementReady }
-            #expect(!session.canAdvance && !model.cloudSpeech)
+            #expect(session.canAdvance && !model.cloudSpeech)
             manager.failure = true
             model.downloadLocalModel()
             try await TestUI.wait { model.error != nil }
-            #expect(!session.canAdvance && model.downloadProgress == nil)
+            #expect(session.canAdvance && model.downloadProgress == nil)
             manager.failure = false
             model.retry()
             model.downloadLocalModel()
@@ -130,6 +130,35 @@ struct OnboardingRouteCloudTests {
         }
     }
 
+    @Test(arguments: [false, true])
+    func `cloud setup can be deferred without replacing model settings`(signedIn: Bool) async throws {
+        try await TestUI.withFixture { settings in
+            let state = auth(fails: true)
+            state.isLoggedIn = signedIn
+            let session = session(settings, auth: state)
+            session.currentStep = .cloud
+            if signedIn {
+                session.cloudModel.refresh()
+                try await TestUI.wait { session.cloudModel.error != nil }
+            }
+
+            let speechProvider = settings.sttProvider
+            let languageProvider = settings.llmRemoteProvider
+            let rewriteModel = session.modelLibrary.rewriteReference
+            session.performSetupAction()
+
+            #expect(session.currentStep == .permissions)
+            #expect(state.isLoggedIn == signedIn)
+            #expect(settings.sttProvider == speechProvider)
+            #expect(settings.llmRemoteProvider == languageProvider)
+            #expect(session.modelLibrary.rewriteReference == rewriteModel)
+
+            session.currentStep = .recall
+            session.performSetupAction()
+            #expect(settings.isOnboardingCompleted)
+        }
+    }
+
     @Test func `failed entitlement and late downloads never navigate or change settings`() async throws {
         try await TestUI.withFixture { settings in
             let manager = CloudFixtureManager()
@@ -139,7 +168,7 @@ struct OnboardingRouteCloudTests {
             let model = session.cloudModel
             model.refresh()
             try await TestUI.wait { model.error != nil }
-            #expect(!model.entitlementReady && !session.canAdvance)
+            #expect(!model.entitlementReady && session.canAdvance)
             let previous = settings.sttProvider
             model.downloadLocalModel()
             try await TestUI.wait { manager.continuation != nil }
@@ -201,12 +230,12 @@ struct OnboardingRouteCloudTests {
             let session = session(settings, auth: state)
             session.currentStep = .cloud
             session.cloudModel.activate()
-            #expect(session.cloudModel.isBusy && !session.canAdvance)
+            #expect(session.cloudModel.isBusy && session.canAdvance)
             firstLoad?.resume(returning: .none); firstLoad = nil
             _ = await background.value
             try await TestUI.wait { session.cloudModel.entitlementReady }
             #expect(calls == 2 && session.cloudModel.error == nil)
-            #expect(!session.canAdvance)
+            #expect(session.canAdvance && session.cloudModel.canContinue == false)
         }
     }
 
