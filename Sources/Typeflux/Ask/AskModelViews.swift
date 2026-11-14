@@ -274,8 +274,7 @@ struct AskModelChoices: View {
                                     Text(tag).font(.system(size: 11))
                                 }
                             }
-                            .help(model.displayName + " — " + (model.pricing == nil
-                                ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
+                            .help(model.pricing?.label == nil ? model.displayName + " — " + L("models.cloud.priceUnknown") : model.displayName)
                         }
                     }
                     if offersCloudSignIn {
@@ -400,7 +399,6 @@ struct AskModelChoices: View {
                 if recoveryProviders != nil, let price = model.pricing?.label {
                     Text(price).font(.system(size: 11, weight: .medium)).fixedSize()
                         .foregroundStyle(StudioTheme.textSecondary)
-                        .help(L("models.cloud.priceExplanation"))
                 }
                 if selected {
                     Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold))
@@ -414,7 +412,7 @@ struct AskModelChoices: View {
             .contentShape(Rectangle())
         }.buttonStyle(.plain)
             .accessibilityAddTraits(selected ? .isSelected : [])
-            .help(model.displayName + " — " + (model.pricing == nil ? L("models.cloud.priceUnknown") : L("models.cloud.priceExplanation")))
+            .help(model.pricing?.label == nil ? model.displayName + " — " + L("models.cloud.priceUnknown") : model.displayName)
     }
 }
 

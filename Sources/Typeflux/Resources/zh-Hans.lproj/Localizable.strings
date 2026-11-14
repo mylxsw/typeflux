@@ -1715,7 +1715,6 @@
 
 "models.cloud.parameters" = "上下文：%d · 输出：%d tokens";
 "models.cloud.priceUnknown" = "价格信息暂不可用";
-"models.cloud.priceExplanation" = "倍率同时作用于输入和输出费率，命中缓存的输入按输入价格的 1/10 计费，实际消耗取决于 token 用量。";
 
 // Ask reasoning effort
 "ask.reasoning.title" = "推理强度";

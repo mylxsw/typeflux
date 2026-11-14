@@ -10,6 +10,13 @@ final class CloudModelPricingTests: XCTestCase {
         XCTAssertEqual(price.label, "↓ 0.05 / ↑ 0.20 Credits / 1K")
     }
 
+    func testRetailLabelDoesNotApplyTheCatalogMultiplierAgain() throws {
+        let raw = #"{"id":"opus","name":"Claude Opus Latest","pricing":{"multiplier":"0.8000","unit":"credit","input_per_1k":"0.5600","output_per_1k":"2.8000","cached_per_1k":"0.0280"}}"#
+        let model = try AskCoding.decoder().decode(AskCloudModel.self, from: Data(raw.utf8))
+        XCTAssertEqual(model.pricing?.label, "↓ 0.56 / ↑ 2.80 Credits / 1K")
+        XCTAssertEqual(model.registered.displayName, "Claude Opus Latest · ↓ 0.56 / ↑ 2.80 Credits / 1K")
+    }
+
     func testOldCatalogHasNoAssumedPrice() throws {
         let model = try AskCoding.decoder().decode(AskCloudModel.self, from: Data(#"{"id":"default","name":"Cloud"}"#.utf8))
         XCTAssertEqual(model.registered.vision, true)

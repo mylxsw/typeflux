@@ -1715,7 +1715,6 @@
 
 "models.cloud.parameters" = "Context: %d · Output: %d tokens";
 "models.cloud.priceUnknown" = "Price information unavailable";
-"models.cloud.priceExplanation" = "Multiplier applies to input and output token rates; cached input is billed at 1/10 of the input rate. Total cost depends on usage.";
 
 // Ask reasoning effort
 "ask.reasoning.title" = "Reasoning effort";

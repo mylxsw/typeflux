@@ -19,8 +19,7 @@ struct CloudProviderModelsView: View {
                 onBack: onBack
             )
             TFNotice(text: L(auth.isLoggedIn ? "models.cloud.managed" : "models.login"))
-            TFFormSection(title: L("models.cloud.available"), count: models.count,
-                          footnote: L("models.cloud.priceExplanation")) {
+            TFFormSection(title: L("models.cloud.available"), count: models.count) {
                 if library.loading { TFSpinner() }
                 TFButton(title: L("models.cloud.refresh"), systemImage: "arrow.clockwise") {
                     Task { await library.refresh(token: auth.accessToken) }

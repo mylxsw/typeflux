@@ -1712,7 +1712,6 @@
 
 "models.cloud.parameters" = "上下文：%d · 輸出：%d tokens";
 "models.cloud.priceUnknown" = "價格資訊暫不可用";
-"models.cloud.priceExplanation" = "倍率同時適用於輸入和輸出費率，命中快取的輸入按輸入價格的 1/10 計費，實際消耗取決於 token 用量。";
 
 // Ask reasoning effort
 "ask.reasoning.title" = "推理強度";
