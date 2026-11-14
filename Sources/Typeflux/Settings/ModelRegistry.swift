@@ -16,10 +16,7 @@ struct RegisteredModel: Codable, Equatable, Identifiable, Sendable {
     /// catalogs that predate levels and for the user's own models.
     var reasoningEfforts: [String]? = nil
 
-    var displayName: String {
-        if let label = pricing?.label { return name + " · " + label }
-        return name
-    }
+    var displayName: String { name }
 
 
     var exclusionReason: String? {

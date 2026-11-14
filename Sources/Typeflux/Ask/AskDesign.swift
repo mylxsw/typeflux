@@ -1605,34 +1605,6 @@ struct AskPopoverFooterButton: View {
     }
 }
 
-/// The price multiplier as a small badge: green at or below 1x, amber above.
-struct AskMultiplierBadge: View {
-    var multiplier: String
-
-    static func text(_ multiplier: String) -> String? {
-        CloudModelPricing(multiplier: multiplier).label.map { String($0.dropLast()) + "×" }
-    }
-
-    static func tone(_ multiplier: String) -> Color {
-        guard let value = Decimal(string: multiplier, locale: Locale(identifier: "en_US_POSIX")) else {
-            return StudioTheme.textSecondary
-        }
-        return value <= 1 ? StudioTheme.success : StudioTheme.warning
-    }
-
-    var body: some View {
-        if let text = Self.text(multiplier) {
-            Text(text)
-                .font(.system(size: 10.5, weight: .semibold))
-                .monospacedDigit()
-                .foregroundStyle(Self.tone(multiplier))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-        }
-    }
-}
-
 /// A two-option segmented control in the design's neutral style: a recessed
 /// track and a raised thumb, instead of the system control's blue fill.
 struct AskSegmentedControl<Value: Hashable>: View {

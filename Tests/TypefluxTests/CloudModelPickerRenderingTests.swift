@@ -45,7 +45,7 @@ final class CloudModelPickerRenderingTests: XCTestCase {
         try library.removeModel("cloud:default", providerID: "typefluxCloud")
         try library.addModels([
             .init(id: "fast", name: "Fast", reference: "cloud:fast", scenarios: ["ask"],
-                  pricing: .init(multiplier: "0.5"), contextWindowTokens: 32768, maxOutputTokens: 4096),
+                  pricing: .init(multiplier: "0.5", inputPer1k: "0.03", outputPer1k: "0.12"), contextWindowTokens: 32768, maxOutputTokens: 4096),
             .init(id: "balanced", name: "Balanced", reference: "cloud:balanced", scenarios: ["ask"],
                   pricing: .init(multiplier: "1"), contextWindowTokens: 128000, maxOutputTokens: 8192),
             .init(id: "deep", name: "Deep", reference: "cloud:deep", scenarios: ["ask"],

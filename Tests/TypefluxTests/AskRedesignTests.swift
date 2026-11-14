@@ -218,18 +218,7 @@ struct AskRedesignFidelityTests {
 @Suite("Ask design polish helpers", .exclusiveUIState)
 @MainActor
 struct AskDesignPolishTests {
-    @Test func multiplierBadgeUsesTheTimesSignAndATone() {
-        #expect(AskMultiplierBadge.text("5") == "5×")
-        #expect(AskMultiplierBadge.text("1") == "1×")
-        #expect(AskMultiplierBadge.text("0.5") == "0.5×")
-        // Anything the pricing label rejects shows no badge at all.
-        #expect(AskMultiplierBadge.text("abc") == nil)
-        #expect(AskMultiplierBadge.text("0") == nil)
-        #expect(AskMultiplierBadge.tone("1") == StudioTheme.success)
-        #expect(AskMultiplierBadge.tone("0.5") == StudioTheme.success)
-        #expect(AskMultiplierBadge.tone("5") == StudioTheme.warning)
-        #expect(AskMultiplierBadge.tone("abc") == StudioTheme.textSecondary)
-    }
+
 
     @Test func lineGlyphsFollowTheDesignPathsAndScale() {
         #expect(AskLineGlyph.polylines(.usage).count == 4)

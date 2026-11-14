@@ -1586,7 +1586,6 @@
 "ask.settings.quick.calculator.subtitle" = "在启动器里输入算式时直接显示结果，不发送给 AI。";
 "ask.settings.quick.numberConversions.title" = "数值转换";
 "ask.settings.quick.numberConversions.subtitle" = "输入纯数字时显示中文大写、进制等转换结果，同时保留内容搜索。";
-"ask.models.multiplierColumn" = "积分倍率";
 "ask.models.ownAPI" = "自有 API";
 "ask.models.badge.vision" = "视觉";
 "ask.history.searchEmpty" = "没有匹配的对话";

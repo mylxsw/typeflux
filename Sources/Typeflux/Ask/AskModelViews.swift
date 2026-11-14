@@ -251,9 +251,7 @@ struct AskModelChoices: View {
                     }
                     ForEach(Array(choices.enumerated()), id: \.element.id) { index, provider in
                         if index > 0 { AskPopoverDivider() }
-                        AskPopoverHeader(title: Self.groupTitle(provider),
-                                         trailing: index == 0 && provider.isCloud
-                                             ? L("ask.models.multiplierColumn") : nil)
+                        AskPopoverHeader(title: Self.groupTitle(provider))
                         ForEach(provider.models) { model in
                             let blocked = Self.imageReason(model, provider: provider, hasImage: hasImage,
                                                            library: library, loggedIn: loggedIn, scenario: scenario)
@@ -267,14 +265,11 @@ struct AskModelChoices: View {
                                 reference = model.reference; dismiss()
                             } accessory: {
                                 AskModelCapabilities(model: model)
-                                if let multiplier = model.pricing?.multiplier,
-                                   let text = AskMultiplierBadge.text(multiplier) {
-                                    Text(text).font(.system(size: 11)).monospacedDigit()
-                                } else if let tag = Self.sourceTag(provider) {
+                                if let tag = Self.sourceTag(provider) {
                                     Text(tag).font(.system(size: 11))
                                 }
                             }
-                            .help(model.pricing?.label == nil ? model.displayName + " — " + L("models.cloud.priceUnknown") : model.displayName)
+                            .help(model.name)
                         }
                     }
                     if offersCloudSignIn {
@@ -326,7 +321,7 @@ struct AskModelChoices: View {
         provider.isOllama ? L("ask.models.localGroup") : provider.name
     }
 
-    /// The trailing word on a row without a Cloud multiplier: where it runs.
+    /// The trailing word identifies where a non-Cloud model runs.
     static func sourceTag(_ provider: RegisteredProvider) -> String? {
         if provider.isCloud { return nil }
         return provider.isOllama ? L("ask.location.local") : L("ask.models.ownAPI")
@@ -383,7 +378,7 @@ struct AskModelChoices: View {
             HStack(spacing: 10) {
                 ModelIcon(model: model, provider: provider)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(recoveryProviders == nil ? model.displayName : model.name).font(.system(
+                    Text(model.name).font(.system(
                         size: 13,
                         weight: selected ? .semibold : .regular,
                         design: .monospaced
@@ -396,10 +391,6 @@ struct AskModelChoices: View {
                     }
                 }
                 Spacer(minLength: 8)
-                if recoveryProviders != nil, let price = model.pricing?.label {
-                    Text(price).font(.system(size: 11, weight: .medium)).fixedSize()
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
                 if selected {
                     Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold))
                 }
@@ -412,7 +403,7 @@ struct AskModelChoices: View {
             .contentShape(Rectangle())
         }.buttonStyle(.plain)
             .accessibilityAddTraits(selected ? .isSelected : [])
-            .help(model.pricing?.label == nil ? model.displayName + " — " + L("models.cloud.priceUnknown") : model.displayName)
+            .help(model.name)
     }
 }
 

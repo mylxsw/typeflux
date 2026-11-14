@@ -1576,7 +1576,6 @@
 "ask.settings.quick.calculator.subtitle" = "런처에 입력한 수식의 결과를 AI에 보내지 않고 바로 표시합니다.";
 "ask.settings.quick.numberConversions.title" = "숫자 변환";
 "ask.settings.quick.numberConversions.subtitle" = "숫자를 입력하면 중국어 대문자 숫자와 진법 등의 변환 결과를 표시합니다. 콘텐츠 검색도 유지됩니다.";
-"ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
 "ask.models.badge.vision" = "Vision";
 "ask.history.searchEmpty" = "일치하는 대화가 없습니다";

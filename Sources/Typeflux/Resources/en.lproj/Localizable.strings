@@ -1586,7 +1586,6 @@
 "ask.settings.quick.calculator.subtitle" = "Show the result of arithmetic typed into the launcher right away, without sending it to the AI.";
 "ask.settings.quick.numberConversions.title" = "Number conversion";
 "ask.settings.quick.numberConversions.subtitle" = "Show Chinese uppercase numbers, numeral bases and other formats for numeric input. Content search stays available.";
-"ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
 "ask.models.badge.vision" = "Vision";
 "ask.history.searchEmpty" = "No matching conversations";

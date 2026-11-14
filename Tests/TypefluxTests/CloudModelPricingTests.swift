@@ -2,19 +2,19 @@
 import XCTest
 
 final class CloudModelPricingTests: XCTestCase {
-    func testPerModelRetailPriceDecodesAndPreservesTwoDecimals() throws {
+    func testPerModelRetailPriceDecodesAndDisplaysPerMillionTokens() throws {
         let raw = #"{"multiplier":"1.0000","base_rate_version":"retail-v2","unit":"credit","input_per_1k":"0.0500","output_per_1k":"0.2000","cached_per_1k":"0.0010"}"#
         let price = try AskCoding.decoder().decode(CloudModelPricing.self, from: Data(raw.utf8))
         XCTAssertEqual(price.inputPer1k, "0.0500")
         XCTAssertEqual(price.outputPer1k, "0.2000")
-        XCTAssertEqual(price.label, "↓ 0.05 / ↑ 0.20 Credits / 1K")
+        XCTAssertEqual(price.label, "↓ 50.00 / ↑ 200.00 Credits / 1M Tokens")
     }
 
     func testRetailLabelDoesNotApplyTheCatalogMultiplierAgain() throws {
         let raw = #"{"id":"opus","name":"Claude Opus Latest","pricing":{"multiplier":"0.8000","unit":"credit","input_per_1k":"0.5600","output_per_1k":"2.8000","cached_per_1k":"0.0280"}}"#
         let model = try AskCoding.decoder().decode(AskCloudModel.self, from: Data(raw.utf8))
-        XCTAssertEqual(model.pricing?.label, "↓ 0.56 / ↑ 2.80 Credits / 1K")
-        XCTAssertEqual(model.registered.displayName, "Claude Opus Latest · ↓ 0.56 / ↑ 2.80 Credits / 1K")
+        XCTAssertEqual(model.pricing?.label, "↓ 560.00 / ↑ 2,800.00 Credits / 1M Tokens")
+        XCTAssertEqual(model.registered.displayName, "Claude Opus Latest")
     }
 
     func testOldCatalogHasNoAssumedPrice() throws {
@@ -28,22 +28,31 @@ final class CloudModelPricingTests: XCTestCase {
     func testCatalogMetadataAndPriceSurviveRegistryRoundTrip() throws {
         let raw = #"{"id":"deep","name":"Deep","scenarios":["ask"],"vision":true,"context_window_tokens":128000,"max_output_tokens":8192,"model_version":3,"pricing":{"multiplier":"0.5000","base_rate_version":"v2","unit":"credit"}}"#
         let model = try AskCoding.decoder().decode(AskCloudModel.self, from: Data(raw.utf8))
-        XCTAssertEqual(model.pricing?.label, "0.5X")
+        XCTAssertNil(model.pricing?.label)
         XCTAssertEqual(model.pricing?.baseRateVersion, "v2")
         XCTAssertEqual(model.contextWindowTokens, 128000)
         XCTAssertEqual(model.maxOutputTokens, 8192)
         XCTAssertEqual(model.modelVersion, 3)
-        XCTAssertEqual(model.registered.displayName, "Deep · 0.5X")
+        XCTAssertEqual(model.registered.displayName, "Deep")
         let registered = try JSONDecoder().decode(RegisteredModel.self, from: JSONEncoder().encode(model.registered))
         XCTAssertEqual(registered, model.registered)
     }
 
-    func testMalformedPricesAreNotDisplayedAsValidMultipliers() {
+    func testMultiplierOnlyCatalogsDoNotDisplayPrices() {
         for value in ["", "0", "-1", "101", "nan", "0.5garbage", "1e5"] {
             XCTAssertNil(CloudModelPricing(multiplier: value).label, value)
         }
-        XCTAssertEqual(CloudModelPricing(multiplier: "2").label, "2X")
-        XCTAssertEqual(CloudModelPricing(multiplier: "1.0000").label, "1X")
+        XCTAssertNil(CloudModelPricing(multiplier: "2").label)
+        XCTAssertNil(CloudModelPricing(multiplier: "1.0000").label)
+    }
+
+    func testPerMillionConversionHappensBeforeRounding() {
+        let price = CloudModelPricing(multiplier: "0.8", inputPer1k: "0.000014", outputPer1k: "0.004096")
+        XCTAssertEqual(price.label, "↓ 0.01 / ↑ 4.10 Credits / 1M Tokens")
+        for invalid in ["", "-1", "nan", "inf", "1e309", "1e308"] {
+            XCTAssertNil(CloudModelPricing(multiplier: "1", inputPer1k: invalid, outputPer1k: "1").label)
+            XCTAssertNil(CloudModelPricing(multiplier: "1", inputPer1k: "1", outputPer1k: invalid).label)
+        }
     }
 
     @MainActor
@@ -81,7 +90,7 @@ final class CloudModelPricingTests: XCTestCase {
         let ask = library.selectableProviders(loggedIn: true, hasImage: false).first(where: \.isCloud)
         XCTAssertEqual(ask?.models.map(\.id), ["ask"])
         XCTAssertEqual(library.name(for: "cloud:ask"), "Ask")
-        XCTAssertEqual(ask?.models.first?.displayName, "Ask · 5X")
+        XCTAssertEqual(ask?.models.first?.displayName, "Ask")
         let rewrite = library.selectableProviders(loggedIn: true, hasImage: false, scenario: "rewrite").first(where: \.isCloud)
         XCTAssertEqual(rewrite?.models.map(\.id), ["default"])
         XCTAssertNil(rewrite?.models.first?.pricing)

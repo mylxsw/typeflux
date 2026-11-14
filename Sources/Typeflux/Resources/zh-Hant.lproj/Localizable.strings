@@ -1583,7 +1583,6 @@
 "ask.settings.quick.calculator.subtitle" = "在啟動器中輸入算式時直接顯示結果，不傳送給 AI。";
 "ask.settings.quick.numberConversions.title" = "數值轉換";
 "ask.settings.quick.numberConversions.subtitle" = "輸入純數字時顯示中文大寫、進位制等轉換結果，同時保留內容搜尋。";
-"ask.models.multiplierColumn" = "Credits ×";
 "ask.models.ownAPI" = "Own API";
 "ask.models.badge.vision" = "Vision";
 "ask.history.searchEmpty" = "沒有符合的對話";
