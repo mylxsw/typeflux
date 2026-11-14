@@ -92,6 +92,10 @@ app-only-intel-release: ## Build an "app-only" variant Intel release
 full-release-continue: ## Continue a "full" variant release notarization
 	TYPEFLUX_RELEASE_VARIANT=full $(MAKE) release-continue
 
+.PHONY: prod
+prod: ## Run the local client against production services and production website sign-in
+	TYPEFLUX_WEB_AUTH_CHANNEL=production TYPEFLUX_WEB_AUTH_ORIGIN=https://typeflux.app TYPEFLUX_WEB_AUTH_API_ORIGIN=https://api.typeflux.app TYPEFLUX_API_URL=https://api.typeflux.app TYPEFLUX_API_URLS=https://api.typeflux.app,https://typeflux-api.aicode.cc ./scripts/run_dev_attached.sh
+
 .PHONY: dev
 dev: ## Run dev version attached to terminal with local API URL
 	TYPEFLUX_API_URL=http://127.0.0.1:8080 ./scripts/run_dev_attached.sh

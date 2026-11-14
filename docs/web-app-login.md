@@ -11,6 +11,9 @@ real-provider/browser acceptance tests before releasing the client. No iOS behav
 macOS always uses website sign-in. Environment values take precedence over identically named
 Info.plist strings for channel and origin configuration. Release packaging copies `app/Info.plist`.
 Both development launch scripts copy the configuration into their bundle before signing.
+`make prod` explicitly selects production API/website origins and the production auth channel,
+while retaining the local app bundle name. The packaging helper honors an explicit
+`TYPEFLUX_WEB_AUTH_CHANNEL`; its default remains `development`.
 
 | Key | Default | Purpose |
 | --- | --- | --- |
