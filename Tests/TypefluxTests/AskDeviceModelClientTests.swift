@@ -84,6 +84,40 @@ private struct DeviceModelTestProber: CloudEndpointProbing {
         #expect(request.value(forHTTPHeaderField: "X-Scenario") == "ask-anything")
     }
 
+    @Test func `work context planning hints never reach cloud billing`() async throws {
+        DeviceInferenceURLProtocol.reset()
+        let workPayload = #"{"model":"cloud:default","messages":[{"role":"user","content":"Hello"}],"typeflux_semantic_context":true,"tools":[{"type":"function","function":{"name":"web_search","parameters":{"type":"object","properties":{}}}}],"parallel_tool_calls":true}"#
+        let model = RegisteredModel(id: "cloud:default", name: "Cloud", contextWindowTokens: 204800, maxOutputTokens: 4096)
+        let planned = try AskContextPlanner.devicePayload(workPayload, model: model, budgeted: false)
+        let result = try await client().complete(provider: provider,
+            connection: .init(provider: .typefluxCloud, baseURL: "", model: "default", apiKey: "account-a"),
+            payload: planned, onUsage: nil, onProgress: nil)
+        #expect(result.0 == "Done")
+        let request = try #require(DeviceInferenceURLProtocol.requests.first)
+        let data: Data
+        if let body = request.httpBody { data = body }
+        else {
+            let stream = try #require(request.httpBodyStream)
+            stream.open()
+            defer { stream.close() }
+            var buffer = [UInt8](repeating: 0, count: 4096)
+            var body = Data()
+            while stream.hasBytesAvailable {
+                let count = stream.read(&buffer, maxLength: buffer.count)
+                #expect(count >= 0)
+                if count <= 0 { break }
+                body.append(contentsOf: buffer.prefix(count))
+            }
+            data = body
+        }
+        let body = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(body["typeflux_context_window"] == nil)
+        #expect(body["typeflux_semantic_context"] == nil)
+        #expect((body["tools"] as? [[String: Any]])?.count == 1)
+        #expect(body["parallel_tool_calls"] as? Bool == true)
+        #expect(body["stream"] as? Bool == true)
+    }
+
     @Test func `transport loss never retries a possibly billed invocation on another server`() async {
         DeviceInferenceURLProtocol.reset()
         await #expect(throws: (any Error).self) {

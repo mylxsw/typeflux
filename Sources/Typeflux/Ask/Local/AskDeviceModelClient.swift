@@ -34,6 +34,9 @@ struct AskDeviceModelClient: AskModelCompleting {
         let deadline = body.removeValue(forKey: "typeflux_deadline") as? Double
         let bounded = body.removeValue(forKey: "typeflux_budget") as? Bool == true
         if bounded, let deadline, deadline <= Date().timeIntervalSince1970 { throw AskBudgetError.reached("duration") }
+        // Context planning is complete; these hints are local orchestration metadata.
+        body.removeValue(forKey: "typeflux_context_window")
+        body.removeValue(forKey: "typeflux_semantic_context")
         body["stream"] = true
         body["stream_options"] = ["include_usage": true]
         let path = AskDeviceTransport.path + "/completions"
