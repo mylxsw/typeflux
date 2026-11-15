@@ -7561,3 +7561,4 @@
 "ask.local.networkUncertain" = "接続が中断されました。受信内容は保存され、リクエストは自動再送されていません。";
 "ask.local.providerUnavailable" = "モデルサービスを一時的に利用できません。後でもう一度お試しください。";
 "ask.local.contextTooLong" = "会話がモデルの処理できる長さを超えています。新しい会話を開始してください。";
+"ask.local.requestRejected" = "モデルがリクエストを拒否しました。選択したモデルとリクエストの設定を確認してください。";

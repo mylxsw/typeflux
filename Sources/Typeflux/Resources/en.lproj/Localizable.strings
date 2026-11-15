@@ -7562,3 +7562,4 @@
 "ask.local.networkUncertain" = "The connection was interrupted. Any partial response has been kept; the request was not automatically repeated.";
 "ask.local.providerUnavailable" = "The model service is temporarily unavailable. Please try again later.";
 "ask.local.contextTooLong" = "This conversation exceeds the model’s context limit. Please start a new conversation.";
+"ask.local.requestRejected" = "The model rejected this request. Check the selected model and request parameters.";

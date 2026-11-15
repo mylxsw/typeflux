@@ -7564,3 +7564,4 @@
 "ask.local.networkUncertain" = "連線中斷，已保留收到的內容，沒有自動重複請求。";
 "ask.local.providerUnavailable" = "模型服務暫時無法使用，請稍後再試。";
 "ask.local.contextTooLong" = "對話內容超出模型可處理的長度，請開啟新對話。";
+"ask.local.requestRejected" = "模型拒絕了這次請求，請檢查所選模型與請求參數。";

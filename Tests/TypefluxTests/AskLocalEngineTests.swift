@@ -30,6 +30,9 @@ final class AskLocalEngineTests: XCTestCase {
 
     func testInferenceFailureCategoriesDoNotExposeProviderBodies() {
         XCTAssertEqual(AskInferenceFailure.code(URLError(.timedOut)), "NETWORK_UNCERTAIN")
+        let rejected = NSError(domain: "provider", code: 422, userInfo: [RequestRetry.responseBodyKey: Data(#"{"code":"LLM_PROVIDER_ERROR"}"#.utf8)])
+        XCTAssertEqual(AskInferenceFailure.code(rejected), "MODEL_REQUEST_INVALID")
+        XCTAssertEqual(AskInferenceFailure.messageKey("MODEL_REQUEST_INVALID"), "ask.local.requestRejected")
         let error = NSError(domain: "provider", code: 503, userInfo: [RequestRetry.responseBodyKey: Data(#"{"code":"BILLING_SYNC_PENDING","message":"sensitive"}"#.utf8)])
         XCTAssertEqual(AskInferenceFailure.code(error), "BILLING_SYNC_PENDING")
         XCTAssertEqual(AskInferenceFailure.messageKey("BILLING_SYNC_PENDING"), "ask.local.syncPending")

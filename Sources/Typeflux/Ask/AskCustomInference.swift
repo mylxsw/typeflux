@@ -30,7 +30,11 @@ enum AskInferenceFailure {
         let value = error as NSError
         if let data = value.userInfo[RequestRetry.responseBodyKey] as? Data,
            let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let code = envelope["code"] as? String { return code }
+           let code = envelope["code"] as? String {
+            if code == "LLM_PROVIDER_ERROR", value.code == 422 { return "MODEL_REQUEST_INVALID" }
+            if code == "LLM_PROVIDER_ERROR", value.code == 429 { return "PROVIDER_BUSY" }
+            return code
+        }
         if value.domain == NSURLErrorDomain { return "NETWORK_UNCERTAIN" }
         if value.code == 429 { return "PROVIDER_BUSY" }
         if (500...599).contains(value.code) { return "PROVIDER_UNAVAILABLE" }
@@ -45,6 +49,7 @@ enum AskInferenceFailure {
         case "NETWORK_UNCERTAIN": return "ask.local.networkUncertain"
         case "PROVIDER_BUSY", "PROVIDER_UNAVAILABLE", "LLM_PROVIDER_ERROR": return "ask.local.providerUnavailable"
         case "MODEL_CONTEXT_TOO_LONG": return "ask.local.contextTooLong"
+        case "MODEL_REQUEST_INVALID": return "ask.local.requestRejected"
         default: return "ask.local.modelFailed"
         }
     }
