@@ -55,7 +55,8 @@ struct TFTabBar<Value: Hashable>: View {
         .overlay(alignment: .bottom) {
             Rectangle().fill(TFColors.border).frame(height: TFMetrics.borderWidth)
         }
-        .focusable()
+        // Focus belongs to individual tab buttons, not the full-width container.
+        // Move commands from those buttons still bubble up to this handler.
         .onMoveCommand { direction in
             guard direction == .left || direction == .right,
                   let next = TFSelectionStep.value(after: selection, in: options.map(\.value),
