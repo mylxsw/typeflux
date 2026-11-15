@@ -1907,7 +1907,6 @@
 "ask.local.expired" = "执行已过期，请重试以继续。";
 "ask.local.busy" = "此对话仍在运行。";
 "ask.local.full" = "请开始新对话以继续。";
-"ask.local.modelFailed" = "模型请求失败，请检查模型配置后重试。";
 "ask.local.badSummary" = "模型返回的摘要无效，请重试。";
 "ask.local.regenerateLatest" = "只能重新生成最新的回复。";
 "ask.local.modelRequired" = "不使用 Typeflux Cloud 时，请选择你自己配置的模型。";
@@ -7556,3 +7555,10 @@
 "setup.skip.existingModels" = "已有模型配置会保留。你可以先使用启动器，未配置的语音和 AI 服务之后可在设置中补充。";
 "setup.skip.existingSpeech" = "已有语音模型配置会保留，暂时跳过语音教学，之后可在设置中调整模型。";
 "setup.skip.existingAI" = "已有 AI 模型配置会保留，暂时跳过 AI 功能介绍，之后可在设置中调整模型。";
+
+"ask.local.modelFailed" = "模型请求未完成，已保留收到的内容。";
+"ask.local.syncPending" = "账户信息正在同步，请稍后重试。";
+"ask.local.loginRequired" = "登录已失效，请重新登录后继续。";
+"ask.local.networkUncertain" = "连接中断，已保留收到的内容，没有自动重复请求。";
+"ask.local.providerUnavailable" = "模型服务暂时不可用，请稍后再试。";
+"ask.local.contextTooLong" = "对话内容超出模型可处理的长度，请新开对话。";

@@ -14,6 +14,35 @@ final class AskLocalEngineTests: XCTestCase {
         try? FileManager.default.removeItem(at: directory)
     }
 
+    func testFailureKeepsPartialOutputAndCategoryWithoutRepeatingInference() async throws {
+        let service = engine()
+        let original = try await service.send(conversationId: "failed-stream", request: request(), token: "")
+        let run = try XCTUnwrap(original.run)
+        let inference = try XCTUnwrap(run.inference)
+        let result = try await service.inferenceResult(conversationId: original.id, request: .init(
+            runId: run.id, deviceId: device, inferenceId: inference.id, content: "Partial answer",
+            failed: true, errorCode: "NETWORK_UNCERTAIN"), token: "")
+        XCTAssertEqual(result.run?.status, "failed")
+        XCTAssertEqual(result.run?.errorCode, "NETWORK_UNCERTAIN")
+        XCTAssertNil(result.run?.inference)
+        XCTAssertTrue(result.messages.contains { $0.text.contains("Partial answer") })
+    }
+
+    func testInferenceFailureCategoriesDoNotExposeProviderBodies() {
+        XCTAssertEqual(AskInferenceFailure.code(URLError(.timedOut)), "NETWORK_UNCERTAIN")
+        let error = NSError(domain: "provider", code: 503, userInfo: [RequestRetry.responseBodyKey: Data(#"{"code":"BILLING_SYNC_PENDING","message":"sensitive"}"#.utf8)])
+        XCTAssertEqual(AskInferenceFailure.code(error), "BILLING_SYNC_PENDING")
+        XCTAssertEqual(AskInferenceFailure.messageKey("BILLING_SYNC_PENDING"), "ask.local.syncPending")
+        XCTAssertEqual(AskInferenceFailure.messageKey("AUTH_REQUIRED"), "ask.local.loginRequired")
+        XCTAssertEqual(AskInferenceFailure.messageKey("NETWORK_UNCERTAIN"), "ask.local.networkUncertain")
+        XCTAssertEqual(AskInferenceFailure.messageKey("LLM_PROVIDER_ERROR"), "ask.local.providerUnavailable")
+        XCTAssertEqual(AskInferenceFailure.messageKey("MODEL_CONTEXT_TOO_LONG"), "ask.local.contextTooLong")
+        XCTAssertEqual(AskInferenceFailure.messageKey(nil), "ask.local.modelFailed")
+        XCTAssertEqual(AskInferenceFailure.code(NSError(domain: "provider", code: 429)), "PROVIDER_BUSY")
+        XCTAssertEqual(AskInferenceFailure.code(NSError(domain: "provider", code: 502)), "PROVIDER_UNAVAILABLE")
+        XCTAssertEqual(AskInferenceFailure.code(NSError(domain: "provider", code: 400)), "MODEL_REQUEST_FAILED")
+    }
+
     func testBuiltinCallsWaitForExplicitClientDecisionAndCannotReplay() async throws {
         let engine = engine()
         var req = request(); req.clientToolApproval = true

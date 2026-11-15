@@ -1907,7 +1907,6 @@
 "ask.local.expired" = "Execution expired; retry to continue.";
 "ask.local.busy" = "This conversation is still running.";
 "ask.local.full" = "Start a new conversation to continue.";
-"ask.local.modelFailed" = "Your model request failed; check its configuration and retry.";
 "ask.local.badSummary" = "The model returned an invalid summary; retry to continue.";
 "ask.local.regenerateLatest" = "Only the latest reply can be regenerated.";
 "ask.local.modelRequired" = "Choose one of your own models to use Chat without Typeflux Cloud.";
@@ -7556,3 +7555,10 @@
 "setup.skip.existingModels" = "Existing model settings will be kept. Start with the launcher, and set up any missing voice or AI services later in Settings.";
 "setup.skip.existingSpeech" = "Your speech model settings will be kept. Skip the voice guide for now; you can change the model later in Settings.";
 "setup.skip.existingAI" = "Your AI model settings will be kept. Skip the AI guide for now; you can change the model later in Settings.";
+
+"ask.local.modelFailed" = "The model request failed. Any partial response has been kept.";
+"ask.local.syncPending" = "Your account is still synchronizing. Please try again shortly.";
+"ask.local.loginRequired" = "Please sign in again to continue.";
+"ask.local.networkUncertain" = "The connection was interrupted. Any partial response has been kept; the request was not automatically repeated.";
+"ask.local.providerUnavailable" = "The model service is temporarily unavailable. Please try again later.";
+"ask.local.contextTooLong" = "This conversation exceeds the model’s context limit. Please start a new conversation.";

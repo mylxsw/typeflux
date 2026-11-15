@@ -1897,7 +1897,6 @@
 "ask.local.expired" = "実行の期限が切れました。続行するには再試行してください。";
 "ask.local.busy" = "この会話はまだ実行中です。";
 "ask.local.full" = "続けるには新しい会話を始めてください。";
-"ask.local.modelFailed" = "モデルへのリクエストが失敗しました。設定を確認して再試行してください。";
 "ask.local.badSummary" = "モデルが無効な要約を返しました。再試行してください。";
 "ask.local.regenerateLatest" = "再生成できるのは最新の返信だけです。";
 "ask.local.modelRequired" = "Typeflux Cloud を使わずに チャット を使うには、自分のモデルを選んでください。";
@@ -7555,3 +7554,10 @@
 "setup.skip.existingModels" = "既存のモデル設定は保持されます。まずランチャーを使い、未設定の音声や AI サービスは後から設定できます。";
 "setup.skip.existingSpeech" = "音声モデルの設定は保持されます。音声ガイドをスキップし、後から設定でモデルを変更できます。";
 "setup.skip.existingAI" = "AI モデルの設定は保持されます。AI ガイドをスキップし、後から設定でモデルを変更できます。";
+
+"ask.local.modelFailed" = "モデルへのリクエストが完了しませんでした。受信した内容は保存されています。";
+"ask.local.syncPending" = "アカウント情報を同期中です。しばらくしてから再試行してください。";
+"ask.local.loginRequired" = "再度ログインして続行してください。";
+"ask.local.networkUncertain" = "接続が中断されました。受信内容は保存され、リクエストは自動再送されていません。";
+"ask.local.providerUnavailable" = "モデルサービスを一時的に利用できません。後でもう一度お試しください。";
+"ask.local.contextTooLong" = "会話がモデルの処理できる長さを超えています。新しい会話を開始してください。";

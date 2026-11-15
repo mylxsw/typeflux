@@ -21,6 +21,35 @@ struct AskInferenceResult: Codable, Equatable, Sendable {
     var errorCode: String? = nil
 }
 
+/// Preserve failure categories in the durable inference receipt without exposing provider bodies.
+enum AskInferenceFailure {
+    static func code(_ error: Error) -> String {
+        if case AskStreamError.contextCapacity = error { return "MODEL_CONTEXT_TOO_LONG" }
+        if error is CloudCreditsExhaustedError { return "CREDITS_EXHAUSTED" }
+        if TypefluxCloudLoginRequiredError.fromError(error) != nil { return "AUTH_REQUIRED" }
+        let value = error as NSError
+        if let data = value.userInfo[RequestRetry.responseBodyKey] as? Data,
+           let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let code = envelope["code"] as? String { return code }
+        if value.domain == NSURLErrorDomain { return "NETWORK_UNCERTAIN" }
+        if value.code == 429 { return "PROVIDER_BUSY" }
+        if (500...599).contains(value.code) { return "PROVIDER_UNAVAILABLE" }
+        return "MODEL_REQUEST_FAILED"
+    }
+
+    static func messageKey(_ code: String?) -> String {
+        switch code {
+        case "BILLING_SYNC_PENDING", "AUTH_UNAVAILABLE", "ASK_BUDGET_RECOVERY_REQUIRED", "ASK_BUDGET_UNAVAILABLE":
+            return "ask.local.syncPending"
+        case "AUTH_REQUIRED", "AUTH_INVALID_TOKEN": return "ask.local.loginRequired"
+        case "NETWORK_UNCERTAIN": return "ask.local.networkUncertain"
+        case "PROVIDER_BUSY", "PROVIDER_UNAVAILABLE", "LLM_PROVIDER_ERROR": return "ask.local.providerUnavailable"
+        case "MODEL_CONTEXT_TOO_LONG": return "ask.local.contextTooLong"
+        default: return "ask.local.modelFailed"
+        }
+    }
+}
+
 /// Refuse redirects so a configured endpoint cannot forward credentials to another host.
 final class AskModelRedirectPolicy: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
     func urlSession(_: URLSession, task _: URLSessionTask,

@@ -439,7 +439,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         if request.failed {
             record.conversation.run?.preview = request.content
             record.conversation.run?.reasoning = request.reasoning
-            return try fail(&record, L("ask.local.modelFailed"))
+            record.conversation.run?.errorCode = request.errorCode
+            return try fail(&record, L(AskInferenceFailure.messageKey(request.errorCode)))
         }
         record.conversation.run?.status = "running"
         if let cut = inference.summaryThrough, cut > 0 {

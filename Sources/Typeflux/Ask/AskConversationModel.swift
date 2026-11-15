@@ -2045,8 +2045,7 @@ final class AskConversationModel: ObservableObject {
                     catch {
                         let progress = inferenceProgress[value.id]
                         receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: progress?.text ?? "", usage: inferenceUsage[inference.id], failed: true, reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
-                        if case AskStreamError.contextCapacity = error { receipt?.errorCode = "MODEL_CONTEXT_TOO_LONG" }
-                        if error is CloudCreditsExhaustedError { receipt?.errorCode = "CREDITS_EXHAUSTED" }
+                        receipt?.errorCode = AskInferenceFailure.code(error)
                     }
                     // Persist under the original binding even if logout/cancel raced completion.
                     try await cache.saveReceipt(.inference(receipt!), identity: identity, owner: current.owner)
