@@ -12,6 +12,10 @@ struct AskDeviceModelClient: AskModelCompleting {
                      apiKey: token, apiStyle: connection.apiStyle)
     }
 
+    @TaskLocal static var billingKey: String?
+
+    static func receiptKey(_ inferenceID: String) -> String { "ask-inference:" + inferenceID }
+
     var custom: any AskModelCompleting = AskCustomInference()
     var executor = CloudRequestExecutor()
     var session: URLSession = .init(configuration: .ephemeral, delegate: AskModelRedirectPolicy(), delegateQueue: nil)
@@ -44,6 +48,8 @@ struct AskDeviceModelClient: AskModelCompleting {
         var request = try ChatRequest.make(baseURL: endpoint, path: path, method: "POST",
                                            body: JSONSerialization.data(withJSONObject: body), token: connection.apiKey,
                                            headers: ["X-Scenario": "ask-anything", "X-Typeflux-Model-Catalog": "1"])
+        request.setValue(Self.billingKey ?? UUID().uuidString.lowercased(), forHTTPHeaderField: "Idempotency-Key")
+        request.setValue("2", forHTTPHeaderField: "X-Typeflux-Credit-Version")
         request.timeoutInterval = bounded ? min(
             180,
             max(0.1, (deadline ?? Date().timeIntervalSince1970 + 180) - Date().timeIntervalSince1970)

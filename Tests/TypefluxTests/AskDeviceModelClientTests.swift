@@ -65,6 +65,19 @@ private struct DeviceModelTestProber: CloudEndpointProbing {
     private let provider = RegisteredProvider(id: "cloud", name: "Cloud", remote: .typefluxCloud)
     private let payload = #"{"model":"cloud:default","messages":[{"role":"user","content":"Hello"}]}"#
 
+    @Test func `cloud request carries the persisted billing identity`() async throws {
+        DeviceInferenceURLProtocol.reset()
+        let key = AskDeviceModelClient.receiptKey("inference-123")
+        _ = try await AskDeviceModelClient.$billingKey.withValue(key) {
+            try await client().complete(provider: provider,
+                connection: .init(provider: .typefluxCloud, baseURL: "", model: "default", apiKey: "account-a"),
+                payload: payload, onUsage: nil, onProgress: nil)
+        }
+        let request = try #require(DeviceInferenceURLProtocol.requests.first)
+        #expect(request.value(forHTTPHeaderField: "Idempotency-Key") == key)
+        #expect(request.value(forHTTPHeaderField: "X-Typeflux-Credit-Version") == "2")
+    }
+
     @Test func `one inference uses the stateless endpoint and the captured account credential`() async throws {
         DeviceInferenceURLProtocol.reset()
         let result = try await client().complete(provider: provider,

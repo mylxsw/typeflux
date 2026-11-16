@@ -26,9 +26,11 @@ enum AskAuxiliaryInference {
             }
             let payload = try AskContextPlanner.devicePayload(inference.payload, model: model, budgeted: false)
             let connection = AskDeviceModelClient.authenticated(library.connection(provider, model: model), token: cloudToken ?? "")
-            let (text, calls) = try await client.complete(provider: provider,
+            let (text, calls) = try await AskDeviceModelClient.$billingKey.withValue(AskDeviceModelClient.receiptKey(inference.id)) {
+                try await client.complete(provider: provider,
                 connection: connection, payload: payload,
                 onUsage: { await capture.observe($0) }, onProgress: { await capture.observe($0) })
+            }
             return await capture.receipt(inference, run: run, device: device, text: text, calls: calls, failed: false)
         } catch {
             return await capture.receipt(inference, run: run, device: device, text: "", calls: [], failed: true)

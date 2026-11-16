@@ -478,7 +478,15 @@ actor AskDeviceAPI: AskAPI {
 
     func usage(id: String, runId: String?, cursor: Int64?, token: String) async throws -> AskUsagePage {
         let owner = try await account(token), (api, route) = try await execution(id, owner: owner)
-        return try await api.usage(id: id, runId: runId, cursor: cursor, token: route)
+        let page = try await api.usage(id: id, runId: runId, cursor: cursor, token: route)
+        guard route.isEmpty, let account = accounts[owner] else { return page }
+        let keys = page.items.filter { $0.modelRef.hasPrefix("cloud:") && $0.status != "confirmed" }.compactMap(\.billingKey)
+        // Receipt delays or an offline display must never interrupt a conversation.
+        let receipts = keys.isEmpty ? [] : (try? await transport.billingReceipts(keys: keys, token: tokens[owner] ?? token)) ?? []
+        try Task.checkCancellation()
+        guard accounts[owner]?.lease === account.lease else { throw CancellationError() }
+        try await account.engine.reconcileUsage(id: id, receipts: receipts)
+        return try await account.engine.usage(id: id, runId: runId, cursor: cursor, token: "")
     }
 
     func models(token: String) async throws -> [AskCloudModel] {

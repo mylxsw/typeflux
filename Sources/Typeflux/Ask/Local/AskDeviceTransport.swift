@@ -42,6 +42,11 @@ protocol AskDeviceTransporting: Sendable {
     func snapshot(id: String, token: String) async throws -> AskDeviceSnapshot?
     func put(id: String, snapshot: AskDeviceSnapshot, token: String) async throws
     func webTool(name: String, arguments: String, token: String) async throws -> AskBuiltinToolOutput
+    func billingReceipts(keys: [String], token: String) async throws -> [AskBillingReceipt]
+}
+
+extension AskDeviceTransporting {
+    func billingReceipts(keys: [String], token: String) async throws -> [AskBillingReceipt] { [] }
 }
 
 enum AskCloudToolBillingIdentity {
@@ -82,6 +87,17 @@ struct AskDeviceTransport: AskDeviceTransporting {
         let identity = AskCloudToolBillingIdentity.key ?? UUID().uuidString.lowercased()
         let result: Result = try await request("/tools", method: "POST", body: body, token: token, idempotencyKey: identity)
         return .init(text: result.text, isError: result.isError)
+    }
+
+    func billingReceipts(keys: [String], token: String) async throws -> [AskBillingReceipt] {
+        struct Result: Decodable { var receipts: [AskBillingReceipt] }
+        let path = "/api/v1/usage/receipts"
+        let body = try JSONSerialization.data(withJSONObject: ["keys": keys])
+        let (data, response) = try await executor.execute(apiPath: path) { base in
+            ChatRequest.make(baseURL: base, path: path, method: "POST", body: body, token: token, timeout: 10)
+        }
+        let result: Result = try ChatRequest.decode(data: data, statusCode: response.statusCode)
+        return result.receipts
     }
 
     private func request<T: Decodable>(

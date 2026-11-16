@@ -50,6 +50,18 @@ private struct DeviceMetadataProber: CloudEndpointProbing {
               ))
     }
 
+    @Test func billingReceiptsDecodeAuthoritativeScaleAndKeepAuthentication() async throws {
+        let http = DeviceMetadataHTTP(), api = transport(http)
+        await http.raw(200, #"{"code":"OK","data":{"receipts":[{"key":"call","microcredits":123000000,"unit_scale":10000}]}}"#)
+        let receipts = try await api.billingReceipts(keys: ["call"], token: "account-token")
+        #expect(receipts == [.init(key: "call", microcredits: 123_000_000, unitScale: 10_000)])
+        let request = try #require(await http.requests.last)
+        #expect(request.url?.path == "/api/v1/usage/receipts" && request.httpMethod == "POST")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer account-token")
+        await http.raw(503, #"{"code":"UNAVAILABLE"}"#)
+        await #expect(throws: (any Error).self) { try await api.billingReceipts(keys: ["call"], token: "account-token") }
+    }
+
     @Test func `history snapshots use independent paths and never include execution payloads`() async throws {
         let http = DeviceMetadataHTTP(), api = transport(http)
         var value = conversation

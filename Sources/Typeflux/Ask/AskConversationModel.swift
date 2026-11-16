@@ -7,8 +7,15 @@ final class AskConversationModel: ObservableObject {
     func usagePage(id: String, runId: String?, cursor: Int64?) async throws -> AskUsagePage {
         guard let current = credentials(for: id) else { throw AuthError.unauthorized }
         let page = try await api.usage(id: id, runId: runId, cursor: cursor, token: current.token)
+        let latest = try? await api.conversation(id: id, token: current.token)
         try Task.checkCancellation()
         guard owner == current.account else { throw CancellationError() }
+        if let latest, let cached = snapshots[id] {
+            let merged = cached.mergingUsage(from: latest)
+            snapshots[id] = merged
+            if selectedId == id { selected = selected?.mergingUsage(from: latest) ?? merged }
+            try? await cache.save(merged, owner: current.owner)
+        }
         return page
     }
 
@@ -2032,12 +2039,14 @@ final class AskConversationModel: ObservableObject {
                             .run?.inference?.payload ?? inference.payload
                         let payload = try AskContextPlanner.devicePayload(currentPayload, model: model, budgeted: run.budgetEnabled == true)
                         let connection = AskDeviceModelClient.authenticated(modelLibrary.connection(provider, model: model), token: inferenceToken)
-                        let (text, calls) = try await customInference.complete(provider: provider,
+                        let (text, calls) = try await AskDeviceModelClient.$billingKey.withValue(AskDeviceModelClient.receiptKey(inference.id)) {
+                            try await customInference.complete(provider: provider,
                             connection: connection, payload: payload,
                             onUsage: { [weak self] usage in await self?.recordInferenceUsage(usage, id: inference.id, owner: current.account) },
                             onProgress: { [weak self] progress in
                                 await self?.updateInferenceProgress(progress, id: conversationID, inferenceID: inference.id, owner: current.account, visible: inference.summaryThrough == nil || inference.summaryThrough == 0)
                             })
+                        }
                         let progress = inferenceProgress[value.id]
                         receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: text, toolCalls: calls, usage: inferenceUsage[inference.id], reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds,
                                                      finishReason: progress?.truncated == true ? "length" : nil)

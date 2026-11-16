@@ -151,7 +151,14 @@ struct AskUsagePanel: View {
         // with the window edge.
         .frame(width: AskMetrics.usagePanelWidth)
         .askSidePanel(edge: .trailing, floating: floating)
-        .task(id: loadKey) { await load(reset: true) }
+        .task(id: loadKey) {
+            await load(reset: true)
+            for delay in [2, 4, 8, 16, 30, 30] {
+                do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+                guard (usage?.total.pending ?? 0) > 0 else { return }
+                await load(reset: true)
+            }
+        }
         .onExitCommand(perform: close)
         .onAppear { if focusCloseOnAppear { closeFocused = true } }
         .onChange(of: focusCloseOnAppear) { if $0 { closeFocused = true } }

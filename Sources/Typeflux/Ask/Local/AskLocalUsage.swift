@@ -49,6 +49,15 @@ struct AskLocalUsage: Codable, Equatable, Sendable {
 private extension AskUsageTotals {
     mutating func addLocal(_ item: AskUsageInvocation) {
         calls += 1
+        if item.tokens == nil || item.tokens?.incomplete == true {
+            missingTokens = (missingTokens ?? 0) + 1
+        } else if item.status == "unavailable" {
+            // A missing charge does not make complete provider tokens a lower bound.
+            missingTokens = missingTokens ?? 0
+        }
+        if item.status == "confirmed", let cost = item.microcredits, cost >= 0 {
+            microcredits += cost / max(1, item.unitScale ?? 1)
+        }
         if item.status == "external" { external += 1 }
         if item.status == "pending" {
             pending += 1
@@ -81,7 +90,8 @@ extension AskLocalRecord {
             id: inference.id, runId: run.id, messageId: inference.summaryThrough == nil ? run.assistantId : nil,
             modelRef: ((try? JSONSerialization.jsonObject(with: Data(inference.payload.utf8))) as? [String: Any])?["model"] as? String ?? run.modelRef ?? conversation.modelRef ?? "",
             purpose: inference.summaryThrough == nil ? "answer" : "summary",
-            createdAt: date, source: "unknown", status: "pending", version: usage.version
+            createdAt: date, source: "unknown", status: "pending", version: usage.version,
+            billingKey: AskDeviceModelClient.receiptKey(inference.id)
         )))
         localUsage = usage
         conversation.usage = usage.summary
@@ -103,9 +113,12 @@ extension AskLocalRecord {
                 item.source = "client"
             }
         }
-        // Provider-reported tokens do not prove the Cloud charge. Keep its cost
-        // explicitly unavailable rather than labeling it as a user's own model.
-        item.status = item.modelRef.hasPrefix("cloud:") ? "unavailable" : "external"
+        // Provider tokens do not prove the Cloud charge. New calls await an
+        // authoritative receipt; legacy calls without a billing key stay unknown.
+        if item.status != "confirmed" {
+            item.status = item.modelRef.hasPrefix("cloud:")
+                ? (item.billingKey != nil && !receipt.failed ? "pending" : "unavailable") : "external"
+        }
         guard item != previous else { return false }
         localUsage?.version += 1
         item.version = localUsage?.version ?? 0
@@ -118,11 +131,47 @@ extension AskLocalRecord {
         guard let run = conversation.run, var usage = localUsage else { return }
         for index in usage.invocations.indices where usage.invocations[index].usage.runId == run.id
             && usage.invocations[index].usage.status == "pending" {
+            if usage.invocations[index].usage.modelRef.hasPrefix("cloud:"),
+               usage.invocations[index].usage.billingKey != nil,
+               usage.invocations[index].usage.tokens != nil { continue }
             usage.version += 1
-            usage.invocations[index].usage.status = "external"
+            usage.invocations[index].usage.status = usage.invocations[index].usage.modelRef.hasPrefix("cloud:") ? "unavailable" : "external"
             usage.invocations[index].usage.version = usage.version
         }
         localUsage = usage
         conversation.usage = usage.summary
+    }
+}
+
+struct AskBillingReceipt: Codable, Equatable, Sendable {
+    var key: String
+    var microcredits: Int64
+    var unitScale: Int64
+}
+
+extension AskLocalEngine {
+    func reconcileUsage(id: String, receipts: [AskBillingReceipt]) throws {
+        var record = try record(id)
+        guard var usage = record.localUsage else { return }
+        var changed = false
+        for index in usage.invocations.indices {
+            var item = usage.invocations[index].usage
+            guard item.modelRef.hasPrefix("cloud:"), item.status != "confirmed",
+                  let key = item.billingKey,
+                  let receipt = receipts.first(where: { $0.key == key }),
+                  receipt.microcredits >= 0, receipt.unitScale > 0 else { continue }
+            usage.version += 1
+            item.microcredits = receipt.microcredits
+            item.unitScale = receipt.unitScale
+            item.status = "confirmed"
+            item.version = usage.version
+            usage.invocations[index].usage = item
+            changed = true
+        }
+        if !changed && record.conversation.usage != usage.summary { usage.version += 1; changed = true }
+        guard changed else { return }
+        record.localUsage = usage
+        record.conversation.usage = usage.summary
+        try persist(record)
     }
 }

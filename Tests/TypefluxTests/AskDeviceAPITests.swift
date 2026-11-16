@@ -36,6 +36,14 @@ private actor DeviceTestSession {
 }
 
 private actor DeviceTestTransport: AskDeviceTransporting {
+    var billingQueries = 0
+    var receiptToken: String?
+    func billingReceipts(keys: [String], token: String) async throws -> [AskBillingReceipt] {
+        billingQueries += 1
+        receiptToken = token
+        if offline { throw URLError(.notConnectedToInternet) }
+        return keys.map { .init(key: $0, microcredits: 123_000_000, unitScale: 10_000) }
+    }
     var webBillingIdentities: [String?] = []
     var offline = true
     var hold = false
@@ -93,6 +101,28 @@ private actor DeviceTestTransport: AskDeviceTransporting {
 
 @Suite(.serialized, .exclusiveUIState)
 @MainActor struct AskDeviceAPITests {
+    @Test func billingDisplaySurvivesOfflineAndUsesRotatedAccountToken() async throws {
+        try await environment { api, _, transport, session, _, _ in
+            let id = UUID().uuidString.lowercased()
+            let queued = try await api.send(conversationId: id, request: request(model: "cloud:default"), token: "user-a")
+            let run = try #require(queued.run), inference = try #require(run.inference)
+            _ = try await api.inferenceResult(conversationId: id, request: .init(
+                runId: run.id, deviceId: run.deviceId, inferenceId: inference.id, content: "OK",
+                usage: .init(promptTokens: 5, completionTokens: 1, totalTokens: 6)), token: "user-a")
+            let offline = try await api.usage(id: id, runId: nil, cursor: nil, token: "user-a")
+            #expect(offline.items.first?.status == "pending" && offline.items.first?.tokens?.totalTokens == 6)
+            await transport.connect()
+            await session.rotate("rotated")
+            let confirmed = try await api.usage(id: id, runId: nil, cursor: nil, token: "user-a")
+            #expect(confirmed.items.first?.microcredits == 123_000_000)
+            #expect(await transport.receiptToken == "rotated")
+            let queries = await transport.billingQueries
+            _ = try await api.usage(id: id, runId: nil, cursor: nil, token: "rotated")
+            #expect(await transport.billingQueries == queries)
+            #expect(try await api.conversation(id: id, token: "rotated").usage?.total.microcredits == 12_300)
+        }
+    }
+
     @Test func paidSearchKeepsTheSameIdentityWhenTheSameToolCallRecovers() async throws {
         let transport = DeviceTestTransport()
         let host = AskDeviceBuiltinHost(transport: transport, token: { "fixture" })

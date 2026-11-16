@@ -73,10 +73,12 @@ struct AskUsageTotals: Codable, Equatable, Sendable {
     var estimated: Int = 0
     var external: Int = 0
     var unitScale: Int64? = nil
+    var missingTokens: Int? = nil
 
     func tokenText(_ value: Int64) -> String {
-        if calls == 0 || (missing == calls && value == 0) { return "—" }
-        let prefix = missing > 0 ? "≥" : estimated > 0 ? "≈" : ""
+        let tokenGaps = missingTokens ?? missing
+        if calls == 0 || (tokenGaps == calls && value == 0) { return "—" }
+        let prefix = tokenGaps > 0 ? "≥" : estimated > 0 ? "≈" : ""
         return prefix + AccountUsageDisplayFormatter.count(value)
     }
 
@@ -132,6 +134,7 @@ struct AskUsageInvocation: Codable, Equatable, Identifiable, Sendable {
     var status: String
     var version: Int64
     var unitScale: Int64? = nil
+    var billingKey: String? = nil
 }
 
 struct AskUsagePage: Codable, Sendable {

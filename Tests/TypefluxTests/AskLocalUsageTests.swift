@@ -37,6 +37,43 @@ struct AskLocalUsageTests {
         #expect(try encoder.encode(actual) == encoder.encode(expected))
     }
 
+    @Test func `cloud receipts survive restart and never duplicate or regress charges`() async throws {
+        let root = directory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let engine = AskLocalEngine(directory: root, now: { Date(timeIntervalSince1970: 1_790_870_400) }, allowsCloudModels: true)
+        let queued = try await engine.send(conversationId: "billing", request: .init(
+            id: UUID().uuidString, deviceId: "device", text: "Hello", tools: [], modelRef: "cloud:default"
+        ), token: "")
+        let report = try receipt(queued, usage: tokens)
+        let done = try await engine.inferenceResult(conversationId: queued.id, request: report, token: "")
+        #expect(done.usage?.total.pending == 1)
+        #expect(done.usage?.total.creditsText == "—")
+        let page = try await engine.usage(id: done.id, runId: nil, cursor: nil, token: "")
+        let key = try #require(page.items.first?.billingKey)
+        let bill = AskBillingReceipt(key: key, microcredits: 123_000_000, unitScale: 10_000)
+        try await engine.reconcileUsage(id: done.id, receipts: [.init(key: "other", microcredits: 900, unitScale: 1)])
+        #expect(try await engine.conversation(id: done.id, token: "").usage == done.usage)
+        try await engine.reconcileUsage(id: done.id, receipts: [bill, bill])
+        let confirmed = try await engine.conversation(id: done.id, token: "")
+        #expect(confirmed.usage?.total.microcredits == 12_300)
+        #expect(confirmed.usage?.total.pending == 0 && confirmed.usage?.total.missing == 0)
+        #expect(confirmed.messages == done.messages && confirmed.revision == done.revision)
+        try await engine.reconcileUsage(id: done.id, receipts: [bill])
+        let late = try await engine.inferenceResult(conversationId: done.id, request: report, token: "")
+        #expect(late.usage == confirmed.usage)
+        let restored = AskLocalEngine(directory: root, now: { Date(timeIntervalSince1970: 1_790_870_400) }, allowsCloudModels: true)
+        #expect(try await restored.conversation(id: done.id, token: "").usage == confirmed.usage)
+    }
+
+    @Test func `historical cloud costs remain unknown but complete tokens are exact`() {
+        let item = AskUsageInvocation(id: "old", runId: "r", modelRef: "cloud:default", purpose: "answer",
+            createdAt: Date(), tokens: tokens, source: "client", status: "unavailable", version: 1)
+        let ledger = AskLocalUsage(since: Date(), historicalGap: false, invocations: [.init(deviceId: "d", usage: item)])
+        #expect(ledger.summary.total.creditsText == "—")
+        #expect(ledger.summary.total.tokenText(120) == "120")
+        #expect(ledger.summary.total.missing == 1)
+    }
+
     @Test(arguments: [false, true])
     func `tokens persist and duplicate receipts count once`(budget: Bool) async throws {
         let root = directory()
