@@ -150,6 +150,14 @@ struct AskBillingReceipt: Codable, Equatable, Sendable {
 }
 
 extension AskLocalEngine {
+    /// Billing summary reconciliation is independent from visible detail pagination.
+    func pendingBillingKeys(id: String) throws -> [String] {
+        let pending = try record(id).localUsage?.invocations.reversed().filter {
+            $0.usage.modelRef.hasPrefix("cloud:") && $0.usage.status == "pending"
+        }.compactMap(\.usage.billingKey) ?? []
+        return Array(pending.prefix(100))
+    }
+
     func reconcileUsage(id: String, receipts: [AskBillingReceipt]) throws {
         var record = try record(id)
         guard var usage = record.localUsage else { return }

@@ -37,6 +37,30 @@ struct AskLocalUsageTests {
         #expect(try encoder.encode(actual) == encoder.encode(expected))
     }
 
+    @Test func billingSummaryBackfillAdvancesBeyondTheVisiblePage() async throws {
+        let root = directory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let engine = makeEngine(directory: root)
+        var record = AskLocalRecord(conversation: .init(id: "batch", title: "Batch", revision: 1,
+            updatedAt: Date(), messages: []))
+        record.localUsage = .init(since: Date(), historicalGap: false, invocations: (0..<150).map { index in
+            .init(deviceId: "d", usage: .init(id: "call-\(index)", runId: "run-\(index)", modelRef: "cloud:default",
+                purpose: "answer", createdAt: Date(), tokens: tokens, source: "client", status: "pending", version: 1,
+                billingKey: "key-\(index)"))
+        })
+        record.conversation.usage = record.localUsage?.summary
+        try await engine.persist(record)
+        let first = try await engine.pendingBillingKeys(id: "batch")
+        #expect(first.count == 100)
+        try await engine.reconcileUsage(id: "batch", receipts: first.map { .init(key: $0, microcredits: 1_000_000, unitScale: 10_000) })
+        let second = try await engine.pendingBillingKeys(id: "batch")
+        #expect(second.count == 50 && Set(first).isDisjoint(with: second))
+        try await engine.reconcileUsage(id: "batch", receipts: second.map { .init(key: $0, microcredits: 1_000_000, unitScale: 10_000) })
+        #expect(try await engine.pendingBillingKeys(id: "batch").isEmpty)
+        let summary = try await engine.conversation(id: "batch", token: "").usage?.total
+        #expect(summary?.microcredits == 15_000 && summary?.pending == 0 && summary?.calls == 150)
+    }
+
     @Test func `cloud receipts survive restart and never duplicate or regress charges`() async throws {
         let root = directory()
         defer { try? FileManager.default.removeItem(at: root) }

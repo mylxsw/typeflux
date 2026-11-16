@@ -480,7 +480,10 @@ actor AskDeviceAPI: AskAPI {
         let owner = try await account(token), (api, route) = try await execution(id, owner: owner)
         let page = try await api.usage(id: id, runId: runId, cursor: cursor, token: route)
         guard route.isEmpty, let account = accounts[owner] else { return page }
-        let keys = page.items.filter { $0.modelRef.hasPrefix("cloud:") && $0.status != "confirmed" }.compactMap(\.billingKey)
+        let pending = try await account.engine.pendingBillingKeys(id: id)
+        let visible = page.items.filter { $0.modelRef.hasPrefix("cloud:") && $0.status != "confirmed" }.compactMap(\.billingKey)
+        var seen = Set<String>()
+        let keys = Array((pending + visible).filter { seen.insert($0).inserted }.prefix(100))
         // Receipt delays or an offline display must never interrupt a conversation.
         let receipts = keys.isEmpty ? [] : (try? await transport.billingReceipts(keys: keys, token: tokens[owner] ?? token)) ?? []
         try Task.checkCancellation()
