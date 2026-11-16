@@ -182,6 +182,8 @@ actor TypefluxASRServerRegistry: TypefluxASRServerProviding {
             baseURLs: servers,
             prober: prober,
             config: config,
+            sharedProbeDirectory: userDefaults === UserDefaults.standard
+                ? TypefluxDataDirectories.cache.appendingPathComponent("cloud-asr-probes") : nil,
             preferredEndpoint: { CloudServerPreferences.shared.preferredASRURL }
         )
     }

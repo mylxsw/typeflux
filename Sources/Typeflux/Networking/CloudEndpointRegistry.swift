@@ -28,6 +28,7 @@ enum CloudEndpointRegistry {
                 else { return nil }
                 return stored.token
             }),
+            sharedProbeDirectory: TypefluxDataDirectories.cache.appendingPathComponent("cloud-api-probes"),
             preferredEndpoint: { CloudServerPreferences.shared.preferredAPIURL }
         )
         cached = selector

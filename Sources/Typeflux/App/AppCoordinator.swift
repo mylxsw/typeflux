@@ -56,7 +56,14 @@ final class AppCoordinator {
                 }
             }
             FeatureProcess.configure(api: AskConversationWindowController.makeAPI(settings: di.settingsStore, modelLibrary: di.modelLibrary), cache: di.conversationCache, preparation: FeatureProcess.role == .screenshot ? nil : featureModuleStartup)
-            if FeatureProcess.role != .host { startFeature(); return }
+            if FeatureProcess.role != .host {
+                if [.voice, .chat, .screenshot].contains(FeatureProcess.role) {
+                    cloudEndpointProbeScheduler.start()
+                }
+                if FeatureProcess.role == .voice { asrPublicConfigRefreshScheduler.start() }
+                startFeature()
+                return
+            }
             FeatureShortcutHost.shared.start()
             featureStatusTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
                 Task { @MainActor in self?.publishFeatureStatus() }

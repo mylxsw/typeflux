@@ -6,6 +6,51 @@ final class CloudEndpointSelectorTests: XCTestCase {
     private let urlB = URL(string: "https://b.example")!
     private let urlC = URL(string: "https://c.example")!
 
+    func testIndependentSelectorsReadNewMeasurementsBeforeEachRequest() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let date = Date()
+        let reader = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(),
+                                           now: { date.addingTimeInterval(2) }, sharedProbeDirectory: directory)
+        let writer = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(),
+                                           now: { date }, sharedProbeDirectory: directory)
+        await writer.reportSuccess(urlA, latencyMs: 206)
+        await writer.reportSuccess(urlB, latencyMs: 23)
+        let first = await reader.latencyOptimizedEndpoint()
+        XCTAssertEqual(first, urlB)
+        // A later settings speed test must also update an already-running worker.
+        let updated = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(),
+                                            now: { date.addingTimeInterval(1) }, sharedProbeDirectory: directory)
+        await updated.reportSuccess(urlA, latencyMs: 10)
+        await updated.reportSuccess(urlB, latencyMs: 100)
+        let second = await reader.latencyOptimizedEndpoint()
+        XCTAssertEqual(second, urlA)
+        let snapshot = await reader.snapshot()
+        XCTAssertEqual(snapshot.first?.latencyMs, 10)
+    }
+
+    func testSharedMeasurementsExpireAndDoNotOverrideLocalCooldown() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let date = Date()
+        let writer = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(),
+                                           now: { date }, sharedProbeDirectory: directory)
+        await writer.reportSuccess(urlA, latencyMs: 206)
+        await writer.reportSuccess(urlB, latencyMs: 23)
+        let expired = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(),
+                                            now: { date.addingTimeInterval(901) }, sharedProbeDirectory: directory)
+        let fallback = await expired.latencyOptimizedEndpoint()
+        XCTAssertEqual(fallback, urlA)
+        var config = CloudEndpointSelectorConfig.default
+        config.failureThreshold = 1
+        let failing = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(), config: config,
+                                            now: { date }, sharedProbeDirectory: directory)
+        await failing.reportFailure(urlB, error: SampleError.boom)
+        // A shared success must preserve a live local failure cooldown.
+        let blocked = await failing.latencyOptimizedEndpoint()
+        XCTAssertEqual(blocked, urlA)
+    }
+
     // MARK: - Ordering
 
     func testOrderedEndpointsPreservesConfiguredOrderBeforeProbes() async {

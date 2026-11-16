@@ -67,6 +67,7 @@ actor CloudEndpointSelector {
     private let preferredEndpoint: @Sendable () -> URL?
     private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "CloudEndpointSelector")
 
+    private let sharedProbeDirectory: URL?
     private let orderedURLs: [URL]
     private var states: [URL: EndpointState]
 
@@ -75,6 +76,7 @@ actor CloudEndpointSelector {
         prober: CloudEndpointProbing,
         config: CloudEndpointSelectorConfig = .default,
         now: @escaping @Sendable () -> Date = { Date() },
+        sharedProbeDirectory: URL? = nil,
         preferredEndpoint: @escaping @Sendable () -> URL? = { nil }
     ) {
         precondition(!baseURLs.isEmpty, "CloudEndpointSelector requires at least one base URL")
@@ -85,6 +87,7 @@ actor CloudEndpointSelector {
             unique.append(url)
         }
         orderedURLs = unique
+        self.sharedProbeDirectory = sharedProbeDirectory
         self.config = config
         self.prober = prober
         self.now = now
@@ -103,6 +106,7 @@ actor CloudEndpointSelector {
     /// Returns endpoints in latency-optimized order for APIs where the nearest
     /// responsive cloud host should handle the request.
     func latencyOptimizedEndpoints() -> [URL] {
+        importSharedProbes()
         let snapshot = now()
 
         struct Ranked {
@@ -232,6 +236,7 @@ actor CloudEndpointSelector {
             state.serverVersion = serverVersion
         }
         states[url] = state
+        persistProbe(url, state: state)
     }
 
     /// Records a successful business request without mixing its server-side
@@ -308,7 +313,8 @@ actor CloudEndpointSelector {
     /// Diagnostic snapshot of every configured endpoint, in configured order.
     /// Suitable for rendering in a settings/diagnostics view.
     func snapshot() -> [CloudEndpointStatus] {
-        orderedURLs.map { url in
+        importSharedProbes()
+        return orderedURLs.map { url in
             let state = states[url] ?? EndpointState()
             return CloudEndpointStatus(
                 baseURL: url,
@@ -321,6 +327,55 @@ actor CloudEndpointSelector {
                 serverVersion: state.serverVersion,
                 lastError: state.lastError
             )
+        }
+    }
+
+    /// Share probe measurements across feature processes without sharing live
+    /// request failures: another process must not clear this process's cooldown.
+    private struct SharedProbe: Codable {
+        let latencyMs: Double
+        let measuredAt: Date
+        let serverID: String?
+        let serverVersion: String?
+    }
+
+    private func probeFile(for url: URL) -> URL? {
+        let name = Data(url.absoluteString.utf8).base64EncodedString()
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "+", with: "-")
+        return sharedProbeDirectory?.appendingPathComponent(name + ".json")
+    }
+
+    private func persistProbe(_ url: URL, state: EndpointState) {
+        guard let directory = sharedProbeDirectory, let file = probeFile(for: url),
+              let latency = state.latencyMs, let date = state.lastProbeAt else { return }
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let probe = SharedProbe(latencyMs: latency, measuredAt: date,
+                                    serverID: state.serverID, serverVersion: state.serverVersion)
+            try JSONEncoder().encode(probe).write(to: file, options: .atomic)
+        } catch {
+            logger.debug("Could not share endpoint probe: \(error.localizedDescription)")
+        }
+    }
+
+    private func importSharedProbes() {
+        guard sharedProbeDirectory != nil else { return }
+        let date = now()
+        for url in orderedURLs {
+            guard let file = probeFile(for: url), let data = try? Data(contentsOf: file),
+                  let probe = try? JSONDecoder().decode(SharedProbe.self, from: data),
+                  probe.latencyMs.isFinite, probe.latencyMs >= 0,
+                  probe.measuredAt <= date,
+                  date.timeIntervalSince(probe.measuredAt) <= config.probeInterval,
+                  var state = states[url],
+                  probe.measuredAt > (state.lastProbeAt ?? .distantPast) else { continue }
+            state.latencyMs = probe.latencyMs
+            state.lastProbeAt = probe.measuredAt
+            state.lastSuccessAt = max(state.lastSuccessAt ?? .distantPast, probe.measuredAt)
+            state.serverID = probe.serverID
+            state.serverVersion = probe.serverVersion
+            states[url] = state
         }
     }
 
