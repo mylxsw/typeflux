@@ -51,6 +51,73 @@ final class CloudEndpointSelectorTests: XCTestCase {
         XCTAssertEqual(blocked, urlA)
     }
 
+    func testImportedLatencyExpiresInRunningSelectorWithoutClearingCooldown() async {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let clock = ClockStub(start: Date())
+        var config = CloudEndpointSelectorConfig.default
+        config.failureThreshold = 1
+        let writer = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(),
+                                           now: clock.now, sharedProbeDirectory: directory)
+        let reader = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(), config: config,
+                                           now: clock.now, sharedProbeDirectory: directory)
+        await writer.reportSuccess(urlA, latencyMs: 206)
+        await writer.reportSuccess(urlB, latencyMs: 23)
+        let initial = await reader.primaryEndpoint()
+        XCTAssertEqual(initial, urlB)
+        clock.advance(by: 900)
+        let atBoundary = await reader.primaryEndpoint()
+        XCTAssertEqual(atBoundary, urlB)
+        await reader.reportFailure(urlB, error: SampleError.boom)
+        clock.advance(by: 1)
+        let snapshot = await reader.snapshot()
+        XCTAssertTrue(snapshot.allSatisfy { $0.latencyMs == nil })
+        XCTAssertEqual(snapshot[1].consecutiveFailures, 1)
+        XCTAssertNotNil(snapshot[1].cooldownUntil)
+        XCTAssertNotNil(snapshot[1].lastError)
+        let fresh = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(),
+                                          now: clock.now, sharedProbeDirectory: directory)
+        let existingChoice = await reader.primaryEndpoint()
+        let freshChoice = await fresh.primaryEndpoint()
+        XCTAssertEqual(existingChoice, freshChoice)
+    }
+
+    func testLocalProbeReplacesSharedExpiryButBusinessSuccessDoesNotExtendIt() async {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let clock = ClockStub(start: Date())
+        let writer = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(),
+                                           now: clock.now, sharedProbeDirectory: directory)
+        let reader = CloudEndpointSelector(baseURLs: [urlA, urlB], prober: StubProber(),
+                                           now: clock.now, sharedProbeDirectory: directory)
+        await writer.reportSuccess(urlA, latencyMs: 206)
+        await writer.reportSuccess(urlB, latencyMs: 23)
+        _ = await reader.snapshot()
+        clock.advance(by: 899)
+        await reader.reportSuccess(urlA, latencyMs: 100)
+        await reader.reportRequestSuccess(urlB)
+        clock.advance(by: 2)
+        let snapshot = await reader.snapshot()
+        XCTAssertNotNil(snapshot[0].latencyMs)
+        XCTAssertNil(snapshot[1].latencyMs)
+    }
+
+    func testLocalProbeDoesNotBlendExpiredSharedLatency() async {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let clock = ClockStub(start: Date())
+        let writer = CloudEndpointSelector(baseURLs: [urlA], prober: StubProber(),
+                                           now: clock.now, sharedProbeDirectory: directory)
+        let reader = CloudEndpointSelector(baseURLs: [urlA], prober: StubProber(),
+                                           now: clock.now, sharedProbeDirectory: directory)
+        await writer.reportSuccess(urlA, latencyMs: 200)
+        _ = await reader.snapshot()
+        clock.advance(by: 901)
+        await reader.reportSuccess(urlA, latencyMs: 10)
+        let snapshot = await reader.snapshot()
+        XCTAssertEqual(snapshot[0].latencyMs, 10)
+    }
+
     // MARK: - Ordering
 
     func testOrderedEndpointsPreservesConfiguredOrderBeforeProbes() async {

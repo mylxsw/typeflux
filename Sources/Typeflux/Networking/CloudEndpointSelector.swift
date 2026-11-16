@@ -52,6 +52,7 @@ struct CloudEndpointSelectorConfig: Sendable {
 actor CloudEndpointSelector {
     private struct EndpointState {
         var latencyMs: Double?
+        var sharedLatencyExpiresAt: Date?
         var lastProbeAt: Date?
         var lastSuccessAt: Date?
         var consecutiveFailures: Int = 0
@@ -223,7 +224,9 @@ actor CloudEndpointSelector {
     func reportSuccess(_ url: URL, latencyMs: Double, serverID: String? = nil, serverVersion: String? = nil) {
         guard var state = states[url] else { return }
         let now = now()
+        expireSharedLatency(in: &state, at: now)
         state.latencyMs = blendLatency(previous: state.latencyMs, sample: latencyMs)
+        state.sharedLatencyExpiresAt = nil
         state.lastProbeAt = now
         state.lastSuccessAt = now
         state.consecutiveFailures = 0
@@ -363,20 +366,30 @@ actor CloudEndpointSelector {
         guard sharedProbeDirectory != nil else { return }
         let date = now()
         for url in orderedURLs {
+            guard var state = states[url] else { continue }
+            expireSharedLatency(in: &state, at: date)
+            states[url] = state
             guard let file = probeFile(for: url), let data = try? Data(contentsOf: file),
                   let probe = try? JSONDecoder().decode(SharedProbe.self, from: data),
                   probe.latencyMs.isFinite, probe.latencyMs >= 0,
                   probe.measuredAt <= date,
                   date.timeIntervalSince(probe.measuredAt) <= config.probeInterval,
-                  var state = states[url],
                   probe.measuredAt > (state.lastProbeAt ?? .distantPast) else { continue }
             state.latencyMs = probe.latencyMs
+            state.sharedLatencyExpiresAt = probe.measuredAt.addingTimeInterval(config.probeInterval)
             state.lastProbeAt = probe.measuredAt
             state.lastSuccessAt = max(state.lastSuccessAt ?? .distantPast, probe.measuredAt)
             state.serverID = probe.serverID
             state.serverVersion = probe.serverVersion
             states[url] = state
         }
+    }
+
+    private func expireSharedLatency(in state: inout EndpointState, at date: Date) {
+        guard let expiry = state.sharedLatencyExpiresAt, date > expiry else { return }
+        // Measurement expiry must not reset local failures or historical timestamps.
+        state.latencyMs = nil
+        state.sharedLatencyExpiresAt = nil
     }
 
     private func blendLatency(previous: Double?, sample: Double) -> Double {
