@@ -7575,3 +7575,11 @@
 "ask.approval.image.details" = "생성 세부 정보 보기";
 "ask.approval.image.copyArguments" = "원본 매개변수 복사";
 "ask.approval.image.noPrompt" = "읽을 수 있는 프롬프트가 없습니다.";
+
+// Image download failures
+"ask.image.load.timeout" = "이미지 다운로드 시간이 초과되었습니다.";
+"ask.image.load.secureConnection" = "이미지 서버에 안전하게 연결하지 못했습니다.";
+"ask.image.load.network" = "이미지 서버에 연결할 수 없습니다.";
+"ask.image.load.http" = "이미지 서버가 HTTP %d를 반환했습니다.";
+"ask.image.load.previewUnavailable" = "이미지 미리보기 서비스를 현재 사용할 수 없습니다.";
+"ask.image.load.decode" = "이미지를 디코딩할 수 없거나 표시 제한을 초과했습니다.";

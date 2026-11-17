@@ -7598,3 +7598,11 @@
 "ask.approval.image.details" = "View generation details";
 "ask.approval.image.copyArguments" = "Copy raw parameters";
 "ask.approval.image.noPrompt" = "No readable prompt was provided.";
+
+// Image download failures
+"ask.image.load.timeout" = "Image download timed out.";
+"ask.image.load.secureConnection" = "Could not establish a secure connection to the image server.";
+"ask.image.load.network" = "Could not connect to the image server.";
+"ask.image.load.http" = "The image server returned HTTP %d.";
+"ask.image.load.previewUnavailable" = "The image preview service is currently unavailable.";
+"ask.image.load.decode" = "The image could not be decoded or exceeded the display limit.";

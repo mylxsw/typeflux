@@ -7598,3 +7598,11 @@
 "ask.approval.image.details" = "查看生成详情";
 "ask.approval.image.copyArguments" = "复制原始参数";
 "ask.approval.image.noPrompt" = "未提供可读的提示词。";
+
+// Image download failures
+"ask.image.load.timeout" = "图片下载超时。";
+"ask.image.load.secureConnection" = "未能与图片服务器建立安全连接。";
+"ask.image.load.network" = "无法连接图片服务器。";
+"ask.image.load.http" = "图片服务器返回 HTTP %d。";
+"ask.image.load.previewUnavailable" = "图片预览服务暂不可用。";
+"ask.image.load.decode" = "图片无法解码或超过显示限制。";

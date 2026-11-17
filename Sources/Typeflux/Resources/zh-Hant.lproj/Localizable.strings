@@ -7600,3 +7600,11 @@
 "ask.approval.image.details" = "查看生成詳情";
 "ask.approval.image.copyArguments" = "複製原始參數";
 "ask.approval.image.noPrompt" = "未提供可讀的提示詞。";
+
+// Image download failures
+"ask.image.load.timeout" = "圖片下載逾時。";
+"ask.image.load.secureConnection" = "未能與圖片伺服器建立安全連線。";
+"ask.image.load.network" = "無法連接圖片伺服器。";
+"ask.image.load.http" = "圖片伺服器回傳 HTTP %d。";
+"ask.image.load.previewUnavailable" = "圖片預覽服務暫不可用。";
+"ask.image.load.decode" = "圖片無法解碼或超過顯示限制。";

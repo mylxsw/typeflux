@@ -11,6 +11,7 @@ final class AskFailureDiagnostics: @unchecked Sendable {
     static let maximumEvents = 100
 
     enum Operation: String, Codable, Sendable {
+        case imageLoad
         case recoveryRead, recoveryReadRecovered, recoveryReadExhausted, draftSave
         case cacheCall, cacheModule, cacheAuthorization
         case sqliteOpen, sqlitePrepare, sqliteRead, sqliteWrite

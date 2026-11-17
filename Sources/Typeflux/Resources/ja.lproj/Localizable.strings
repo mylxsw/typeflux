@@ -7575,3 +7575,11 @@
 "ask.approval.image.details" = "生成の詳細を表示";
 "ask.approval.image.copyArguments" = "元のパラメータをコピー";
 "ask.approval.image.noPrompt" = "読み取れるプロンプトがありません。";
+
+// Image download failures
+"ask.image.load.timeout" = "画像のダウンロードがタイムアウトしました。";
+"ask.image.load.secureConnection" = "画像サーバーへの安全な接続を確立できませんでした。";
+"ask.image.load.network" = "画像サーバーに接続できません。";
+"ask.image.load.http" = "画像サーバーが HTTP %d を返しました。";
+"ask.image.load.previewUnavailable" = "画像プレビューサービスは現在利用できません。";
+"ask.image.load.decode" = "画像をデコードできないか、表示制限を超えています。";

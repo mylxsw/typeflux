@@ -29,7 +29,16 @@ struct AskRemoteImageLoader: Sendable {
         defer { withExtendedLifetime(slot) {} }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
         request.httpMethod = "GET"
-        let data = try await transport.send(request, limit: Self.maximumBytes)
+        let data: Data
+        do { data = try await transport.send(request, limit: Self.maximumBytes) }
+        catch {
+            guard Self.shouldRetryDownload(error) else { throw error }
+            try await Task.sleep(for: .milliseconds(300))
+            try Task.checkCancellation()
+            guard current() else { throw MediaFailure.unavailable }
+            // Only the existing public image GET is retried, never generation or authorization.
+            data = try await transport.send(request, limit: Self.maximumBytes)
+        }
         try Task.checkCancellation()
         guard current() else { throw MediaFailure.unavailable }
         guard !data.isEmpty, data.count <= Self.maximumBytes else { throw MediaFailure.unreadable }
@@ -43,6 +52,18 @@ struct AskRemoteImageLoader: Sendable {
             throw MediaFailure.invalidProtocol
         }
         return result
+    }
+
+    static func shouldRetryDownload(_ error: Error) -> Bool {
+        guard let network = error as? URLError else { return false }
+        if [.timedOut, .networkConnectionLost, .cannotConnectToHost].contains(network.code) { return true }
+        guard network.code == .secureConnectionFailed else { return false }
+        // errSSLClosedNoNotify means a peer closed the connection. Certificate errors
+        // are deliberately excluded; every attempt still uses normal TLS validation.
+        let info = (error as NSError).userInfo
+        let underlying = info[NSUnderlyingErrorKey] as? NSError
+        return (info["_kCFStreamErrorCodeKey"] as? Int == -9816) ||
+            (underlying?.userInfo["_kCFStreamErrorCodeKey"] as? Int == -9816)
     }
 
     static func decodePixels(_ data: Data) async throws -> AskFilePreviewPDF.Result {
@@ -149,6 +170,7 @@ extension AskConversationModel {
     @Published private(set) var source: AskGeneratedImage?
     @Published private(set) var image: NSImage?
     @Published private(set) var unavailable = false
+    @Published private(set) var failureDetail: String?
     private var generation = UUID()
     private var registration: UUID?
     private weak var scope: AskRemoteImageScope?
@@ -168,7 +190,7 @@ extension AskConversationModel {
     func cancel() {
         generation = UUID(); operation?.cancel(); operation = nil
         if let registration { scope?.remove(registration) }
-        registration = nil; scope = nil; originalAccess = nil; source = nil; image = nil; pixels = nil; unavailable = false
+        registration = nil; scope = nil; originalAccess = nil; source = nil; image = nil; pixels = nil; unavailable = false; failureDetail = nil
     }
     func load(_ asset: AskGeneratedImage, access: AskRemoteImageAccess) async {
         guard !Task.isCancelled else { return }
@@ -206,9 +228,25 @@ extension AskConversationModel {
             if !Task.isCancelled && access.allows() {
                 // Keep ownership of the failed presentation until an explicit replacement or revocation.
                 operation = nil; pixels = nil; image = nil; unavailable = true
+                failureDetail = Self.failureDescription(error)
+                AskFailureDiagnostics.shared.record(.imageLoad, error: error)
             } else { cancel() }
         }
     }
+    static func failureDescription(_ error: Error) -> String {
+        if let network = error as? URLError {
+            if network.code == .timedOut { return L("ask.image.load.timeout") }
+            if [.secureConnectionFailed, .serverCertificateUntrusted, .serverCertificateHasBadDate,
+                .serverCertificateHasUnknownRoot, .serverCertificateNotYetValid].contains(network.code) {
+                return L("ask.image.load.secureConnection")
+            }
+            return L("ask.image.load.network")
+        }
+        if case let AskImageError.http(status) = error { return L("ask.image.load.http", status) }
+        if let media = error as? MediaFailure, media == .unavailable { return L("ask.image.load.previewUnavailable") }
+        return L("ask.image.load.decode")
+    }
+
 }
 
 struct AskRemoteImageView: View {
@@ -256,7 +294,7 @@ struct AskRemoteImageView: View {
                     }
                     .buttonStyle(.plain).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
                 } else if model.unavailable || !enabled {
-                    AskImagePlaceholder(title: L("ask.image.generatedLoadFailed"), detail: nil,
+                    AskImagePlaceholder(title: L("ask.image.generatedLoadFailed"), detail: model.failureDetail,
                                         hint: L("ask.image.reloadHint"), spinning: false)
                     HStack(spacing: 16) {
                         if enabled { Button(L("ask.image.reload")) { reload += 1 } }

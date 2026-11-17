@@ -192,12 +192,52 @@ private actor RemoteGate {
         AskImageRedirectPolicy(maximumRedirects: 3).urlSession(session, task: task, willPerformHTTPRedirection: response, newRequest: request) { XCTAssertNil($0) }
     }
 
+    func testTransientDownloadRetriesOnceButDoesNotRetryCertificateOrHTTPFailures() async throws {
+        let closed = URLError(.secureConnectionFailed, userInfo: [NSUnderlyingErrorKey:
+            NSError(domain: "kCFErrorDomainCFNetwork", code: -1200,
+                    userInfo: ["_kCFStreamErrorCodeKey": -9816])])
+        XCTAssertTrue(AskRemoteImageLoader.shouldRetryDownload(closed))
+        XCTAssertFalse(AskRemoteImageLoader.shouldRetryDownload(URLError(.secureConnectionFailed)))
+        XCTAssertFalse(AskRemoteImageLoader.shouldRetryDownload(URLError(.serverCertificateUntrusted)))
+        XCTAssertFalse(AskRemoteImageLoader.shouldRetryDownload(AskImageError.http(403)))
+        let calls = RemoteRequests(), decoded = pixels()
+        let loader = AskRemoteImageLoader(transport: RemoteTransport { request, _ in
+            calls.record(request.httpMethod! + " " + request.url!.absoluteString)
+            if calls.values.count == 1 { throw closed }
+            return Data([1])
+        }, decode: { _ in decoded })
+        let scope = AskRemoteImageScope(), model = AskRemoteImageModel(loader: loader)
+        await model.load(asset, access: access(scope))
+        XCTAssertNotNil(model.displayed(asset, access: access(scope)))
+        XCTAssertNil(model.failureDetail)
+        XCTAssertEqual(calls.values, Array(repeating: "GET " + asset.url, count: 2))
+        model.cancel()
+    }
+
+    func testRepeatedTimeoutStopsAfterTwoGETsAndReportsSanitizedReason() async throws {
+        let calls = RemoteRequests(), scope = AskRemoteImageScope()
+        let loader = AskRemoteImageLoader(transport: RemoteTransport { request, _ in
+            calls.record(request.httpMethod!)
+            throw URLError(.timedOut, userInfo: [NSURLErrorFailingURLStringErrorKey: "https://private.test/?token=secret"])
+        }, decode: { _ in throw MediaFailure.unreadable })
+        let model = AskRemoteImageModel(loader: loader)
+        await model.load(asset, access: access(scope))
+        XCTAssertEqual(calls.values, ["GET", "GET"])
+        XCTAssertTrue(model.unavailable)
+        XCTAssertEqual(model.failureDetail, L("ask.image.load.timeout"))
+        XCTAssertFalse(model.failureDetail?.contains("secret") ?? true)
+        model.cancel()
+        XCTAssertNil(model.failureDetail)
+        XCTAssertEqual(AskRemoteImageModel.failureDescription(AskImageError.http(403)), L("ask.image.load.http", 403))
+        XCTAssertEqual(AskRemoteImageModel.failureDescription(MediaFailure.unavailable), L("ask.image.load.previewUnavailable"))
+    }
+
     func testRetryDownloadsTheSameImageWithoutCreatingAnotherJob() async throws {
         let calls = RemoteRequests(), scope = AskRemoteImageScope()
         let decoded = pixels()
         let loader = AskRemoteImageLoader(transport: RemoteTransport { request, _ in
             calls.record(request.httpMethod! + " " + request.url!.absoluteString)
-            if calls.values.count == 1 { throw URLError(.networkConnectionLost) }
+            if calls.values.count == 1 { throw AskImageError.http(403) }
             return Data([1])
         }, decode: { _ in decoded })
         let model = AskRemoteImageModel(loader: loader)
