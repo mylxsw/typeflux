@@ -15,7 +15,8 @@ extension AskConversationModel {
     var recoveryPresentation: AskRecoveryPresentation {
         if let cachedRecoveryPresentation { return cachedRecoveryPresentation }
         let value = AskRecoveryPresentation(run: selected?.run, entries: selectedRecoveryEntries, deviceId: deviceId,
-                                            local: selected.map { isLocal($0.id) } ?? false)
+                                            local: selected.map { isLocal($0.id) } ?? false,
+                                            liveExecutions: Array(liveToolExecutions.values))
         cachedRecoveryPresentation = value
         recordRecoveryPresentationBuild()
         return value
@@ -28,6 +29,19 @@ extension AskConversationModel {
                                    pendingApproval: pendingApprovals[value.id] != nil,
                                    recovery: recoveryPresentation,
                                    storageUnavailable: selectedRecoveryEntries.contains(where: \.readUnavailable))
+    }
+
+    var isGeneratingImage: Bool {
+        runPhase?.isWorking == true && selected?.run?.pending.contains(where: {
+            AskImageCardState.isImageTool($0.function.name)
+        }) == true
+    }
+
+    var imageRunSummary: String? {
+        if isGeneratingImage { return L("ask.image.creating") }
+        guard case .completed = runPhase, let run = selected?.run,
+              selected?.messages.contains(where: { $0.runId == run.id && $0.generatedImage != nil && $0.isError != true }) == true else { return nil }
+        return L("ask.image.generated")
     }
 
     var hasRecoveryNotice: Bool {

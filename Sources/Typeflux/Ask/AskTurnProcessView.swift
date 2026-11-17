@@ -87,8 +87,12 @@ struct AskTranscriptSection: Identifiable {
                         flushProcess()
                         sections.append(.init(id: item.viewID, items: [.init(kind: .message(answer))]))
                     } else { process.append(item) }
-                case .activity:
-                    process.append(item)
+                case let .activity(group):
+                    if group.calls.contains(where: { AskImageCardState.isImageTool($0.function.name) }) {
+                        // Image cards must survive the process disclosure closing after completion.
+                        flushProcess()
+                        sections.append(.init(id: item.viewID, items: [item]))
+                    } else { process.append(item) }
                 default:
                     flushProcess()
                     sections.append(.init(id: item.viewID, items: [item]))

@@ -2823,7 +2823,14 @@ struct AskComposer: View {
             } else {
                 Group {
                     switch sendControl {
-                    case .stop: AskStopButton { model.stop() }
+                    case .stop:
+                        if model.isGeneratingImage {
+                            Button(L("ask.image.stopWaiting")) { model.stop() }
+                                .buttonStyle(.plain)
+                                .font(.system(size: 12, weight: .medium))
+                                .help(L("ask.image.stopHint"))
+                                .accessibilityHint(L("ask.image.stopHint"))
+                        } else { AskStopButton { model.stop() } }
                     case let .send(enabled):
                         AskSendButton(enabled: enabled, tint: AskTheme.sendFill, ink: AskTheme.sendInk,
                                       glows: false, action: submit)

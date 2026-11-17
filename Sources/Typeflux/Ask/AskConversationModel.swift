@@ -480,6 +480,7 @@ final class AskConversationModel: ObservableObject {
     var capturedContentFeedbackTasks: [Bool: Task<Void, Never>] = [:]
     var capturedContentFeedbackDuration: Duration = .seconds(5)
     var capturedContentAccount: String? { session()?.owner }
+    @Published var liveToolExecutions: [String: AskExecutionIdentity] = [:] { didSet { cachedRecoveryPresentation = nil } }
     @Published var recoveryEntries: [String: [AskExecutionEntry]] = [:] { didSet { cachedRecoveryPresentation = nil } }
     @Published var inspectingRecovery = false
     @Published var recoveryWorking = false
@@ -2074,6 +2075,11 @@ final class AskConversationModel: ObservableObject {
             let identity = AskExecutionIdentity(owner: current.account, conversation: value, run: run,
                                                 callId: call.id, kind: "tool")
             let journalKey = identity.key
+            // Only a dispatch owned by this live operation can suppress an unfinished journal entry.
+            var claimedHere = false
+            defer {
+                if claimedHere, liveToolExecutions[journalKey] == identity { liveToolExecutions[journalKey] = nil }
+            }
             let saved = try await cache.execution(id: journalKey, owner: current.owner)
             var result: AskToolResultRequest?
             if let saved {
@@ -2175,6 +2181,8 @@ final class AskConversationModel: ObservableObject {
                                               argumentsHash: request.context.argumentsHash,
                                               approvalId: grantID, approvedAt: grantID == nil ? nil : approvalStore.now())
                 guard try await cache.claimExecution(audit, owner: current.owner) else { throw AskRecoveryError.unknown }
+                claimedHere = true
+                liveToolExecutions[journalKey] = identity
                 if let grantID {
                     result?.harness?.outcome?.status = "unknown"
                     do {

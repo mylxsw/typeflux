@@ -215,28 +215,62 @@ struct AskRemoteImageView: View {
     let asset: AskGeneratedImage
     var enabled = true
     @Environment(\.askRemoteImageAccess) private var access
+    @Environment(\.askEditGeneratedImage) private var editImage
     @StateObject private var model: AskRemoteImageModel
+    @State private var reload = 0
+    @State private var preview = false
+    @State private var saveError: String?
     init(asset: AskGeneratedImage, enabled: Bool = true, loader: AskRemoteImageLoader = .init(), model: AskRemoteImageModel? = nil) {
         self.asset = asset; self.enabled = enabled; _model = StateObject(wrappedValue: model ?? AskRemoteImageModel(loader: loader))
     }
-    private struct Identity: Hashable { let asset: String; let url: String; let epoch: UUID?; let enabled: Bool }
-    private var taskIdentity: Identity { .init(asset: asset.assetId, url: asset.url, epoch: access.epoch, enabled: enabled) }
+    private struct Identity: Hashable { let asset: String; let url: String; let epoch: UUID?; let enabled: Bool; let reload: Int }
+    private var taskIdentity: Identity { .init(asset: asset.assetId, url: asset.url, epoch: access.epoch, enabled: enabled, reload: reload) }
     var body: some View {
-        ZStack {
+        VStack(alignment: .leading, spacing: 12) {
             if access.allows(), let url = AskRemoteImageLoader.eligible(asset) {
-                Link(destination: url) {
-                    if let image = model.displayed(asset, access: access) {
-                        Image(nsImage: image).resizable().scaledToFit().frame(maxWidth: 480, maxHeight: 360)
-                    } else if model.unavailable || !enabled {
-                        Label(L("ask.preview"), systemImage: "photo")
-                    } else {
-                        ProgressView().frame(width: 240, height: 160)
+                if let image = model.displayed(asset, access: access) {
+                    Button { preview = true } label: {
+                        Image(nsImage: image).resizable().scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .aspectRatio(1, contentMode: .fit)
+                            .background(StudioTheme.textPrimary.opacity(0.035))
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
                     }
-                }.accessibilityLabel(L("ask.preview"))
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L("ask.preview"))
+                    .popover(isPresented: $preview) {
+                        if let displayed = model.displayed(asset, access: access) {
+                            Image(nsImage: displayed).resizable().scaledToFit()
+                                .frame(maxWidth: 800, maxHeight: 700).padding(12)
+                        }
+                    }
+                    HStack(spacing: 16) {
+                        Button {
+                            guard let current = model.displayed(asset, access: access) else { return }
+                            do { try AskArtifactActions.save(current) } catch { saveError = error.localizedDescription }
+                        } label: { Label(L("ask.image.save"), systemImage: "arrow.down.to.line") }
+                        if let editImage {
+                            Button { if access.allows() { editImage(asset) } }
+                                label: { Label(L("ask.image.edit"), systemImage: "pencil") }
+                        }
+                    }
+                    .buttonStyle(.plain).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                } else if model.unavailable || !enabled {
+                    AskImagePlaceholder(title: L("ask.image.generatedLoadFailed"), detail: nil,
+                                        hint: L("ask.image.reloadHint"), spinning: false)
+                    HStack(spacing: 16) {
+                        if enabled { Button(L("ask.image.reload")) { reload += 1 } }
+                        Link(L("ask.preview"), destination: url)
+                    }.font(.system(size: 12.5))
+                } else {
+                    AskImagePlaceholder(title: L("ask.image.generatedLoading"), detail: nil,
+                                        hint: L("ask.image.loadingHint"), spinning: true)
+                }
+                if let saveError { Text(saveError).font(.system(size: 12)).foregroundStyle(.red) }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .frame(maxWidth: 400, alignment: .leading)
         .task(id: taskIdentity) { if enabled { await model.load(asset, access: access) } else { model.cancel() } }
-        .onDisappear { model.cancel() }
+        .onDisappear { model.cancel(); preview = false }
     }
 }

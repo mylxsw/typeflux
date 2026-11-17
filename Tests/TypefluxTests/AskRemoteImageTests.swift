@@ -160,11 +160,12 @@ private actor RemoteGate {
 
     func testRealHelperDetectsOriginalTypeAndRejectsMalformedBytes() async throws {
         let data = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 20, height: 12), type: .png)
-        let loader = AskRemoteImageLoader(transport: RemoteTransport { _, _ in data })
+        let worker = MediaWorker()
+        let loader = AskRemoteImageLoader(transport: RemoteTransport { _, _ in data }, worker: worker)
         let result = try await loader.load(asset)
         XCTAssertEqual(result.images.first?.width, 20); XCTAssertEqual(result.images.first?.height, 12)
         for malformed in [Data([1, 2, 3]), Data(data.prefix(20))] {
-            do { _ = try await AskRemoteImageLoader(transport: RemoteTransport { _, _ in malformed }).load(asset); XCTFail() } catch {}
+            do { _ = try await AskRemoteImageLoader(transport: RemoteTransport { _, _ in malformed }, worker: worker).load(asset); XCTFail() } catch {}
         }
     }
 
@@ -191,14 +192,31 @@ private actor RemoteGate {
         AskImageRedirectPolicy(maximumRedirects: 3).urlSession(session, task: task, willPerformHTTPRedirection: response, newRequest: request) { XCTAssertNil($0) }
     }
 
+    func testRetryDownloadsTheSameImageWithoutCreatingAnotherJob() async throws {
+        let calls = RemoteRequests(), scope = AskRemoteImageScope()
+        let decoded = pixels()
+        let loader = AskRemoteImageLoader(transport: RemoteTransport { request, _ in
+            calls.record(request.httpMethod! + " " + request.url!.absoluteString)
+            if calls.values.count == 1 { throw URLError(.networkConnectionLost) }
+            return Data([1])
+        }, decode: { _ in decoded })
+        let model = AskRemoteImageModel(loader: loader)
+        await model.load(asset, access: access(scope))
+        XCTAssertTrue(model.unavailable)
+        await model.load(asset, access: access(scope))
+        XCTAssertFalse(model.unavailable)
+        XCTAssertNotNil(model.displayed(asset, access: access(scope)))
+        XCTAssertEqual(calls.values, Array(repeating: "GET " + asset.url, count: 2))
+        model.cancel()
+    }
+
     func testViewOwnsLoadingPixelsLinksAndCloseCleanup() async throws {
         let scope = AskRemoteImageScope(), model = AskRemoteImageModel(loader: loader())
         let view = NSHostingView(rootView: VStack(alignment: .leading, spacing: 20) {
             Text("Generated image").font(.headline).foregroundColor(.black)
             AskRemoteImageView(asset: asset, model: model)
-            AskRemoteImageView(asset: .init(assetId: "link-only", url: asset.url), enabled: false)
-        }.padding(24).frame(width: 540, height: 420).background(Color.white).environment(\.askRemoteImageAccess, access(scope)))
-        let window = NSWindow(contentRect: .init(x: 100, y: 100, width: 540, height: 420), styleMask: [.titled], backing: .buffered, defer: false)
+        }.padding(24).frame(width: 540, height: 520).background(Color.white).environment(\.askRemoteImageAccess, access(scope)))
+        let window = NSWindow(contentRect: .init(x: 100, y: 100, width: 540, height: 520), styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false; window.contentView = view; window.orderFront(nil)
         defer { window.close() }
         for _ in 0..<200 where model.image == nil { try await Task.sleep(for: .milliseconds(10)) }
@@ -232,7 +250,7 @@ private actor RemoteGate {
         let loader = AskRemoteImageLoader(transport: RemoteTransport { request, _ in
             calls.record(request.url!.lastPathComponent)
             throw URLError(.timedOut)
-        })
+        }, decode: { _ in throw URLError(.cannotDecodeContentData) })
         let view = NSHostingView(rootView: AskRunOutputsView(outputs: outputs, remoteImages: loader)
             .environment(\.askRemoteImageAccess, access(scope)))
         let window = NSWindow(contentRect: .init(x: 100, y: 100, width: 500, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
@@ -252,7 +270,7 @@ private actor RemoteGate {
         defer { try? FileManager.default.removeItem(at: root) }
         let defaults = try XCTUnwrap(UserDefaults(suiteName: UUID().uuidString))
         let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
-            artifactStore: AskArtifactStore(storageURL: root.appendingPathComponent("artifacts")))
+            artifactStore: AskArtifactStore(storageURL: root.appendingPathComponent("artifacts")), owner: { "owner" })
         let cache = try AskConversationCache(url: root.appendingPathComponent("cache.sqlite"))
         var account: (owner: String, token: String)? = ("owner", "token")
         let api = AskTestAPI()

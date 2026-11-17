@@ -26,6 +26,23 @@ struct AskTurnProcessTests {
         )
     }
 
+    @Test func imageCardStaysOutsideProcessBeforeAndAfterTheAnswer() throws {
+        var step = message("image-step", text: "")
+        step.toolCalls = [.init(id: "image-call", function: .init(name: "image_generate", arguments: "{}"))]
+        let waiting = AskActivity.items([message("user", role: "user"), step], results: [])
+        var receipt = message("receipt", role: "tool", text: "Created")
+        receipt.toolCallId = "image-call"
+        receipt.generatedImage = .init(assetId: "image-job", url: "https://image.test/result.png")
+        let finished = AskActivity.items([message("user", role: "user"), step, message("answer")], results: [receipt])
+        let liveSection = try #require(AskTranscriptSection.make(waiting, activeRunID: "run").first { $0.contains("image-step") })
+        let finalSection = try #require(AskTranscriptSection.make(finished).first { $0.contains("image-step") })
+        #expect(!liveSection.isProcess && !finalSection.isProcess)
+        #expect(liveSection.id == finalSection.id)
+        #expect(finalSection.id == "activity/image-step")
+        #expect(AskTranscriptSection.make(finished).firstIndex { $0.contains("image-step") }!
+            < AskTranscriptSection.make(finished).firstIndex { $0.contains("answer") }!)
+    }
+
     @Test func `completed turn keeps its answer and files outside one process disclosure`() throws {
         let sections = AskTranscriptSection.make(transcript())
         #expect(sections.count == 4)
@@ -138,6 +155,9 @@ struct AskTurnProcessTests {
     }
 
     @Test func conversationKeepsItsConclusionVisibleAndCanLocateFoldedSteps() async throws {
+        let previousKeychainMode = KeychainTokenStore.useInMemoryStoreForTesting
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        defer { KeychainTokenStore.useInMemoryStoreForTesting = previousKeychainMode }
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         let call = AskToolCall(id: "command", function: .init(name: "run_command", arguments: #"{"command":"git diff --check"}"#))
@@ -151,7 +171,8 @@ struct AskTurnProcessTests {
             ])
         await fixture.api.seed(conversation)
         await fixture.model.select(conversation.id)
-        let host = NSHostingView(rootView: AskConversationView(model: fixture.model))
+        let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil }, loadStoredUserProfile: { nil })
+        let host = NSHostingView(rootView: AskConversationView(model: fixture.model, auth: auth))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 750), styleMask: [.titled],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false

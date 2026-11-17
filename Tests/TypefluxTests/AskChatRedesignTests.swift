@@ -17,6 +17,29 @@ struct AskRunPhaseTests {
         .init(run: run, entries: entries, deviceId: "device", local: false)
     }
 
+    @Test func liveToolClaimDoesNotPauseTheImageButAnAbandonedClaimDoes() {
+        let conversation = AskRecoveryFixture.conversation()
+        let audit = AskRecoveryFixture.audit(conversation)
+        let entry = AskExecutionEntry(id: audit.identity.key, audit: audit, receipt: nil)
+        let active = AskRecoveryPresentation(run: conversation.run, entries: [entry], deviceId: "device", local: true,
+                                            liveExecutions: [audit.identity])
+        #expect(!active.unknown)
+        #expect(AskRunPhase.resolve(run: conversation.run, busy: true, pendingApproval: false, recovery: active)?.isWorking == true)
+        let interrupted = AskRecoveryPresentation(run: conversation.run, entries: [entry], deviceId: "device", local: true)
+        #expect(interrupted.unknown)
+        #expect(AskRunPhase.resolve(run: conversation.run, busy: true, pendingApproval: false, recovery: interrupted)?.offersStop == false)
+        var foreign = audit.identity
+        foreign.runId = "another-run"
+        let mismatch = AskRecoveryPresentation(run: conversation.run, entries: [entry], deviceId: "device", local: true,
+                                              liveExecutions: [foreign])
+        #expect(mismatch.unknown)
+        var failed = entry
+        failed.receipt = .tool(.init(runId: audit.identity.runId, deviceId: "device", toolCallId: audit.identity.callId,
+                                    content: "Unknown result", isError: true, harness: .init(version: 1, outcome: .init(status: "unknown"))))
+        #expect(AskRecoveryPresentation(run: conversation.run, entries: [failed], deviceId: "device", local: true,
+                                       liveExecutions: [audit.identity]).unknown)
+    }
+
     @Test func noRunHasNoPhase() {
         #expect(AskRunPhase.resolve(run: nil, busy: false, pendingApproval: false, recovery: nil) == nil)
         #expect(AskRunPhase.resolve(run: nil, busy: true, pendingApproval: false, recovery: nil) == .working(step: 1))

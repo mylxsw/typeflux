@@ -10,13 +10,14 @@ struct AskRecoveryPresentation: Equatable {
     let unknownTool: String?
     let canInspect: Bool
 
-    init(run: AskRun?, entries: [AskExecutionEntry], deviceId: String, local _: Bool) {
+    init(run: AskRun?, entries: [AskExecutionEntry], deviceId: String, local _: Bool, liveExecutions: [AskExecutionIdentity] = []) {
         canInspect = run.map { !["completed", "cancelled"].contains($0.status) } ?? false
         // A terminal run with no unacknowledged execution has no outstanding
         // effect to inspect. Its own failure (for example the step limit) has a
         // separate, more accurate status. Keep an actual missing receipt visible.
         let currentEntries = entries.filter {
             !$0.readUnavailable && ($0.audit == nil || $0.audit?.identity.runId == run?.id)
+                && !Self.isLive($0, run: run, deviceId: deviceId, executions: liveExecutions)
         }
         if let run, !run.isActive,
            (run.status == "completed" ||
@@ -44,6 +45,15 @@ struct AskRecoveryPresentation: Equatable {
         savedReceipts = currentEntries.filter { !$0.deleted && $0.receipt != nil && !$0.acknowledged }.count
         canContinue = !entries.contains(where: \.readUnavailable) && !unknown && savedReceipts == 0 && !otherDevice
             && ["waiting_tool", "waiting_inference"].contains(run?.status ?? "")
+    }
+
+    static func isLive(_ entry: AskExecutionEntry, run: AskRun?, deviceId: String,
+                       executions: [AskExecutionIdentity]) -> Bool {
+        guard let identity = entry.audit?.identity, identity.deviceId == deviceId,
+              identity.runId == run?.id, run?.isActive == true,
+              executions.contains(identity), !entry.deleted else { return false }
+        // An actual failure/unknown receipt remains actionable even during delivery.
+        return entry.receipt == nil || entry.receipt?.status == "ok"
     }
 
     var isVisible: Bool {

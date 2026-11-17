@@ -19,6 +19,32 @@ import Testing
         items.first { if case .outcome = $0.kind { return true }; return false }
     }
 
+    @Test func imageCardRendersWaitingAndInterruptedStatesAtStableSize() throws {
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let call = AskToolCall(id: "image", function: .init(name: "image_generate", arguments: "{}"))
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/image-card-validation")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        for (name, status, active) in [("waiting", AskActivity.Status.running, true), ("interrupted", .paused, false), ("approval", .attention, true)] {
+            let view = AskImageGenerationCard(call: call, result: nil, status: status, active: active,
+                                             startedAt: Date().addingTimeInterval(-35))
+                .padding(24).frame(width: 448, height: 460).background(AskTheme.surface)
+                .environment(\.colorScheme, .dark)
+            let host = NSHostingView(rootView: view)
+            host.appearance = NSAppearance(named: .darkAqua)
+            host.frame = NSRect(x: 0, y: 0, width: 448, height: 460)
+            host.layoutSubtreeIfNeeded()
+            #expect(host.fittingSize.width <= 448)
+            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            let data = try #require(bitmap.representation(using: .png, properties: [:]))
+            try data.write(to: root.appendingPathComponent(name + ".png"))
+            #expect(data.count > 2000)
+        }
+    }
+
     @Test func historyToolUsesReadableTitleAndToolCountHasItsOwnUnit() {
         let call = AskToolCall(id: "history", function: .init(name: "read_conversation_history", arguments: "{}"))
         #expect(AskTheme.toolTitle(call) == L("ask.tool.read_conversation_history"))

@@ -2,6 +2,22 @@ import XCTest
 @testable import Typeflux
 
 final class AskGeneratedImageTests: XCTestCase {
+    func testImageCardKeepsGenerationSeparateFromFailureAndDownload() {
+        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .running, active: true), .generating)
+        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .running, active: false), .interrupted)
+        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .paused, active: true), .interrupted)
+        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .attention, active: true), .approval)
+        let image = AskGeneratedImage(assetId: "job", url: "https://cdn.example/result.png")
+        var result = AskMessage(id: "result", role: "tool", text: "", toolCallId: "call", createdAt: Date(), generatedImage: image)
+        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .running, active: true), .ready(image))
+        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .done, active: false), .ready(image))
+        result.isError = true
+        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .running, active: true), .failed)
+        result.isError = false
+        result.generatedImage?.url = "javascript:bad"
+        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .done, active: false), .failed)
+    }
+
     func testGeneratedImageDecodesAndRejectsUnsafeLinks() throws {
         let json = #"{"asset_id":"job-id","url":"https://cdn.example/image.png"}"#
         let image = try AskCoding.decoder().decode(AskGeneratedImage.self, from: Data(json.utf8))

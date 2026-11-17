@@ -7566,3 +7566,25 @@
 
 "models.cloud.price.details" = "Input: %@ Credits / 1K Tokens\nOutput: %@ Credits / 1K Tokens\nCached input: %@";
 "models.cloud.price.unavailable" = "Not provided";
+
+// Inline image generation and download states.
+"ask.image.creating" = "Creating image";
+"ask.image.elapsed" = "Waiting for %d seconds";
+"ask.image.waitHint" = "You can leave this conversation and return later.";
+"ask.image.approval" = "Waiting for your approval";
+"ask.image.approvalHint" = "Review the request below to start creating the image.";
+"ask.image.interrupted" = "Image result not yet confirmed";
+"ask.image.interruptedHint" = "Cloud generation may still finish. Check the process before generating again.";
+"ask.image.failed" = "Image request did not complete";
+"ask.image.failedHint" = "Check the process for details. No new image request was submitted automatically.";
+"ask.image.details" = "View process";
+"ask.image.save" = "Save image";
+"ask.image.edit" = "Edit image";
+"ask.image.editPrompt" = "Edit generated image %d: ";
+"ask.image.generatedLoadFailed" = "Image created, but could not load";
+"ask.image.reloadHint" = "Reloading only downloads the existing image.";
+"ask.image.reload" = "Reload image";
+"ask.image.generatedLoading" = "Image created. Loading…";
+"ask.image.loadingHint" = "Your image will appear here.";
+"ask.image.stopWaiting" = "Stop waiting";
+"ask.image.stopHint" = "Stops this reply. Cloud generation may still finish and incur a charge.";

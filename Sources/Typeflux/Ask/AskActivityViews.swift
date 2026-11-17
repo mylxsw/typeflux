@@ -17,6 +17,7 @@ struct AskActivityBlock: View, Equatable {
     var approvalToolId: String?
     var runningToolIDs: Set<String> = []
     var queuedToolIDs: Set<String> = []
+    var imageRunActive = true
     /// The run's step count from `AskRunPhase`, for the block that carries the run.
     var runStep: Int?
     var outputs = AskRunOutputs()
@@ -37,6 +38,7 @@ struct AskActivityBlock: View, Equatable {
             && lhs.status == rhs.status && lhs.resolution == rhs.resolution
             && lhs.streamingId == rhs.streamingId && lhs.approvalToolId == rhs.approvalToolId
             && lhs.runningToolIDs == rhs.runningToolIDs && lhs.queuedToolIDs == rhs.queuedToolIDs
+            && lhs.imageRunActive == rhs.imageRunActive
             && lhs.runStep == rhs.runStep && lhs.outputs == rhs.outputs
             && lhs.fileChanges == rhs.fileChanges && lhs.startsExpanded == rhs.startsExpanded
     }
@@ -54,6 +56,9 @@ struct AskActivityBlock: View, Equatable {
     private var expanded: Bool { userExpanded ?? startsExpanded ?? false }
 
     private var title: String {
+        if group.steps.contains(where: { AskImageCardState.isImageTool($0.function.name) }) {
+            return L("ask.image.details")
+        }
         if status == .done || status == .failed { return AskActivityRowPresentation.groupTitle(group) }
         let count = group.calls.filter { runningToolIDs.contains($0.id) }.count
         if count > 1 { return L("ask.activity.parallel", count) }
@@ -62,6 +67,12 @@ struct AskActivityBlock: View, Equatable {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            ForEach(group.steps.filter { AskImageCardState.isImageTool($0.function.name) }, id: \.id) { call in
+                AskImageGenerationCard(call: call,
+                    result: results.first { $0.toolCallId == call.id },
+                    status: status, active: imageRunActive,
+                    startedAt: group.messages.first { $0.toolCalls?.contains(where: { $0.id == call.id }) == true }?.createdAt ?? .now)
+            }
             if status == .attention { card } else { trace }
             if let resolution, !resolution.reason.isEmpty {
                 Text(resolution.reason).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).textSelection(.enabled)
@@ -237,7 +248,8 @@ struct AskActivityBlock: View, Equatable {
                 case let .tool(call, messageID):
                     AskToolStepRow(call: call, result: index[call.id],
                                    preparing: streamingId == messageID && index[call.id] == nil,
-                                   pending: approvalToolId == call.id, running: runningToolIDs.contains(call.id), queued: queuedToolIDs.contains(call.id), exportProjectPatch: exportProjectPatch)
+                                   pending: approvalToolId == call.id, running: runningToolIDs.contains(call.id), queued: queuedToolIDs.contains(call.id),
+                                   interrupted: AskImageCardState.isImageTool(call.function.name) && (!imageRunActive || status == .paused), exportProjectPatch: exportProjectPatch)
                 }
             }
         }
@@ -257,6 +269,7 @@ struct AskToolStepRow: View {
     var pending = false
     var running = false
     var queued = false
+    var interrupted = false
     var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     var startsExpanded = false
     @State private var userExpanded: Bool?
@@ -279,12 +292,14 @@ struct AskToolStepRow: View {
     }
 
     private var state: AskActivityState {
+        if interrupted && result == nil { return .attention }
         if preparing || running { return .running }
         if pending { return .attention }
         return AskPresentation.toolState(result: result)
     }
 
     private var statusText: String {
+        if interrupted && result == nil { return L("ask.image.interrupted") }
         if preparing { return L("ask.tool.preparing") }
         if running { return L("ask.tool.running") }
         if queued { return L("ask.activity.queuedTool") }

@@ -159,6 +159,12 @@ struct AskConversationView: View {
         .tint(AskTheme.accent)
         .environment(\.askContextImageAccess, model.contextImageAccess(launcher: false))
         .environment(\.askRemoteImageAccess, model.remoteImageAccess)
+        .environment(\.askEditGeneratedImage, { asset in
+            let images = model.selected?.messages.compactMap(\.generatedImage) ?? []
+            let number = (images.firstIndex(where: { $0.assetId == asset.assetId }) ?? 0) + 1
+            let prompt = L("ask.image.editPrompt", number)
+            model.draft.text += (model.draft.text.isEmpty ? "" : "\n") + prompt
+        })
         .environment(\.askArtifactAccess, model.artifactAccess)
         .environment(\.askTerminalAccess, model.terminalAccess)
         .environment(\.askSidePanelActions, sidePanelActions)
@@ -1020,7 +1026,7 @@ struct AskConversationView: View {
                     if layout.mainWidth >= 760, let phase = model.runPhase {
                         HStack(spacing: 5) {
                             AskRunToneDot(tone: phase.tone)
-                            Text(phase.summary)
+                            Text(model.imageRunSummary ?? phase.summary)
                                 .font(.system(size: 12))
                                 .foregroundStyle(StudioTheme.textSecondary)
                                 .monospacedDigit()
@@ -1667,6 +1673,7 @@ struct AskConversationView: View {
                              status: status, resolution: AskActivity.resolution(for: group, run: run, isLatest: isLatest, answers: Array((model.selected?.messages ?? []).suffix(12))), streamingId: streamingId, approvalToolId: approvalToolId,
                              runningToolIDs: batch?.running ?? [],
                              queuedToolIDs: batch.map { Set((run?.pending ?? []).map(\.id)).subtracting($0.running).subtracting(completed.keys) } ?? [],
+                             imageRunActive: run?.isActive == true && group.messages.contains { $0.runId == nil || $0.runId == run?.id },
                              runStep: live || halted ? phase?.step : nil,
                              outputs: item.outputs,
                              fileChanges: [],

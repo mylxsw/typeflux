@@ -5,6 +5,12 @@ import SwiftUI
 struct AskTaskOutcomeView: View {
     let outcome: AskTaskOutcome
     let outputs: AskRunOutputs
+    private var remainingOutputs: AskRunOutputs {
+        var value = outputs
+        // Generated images stay beside their original tool call, before the final prose.
+        value.generatedImages = []
+        return value
+    }
     let active: Bool
     let actions: AskSidePanelActions
     @State private var expanded = true
@@ -12,7 +18,7 @@ struct AskTaskOutcomeView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if !outputs.isEmpty {
+            if !remainingOutputs.isEmpty {
                 Button { inspectTranscript(); expanded.toggle() } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "shippingbox")
@@ -24,7 +30,7 @@ struct AskTaskOutcomeView: View {
                 }
                 .buttonStyle(.plain)
                 if expanded {
-                    AskPagedRunOutputs(outputs: outputs)
+                    AskPagedRunOutputs(outputs: remainingOutputs)
                 }
             }
             if !outcome.changes.isEmpty {

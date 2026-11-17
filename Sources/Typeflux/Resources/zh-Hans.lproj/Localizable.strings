@@ -7566,3 +7566,25 @@
 
 "models.cloud.price.details" = "输入：%@ Credits / 1K Tokens\n输出：%@ Credits / 1K Tokens\n缓存输入（Cached）：%@";
 "models.cloud.price.unavailable" = "未提供";
+
+// Inline image generation and download states.
+"ask.image.creating" = "正在生成图片";
+"ask.image.elapsed" = "已等待 %d 秒";
+"ask.image.waitHint" = "可以离开此对话，稍后回来查看。";
+"ask.image.approval" = "等待你确认";
+"ask.image.approvalHint" = "确认下方请求后开始生成图片。";
+"ask.image.interrupted" = "图片结果尚未确认";
+"ask.image.interruptedHint" = "云端仍可能完成，请先查看处理过程，不必重复生成。";
+"ask.image.failed" = "图片请求未完成";
+"ask.image.failedHint" = "展开处理过程查看原因，不会自动重复生成。";
+"ask.image.details" = "查看过程";
+"ask.image.save" = "保存图片";
+"ask.image.edit" = "继续修改";
+"ask.image.editPrompt" = "修改第 %d 张生成的图片：";
+"ask.image.generatedLoadFailed" = "图片已生成，但加载失败";
+"ask.image.reloadHint" = "重新加载只获取已有图片，不会重新生成。";
+"ask.image.reload" = "重新加载图片";
+"ask.image.generatedLoading" = "图片已生成，正在加载…";
+"ask.image.loadingHint" = "图片即将显示在这里。";
+"ask.image.stopWaiting" = "停止等待";
+"ask.image.stopHint" = "停止本轮回复；云端图片仍可能生成完成并计费。";
