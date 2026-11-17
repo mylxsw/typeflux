@@ -23,6 +23,7 @@ extension AskModelLibrary {
         if provider.isCloud, scenario == "rewrite", let rewriteCloud {
             result.models = rewriteCloud.map(\.registered)
         }
+        result.models.sort(by: RegisteredModel.alphabetical)
         return result
     }
 

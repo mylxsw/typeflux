@@ -93,6 +93,7 @@ extension AskConversationModel {
     func selectModel(_ reference: String, launcher: Bool) {
         let wasAttached = launcher ? launcherDraft.includeScreenshot : draft.includeScreenshot
         if launcher { launcherDraft.modelRef = reference } else { draft.modelRef = reference }
+        if launcher || selectedId == nil { modelLibrary.defaultReference = reference }
         snapReasoningEffort(launcher: launcher)
         let notice = wasAttached && !screenshotCapability(launcher: launcher).canAttach
             ? L("ask.image.detached") : nil

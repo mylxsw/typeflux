@@ -291,6 +291,7 @@ struct AskToolResultRequest: Codable, Equatable, Sendable {
 }
 
 struct AskDraft: Codable, Equatable, Sendable {
+    var reasoningEffort: String? = nil
     var text = ""
     var includeScreenshot = true
     var screenshot: String?

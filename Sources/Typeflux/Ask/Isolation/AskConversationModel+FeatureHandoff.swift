@@ -20,7 +20,7 @@ extension AskConversationModel {
         let source = launcherDraft
         let handoff = reserveChatDraft(incoming, account: account)
         let transfer = FeatureChatHandoff(id: handoff.id, owner: account, generation: AuthState.shared.sessionGeneration, draft: incoming,
-            permission: launcherPermissionMode.rawValue, reasoning: reasoningEffort.rawValue, submit: submit)
+            permission: launcherPermissionMode.rawValue, reasoning: chosenReasoningEffort(launcher: true).rawValue, submit: submit)
         isOpeningChat = true
         defer { isOpeningChat = false }
         do {
@@ -101,8 +101,8 @@ extension AskConversationModel {
         } else {
             launcherDraft = handoff.draft
             launcherPermissionMode = AskPermissionMode(rawValue: handoff.permission) ?? .standard
-            reasoningEffort = AskReasoningEffort(rawValue: handoff.reasoning) ?? .providerDefault
-            pendingDraftHandoff = .init(id: handoff.id, owner: handoff.owner, draft: handoff.draft)
+            launcherDraft.reasoningEffort = handoff.reasoning
+            pendingDraftHandoff = .init(id: handoff.id, owner: handoff.owner, draft: launcherDraft)
             guard await openChatFromLauncher() else { return false }
         }
         guard session()?.owner == handoff.owner, AuthState.shared.sessionGeneration == handoff.generation else { return false }
@@ -117,7 +117,7 @@ extension AskConversationModel {
               let id = quick.conversationId, let account = session()?.owner, quick.owner == account else { return false }
         let transfer = FeatureChatHandoff(id: "quick:" + quick.generation.uuidString, owner: account, generation: AuthState.shared.sessionGeneration,
             draft: .followUp, permission: AskPermissionMode.standard.rawValue,
-            reasoning: reasoningEffort.rawValue, submit: false, conversationID: id)
+            reasoning: chosenReasoningEffort(launcher: true).rawValue, submit: false, conversationID: id)
         isOpeningChat = true
         defer { isOpeningChat = false }
         do {

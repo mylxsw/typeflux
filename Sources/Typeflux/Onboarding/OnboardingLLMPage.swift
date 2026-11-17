@@ -271,9 +271,9 @@ private extension OnboardingLLMPage {
 
     private func modelSelectorMenu(models: [String], enabled: Bool) -> some View {
         OnboardingModelPicker(
-            items: models.enumerated().map { index, name in
+            items: models.sorted(by: RegisteredModel.nameAscending).map { name in
                 .init(id: name, title: name,
-                      detail: index == 0 ? OnboardingStrings.text("badge.recommended", table: "OnboardingLlm") : nil)
+                      detail: name == models.first ? OnboardingStrings.text("badge.recommended", table: "OnboardingLlm") : nil)
             },
             selection: model.selectedModel,
             identifier: "onboarding.llm.model",

@@ -121,7 +121,7 @@ extension AskConversationModel {
             selectModel(reference, launcher: launcher)
             confirm(L("ask.command.modelChanged", modelLibrary.name(for: reference)))
         case let .pickReasoning(effort):
-            reasoningEffort = effort
+            selectReasoningEffort(effort, launcher: launcher)
             confirm(L("ask.command.reasoningChanged", effort.label))
         case .localMode:
             guard canChangeStorage(launcher: launcher) else { return }
@@ -255,16 +255,17 @@ extension AskConversationModel {
     /// The effort the next message uses with this composer's model: the chosen one,
     /// or the closest level the model offers.
     func displayedReasoningEffort(launcher: Bool) -> AskReasoningEffort {
-        reasoningEffort.nearest(in: reasoningLevels(launcher: launcher))
+        chosenReasoningEffort(launcher: launcher).nearest(in: reasoningLevels(launcher: launcher))
     }
 
     /// A model with fewer levels moves the choice to its closest level, and says so once.
     func snapReasoningEffort(launcher: Bool) {
         let levels = reasoningLevels(launcher: launcher)
+        let reasoningEffort = chosenReasoningEffort(launcher: launcher)
         let snapped = reasoningEffort.nearest(in: levels)
         guard !levels.isEmpty, snapped != reasoningEffort else { return }
         let from = reasoningEffort
-        reasoningEffort = snapped
+        selectReasoningEffort(snapped, launcher: launcher)
         confirm(L("ask.reasoning.snapped", from.label, snapped.label))
     }
 

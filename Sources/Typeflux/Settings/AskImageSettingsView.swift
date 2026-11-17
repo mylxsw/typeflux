@@ -78,7 +78,7 @@ struct AskImageSettingsView: View {
             TextField(L("imagegen.model.placeholder"), text: $model.configuration.model)
                 .textFieldStyle(TFTextFieldStyle(monospaced: true)).accessibilityIdentifier("imagegen-model")
             TFMenuButton(title: L("imagegen.models.suggestions"), systemImage: "list.bullet", iconOnly: true,
-                         actions: model.models.map { name in .action(name) { model.configuration.model = name } })
+                         actions: model.models.sorted(by: RegisteredModel.nameAscending).map { name in .action(name) { model.configuration.model = name } })
                 .disabled(model.models.isEmpty)
         }
     }

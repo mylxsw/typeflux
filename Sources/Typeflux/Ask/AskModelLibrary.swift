@@ -81,7 +81,11 @@ final class AskModelLibrary: ObservableObject {
     }
 
     var providers: [RegisteredProvider] {
-        registry.providers
+        registry.providers.map { provider in
+            var result = provider
+            result.models.sort(by: RegisteredModel.alphabetical)
+            return result
+        }
     }
 
     /// Empty bundled free catalogs have no configuration UI. Keep their saved

@@ -112,7 +112,7 @@ private extension OnboardingSpeechPage {
                     .foregroundStyle(.secondary)
 
                 OnboardingModelPicker(
-                    items: LocalSTTModel.displayOrder.map { local in
+                    items: LocalSTTModel.displayOrder.sorted { RegisteredModel.nameAscending($0.displayName, $1.displayName) }.map { local in
                         .init(id: local.rawValue, title: local.displayName,
                               detail: model.isModelAvailable(local)
                                   ? OnboardingStrings.text("local.downloadedTag", table: "OnboardingSpeech")

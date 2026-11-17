@@ -2916,7 +2916,8 @@ struct AskComposer: View {
            showsChevron: false,
            cloudAvailable: model.cloudAvailable(launcher: launcher),
            onManage: model.onOpenSettings.map { open in { open(.models) } },
-           effort: $model.reasoningEffort)
+           effort: Binding(get: { model.chosenReasoningEffort(launcher: launcher) },
+                           set: { model.selectReasoningEffort($0, launcher: launcher) }))
         .opacity(Self.recordingDim(active))
         // In the launcher the model outranks the key hints, which shorten instead.
         .layoutPriority(launcher ? 1 : 0)

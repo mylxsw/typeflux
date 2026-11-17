@@ -18,6 +18,17 @@ struct RegisteredModel: Codable, Equatable, Identifiable, Sendable {
 
     var displayName: String { name }
 
+    static func nameAscending(_ lhs: String, _ rhs: String) -> Bool {
+        lhs.compare(rhs, options: [.caseInsensitive, .diacriticInsensitive],
+                    locale: Locale(identifier: "en_US")) == .orderedAscending
+    }
+
+    static func alphabetical(_ lhs: Self, _ rhs: Self) -> Bool {
+        let order = lhs.name.compare(rhs.name, options: [.caseInsensitive, .diacriticInsensitive],
+                                     locale: Locale(identifier: "en_US"))
+        return order == .orderedSame ? lhs.reference < rhs.reference : order == .orderedAscending
+    }
+
 
     var exclusionReason: String? {
         let value = id.lowercased()

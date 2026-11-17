@@ -28,7 +28,7 @@ struct ModelCatalogView: View {
             ModelSurface {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(models
+                        ForEach(models.sorted(by: RegisteredModel.alphabetical)
                             .filter { search.isEmpty || $0.id.localizedCaseInsensitiveContains(search) }) { model in
                                 row(model)
                                 ModelRowDivider(leading: 14)

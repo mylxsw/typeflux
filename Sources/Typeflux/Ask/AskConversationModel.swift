@@ -204,7 +204,30 @@ final class AskConversationModel: ObservableObject {
     var openFileInApplication: @MainActor (URL, String) -> Bool = { url, name in
         AskWorkflowLauncherActionHost.open(url, inApplication: name)
     }
-    @Published var reasoningEffort: AskReasoningEffort = .providerDefault
+    var reasoningEffort: AskReasoningEffort {
+        get { chosenReasoningEffort(launcher: false) }
+        set { selectReasoningEffort(newValue, launcher: false) }
+    }
+
+    func chosenReasoningEffort(launcher: Bool) -> AskReasoningEffort {
+        let raw = launcher ? launcherDraft.reasoningEffort : draft.reasoningEffort
+        if let raw, let effort = AskReasoningEffort(rawValue: raw) { return effort }
+        if !launcher, selectedId != nil {
+            return selected?.messages.last(where: { $0.role == "user" })?.reasoningEffort
+                .flatMap(AskReasoningEffort.init(rawValue:)) ?? .providerDefault
+        }
+        return AskReasoningEffort(rawValue: modelLibrary.defaults.string(forKey: "ask.reasoning.default") ?? "")
+            ?? .providerDefault
+    }
+
+    func selectReasoningEffort(_ effort: AskReasoningEffort, launcher: Bool) {
+        if launcher { launcherDraft.reasoningEffort = effort.rawValue }
+        else { draft.reasoningEffort = effort.rawValue }
+        if launcher || selectedId == nil {
+            modelLibrary.defaults.set(effort.rawValue, forKey: "ask.reasoning.default")
+        }
+        persistDrafts()
+    }
     let modelLibrary: AskModelLibrary
     private var inferenceUsage: [String: AskTokenUsage] = [:]
     var customInference: any AskModelCompleting
@@ -1544,7 +1567,8 @@ final class AskConversationModel: ObservableObject {
         request.clientToolApproval = true
         request.skillCatalog = skillCatalog(submitted.skills)
         request.modelRef = modelRef
-        request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
+        request.reasoningEffort = (submitted.reasoningEffort.flatMap(AskReasoningEffort.init(rawValue:))
+            ?? chosenReasoningEffort(launcher: launcher)).requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
         request.memory = newConversation && !temporaryRun && submitted.memoryOff != true
             ? (submitted.memory ?? capture.globalMemory())?.usable(owner: current.account,
                                                                   invalidations: memoryInvalidations) : nil

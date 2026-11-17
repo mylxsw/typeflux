@@ -311,7 +311,7 @@ struct AskImageCapabilityTests {
         f.model.selectModel("cloud:vision", launcher: launcher)
         #expect(!(launcher ? f.model.launcherDraft : f.model.draft).includeScreenshot)
         #expect((launcher ? f.model.launcherScreenshotNotice : f.model.screenshotNotice) == nil)
-        #expect(f.model.modelLibrary.defaultReference == "cloud:default")
+        #expect(f.model.modelLibrary.defaultReference == "cloud:vision")
     }
 
     @Test(arguments: ["cloud:text", "cloud:unknown", "missing"])

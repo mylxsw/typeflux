@@ -105,6 +105,62 @@ struct AskEffortPickerTests {
         #expect(names == ([.providerDefault] + AskReasoningEffort.levels).map(\.label))
     }
 
+    @Test func newConversationRemembersChoicesWithoutFollowingOldConversations() async throws {
+        let f = try fixture()
+        defer { f.model.resetSession() }
+        f.model.selectModel(five.reference, launcher: false)
+        f.model.reasoningEffort = .max
+        f.model.newConversation()
+        #expect(f.model.modelReference(launcher: false) == five.reference)
+        #expect(f.model.reasoningEffort == .max)
+
+        await f.api.seed(AskConversation(id: "old", title: "Old", revision: 0, updatedAt: Date(), messages: []))
+        await f.model.select("old")
+        f.model.selectModel(three.reference, launcher: false)
+        f.model.reasoningEffort = .low
+        #expect(f.model.modelLibrary.defaultReference == five.reference)
+        f.model.newConversation()
+        #expect(f.model.modelReference(launcher: false) == five.reference)
+        #expect(f.model.reasoningEffort == .max)
+        let restored = AskModelLibrary(defaults: f.model.modelLibrary.defaults, automaticallyLoadsCatalog: false)
+        let next = try AskTestFixture(modelLibrary: restored)
+        defer { next.model.resetSession() }
+        #expect(next.model.modelReference(launcher: false) == five.reference)
+        #expect(next.model.reasoningEffort == .max)
+    }
+
+    @Test func launcherReasoningIsIndependentOfTheOpenConversation() async throws {
+        let f = try fixture()
+        defer { f.model.resetSession() }
+        await f.api.seed(AskConversation(id: "old", title: "Old", revision: 0, updatedAt: Date(), messages: []))
+        await f.model.select("old")
+        f.model.reasoningEffort = .low
+        f.model.selectModel(five.reference, launcher: true)
+        f.model.selectReasoningEffort(.max, launcher: true)
+        #expect(f.model.reasoningEffort == .low)
+        #expect(f.model.displayedReasoningEffort(launcher: true) == .max)
+        f.model.newConversation()
+        #expect(f.model.reasoningEffort == .max)
+    }
+
+    @Test func modelPresentationSortsEnglishNamesAcrossCatalogs() throws {
+        let f = try fixture()
+        defer { f.model.resetSession() }
+        let library = f.model.modelLibrary
+        try library.replaceCloudModels([
+            .init(id: "z", name: "Zeta"), .init(id: "g2", name: "GPT 6 Luna"),
+            .init(id: "a", name: "alpha"), .init(id: "g1", name: "GPT 6 Astra")
+        ])
+        let expected = ["alpha", "GPT 6 Astra", "GPT 6 Luna", "Zeta"]
+        #expect(library.providers.first(where: \.isCloud)?.models.map(\.name) == expected)
+        #expect(library.selectableProviders(loggedIn: true, hasImage: false)
+            .first(where: \.isCloud)?.models.map(\.name) == expected)
+        try library.replaceRewriteModels([.init(id: "z", name: "Zeta"), .init(id: "a", name: "alpha")])
+        let cloudProvider = library.providers.first(where: \.isCloud)
+        let provider = try #require(cloudProvider)
+        #expect(library.presentationProvider(provider, scenario: "rewrite").models.map(\.name) == ["alpha", "Zeta"])
+    }
+
     @Test func sliderGeometryFillsTheTrackAtTheTopStop() {
         let width: CGFloat = 300
         let edge = AskEffortSlider.inset + AskEffortSlider.knob / 2

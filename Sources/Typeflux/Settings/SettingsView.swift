@@ -1595,7 +1595,7 @@ struct StudioView: View {
                         label: L("common.model"),
                         placeholder: provider.defaultModel,
                         text: Binding(get: { viewModel.llmModel }, set: viewModel.setLLMModel),
-                        suggestions: remoteLLMModelSuggestions
+                        suggestions: remoteLLMModelSuggestions.sorted(by: RegisteredModel.nameAscending)
                     )
 
                     Text(L("settings.models.llm.providerEndpointHint", provider.displayName))
@@ -1721,7 +1721,7 @@ struct StudioView: View {
 
             case .localSTT:
                 VStack(spacing: 0) {
-                    ForEach(LocalSTTModel.displayOrder, id: \.self) { model in
+                    ForEach(LocalSTTModel.displayOrder.sorted { RegisteredModel.nameAscending($0.displayName, $1.displayName) }, id: \.self) { model in
                         localSTTModelOptionCard(model)
                         TFDivider.form
                     }
@@ -1807,7 +1807,7 @@ struct StudioView: View {
                     label: L("common.model"),
                     placeholder: whisperModelSuggestions[0],
                     text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
-                    suggestions: whisperModelSuggestions,
+                    suggestions: whisperModelSuggestions.sorted(by: RegisteredModel.nameAscending),
                     horizontal: true
                 )
                 StudioTextInputCard(
@@ -1836,7 +1836,7 @@ struct StudioView: View {
                     label: L("settings.models.localModel"),
                     placeholder: "qwen2.5:7b",
                     text: Binding(get: { viewModel.ollamaModel }, set: viewModel.setOllamaModel),
-                    suggestions: ollamaModelSuggestions
+                    suggestions: ollamaModelSuggestions.sorted(by: RegisteredModel.nameAscending)
                 )
                 Toggle(
                     L("settings.models.ollama.autoInstall"),
@@ -1872,7 +1872,7 @@ struct StudioView: View {
                             get: { viewModel.multimodalLLMModel },
                             set: viewModel.setMultimodalLLMModel
                         ),
-                        suggestions: multimodalModelSuggestions,
+                        suggestions: multimodalModelSuggestions.sorted(by: RegisteredModel.nameAscending),
                         horizontal: true
                     )
                     StudioTextInputCard(
@@ -1899,7 +1899,7 @@ struct StudioView: View {
                             get: { viewModel.aliCloudModel },
                             set: viewModel.setAliCloudModel
                         ),
-                        suggestions: AliCloudASRDefaults.suggestedModels,
+                        suggestions: AliCloudASRDefaults.suggestedModels.sorted(by: RegisteredModel.nameAscending),
                         horizontal: true
                     )
                     StudioTextInputCard(
@@ -1963,7 +1963,7 @@ struct StudioView: View {
                             get: { viewModel.googleCloudModel },
                             set: viewModel.setGoogleCloudModel
                         ),
-                        suggestions: GoogleCloudSpeechDefaults.suggestedModels,
+                        suggestions: GoogleCloudSpeechDefaults.suggestedModels.sorted(by: RegisteredModel.nameAscending),
                         horizontal: true
                     )
                     ModelFormRow(title: "Google OAuth") {
@@ -2004,7 +2004,7 @@ struct StudioView: View {
                         label: L("common.model"),
                         placeholder: OpenAIAudioModelCatalog.groqWhisperModels[0],
                         text: Binding(get: { viewModel.groqSTTModel }, set: viewModel.setGroqSTTModel),
-                        suggestions: OpenAIAudioModelCatalog.groqWhisperModels,
+                        suggestions: OpenAIAudioModelCatalog.groqWhisperModels.sorted(by: RegisteredModel.nameAscending),
                         horizontal: true
                     )
                 }
@@ -2025,7 +2025,7 @@ struct StudioView: View {
                         label: L("common.model"),
                         placeholder: SonioxASRDefaults.model,
                         text: Binding(get: { viewModel.sonioxModel }, set: viewModel.setSonioxModel),
-                        suggestions: SonioxASRDefaults.suggestedModels,
+                        suggestions: SonioxASRDefaults.suggestedModels.sorted(by: RegisteredModel.nameAscending),
                         horizontal: true
                     )
                 }
