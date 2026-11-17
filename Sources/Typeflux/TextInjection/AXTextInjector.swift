@@ -287,16 +287,11 @@ final class AXTextInjector: TextInjector {
         qos: .userInitiated
     )
 
-    func isTypefluxOwnedTarget(processID: pid_t?, bundleIdentifier: String?) -> Bool {
-        if processID == getpid() {
-            return true
-        }
-
-        if let bundleIdentifier, bundleIdentifier == Bundle.main.bundleIdentifier {
-            return true
-        }
-
-        return false
+    func isTypefluxOwnedTarget(processID: pid_t?, bundleIdentifier _: String?) -> Bool {
+        // Feature processes share the app bundle, but not NSApp or its windows.
+        // Only this process can use local AppKit responders; Chat and other
+        // sibling processes must go through the external accessibility path.
+        processID == getpid()
     }
 
     func typefluxFrontmostWindow() -> NSWindow? {

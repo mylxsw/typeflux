@@ -20,6 +20,23 @@ private final class LockedTestFlag: @unchecked Sendable {
 }
 
 final class AXTextInjectorTests: XCTestCase {
+    func testSiblingChatProcessIsExternalEvenWithSameBundleIdentifier() {
+        let injector = AXTextInjector()
+        XCTAssertFalse(injector.isTypefluxOwnedTarget(
+            processID: getpid() + 1, bundleIdentifier: Bundle.main.bundleIdentifier
+        ))
+    }
+
+    func testLocalProcessUsesNativeRespondersWithoutBundleIdentifier() {
+        XCTAssertTrue(AXTextInjector().isTypefluxOwnedTarget(processID: getpid(), bundleIdentifier: nil))
+    }
+
+    func testMissingProcessDoesNotUseLocalWindowsEvenWithSameBundleIdentifier() {
+        XCTAssertFalse(AXTextInjector().isTypefluxOwnedTarget(
+            processID: nil, bundleIdentifier: Bundle.main.bundleIdentifier
+        ))
+    }
+
     func testSelectionReplacementWorkRunsOffMainThread() async throws {
         let injector = AXTextInjector()
 
