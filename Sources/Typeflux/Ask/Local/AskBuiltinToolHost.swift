@@ -5,12 +5,14 @@ import Foundation
 protocol AskBuiltinToolHosting: Sendable {
     func executionClassification(for definition: AskToolDefinition) -> AskBuiltinExecutionClass
     func definitions() -> [AskToolDefinition]
+    func availableDefinitions() async -> [AskToolDefinition]
     func execute(_ input: AskBuiltinToolInput) async -> AskBuiltinToolOutput
 }
 
 enum AskBuiltinExecutionClass: Sendable { case serial, independentWebRead }
 
 extension AskBuiltinToolHosting {
+    func availableDefinitions() async -> [AskToolDefinition] { definitions() }
     func executionClassification(for _: AskToolDefinition) -> AskBuiltinExecutionClass { .serial }
 }
 
@@ -26,6 +28,7 @@ struct AskBuiltinToolOutput: Sendable {
     var text: String
     var isError: Bool
     var plan: [AskPlanItem]?
+    var generatedImage: AskGeneratedImage?
 }
 
 struct DefaultAskBuiltinToolHost: AskBuiltinToolHosting {

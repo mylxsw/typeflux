@@ -117,11 +117,13 @@ struct AskDeviceTransport: AskDeviceTransporting {
     }
 }
 
-/// Only public web reads leave the device. The local engine retains approval,
+/// Cloud web and image tools use the signed-in account. The local engine retains approval,
 /// execution journaling and result application, including when this call fails.
 struct AskDeviceBuiltinHost: AskBuiltinToolHosting {
     let transport: any AskDeviceTransporting
     let token: @Sendable () async throws -> String
+    var images: any AskCloudImageTransporting = AskCloudImageTransport()
+    var imagePollWait: @Sendable () async throws -> Void = { try await Task.sleep(for: .seconds(2)) }
     private let local = DefaultAskBuiltinToolHost(webTools: .init())
 
     func definitions() -> [AskToolDefinition] {
@@ -147,6 +149,7 @@ struct AskDeviceBuiltinHost: AskBuiltinToolHosting {
     }
 
     func execute(_ input: AskBuiltinToolInput) async -> AskBuiltinToolOutput {
+        if ["image_generate", "image_edit"].contains(input.call.function.name) { return await executeImage(input) }
         guard ["web_search", "web_fetch"].contains(input.call.function.name) else { return await local.execute(input) }
         let identity = [input.conversation.id, input.conversation.run?.id ?? "", String(input.conversation.run?.steps ?? 0), input.call.id].joined(separator: ":")
         do {

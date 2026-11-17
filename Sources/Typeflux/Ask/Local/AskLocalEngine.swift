@@ -216,7 +216,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             record.conversation.run?.inference?.payload = AskMemory.removingInjection(from: payload)
         }
         // An interrupted inference or engine step must not strand the conversation.
-        if let run = record.conversation.run, run.isActive, run.status == "running", run.recovery?.blocksExecution != true,
+        if let run = record.conversation.run, builtinFlights[id] == nil, run.isActive, run.status == "running", run.recovery?.blocksExecution != true,
            now().timeIntervalSince(run.updatedAt) > Self.staleAfter {
             keepPartial(&record)
             closePending(&record, reason: "The previous execution expired. It was not replayed.")
@@ -306,6 +306,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
         guard token.isEmpty else { throw conflict() }
+        let availableTools = await builtinTools.availableDefinitions()
+        try Task.checkCancellation()
         try loadAll()
         let id = AskConversationID.canonical(conversationId)
         guard Self.validID(id) else { throw AskLocalError.message(L("ask.local.notFound")) }
@@ -342,7 +344,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         c.run?.clientToolApproval = request.clientToolApproval
         c.run?.recoveryCheck = request.recoveryCheck
         record.conversation = c
-        try prepareRun(&record)
+        try prepareRun(&record, availableTools: availableTools)
         try save(&record)
         return try await step(&record)
     }
@@ -548,6 +550,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, maxSteps: Int?, token: String) async throws -> AskConversation {
         guard token.isEmpty else { throw conflict() }
+        let availableTools = await builtinTools.availableDefinitions()
+        try Task.checkCancellation()
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == runId, run.deviceId == deviceId else { throw conflict() }
         _ = try resolveTurn(record)
@@ -574,13 +578,15 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             }
             record.conversation.run?.internalRecovery = recovery
         }
-        try prepareRun(&record)
+        try prepareRun(&record, availableTools: availableTools)
         try save(&record)
         return try await step(&record)
     }
 
     func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation {
         guard token.isEmpty else { throw conflict() }
+        let availableTools = await builtinTools.availableDefinitions()
+        try Task.checkCancellation()
         var record = try record(conversationId)
         var c = record.conversation
         _ = try resolveTurn(record)
@@ -605,7 +611,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         c.run?.clientToolApproval = request.clientToolApproval
         c.run?.recoveryCheck = record.conversation.run?.recoveryCheck
         record.conversation = c
-        try prepareRun(&record)
+        try prepareRun(&record, availableTools: availableTools)
         try save(&record)
         return try await step(&record)
     }
@@ -668,7 +674,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     private func conflict() -> AskLocalError { .message(L("ask.local.conflict")) }
 
-    private func prepareRun(_ record: inout AskLocalRecord) throws {
+    private func prepareRun(_ record: inout AskLocalRecord, availableTools: [AskToolDefinition]) throws {
         guard turnOwnershipAvailable, turnPolicy.acceptsDirectory(directory) else { throw AskLocalError.implementationUnavailable }
         _ = try turnPolicy.resolve(turnPolicy.selected, operations: Set(AskAgentOperation.allCases))
         record.conversation.run?.taskProgress = .init(startIndex: record.conversation.messages.count)
@@ -692,7 +698,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.summaryUnavailable = nil
         record.summaryFallback = nil
         record.steering = nil
-        record.builtinTools = builtinTools.definitions()
+        record.builtinTools = availableTools
         let deviceNames = Set(record.conversation.run?.tools.map(\.name) ?? [])
         record.conversation.run?.cloudTools = record.builtinTools.filter { !deviceNames.contains($0.name) }
         record.approvedCloudCallId = nil
@@ -1135,8 +1141,10 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
                 } else if call.function.name != "update_plan" {
                     record.conversation.run?.taskResolution = nil
                 }
-                record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: result.text,
-                    toolCallId: call.id, isError: result.isError, createdAt: now(), runId: record.conversation.run?.id))
+                var message = AskMessage(id: UUID().uuidString, role: "tool", text: result.text,
+                    toolCallId: call.id, isError: result.isError, createdAt: now(), runId: record.conversation.run?.id)
+                message.generatedImage = result.generatedImage
+                record.conversation.messages.append(message)
                 if !["update_plan", "read_conversation_history"].contains(call.function.name) { record.cloudCalls += 1 }
             }
             record.conversation.run?.pending.removeFirst(calls.count)

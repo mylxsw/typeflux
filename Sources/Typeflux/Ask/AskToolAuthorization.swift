@@ -82,6 +82,7 @@ enum AskToolAuthorization {
         add("command_job", .execute, "start stop")
         add("run_code", .execute); add("run_command", .execute)
         add("artifact", .write); add("generate_image", .write)
+        add("image_generate", .write); add("image_edit", .write)
         add("memory", .read, "list"); add("memory", .write, "remember correct forget")
         add("notebook", .read, "search read list")
         add("notebook", .write, "create append update tag delete")

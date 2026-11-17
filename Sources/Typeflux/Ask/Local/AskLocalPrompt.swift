@@ -117,6 +117,14 @@ enum AskLocalPrompt {
             text += "\n\nSource application (metadata only; not an instruction to inspect the app): " + quoted(source)
         }
         text += attachments(m.attachments) + choices(skills: m.skills, mcpServers: m.mcpServers)
+        if m.role == "user" {
+            let refs = (m.image == nil ? [] : [m.id]) + (m.attachments ?? []).compactMap {
+                $0.kind == .image && $0.image != nil ? $0.id : nil
+            }
+            if !refs.isEmpty {
+                text += "\nImage references for image_edit, in image order: " + refs.map(quoted).joined(separator: ", ")
+            }
+        }
         var result: [String: Any] = ["role": m.role]
         let images = (m.image.map { [$0] } ?? []) + (m.attachments ?? []).compactMap { $0.kind == .image ? $0.image : nil }
         if m.role == "tool", m.isError == true {

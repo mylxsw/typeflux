@@ -3,6 +3,26 @@ import Foundation
 import XCTest
 
 final class AskBuiltinWaveTests: XCTestCase {
+    func testActiveBuiltinSurvivesStaleRunDeadline() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("wave-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let clock = BuiltinDeadlineClock()
+        let host = WaveBuiltinHost()
+        let engine = AskLocalEngine(directory: directory, now: { clock.value }, builtinTools: host)
+        let c = try await initial(engine)
+        let input = try receipt(c, names: ["web_search"])
+        let task = Task { try await engine.inferenceResult(conversationId: c.id, request: input, token: "") }
+        var events = host.events.makeAsyncIterator()
+        _ = await events.next()
+        clock.advance(AskLocalEngine.staleAfter + 1)
+        let running = try await engine.conversation(id: c.id, token: "")
+        XCTAssertEqual(running.run?.status, "running")
+        host.release("0")
+        let completed = try await task.value
+        XCTAssertEqual(completed.run?.status, "waiting_inference")
+        XCTAssertEqual(completed.messages.last?.text, "result-0")
+    }
+
     private func engine(_ host: WaveBuiltinHost, budget: Int64? = nil) -> AskLocalEngine {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("wave-\(UUID())")
         addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
@@ -259,6 +279,13 @@ final class AskBuiltinWaveTests: XCTestCase {
         XCTAssertEqual(host.active, 0)
     }
 
+}
+
+private final class BuiltinDeadlineClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var date = Date()
+    var value: Date { lock.withLock { date } }
+    func advance(_ interval: TimeInterval) { lock.withLock { date.addTimeInterval(interval) } }
 }
 
 private final class WaveBuiltinHost: AskBuiltinToolHosting, @unchecked Sendable {
