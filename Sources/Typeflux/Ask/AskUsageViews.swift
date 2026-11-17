@@ -326,7 +326,8 @@ struct AskUsagePanel: View {
                     Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
                         .foregroundStyle(StudioTheme.textTertiary)
                         .rotationEffect(.degrees(expanded ? 90 : 0))
-                    Text(L(item.purpose == "summary" ? "ask.usage.summary" : "ask.usage.inference"))
+                    Text(L(item.purpose.hasPrefix("image_") ? "imagegen.title"
+                           : item.purpose == "summary" ? "ask.usage.summary" : "ask.usage.inference"))
                         .foregroundStyle(StudioTheme.textSecondary)
                     Spacer(minLength: 8)
                     Text(invocationCost(item)).foregroundStyle(StudioTheme.textPrimary).monospacedDigit()
@@ -349,7 +350,7 @@ struct AskUsagePanel: View {
                         }
                         detail("ask.usage.output", String(tokens.completionTokens))
                         detail("ask.usage.total", String(tokens.totalTokens))
-                    } else { help("ask.usage.unavailable") }
+                    } else if !item.purpose.hasPrefix("image_") { help("ask.usage.unavailable") }
                     if item.source != "unknown" {
                         help(item.source == "estimated" ? "ask.usage.estimated"
                              : item.source == "client" ? "ask.usage.clientSource" : "ask.usage.providerSource")

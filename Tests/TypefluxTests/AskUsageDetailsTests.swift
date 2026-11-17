@@ -12,6 +12,21 @@ struct AskUsageDetailsTests {
               source: "provider", status: "confirmed", version: 1)
     }
 
+    @Test func imageReceiptPreservesCreditsWithoutTextTokens() async throws {
+        let raw = Data(#"{"items":[{"id":"image","run_id":"run","model_ref":"cloud:image","purpose":"image_generate","created_at":"2026-11-17T00:00:00Z","source":"provider","status":"confirmed","microcredits":100000000000,"unit_scale":10000,"version":3}]}"#.utf8)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+        let page = try decoder.decode(AskUsagePage.self, from: raw)
+        let details = AskUsageDetails()
+        await details.load(key: "image/run", hasRecords: true, reset: true) { _ in page }
+        let receipt = try #require(details.items.first)
+        #expect(receipt.purpose == "image_generate" && receipt.tokens == nil)
+        let totals = AskUsageTotals(microcredits: receipt.microcredits ?? 0, calls: 1,
+                                    unitScale: receipt.unitScale)
+        #expect(totals.creditsText == "10.00")
+    }
+
     @Test func noRecordsIsAnEmptyStateWithoutARequest() async {
         let details = AskUsageDetails()
         var calls = 0
