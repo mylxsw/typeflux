@@ -29,3 +29,9 @@ The explicit opt-in `AskCloudImageLiveTests` ran a real local work-mode engine, 
 Successful image job: `78c22da6-4834-4e3b-9223-975cde9331d6`. The conversation completed with exactly one image; the job had one 10-Credit debit. Downloaded PNG was 1254 x 1254, 2,577,650 bytes; all PNG chunk checksums and compressed pixel data validated. Visual inspection confirmed the requested kitten/dog illustration.
 
 The live acceptance uses the real engine and transport but is not itself a mouse-driven UI test. Existing snapshot/journal recovery still treats interrupted unknown outcomes conservatively; this change does not claim automatic crash recovery of image jobs.
+
+## Installed developer application
+
+Release build completed in 457.19 seconds. `make run` gracefully stopped the old application, packaged and signed the update with the existing stable Apple Development identity, and launched `/Users/mylxsw/Applications/Typeflux Dev.app` at 17:23:46 Singapore time. The installed executable contains the new catalog schema and image-response handling; deep/strict code-signature verification passed and the new main process is running. Unrelated working-tree changes were preserved and excluded from this fix's commits.
+
+Native UI automation still fails to connect to Typeflux with `timeoutReached` (-10005), including after reopening through its existing launcher shortcut. Finder automation connects successfully. Therefore no mouse-driven chat/card acceptance is claimed; the real work-engine/inference/image-service acceptance and installed-binary checks above are the verified scope.
