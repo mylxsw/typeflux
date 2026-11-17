@@ -7565,3 +7565,13 @@
 
 "models.cloud.price.details" = "入力：%@ Credits / 1K Tokens\n出力：%@ Credits / 1K Tokens\nキャッシュ入力（Cached）：%@";
 "models.cloud.price.unavailable" = "未提供";
+
+// Image approval details
+"ask.approval.q.imageGenerate" = "画像の生成を許可しますか？";
+"ask.approval.q.imageEdit" = "画像の編集を許可しますか？";
+"ask.approval.image.ratio" = "比率：%@";
+"ask.approval.image.resolution" = "解像度：%@";
+"ask.approval.image.model" = "モデル：%@";
+"ask.approval.image.details" = "生成の詳細を表示";
+"ask.approval.image.copyArguments" = "元のパラメータをコピー";
+"ask.approval.image.noPrompt" = "読み取れるプロンプトがありません。";

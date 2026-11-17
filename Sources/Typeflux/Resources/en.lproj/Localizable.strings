@@ -7588,3 +7588,13 @@
 "ask.image.loadingHint" = "Your image will appear here.";
 "ask.image.stopWaiting" = "Stop waiting";
 "ask.image.stopHint" = "Stops this reply. Cloud generation may still finish and incur a charge.";
+
+// Image approval details
+"ask.approval.q.imageGenerate" = "Allow image generation?";
+"ask.approval.q.imageEdit" = "Allow image editing?";
+"ask.approval.image.ratio" = "Ratio: %@";
+"ask.approval.image.resolution" = "Resolution: %@";
+"ask.approval.image.model" = "Model: %@";
+"ask.approval.image.details" = "View generation details";
+"ask.approval.image.copyArguments" = "Copy raw parameters";
+"ask.approval.image.noPrompt" = "No readable prompt was provided.";

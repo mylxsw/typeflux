@@ -31,6 +31,8 @@ enum AskApprovalCopy {
             return L("ask.approval.q.edit", filename(path))
         case ("run_command", _), ("command_job", "start"):
             return L("ask.approval.q.command")
+        case ("image_generate", _): return L("ask.approval.q.imageGenerate")
+        case ("image_edit", _): return L("ask.approval.q.imageEdit")
         case ("run_code", _):
             if let language = args["language"] as? String, !language.isEmpty {
                 return L("ask.approval.q.code", language)
@@ -90,6 +92,18 @@ enum AskApprovalCopy {
             if let target = readableTarget(targetSummary) {
                 facts.append(.init(symbol: "macwindow", text: target))
             }
+        case ("image_generate", _), ("image_edit", _):
+            if args["aspect_ratio"] == nil, let layout = args["layout"] as? String,
+               ["auto", "square", "landscape", "portrait"].contains(layout) {
+                facts.append(.init(symbol: "aspectratio", text: L("imagegen.layout." + layout)))
+            }
+            for (key, label, symbol) in [("aspect_ratio", "ratio", "aspectratio"),
+                                          ("resolution", "resolution", "photo"), ("model", "model", "sparkles")] {
+                if let value = args[key] as? String, !value.isEmpty {
+                    let readable = key == "model" ? imageModelName(value) : value
+                    facts.append(.init(symbol: symbol, text: L("ask.approval.image." + label, readable)))
+                }
+            }
         case ("command_job", _): break
         default:
             if call.function.name != "run_code", let target = readableTarget(targetSummary) {
@@ -100,6 +114,23 @@ enum AskApprovalCopy {
             facts.append(.init(symbol: "exclamationmark.octagon", text: L("ask.approval.fact.irreversible"), warning: true))
         }
         return Array(facts.prefix(maxFacts))
+    }
+
+    static func imagePrompt(_ call: AskToolCall) -> String? {
+        guard AskImageCardState.isImageTool(call.function.name),
+              let prompt = arguments(call)["prompt"] as? String, !prompt.isEmpty else { return nil }
+        return prompt
+    }
+
+    static func imageModelName(_ value: String) -> String {
+        let name = value.hasPrefix("image:") ? String(value.dropFirst(6)) : value
+        switch name {
+        case "gpt-image-2": return "GPT Image 2"
+        case "gpt-image-1": return "GPT Image 1"
+        case "gpt-image-1.5": return "GPT Image 1.5"
+        case "gpt-image-1-mini": return "GPT Image 1 Mini"
+        default: return name
+        }
     }
 
     // MARK: Tone

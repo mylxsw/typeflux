@@ -7565,3 +7565,13 @@
 
 "models.cloud.price.details" = "입력: %@ Credits / 1K Tokens\n출력: %@ Credits / 1K Tokens\n캐시 입력 (Cached): %@";
 "models.cloud.price.unavailable" = "제공되지 않음";
+
+// Image approval details
+"ask.approval.q.imageGenerate" = "이미지 생성을 허용할까요?";
+"ask.approval.q.imageEdit" = "이미지 편집을 허용할까요?";
+"ask.approval.image.ratio" = "비율: %@";
+"ask.approval.image.resolution" = "해상도: %@";
+"ask.approval.image.model" = "모델: %@";
+"ask.approval.image.details" = "생성 세부 정보 보기";
+"ask.approval.image.copyArguments" = "원본 매개변수 복사";
+"ask.approval.image.noPrompt" = "읽을 수 있는 프롬프트가 없습니다.";

@@ -222,6 +222,58 @@ struct AskApprovalCopyTests {
         #expect(fits(AskApprovalFactChip(fact: .init(symbol: "x", text: "warn", warning: true)), width: 200) > 0)
     }
 
+    @Test func imageApprovalShowsDecodedPromptAndReadableFactsWithoutDuplicatePreview() {
+        let prompt = "A newspaper front page.\n标题：深夜书店\n" + String(repeating: "Texture and typography. ", count: 150)
+        let image = call("image_generate", ["prompt": prompt, "aspect_ratio": "9:16", "resolution": "2K", "model": "image:gpt-image-2"])
+        #expect(AskApprovalCopy.question(image) == L("ask.approval.q.imageGenerate"))
+        #expect(AskApprovalCopy.question(call("image_edit")) == L("ask.approval.q.imageEdit"))
+        #expect(AskApprovalPresentation.preview(image) == .none)
+        #expect(AskApprovalCopy.imagePrompt(image) == prompt)
+        #expect(AskApprovalCopy.facts(image, risk: .write, targetSummary: "image_generate").map(\.text) == [
+            L("ask.approval.image.ratio", "9:16"), L("ask.approval.image.resolution", "2K"),
+            L("ask.approval.image.model", "GPT Image 2")])
+        #expect(AskApprovalCopy.imageModelName("image:custom-model") == "custom-model")
+        #expect(AskApprovalCopy.facts(call("image_generate", ["layout": "portrait"]), risk: .write).first?.text == L("imagegen.layout.portrait"))
+        #expect(AskApprovalCopy.facts(call("image_generate"), risk: .write, targetSummary: "image_generate").isEmpty)
+        #expect(AskApprovalCopy.imagePrompt(call("image_generate")) == nil)
+    }
+
+    @Test func imageApprovalDetailsStayBoundedWithActionsBelowAndRenderInBothThemes() throws {
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let prompt = String(repeating: "旧报纸头版，纸张纹理与中文标题。\n", count: 300)
+        let image = call("image_generate", ["prompt": prompt, "aspect_ratio": "9:16", "resolution": "2K", "model": "image:gpt-image-2"])
+        var denied = false, allowed = false
+        let closed = AskApprovalCard(call: image, risk: .write, reason: "生成一张旧报纸风格的书店海报。",
+                                     onDeny: { denied = true }, onAllow: { allowed = true })
+        var opened = closed
+        opened.initiallyShowsDetails = true
+        for width: CGFloat in [360, 640] {
+            #expect(fits(opened, width: width) > fits(closed, width: width) + 200)
+            #expect(fits(opened, width: width) < 600)
+        }
+        closed.onDeny(); closed.onAllow()
+        #expect(denied && allowed)
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/image-approval-validation")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        for dark in [true, false] {
+            for expanded in [true, false] {
+                let card = expanded ? opened : closed
+                let host = NSHostingView(rootView: card.padding(20).frame(width: 640)
+                    .background(AskTheme.surface).environment(\.colorScheme, dark ? .dark : .light))
+                host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+                host.frame = NSRect(x: 0, y: 0, width: 640, height: host.fittingSize.height)
+                host.layoutSubtreeIfNeeded()
+                let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                host.cacheDisplay(in: host.bounds, to: bitmap)
+                let data = try #require(bitmap.representation(using: .png, properties: [:]))
+                try data.write(to: root.appendingPathComponent("\(dark ? "dark" : "light")-\(expanded ? "expanded" : "collapsed").png"))
+            }
+        }
+    }
+
     // MARK: Activity and step limit
 
     @Test func waitingCardTitleShowsPlanProgress() {

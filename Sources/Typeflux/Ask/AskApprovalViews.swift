@@ -14,6 +14,7 @@ enum AskApprovalPresentation {
     }
 
     static func preview(_ call: AskToolCall) -> Preview {
+        if AskImageCardState.isImageTool(call.function.name) { return .none }
         let args = (try? AskLocalTools.jsonArguments(call.function.arguments)) ?? [:]
         if call.function.name == AskNotebookTool.name { return notebookPreview(call, args: args) }
         switch (call.function.name, args["action"] as? String ?? "") {
@@ -106,7 +107,10 @@ struct AskApprovalCard: View {
     var onDeny: () -> Void
     var onAllowForConversation: () -> Void = {}
     var onAllow: () -> Void
-    @State private var showsTechnical = false
+    var initiallyShowsDetails = false
+    @State private var showsTechnical: Bool?
+    private var detailsOpen: Bool { showsTechnical ?? initiallyShowsDetails }
+    private var isImage: Bool { AskImageCardState.isImageTool(call.function.name) }
     @State private var showsPreview: Bool?
     @State private var scopeChoice: Bool?
     @State private var choosingScope = false
@@ -179,10 +183,7 @@ struct AskApprovalCard: View {
                 Text(L("ask.approval.everyTime")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
                     .padding(.leading, Self.inset)
             }
-            if showsTechnical {
-                AskMonoBlock(title: AskToolPolicy.action(call), text: call.function.arguments)
-                    .padding(.leading, Self.inset)
-            }
+            detailsSection.padding(.leading, Self.inset)
             footer.padding(.leading, Self.inset)
         }
         .padding(.leading, 15)
@@ -217,7 +218,7 @@ struct AskApprovalCard: View {
                     .lineLimit(2)
                     .truncationMode(.middle)
                     .fixedSize(horizontal: false, vertical: true)
-                if let reason = AskApprovalCopy.reason(reason) {
+                if let reason = AskApprovalCopy.reason(reason) ?? AskApprovalCopy.reason(AskApprovalCopy.imagePrompt(call)) {
                     Text(reason).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(3)
                         .lineSpacing(1.5)
@@ -238,12 +239,41 @@ struct AskApprovalCard: View {
         }
     }
 
+    private var detailsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            AskApprovalDisclosure(title: L(isImage ? "ask.approval.image.details" : "ask.approval.arguments"),
+                                  open: detailsOpen, quiet: !isImage) {
+                showsTechnical = !detailsOpen
+            }
+            .accessibilityIdentifier("ask.approval.details.toggle")
+            if detailsOpen {
+                if isImage {
+                    ScrollView {
+                        Text(AskApprovalCopy.imagePrompt(call) ?? L("ask.approval.image.noPrompt"))
+                            .font(.system(size: 12.5)).lineSpacing(4)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(12)
+                    }
+                    .frame(height: 240)
+                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8))
+                    .accessibilityIdentifier("ask.approval.details.content")
+                    Button(L("ask.approval.image.copyArguments")) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(call.function.arguments, forType: .string)
+                    }
+                    .buttonStyle(.plain).font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                } else {
+                    AskMonoBlock(title: AskToolPolicy.action(call), text: call.function.arguments)
+                }
+            }
+        }
+    }
+
     private var footer: some View {
         HStack(spacing: 8) {
-            AskApprovalDisclosure(title: L("ask.approval.arguments"), open: showsTechnical, quiet: true) {
-                showsTechnical.toggle()
-            }
-            .help(AskToolPolicy.action(call))
             Spacer(minLength: 8)
             Button(action: onDeny) { Text(L("ask.deny")) }
                 .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))

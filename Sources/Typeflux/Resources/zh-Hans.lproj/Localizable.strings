@@ -7588,3 +7588,13 @@
 "ask.image.loadingHint" = "图片即将显示在这里。";
 "ask.image.stopWaiting" = "停止等待";
 "ask.image.stopHint" = "停止本轮回复；云端图片仍可能生成完成并计费。";
+
+// Image approval details
+"ask.approval.q.imageGenerate" = "允许生成图片？";
+"ask.approval.q.imageEdit" = "允许编辑图片？";
+"ask.approval.image.ratio" = "比例：%@";
+"ask.approval.image.resolution" = "分辨率：%@";
+"ask.approval.image.model" = "模型：%@";
+"ask.approval.image.details" = "查看生成详情";
+"ask.approval.image.copyArguments" = "复制原始参数";
+"ask.approval.image.noPrompt" = "未提供可读的提示词。";
