@@ -7563,3 +7563,6 @@
 "ask.local.providerUnavailable" = "模型服务暂时不可用，请稍后再试。";
 "ask.local.contextTooLong" = "对话内容超出模型可处理的长度，请新开对话。";
 "ask.local.requestRejected" = "模型拒绝了这次请求，请检查所选模型和请求参数。";
+
+"models.cloud.price.details" = "输入：%@ Credits / 1K Tokens\n输出：%@ Credits / 1K Tokens\n缓存输入（Cached）：%@";
+"models.cloud.price.unavailable" = "未提供";

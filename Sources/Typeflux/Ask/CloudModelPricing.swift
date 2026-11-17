@@ -15,14 +15,29 @@ struct CloudModelPricing: Codable, Equatable, Sendable {
         case cachedPer1k = "cachedPer1K"
     }
 
-    /// Catalog rates already include all pricing adjustments; only convert the display unit.
+    /// Catalog rates already include all pricing adjustments.
     var label: String? {
-        guard let inputPer1k, let outputPer1k,
-              let input = Double(inputPer1k), let output = Double(outputPer1k),
-              input.isFinite, output.isFinite, input >= 0, output >= 0,
-              (input * 1000).isFinite, (output * 1000).isFinite else { return nil }
-        return "↓ " + AccountUsageDisplayFormatter.creditAmount(input * 1000)
-            + " / ↑ " + AccountUsageDisplayFormatter.creditAmount(output * 1000) + " Credits / 1M Tokens"
+        guard let input = Self.rate(inputPer1k), let output = Self.rate(outputPer1k) else { return nil }
+        return "↓ \(input) / ↑ \(output) Credits / 1K Tokens"
+    }
+
+    var tooltip: String? {
+        guard let input = Self.rate(inputPer1k), let output = Self.rate(outputPer1k) else { return nil }
+        let cached = Self.rate(cachedPer1k).map { "\($0) Credits / 1K Tokens" }
+            ?? L("models.cloud.price.unavailable")
+        return String(format: L("models.cloud.price.details"), input, output, cached)
+    }
+
+    private static func rate(_ raw: String?) -> String? {
+        guard let raw, let value = Double(raw), value.isFinite, value >= 0 else { return nil }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 16
+        guard let formatted = formatter.string(from: NSNumber(value: value)) else { return nil }
+        // Preserve very small nonzero rates instead of suggesting that they are free.
+        return value > 0 && Double(formatted) == 0 ? raw : formatted
     }
 
 }

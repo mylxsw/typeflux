@@ -57,6 +57,7 @@ struct CloudProviderModelsView: View {
                         .foregroundStyle(TFColors.textPrimary)
                     if let label = model.pricing?.label {
                         TFTag(text: label)
+                            .help(model.pricing?.tooltip ?? label)
                     }
                 }
                 if let context = model.contextWindowTokens, let output = model.maxOutputTokens {

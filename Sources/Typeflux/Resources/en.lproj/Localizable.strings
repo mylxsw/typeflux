@@ -7563,3 +7563,6 @@
 "ask.local.providerUnavailable" = "The model service is temporarily unavailable. Please try again later.";
 "ask.local.contextTooLong" = "This conversation exceeds the model’s context limit. Please start a new conversation.";
 "ask.local.requestRejected" = "The model rejected this request. Check the selected model and request parameters.";
+
+"models.cloud.price.details" = "Input: %@ Credits / 1K Tokens\nOutput: %@ Credits / 1K Tokens\nCached input: %@";
+"models.cloud.price.unavailable" = "Not provided";

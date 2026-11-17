@@ -7562,3 +7562,6 @@
 "ask.local.providerUnavailable" = "モデルサービスを一時的に利用できません。後でもう一度お試しください。";
 "ask.local.contextTooLong" = "会話がモデルの処理できる長さを超えています。新しい会話を開始してください。";
 "ask.local.requestRejected" = "モデルがリクエストを拒否しました。選択したモデルとリクエストの設定を確認してください。";
+
+"models.cloud.price.details" = "入力：%@ Credits / 1K Tokens\n出力：%@ Credits / 1K Tokens\nキャッシュ入力（Cached）：%@";
+"models.cloud.price.unavailable" = "未提供";

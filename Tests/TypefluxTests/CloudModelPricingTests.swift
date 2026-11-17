@@ -2,18 +2,18 @@
 import XCTest
 
 final class CloudModelPricingTests: XCTestCase {
-    func testPerModelRetailPriceDecodesAndDisplaysPerMillionTokens() throws {
+    func testPerModelRetailPriceDecodesAndDisplaysPerThousandTokens() throws {
         let raw = #"{"multiplier":"1.0000","base_rate_version":"retail-v2","unit":"credit","input_per_1k":"0.0500","output_per_1k":"0.2000","cached_per_1k":"0.0010"}"#
         let price = try AskCoding.decoder().decode(CloudModelPricing.self, from: Data(raw.utf8))
         XCTAssertEqual(price.inputPer1k, "0.0500")
         XCTAssertEqual(price.outputPer1k, "0.2000")
-        XCTAssertEqual(price.label, "↓ 50.00 / ↑ 200.00 Credits / 1M Tokens")
+        XCTAssertEqual(price.label, "↓ 0.05 / ↑ 0.20 Credits / 1K Tokens")
     }
 
     func testRetailLabelDoesNotApplyTheCatalogMultiplierAgain() throws {
         let raw = #"{"id":"opus","name":"Claude Opus Latest","pricing":{"multiplier":"0.8000","unit":"credit","input_per_1k":"0.5600","output_per_1k":"2.8000","cached_per_1k":"0.0280"}}"#
         let model = try AskCoding.decoder().decode(AskCloudModel.self, from: Data(raw.utf8))
-        XCTAssertEqual(model.pricing?.label, "↓ 560.00 / ↑ 2,800.00 Credits / 1M Tokens")
+        XCTAssertEqual(model.pricing?.label, "↓ 0.56 / ↑ 2.80 Credits / 1K Tokens")
         XCTAssertEqual(model.registered.displayName, "Claude Opus Latest")
     }
 
@@ -46,13 +46,33 @@ final class CloudModelPricingTests: XCTestCase {
         XCTAssertNil(CloudModelPricing(multiplier: "1.0000").label)
     }
 
-    func testPerMillionConversionHappensBeforeRounding() {
+    func testSmallRatesKeepTheirPrecision() {
         let price = CloudModelPricing(multiplier: "0.8", inputPer1k: "0.000014", outputPer1k: "0.004096")
-        XCTAssertEqual(price.label, "↓ 0.01 / ↑ 4.10 Credits / 1M Tokens")
-        for invalid in ["", "-1", "nan", "inf", "1e309", "1e308"] {
+        XCTAssertEqual(price.label, "↓ 0.000014 / ↑ 0.004096 Credits / 1K Tokens")
+        for invalid in ["", "-1", "nan", "inf", "1e309"] {
             XCTAssertNil(CloudModelPricing(multiplier: "1", inputPer1k: invalid, outputPer1k: "1").label)
             XCTAssertNil(CloudModelPricing(multiplier: "1", inputPer1k: "1", outputPer1k: invalid).label)
         }
+    }
+
+    func testTooltipIncludesCachedRateWithoutApplyingMultiplier() throws {
+        let price = CloudModelPricing(multiplier: "0.8", inputPer1k: "0.56", outputPer1k: "2.8", cachedPer1k: "0.028")
+        let tooltip = try XCTUnwrap(price.tooltip)
+        XCTAssertTrue(tooltip.contains("0.56 Credits / 1K Tokens"))
+        XCTAssertTrue(tooltip.contains("2.80 Credits / 1K Tokens"))
+        XCTAssertTrue(tooltip.contains("0.028 Credits / 1K Tokens"))
+        XCTAssertEqual(tooltip.components(separatedBy: "\n").count, 3)
+    }
+
+    func testMissingAndInvalidCachePricesAreNotShownAsFree() throws {
+        for cached in [nil, "", "-1", "nan", "inf"] as [String?] {
+            let price = CloudModelPricing(multiplier: "1", inputPer1k: "1", outputPer1k: "2", cachedPer1k: cached)
+            let tooltip = try XCTUnwrap(price.tooltip)
+            XCTAssertTrue(tooltip.contains(L("models.cloud.price.unavailable")))
+        }
+        let free = CloudModelPricing(multiplier: "1", inputPer1k: "0", outputPer1k: "0", cachedPer1k: "0")
+        XCTAssertEqual(free.tooltip?.components(separatedBy: "0.00 Credits / 1K Tokens").count, 4)
+        XCTAssertNil(CloudModelPricing(multiplier: "1").tooltip)
     }
 
     @MainActor
