@@ -51,6 +51,8 @@ private actor DeviceTestTransport: AskDeviceTransporting {
     var waiter: CheckedContinuation<Void, Never>?
     var attempts: [(String, String, AskDeviceSnapshot)] = []
     var values: [String: [String: AskDeviceSnapshot]] = [:]
+    var listOffsets: [Int] = []
+    func resetListOffsets() { listOffsets = [] }
     func connect() {
         offline = false
     }
@@ -72,11 +74,12 @@ private actor DeviceTestTransport: AskDeviceTransporting {
     }
 
     func list(token: String, offset: Int) async throws -> [AskConversationSummary] {
+        listOffsets.append(offset)
         if offline { throw AskStreamError.requestFailed }
         return Array((values[token] ?? [:]).values.compactMap { value -> AskConversationSummary? in
             guard !value.deleted, let c = value.conversation else { return nil }
             return .init(id: c.id, title: c.title, updatedAt: c.updatedAt)
-        }.sorted { $0.updatedAt > $1.updatedAt }.dropFirst(offset).prefix(50))
+        }.sorted { $0.updatedAt == $1.updatedAt ? $0.id < $1.id : $0.updatedAt > $1.updatedAt }.dropFirst(offset).prefix(50))
     }
 
     func snapshot(id: String, token: String) async throws -> AskDeviceSnapshot? {
@@ -101,6 +104,50 @@ private actor DeviceTestTransport: AskDeviceTransporting {
 
 @Suite(.serialized, .exclusiveUIState)
 @MainActor struct AskDeviceAPITests {
+    @Test func historyStopsFetchingOnceTheRequestedPageIsKnown() async throws {
+        try await environment { api, _, transport, _, _, _ in
+            let local = try await api.send(conversationId: UUID().uuidString.lowercased(), request: request(), token: "user-a")
+            for index in 0..<150 {
+                let value = AskConversation(id: "remote-\(index)", title: "Remote", revision: 1,
+                                            updatedAt: local.updatedAt.addingTimeInterval(-Double(index + 1)), messages: [])
+                await transport.seed(.init(deviceId: "other", revision: 1, conversation: value), id: value.id, token: "user-a")
+            }
+            // Keep this device's pending upload out of the remote pagination fixture.
+            await transport.pause()
+            await transport.connect()
+            let first = try await api.list(token: "user-a", offset: 0)
+            #expect(first.map(\.id) == [local.id] + (0..<49).map { "remote-\($0)" })
+            #expect(await transport.listOffsets == [0])
+            await transport.resetListOffsets()
+            let second = try await api.list(token: "user-a", offset: 50)
+            #expect(second.map(\.id) == (49..<99).map { "remote-\($0)" })
+            #expect(await transport.listOffsets == [0, 50])
+            await transport.release()
+        }
+    }
+
+    @Test func historyReadsPastDuplicatesAndTiedPageBoundaries() async throws {
+        try await environment { api, _, transport, _, _, _ in
+            let local = try await api.send(conversationId: UUID().uuidString.lowercased(), request: request(), token: "user-a")
+            let date = local.updatedAt.addingTimeInterval(1)
+            for index in 0..<100 {
+                let value = AskConversation(id: "remote-\(index)", title: "Remote", revision: 1,
+                                            updatedAt: date, messages: [])
+                await transport.seed(.init(deviceId: "other", revision: 1, conversation: value), id: value.id, token: "user-a")
+            }
+            var remoteCopy = local
+            remoteCopy.updatedAt = date.addingTimeInterval(1)
+            await transport.seed(.init(deviceId: "other", revision: local.revision, conversation: remoteCopy), id: local.id, token: "user-a")
+            await transport.pause()
+            await transport.connect()
+            let first = try await api.list(token: "user-a", offset: 0)
+            #expect(first.map(\.id) == Array((0..<100).map { "remote-\($0)" }.sorted().prefix(50)))
+            #expect(Set(first.map(\.id)).count == 50)
+            #expect(await transport.listOffsets == [0, 50])
+            await transport.release()
+        }
+    }
+
     @Test func billingDisplaySurvivesOfflineAndUsesRotatedAccountToken() async throws {
         try await environment { api, _, transport, session, _, _ in
             let id = UUID().uuidString.lowercased()

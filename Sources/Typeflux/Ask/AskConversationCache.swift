@@ -56,6 +56,13 @@ actor AskConversationCache: AskCaching {
         CREATE TABLE IF NOT EXISTS ask_execution(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB NOT NULL,PRIMARY KEY(owner,id));
         CREATE TABLE IF NOT EXISTS ask_deleted(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB NOT NULL,PRIMARY KEY(owner,id));
         CREATE TABLE IF NOT EXISTS ask_cache(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB NOT NULL,PRIMARY KEY(owner,id));
+        CREATE TABLE IF NOT EXISTS ask_summaries(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB NOT NULL,PRIMARY KEY(owner,id));
+        CREATE TRIGGER IF NOT EXISTS ask_invalidate_summary AFTER UPDATE ON ask_cache
+        BEGIN DELETE FROM ask_summaries WHERE owner=OLD.owner AND id=OLD.id; END;
+        CREATE TRIGGER IF NOT EXISTS ask_delete_summary AFTER DELETE ON ask_cache
+        BEGIN DELETE FROM ask_summaries WHERE owner=OLD.owner AND id=OLD.id; END;
+        CREATE TRIGGER IF NOT EXISTS ask_insert_summary AFTER INSERT ON ask_cache
+        BEGIN DELETE FROM ask_summaries WHERE owner=NEW.owner AND id=NEW.id; END;
         CREATE TABLE IF NOT EXISTS ask_drafts(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB NOT NULL,PRIMARY KEY(owner,id));
         CREATE TABLE IF NOT EXISTS ask_tool_owners(owner TEXT NOT NULL,id TEXT NOT NULL,conversation_id TEXT NOT NULL,PRIMARY KEY(owner,id));
         CREATE INDEX IF NOT EXISTS ask_tool_conversation ON ask_tool_owners(owner,conversation_id,id);
@@ -85,7 +92,13 @@ actor AskConversationCache: AskCaching {
         }
         let merged = try load(id: conversation.id, owner: owner)?.reconciling(conversation) ?? conversation
         try Task.checkCancellation()
-        try write(table: "ask_cache", id: conversation.id, owner: owner, data: AskCoding.encoder().encode(merged))
+        try execute("BEGIN IMMEDIATE", strings: [])
+        do {
+            try write(table: "ask_cache", id: conversation.id, owner: owner, data: AskCoding.encoder().encode(merged))
+            try write(table: "ask_summaries", id: conversation.id, owner: owner,
+                      data: AskCoding.encoder().encode(CachedSummary(merged)))
+            try execute("COMMIT", strings: [])
+        } catch { try? execute("ROLLBACK", strings: []); throw error }
     }
     func load(id: String, owner: String) throws -> AskConversation? {
         try Task.checkCancellation()
@@ -96,20 +109,61 @@ actor AskConversationCache: AskCaching {
             .max { $0.revision < $1.revision }
     }
     func list(owner: String) throws -> [AskConversationSummary] {
-        let statement = try prepare("SELECT data FROM ask_cache WHERE owner=?", strings: [owner])
+        try Task.checkCancellation()
+        // Backfill older caches once, under the same transaction as the read. Normal
+        // opens read only small summaries, regardless of transcript or attachment size.
+        try execute("BEGIN DEFERRED", strings: [])
+        do {
+            let result = try listedSummaries(owner: owner)
+            try execute("COMMIT", strings: [])
+            return result
+        } catch { try? execute("ROLLBACK", strings: []); throw error }
+    }
+
+    private struct CachedSummary: Codable {
+        var summary: AskConversationSummary
+        var revision: Int64
+
+        init(_ conversation: AskConversation) {
+            summary = AskConversationSummary(conversation)
+            revision = conversation.revision
+        }
+    }
+
+    private func listedSummaries(owner: String) throws -> [AskConversationSummary] {
+        let statement = try prepare("""
+            SELECT c.id,COALESCE(s.data,c.data),s.id IS NOT NULL
+            FROM ask_cache c LEFT JOIN ask_summaries s ON s.owner=c.owner AND s.id=c.id
+            WHERE c.owner=?
+            """, strings: [owner])
         defer { sqlite3_finalize(statement) }
-        var snapshots: [String: AskConversation] = [:]
+        var snapshots: [String: CachedSummary] = [:]
+        var missing: [(String, CachedSummary)] = []
         let decoder = AskCoding.decoder()
         var status = sqlite3_step(statement)
         while status == SQLITE_ROW {
             try Task.checkCancellation()
-            if let data = blob(statement), let c = try? decoder.decode(AskConversation.self, from: data) {
-                if (snapshots[c.id]?.revision ?? -1) <= c.revision { snapshots[c.id] = c }
+            if let data = blob(statement, column: 1) {
+                let cached = sqlite3_column_int(statement, 2) != 0
+                let value = cached ? (try? decoder.decode(CachedSummary.self, from: data))
+                    : (try? decoder.decode(AskConversation.self, from: data)).map(CachedSummary.init)
+                if let value {
+                    if (snapshots[value.summary.id]?.revision ?? -1) <= value.revision {
+                        snapshots[value.summary.id] = value
+                    }
+                    if !cached, let id = sqlite3_column_text(statement, 0) {
+                        missing.append((String(cString: id), value))
+                    }
+                }
             }
             status = sqlite3_step(statement)
         }
         guard status == SQLITE_DONE else { throw storageFailure(.sqliteRead, code: .fileReadUnknown) }
-        return snapshots.values.map { AskConversationSummary($0) }.sorted { $0.updatedAt > $1.updatedAt }
+        for (id, value) in missing {
+            try Task.checkCancellation()
+            try write(table: "ask_summaries", id: id, owner: owner, data: AskCoding.encoder().encode(value))
+        }
+        return snapshots.values.map(\.summary).sorted { $0.updatedAt > $1.updatedAt }
     }
     func delete(id: String, owner: String) throws {
         try execute("BEGIN IMMEDIATE", strings: [])

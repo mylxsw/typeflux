@@ -222,12 +222,25 @@ actor AskDeviceAPI: AskAPI {
             if page.count < 50 { break }
         }
         var remote: [AskConversationSummary] = []
+        let needed = max(0, offset) + 50
         do {
-            while remote.count < max(0, offset) + 50 + local.count {
+            while true {
+                try Task.checkCancellation()
                 let page = try await transport.list(token: token, offset: remote.count)
                 remote += page
                 if page.count < 50 { break }
+                let merged = Self.mergedHistory(local: local, remote: remote,
+                                                deleted: accounts[owner]?.journal.deleted ?? [])
+                // Remote pages are newest first. Once the page boundary is older
+                // than the requested rows, no unseen row can change this result.
+                // The service breaks date ties by ascending ID, as does the merge.
+                if merged.count >= needed, let boundary = page.last {
+                    let lastNeeded = merged[needed - 1]
+                    if boundary.updatedAt < lastNeeded.updatedAt
+                        || (boundary.updatedAt == lastNeeded.updatedAt && boundary.id >= lastNeeded.id) { break }
+                }
             }
+        } catch is CancellationError { throw CancellationError()
         } catch {
             // Older servers still expose legacy history. Failure to list either
             // service cannot hide or interrupt device-owned conversations.
@@ -235,15 +248,21 @@ actor AskDeviceAPI: AskAPI {
             failures.insert(owner)
         }
         guard try await resolveAccount(token) == owner else { throw CancellationError() }
+        let sorted = Self.mergedHistory(local: local, remote: remote,
+                                        deleted: accounts[owner]?.journal.deleted ?? [])
+        return Array(sorted.dropFirst(max(0, offset)).prefix(50))
+    }
+
+    private static func mergedHistory(local: [AskConversationSummary], remote: [AskConversationSummary],
+                                      deleted: Set<String>) -> [AskConversationSummary] {
         // Concurrent uploads can move a row across offset-page boundaries.
         // Deduplicate those rows rather than trapping on a repeated identity.
         var byID = Dictionary(remote.map { ($0.id, $0) }, uniquingKeysWith: { $0.updatedAt >= $1.updatedAt ? $0 : $1 })
         for item in local {
             byID[item.id] = item
         }
-        let sorted = byID.values.filter { accounts[owner]?.journal.deleted.contains($0.id) != true }
+        return byID.values.filter { !deleted.contains($0.id) }
             .sorted { $0.updatedAt == $1.updatedAt ? $0.id < $1.id : $0.updatedAt > $1.updatedAt }
-        return Array(sorted.dropFirst(max(0, offset)).prefix(50))
     }
 
     func conversation(id: String, token: String) async throws -> AskConversation {
