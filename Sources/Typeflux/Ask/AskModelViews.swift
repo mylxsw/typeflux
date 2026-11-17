@@ -114,10 +114,7 @@ struct AskModelMenu: View {
 
     private var modelLabel: some View {
         HStack(spacing: compact ? 6 : 8) {
-            if let (provider, model) = library.registry.resolve(library.presentationReference(
-                for: reference,
-                scenario: scenario
-            )) {
+            if let (provider, model) = library.presentationModel(for: reference, scenario: scenario) {
                 ModelIcon(model: model, provider: provider, size: 16)
             }
             // A long model name must not squeeze the context chips out of the

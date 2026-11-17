@@ -17,10 +17,30 @@ extension RegisteredProvider {
 }
 
 extension AskModelLibrary {
+    /// Use the scenario's catalog for both picker contents and selected-model presentation.
+    func presentationProvider(_ provider: RegisteredProvider, scenario: String) -> RegisteredProvider {
+        var result = provider
+        if provider.isCloud, scenario == "rewrite", let rewriteCloud {
+            result.models = rewriteCloud.map(\.registered)
+        }
+        return result
+    }
+
+    func presentationModel(for reference: String, scenario: String) -> (RegisteredProvider, RegisteredModel)? {
+        let displayed = presentationReference(for: reference, scenario: scenario)
+        for provider in providers {
+            let source = presentationProvider(provider, scenario: scenario)
+            if let model = source.models.first(where: { $0.reference == displayed }) {
+                return (source, model)
+            }
+        }
+        return nil
+    }
+
     /// Presentation only: saved defaults and conversation routing keep their original references.
     func presentationReference(for reference: String, scenario: String = "ask") -> String {
-        guard scenario == "ask", reference == "cloud:default",
-              let model = providers.first(where: \.isCloud)?.explicitCloudDefault else { return reference }
+        guard reference == "cloud:default",
+              let model = providers.first(where: \.isCloud).map({ presentationProvider($0, scenario: scenario) })?.explicitCloudDefault else { return reference }
         return model.reference
     }
 }

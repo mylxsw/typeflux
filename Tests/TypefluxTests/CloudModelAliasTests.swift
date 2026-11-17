@@ -110,6 +110,26 @@ final class CloudModelAliasTests: XCTestCase {
             .first(where: \.isCloud)?.models.map(\.id), ["default", "text"])
     }
 
+    func testRewriteAliasUsesItsOwnCatalogForChoicesSelectionAndIcon() throws {
+        let library = try library()
+        let flash = AskCloudModel(id: "rewrite-flash", name: "DeepSeek Flash", vision: false, scenarios: ["rewrite"], modelVersion: 1)
+        var alias = flash
+        alias.id = "default"
+        try library.replaceRewriteModels([alias, flash, .init(id: "rewrite-pro", name: "DeepSeek Pro", scenarios: ["rewrite"])])
+        let restored = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let choices = try XCTUnwrap(restored.selectableProviders(loggedIn: true, hasImage: false, scenario: "rewrite")
+            .first(where: \.isCloud))
+        XCTAssertEqual(choices.models.map(\.id), ["rewrite-flash", "rewrite-pro"])
+        XCTAssertEqual(restored.presentationReference(for: "cloud:default", scenario: "rewrite"), flash.reference)
+        let (provider, model) = try XCTUnwrap(restored.presentationModel(for: "cloud:default", scenario: "rewrite"))
+        XCTAssertEqual(model.reference, flash.reference)
+        XCTAssertEqual(ModelIcon(model: model, provider: provider).descriptor.resourceKey, "deepseek")
+        XCTAssertNil(restored.selectionReason(model, provider: provider, hasImage: false, loggedIn: true, scenario: "rewrite"))
+        XCTAssertEqual(restored.presentationReference(for: "cloud:default"), "cloud:deployment-pro")
+        XCTAssertEqual(restored.rewriteCloud?.first?.id, "default")
+        XCTAssertEqual(restored.defaultReference, "cloud:default")
+    }
+
     func testSameNameWithDifferentMetadataDoesNotHideDefaultRoute() throws {
         let original = CloudModelAliasFixture.models[1]
         var variants = [AskCloudModel]()
