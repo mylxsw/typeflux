@@ -33,6 +33,7 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
     var openPopup: ((WKWebViewConfiguration) -> WKWebView?)?
     private(set) var localFileURL: URL?
     private(set) var previewHost: AskPreviewHost?
+    private var localPreviewVersion: String?
     private var loadTicket = UUID()
     private let browserConfiguration: WKWebViewConfiguration
     private var observations: [NSKeyValueObservation] = []
@@ -106,6 +107,8 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
         let view = try await host.open(.artifact(bundle.manifest.ref), enabled: true,
                                        validateAccess: { _ in try AskSidePanelFileAccess.check(target, roots: roots) },
                                        load: { _ in bundle })
+        do { try await host.validateLoadedPage() }
+        catch { host.close(); throw error }
         guard loadTicket == ticket, !Task.isCancelled else {
             host.close()
             throw CancellationError()
@@ -119,12 +122,24 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
         notice = nil
         previewHost = host
         localFileURL = url.standardizedFileURL
+        localPreviewVersion = bundle.manifest.ref.version
         host.report = { [weak self] in self?.notice = $0 }
         host.navigationCommitted = { [weak self] in self?.generation += 1 }
         generation += 1
         view.frame = webView.frame
         webView = view
         observeWebView()
+    }
+
+    /// A file edit does not mutate the isolated snapshot already on screen.
+    func validateLocalPreview() async throws {
+        guard let file = localFileURL, let host = previewHost else { return }
+        let target = try AskSidePanelFileAccess.resolve(file.path, workspaceRoot: file.deletingLastPathComponent())
+        let current = try AskFileHTMLPreview.bundle(target, roots: [target.root])
+        guard current.manifest.ref.version == localPreviewVersion else {
+            throw AskLocalError.message("Local preview is stale because its files changed. Call open_file again before inspecting or reporting it as ready.")
+        }
+        try await host.validateLoadedPage()
     }
 
     func reload() {

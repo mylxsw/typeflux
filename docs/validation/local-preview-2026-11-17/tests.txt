@@ -1,0 +1,150 @@
+Test Suite 'Selected tests' started at 2026-11-17 16:39:20.516.
+Test Suite 'TypefluxPackageTests.xctest' started at 2026-11-17 16:39:20.518.
+Test Suite 'AskBrowserWorkspaceTests' started at 2026-11-17 16:39:20.518.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testANewHandoffReplacesAnOlderOne]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testANewHandoffReplacesAnOlderOne]' passed (0.196 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testClosingAHandoffTabCancelsIt]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testClosingAHandoffTabCancelsIt]' passed (0.044 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testClosingTheSelectedTabSelectsItsNeighbour]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testClosingTheSelectedTabSelectsItsNeighbour]' passed (0.076 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testLocalPreviewRespectsFolderAccessWhenHostCommandsAreDisabled]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testLocalPreviewRespectsFolderAccessWhenHostCommandsAreDisabled]' passed (0.214 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testLocalToolsOfferTheToolOnlyWithABrowser]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testLocalToolsOfferTheToolOnlyWithABrowser]' passed (0.017 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testLocalToolsRouteRiskApprovalAndExecution]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testLocalToolsRouteRiskApprovalAndExecution]' passed (0.002 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testPersistentProfileIsSeparateFromTheDefaultStore]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testPersistentProfileIsSeparateFromTheDefaultStore]' passed (0.000 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testPopupsOpenAsTabsWithTheOpenerOwner]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testPopupsOpenAsTabsWithTheOpenerOwner]' passed (0.050 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testPrivateTabsUseANonPersistentStoreAndSafariUserAgent]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testPrivateTabsUseANonPersistentStoreAndSafariUserAgent]' passed (0.047 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testSitesMergePermissionsAndStoredData]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testSitesMergePermissionsAndStoredData]' passed (9.995 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testTabReportsFailuresButNotCancellationsAndRecoversFromCrashes]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testTabReportsFailuresButNotCancellationsAndRecoversFromCrashes]' passed (0.030 seconds).
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testTabsAreNumberedSelectedAndCapped]' started.
+Test Case '-[TypefluxTests.AskBrowserWorkspaceTests testTabsAreNumberedSelectedAndCapped]' passed (0.201 seconds).
+Test Suite 'AskBrowserWorkspaceTests' passed at 2026-11-17 16:39:31.394.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 10.874 (10.875) seconds
+Test Suite 'AskEmbeddedBrowserToolTests' started at 2026-11-17 16:39:31.394.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testBindingTracksTabGenerationAndDescribesTheCall]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testBindingTracksTabGenerationAndDescribesTheCall]' passed (0.282 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testCancellingTheRunEndsTheHandoff]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testCancellingTheRunEndsTheHandoff]' passed (0.107 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testClickRequiresTheLatestObservationAndConsumesIt]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testClickRequiresTheLatestObservationAndConsumesIt]' passed (0.240 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testDefinitionListsEveryAction]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testDefinitionListsEveryAction]' passed (0.002 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testFillWorksButNeverTypesIntoPasswords]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testFillWorksButNeverTypesIntoPasswords]' passed (0.255 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testGenericMutationsRequireFreshConsentEvenWithActPolicy]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testGenericMutationsRequireFreshConsentEvenWithActPolicy]' passed (0.087 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testHandoffWaitsForTheUser]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testHandoffWaitsForTheUser]' passed (0.099 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testNavigationInvalidatesTheObservation]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testNavigationInvalidatesTheObservation]' passed (0.240 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testNoTabErrorsAndEmptyList]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testNoTabErrorsAndEmptyList]' passed (0.006 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testObservationStateIsInvisibleToThePageWorld]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testObservationStateIsInvisibleToThePageWorld]' passed (0.098 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testOffPermissionRefusesEveryPageAction]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testOffPermissionRefusesEveryPageAction]' passed (0.089 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testOpenLocalStandaloneHTMLInBuiltInBrowser]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testOpenLocalStandaloneHTMLInBuiltInBrowser]' passed (0.431 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testOpenWithoutATabOpensOneForTheAI]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testOpenWithoutATabOpensOneForTheAI]' passed (0.293 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testOriginChangeDuringWaitDoesNotReturnRedirectedPageContent]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testOriginChangeDuringWaitDoesNotReturnRedirectedPageContent]' passed (0.243 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testPauseBelongsToTheActingConversation]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testPauseBelongsToTheActingConversation]' passed (0.078 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testPausedOriginOrPolicyChangeCannotBorrowOldConsent]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testPausedOriginOrPolicyChangeCannotBorrowOldConsent]' passed (0.640 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testPausedWorkspaceHoldsActionsUntilResumed]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testPausedWorkspaceHoldsActionsUntilResumed]' passed (0.410 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testPrivateTabsAreUnavailableToTheAI]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testPrivateTabsAreUnavailableToTheAI]' passed (0.200 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testReadMarksContentUntrustedAndNotesPasswordFields]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testReadMarksContentUntrustedAndNotesPasswordFields]' passed (0.082 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testRevocationAfterPageEffectKeepsReceiptWithoutReturningPageData]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testRevocationAfterPageEffectKeepsReceiptWithoutReturningPageData]' passed (0.227 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testRiskFollowsSitePermissionAndSensitiveControls]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testRiskFollowsSitePermissionAndSensitiveControls]' passed (0.098 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testScreenshotScrollWaitAndBack]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testScreenshotScrollWaitAndBack]' passed (0.091 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testSelectorsCannotBypassObservedRefs]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testSelectorsCannotBypassObservedRefs]' passed (0.080 seconds).
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testTabsNewSelectAndCloseOwnership]' started.
+Test Case '-[TypefluxTests.AskEmbeddedBrowserToolTests testTabsNewSelectAndCloseOwnership]' passed (0.109 seconds).
+Test Suite 'AskEmbeddedBrowserToolTests' passed at 2026-11-17 16:39:35.885.
+	 Executed 24 tests, with 0 failures (0 unexpected) in 4.487 (4.491) seconds
+Test Suite 'AskLocalWebsitePreviewTests' started at 2026-11-17 16:39:35.885.
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testAgentAndUserRenderTheSameMultiFileWebsite]' started.
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testAgentAndUserRenderTheSameMultiFileWebsite]' passed (0.307 seconds).
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testClosingDuringPreviewPreparationDoesNotResurrectTheTab]' started.
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testClosingDuringPreviewPreparationDoesNotResurrectTheTab]' passed (0.033 seconds).
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testInvalidImageAndScriptFailureCannotReplaceWorkingPreview]' started.
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testInvalidImageAndScriptFailureCannotReplaceWorkingPreview]' passed (0.250 seconds).
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testMissingResourceIncludesItsPathForBothEntrances]' started.
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testMissingResourceIncludesItsPathForBothEntrances]' passed (0.210 seconds).
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testSiblingImageFailureIsHiddenAndRepairMustBeReopened]' started.
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testSiblingImageFailureIsHiddenAndRepairMustBeReopened]' passed (0.301 seconds).
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testSnapshotPreservesPathsExcludesSecretsAndLinksAndTracksResourceChanges]' started.
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testSnapshotPreservesPathsExcludesSecretsAndLinksAndTracksResourceChanges]' passed (0.007 seconds).
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testTooManyAndOversizedAssetsFailExplicitly]' started.
+Test Case '-[TypefluxTests.AskLocalWebsitePreviewTests testTooManyAndOversizedAssetsFailExplicitly]' passed (0.020 seconds).
+Test Suite 'AskLocalWebsitePreviewTests' passed at 2026-11-17 16:39:37.013.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 1.128 (1.129) seconds
+Test Suite 'AskPreviewHostTests' started at 2026-11-17 16:39:37.013.
+Test Case '-[TypefluxTests.AskPreviewHostTests testCloseAndRevocationDuringRuleCompilationDoNotPublishAView]' started.
+Test Case '-[TypefluxTests.AskPreviewHostTests testCloseAndRevocationDuringRuleCompilationDoNotPublishAView]' passed (0.004 seconds).
+Test Case '-[TypefluxTests.AskPreviewHostTests testFileSelectionDoesNotReadFilesAndProcessFailureClosesPage]' started.
+Test Case '-[TypefluxTests.AskPreviewHostTests testFileSelectionDoesNotReadFilesAndProcessFailureClosesPage]' passed (0.213 seconds).
+Test Case '-[TypefluxTests.AskPreviewHostTests testPolicyRejectsCrossArtifactTraversalAndFileURLs]' started.
+Test Case '-[TypefluxTests.AskPreviewHostTests testPolicyRejectsCrossArtifactTraversalAndFileURLs]' passed (0.001 seconds).
+Test Case '-[TypefluxTests.AskPreviewHostTests testRealWebKitBlocksOutboundRequestsAndCrossArtifactResources]' started.
+Test Case '-[TypefluxTests.AskPreviewHostTests testRealWebKitBlocksOutboundRequestsAndCrossArtifactResources]' passed (1.299 seconds).
+Test Case '-[TypefluxTests.AskPreviewHostTests testRealWebKitCannotUseWebRTCOrNativeDialogs]' started.
+Test Case '-[TypefluxTests.AskPreviewHostTests testRealWebKitCannotUseWebRTCOrNativeDialogs]' passed (1.159 swarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+error: toolchain is invalid: could not find CLI tool `llvm-profdata` at any of these directories: [<AbsolutePath:"/tmp">]
+econds).
+Test Case '-[TypefluxTests.AskPreviewHostTests testRealWebKitReportsScriptErrorsMissingResourcesAndRevocation]' started.
+Test Case '-[TypefluxTests.AskPreviewHostTests testRealWebKitReportsScriptErrorsMissingResourcesAndRevocation]' passed (0.285 seconds).
+Test Case '-[TypefluxTests.AskPreviewHostTests testRealWebKitRunsLocalScriptWithoutBridgeOrFileAuthority]' started.
+Test Case '-[TypefluxTests.AskPreviewHostTests testRealWebKitRunsLocalScriptWithoutBridgeOrFileAuthority]' passed (0.244 seconds).
+Test Case '-[TypefluxTests.AskPreviewHostTests testRolloutAndDynamicSourceFailClosed]' started.
+Test Case '-[TypefluxTests.AskPreviewHostTests testRolloutAndDynamicSourceFailClosed]' passed (0.001 seconds).
+Test Suite 'AskPreviewHostTests' passed at 2026-11-17 16:39:40.221.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 3.206 (3.207) seconds
+Test Suite 'AskSidePanelFilePreviewTests' started at 2026-11-17 16:39:40.221.
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testCopiesTheFileOrItsPath]' started.
+sandbox_extension_consume failed: 1 (Operation not permitted)
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testCopiesTheFileOrItsPath]' passed (0.019 seconds).
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testCSVHandlesQuotesLineBreaksAndRowLimit]' started.
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testCSVHandlesQuotesLineBreaksAndRowLimit]' passed (0.001 seconds).
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testExportCopiesAndReplaces]' started.
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testExportCopiesAndReplaces]' passed (0.004 seconds).
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testExternalActionsGoThroughTheSystem]' started.
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testExternalActionsGoThroughTheSystem]' passed (0.001 seconds).
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testHTMLPreviewClosesWhenTheFileIsNoLongerAllowed]' started.
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testHTMLPreviewClosesWhenTheFileIsNoLongerAllowed]' passed (0.054 seconds).
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testHTMLPreviewServesOnlyTheFileWithNetworkingBlocked]' started.
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testHTMLPreviewServesOnlyTheFileWithNetworkingBlocked]' passed (0.003 seconds).
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testKindsFollowTheExtensionThenTheBytes]' started.
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testKindsFollowTheExtensionThenTheBytes]' passed (0.001 seconds).
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testLargeTextIsClippedAndDeniedFilesFail]' started.
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testLargeTextIsClippedAndDeniedFilesFail]' passed (0.004 seconds).
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testLoadsEachSupportedFormat]' started.
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testLoadsEachSupportedFormat]' passed (0.009 seconds).
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testMenuItemsRenderForHTMLAndOtherFiles]' started.
+Test Case '-[TypefluxTests.AskSidePanelFilePreviewTests testMenuItemsRenderForHTMLAndOtherFiles]' passed (0.053 seconds).
+Test Suite 'AskSidePanelFilePreviewTests' passed at 2026-11-17 16:39:40.371.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.149 (0.150) seconds
+Test Suite 'TypefluxPackageTests.xctest' passed at 2026-11-17 16:39:40.371.
+	 Executed 61 tests, with 0 failures (0 unexpected) in 19.843 (19.853) seconds
+Test Suite 'Selected tests' passed at 2026-11-17 16:39:40.371.
+	 Executed 61 tests, with 0 failures (0 unexpected) in 19.843 (19.855) seconds
+Test execution (serial): 24.36s
+Fix and retry only the failed method(s) or smallest containing suite; no automatic retry.
+Total wall time: 302.86s
+make: *** [coverage] Error 1

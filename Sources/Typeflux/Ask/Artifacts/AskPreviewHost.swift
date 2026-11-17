@@ -239,6 +239,35 @@ struct AskPreviewPolicy {
         return (diagnostics, console)
     }
 
+    /// Validate the actual rendered page before publishing a local preview.
+    func validateLoadedPage(timeout: Duration = .seconds(10)) async throws {
+        let deadline = ContinuousClock.now + timeout
+        guard let view = webView else { throw AskArtifactError.unavailable }
+        while true {
+            try Task.checkCancellation()
+            guard webView === view else { throw CancellationError() }
+            if !view.isLoading,
+               (try? await view.evaluateJavaScript("document.readyState")) as? String == "complete" {
+                break
+            }
+            guard ContinuousClock.now < deadline else {
+                throw AskLocalError.message("Local preview timed out. Fix the page and reopen it with open_file.")
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let result = try await collectDiagnostics()
+        let broken = try await view.evaluateJavaScript("""
+        Array.from(document.images).filter(img => !img.complete || img.naturalWidth === 0)
+          .map(img => String(img.currentSrc || img.src).slice(0,500)).slice(0,8)
+        """) as? [String] ?? []
+        let errors = result.errors + broken.map { "Image not loaded: " + $0 }
+        guard errors.isEmpty else {
+            throw AskLocalError.message("Local preview validation failed:\n" + errors.joined(separator: "\n")
+                + "\nKeep referenced assets inside the HTML directory, fix loading errors, then call open_file again. "
+                + "Do not report this preview as ready.")
+        }
+    }
+
     func check() {
         do { try validate?() } catch {
             record(error.localizedDescription)

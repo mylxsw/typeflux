@@ -362,11 +362,14 @@ struct AskFileHTMLView: NSViewRepresentable {
                 let view = try await host.open(.artifact(bundle.manifest.ref), enabled: true,
                                                validateAccess: { _ in try validate() },
                                                load: { _ in bundle })
+                try await host.validateLoadedPage()
                 view.frame = container.bounds
                 view.autoresizingMask = [.width, .height]
                 container.addSubview(view)
             } catch is CancellationError {
+                host.close()
             } catch {
+                host.close()
                 self.error = error.localizedDescription
             }
         }

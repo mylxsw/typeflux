@@ -69,7 +69,7 @@ final class AskEmbeddedBrowserTool {
         Use Typeflux's built-in browser, shown beside this conversation, to open and visually check web pages, \
         especially pages you just built. Prefer it over a shell open command or the user's Safari/Chrome unless \
         the user specifically asks for an external browser. One action per call. tabs lists tabs; new_tab opens one (optionally at url); \
-        open_file opens a local HTML website using its absolute path, reusing that file's tab on later calls. Local CSS, scripts, images and fonts under its directory use the same isolated loader as user file previews; external networking is blocked. Inspect resource diagnostics before declaring success. \
+        open_file opens a local HTML website using its absolute path, reusing that file's tab on later calls. Local CSS, scripts, images and fonts under its directory use the same isolated loader as user file previews; external networking is blocked. Loading errors fail open_file; repair the files and reopen before declaring success. File edits invalidate read, snapshot and screenshot until open_file is called again. \
         Sibling files are not available; if host commands are disabled, the file must be in a folder granted to Chat. \
         open navigates a tab to an http(s) url; read returns the page URL, title and visible text; snapshot lists \
         interactive elements with refs and returns an observation_id; screenshot returns an image of the page. \
@@ -225,6 +225,9 @@ final class AskEmbeddedBrowserTool {
 
     /// An action on the page itself, after the site permission and pause checks.
     private func page(_ action: String, args: [String: Any], tab: AskBrowserTab) async throws -> AskLocalToolOutput {
+        if ["read", "snapshot", "screenshot"].contains(action) {
+            try await tab.validateLocalPreview()
+        }
         switch action {
         case "open":
             let url = try Self.validatedURL(args["url"])
@@ -291,24 +294,23 @@ final class AskEmbeddedBrowserTool {
         let previous = workspace.tabs.first {
             $0.owner == .agent(conversationId: conversationId) && $0.localFileURL == url
         }
-        let tab = try previous ?? workspace.newTab(owner: .agent(conversationId: conversationId))
+        let tab = try previous ?? workspace.newTab(owner: .agent(conversationId: conversationId), select: false)
         observations[tab.id] = nil
-        workspace.select(tab)
-        workspace.requestPresentation()
         workspace.beginActivity(L("ask.web.action.open"), conversationId: conversationId, tab: tab)
-        do { try await tab.loadLocalHTML(url) }
-        catch {
+        do {
+            try await tab.loadLocalHTML(url)
+            try authorize()
+            try Task.checkCancellation()
+            guard !tab.isPrivate, tab.localFileURL == url, !tab.isLoading else {
+                throw AskLocalError.message(tab.notice ?? "Local HTML preview did not finish loading.")
+            }
+            try await tab.validateLocalPreview()
+        } catch {
             if previous == nil { workspace.close(tab) }
             throw error
         }
-        try await tab.waitForLoad(timeout: loadTimeout)
-        try authorize()
-        try Task.checkCancellation()
-        guard !tab.isPrivate, tab.localFileURL == url, !tab.isLoading else {
-            if previous == nil { workspace.close(tab) }
-            throw AskLocalError.message(tab.notice ?? "Local HTML preview did not finish loading.")
-        }
-        _ = try await tab.previewHost?.collectDiagnostics()
+        workspace.select(tab)
+        workspace.requestPresentation()
         return .init(content: "Opened local HTML in tab \(tab.number).\n" + pageSummary(tab))
     }
 

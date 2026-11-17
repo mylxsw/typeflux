@@ -1,0 +1,36 @@
+{
+  "scope": "Added instrumented production lines in this change; llvm-cov show line counts",
+  "covered": 53,
+  "total": 58,
+  "percent": 91.4,
+  "files": {
+    "Sources/Typeflux/Ask/Artifacts/AskPreviewHost.swift": {
+      "covered": 26,
+      "instrumented_added_lines": 27,
+      "uncovered_lines": [
+        254
+      ]
+    },
+    "Sources/Typeflux/Ask/Browser/AskBrowserTab.swift": {
+      "covered": 12,
+      "instrumented_added_lines": 12,
+      "uncovered_lines": []
+    },
+    "Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift": {
+      "covered": 15,
+      "instrumented_added_lines": 16,
+      "uncovered_lines": [
+        305
+      ]
+    },
+    "Sources/Typeflux/Ask/SidePanel/AskFileTabView.swift": {
+      "covered": 0,
+      "instrumented_added_lines": 3,
+      "uncovered_lines": [
+        365,
+        370,
+        372
+      ]
+    }
+  }
+}

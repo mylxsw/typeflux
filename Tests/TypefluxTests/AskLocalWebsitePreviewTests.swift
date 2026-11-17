@@ -150,9 +150,74 @@ import XCTest
         XCTAssertTrue(diagnostics.errors.contains { $0.contains("assets/missing.js") }, "\(diagnostics.errors)")
         let workspace = AskBrowserWorkspace(dataStore: .nonPersistent())
         let tool = AskEmbeddedBrowserTool(workspace: workspace)
-        let output = try await tool.execute(["action": "open_file", "path": root.appendingPathComponent("site/home.html").path],
-                                            conversationId: "test", authorize: {})
-        defer { workspace.tabs.forEach { workspace.close($0) } }
-        XCTAssertTrue(output.content.contains("assets/missing.js"), output.content)
+        let presentation = workspace.presentationRequest
+        do {
+            _ = try await tool.execute(["action": "open_file", "path": root.appendingPathComponent("site/home.html").path],
+                                      conversationId: "test", authorize: {})
+            XCTFail("Missing resources must fail the tool instead of returning an opened receipt")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("assets/missing.js"), error.localizedDescription)
+        }
+        XCTAssertTrue(workspace.tabs.isEmpty)
+        XCTAssertEqual(workspace.presentationRequest, presentation)
     }
+    func testSiblingImageFailureIsHiddenAndRepairMustBeReopened() async throws {
+        try write("work/preview.html", "<img src='../outputs/cat.svg'>")
+        let svg = "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><rect width='12' height='12'/></svg>"
+        try write("outputs/cat.svg", svg)
+        try write("work/cat.svg", svg)
+        let workspace = AskBrowserWorkspace(dataStore: .nonPersistent())
+        defer { workspace.tabs.forEach { workspace.close($0) } }
+        let tool = AskEmbeddedBrowserTool(workspace: workspace)
+        let args: [String: Any] = ["action": "open_file", "path": root.appendingPathComponent("work/preview.html").path]
+        do {
+            _ = try await tool.execute(args, conversationId: "test")
+            XCTFail("Sibling directories are outside the preview root")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("outputs/cat.svg"))
+        }
+        XCTAssertTrue(workspace.tabs.isEmpty)
+        XCTAssertEqual(workspace.presentationRequest, 0)
+        try write("work/preview.html", "<img src='./cat.svg'>")
+        let opened = try await tool.execute(args, conversationId: "test")
+        XCTAssertFalse(opened.isError)
+        let tab = try XCTUnwrap(workspace.selectedTab)
+        let width = try await tab.webView.evaluateJavaScript("document.images[0].naturalWidth") as? Int
+        XCTAssertEqual(width, 12)
+        try write("work/cat.svg", svg.replacingOccurrences(of: "12", with: "24"))
+        for action in ["read", "snapshot", "screenshot"] {
+            do {
+                _ = try await tool.execute(["action": action], conversationId: "test")
+                XCTFail("Changed assets require reopening before inspection")
+            } catch {
+                XCTAssertTrue(error.localizedDescription.contains("stale"), error.localizedDescription)
+            }
+        }
+        _ = try await tool.execute(args, conversationId: "test")
+        XCTAssertEqual(workspace.selectedTab?.id, tab.id)
+        let newWidth = try await tab.webView.evaluateJavaScript("document.images[0].naturalWidth") as? Int
+        XCTAssertEqual(newWidth, 24)
+        _ = try await tool.execute(["action": "read"], conversationId: "test")
+    }
+
+    func testInvalidImageAndScriptFailureCannotReplaceWorkingPreview() async throws {
+        try write("site/home.html", "<h1>Working</h1>")
+        let tab = AskBrowserTab(number: 1, configuration: WKWebViewConfiguration(), isPrivate: false, owner: .user)
+        defer { tab.close() }
+        let file = root.appendingPathComponent("site/home.html")
+        try await tab.loadLocalHTML(file)
+        let workingView = tab.webView
+        for html in ["<img src='broken.svg'>", "<script>throw new Error('fixture failure')</script>"] {
+            try write("site/home.html", html)
+            try write("site/broken.svg", "not an SVG")
+            do {
+                try await tab.loadLocalHTML(file)
+                XCTFail("Broken pages must not replace the working page")
+            } catch {
+                XCTAssertTrue(error.localizedDescription.contains("validation failed"), error.localizedDescription)
+            }
+            XCTAssertTrue(tab.webView === workingView)
+        }
+    }
+
 }
