@@ -3,19 +3,34 @@ import XCTest
 
 final class AskGeneratedImageTests: XCTestCase {
     func testImageCardKeepsGenerationSeparateFromFailureAndDownload() {
-        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .running, active: true), .generating)
-        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .running, active: false), .interrupted)
-        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .paused, active: true), .interrupted)
-        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .attention, active: true), .approval)
+        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .running, active: true, started: true), .generating)
+        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .running, active: false, started: true), .interrupted)
+        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .paused, active: true, started: true), .interrupted)
+        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .attention, active: true, started: false), .hidden)
         let image = AskGeneratedImage(assetId: "job", url: "https://cdn.example/result.png")
         var result = AskMessage(id: "result", role: "tool", text: "", toolCallId: "call", createdAt: Date(), generatedImage: image)
-        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .running, active: true), .ready(image))
-        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .done, active: false), .ready(image))
+        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .running, active: true, started: true), .ready(image))
+        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .done, active: false, started: true), .ready(image))
         result.isError = true
-        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .running, active: true), .failed)
+        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .running, active: true, started: true), .failed)
         result.isError = false
         result.generatedImage?.url = "javascript:bad"
-        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .done, active: false), .failed)
+        XCTAssertEqual(AskImageCardState.resolve(result: result, status: .done, active: false, started: true), .failed)
+    }
+
+    func testImageCardStaysHiddenBeforeDispatchAndAfterRefusal() {
+        for status in [AskActivity.Status.running, .attention, .paused, .done, .failed] {
+            for active in [true, false] {
+                XCTAssertEqual(AskImageCardState.resolve(result: nil, status: status, active: active, started: false), .hidden)
+            }
+        }
+        for status in ["denied", "invalid", "cancelled"] {
+            let result = AskMessage(id: "refusal", role: "tool", text: "Not executed", toolCallId: "call",
+                isError: true, createdAt: Date(), harness: .init(version: 1, outcome: .init(status: status)))
+            XCTAssertEqual(AskImageCardState.resolve(result: result, status: .done, active: false, started: false), .hidden)
+        }
+        // Another tool's approval must not hide an image that already started.
+        XCTAssertEqual(AskImageCardState.resolve(result: nil, status: .attention, active: true, started: true), .generating)
     }
 
     func testGeneratedImageDecodesAndRejectsUnsafeLinks() throws {

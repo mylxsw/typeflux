@@ -480,6 +480,7 @@ final class AskConversationModel: ObservableObject {
     var capturedContentFeedbackTasks: [Bool: Task<Void, Never>] = [:]
     var capturedContentFeedbackDuration: Duration = .seconds(5)
     var capturedContentAccount: String? { session()?.owner }
+    @Published var imageExecutionStarts: [String: AskImageExecutionStart] = [:]
     @Published var liveToolExecutions: [String: AskExecutionIdentity] = [:] { didSet { cachedRecoveryPresentation = nil } }
     @Published var recoveryEntries: [String: [AskExecutionEntry]] = [:] { didSet { cachedRecoveryPresentation = nil } }
     @Published var inspectingRecovery = false
@@ -800,6 +801,7 @@ final class AskConversationModel: ObservableObject {
         recoveryReadRetries.values.forEach { $0.cancel() }
         recoveryReadRetries = [:]; recoveryReadTokens = [:]
         recoveryEntries = [:]
+        imageExecutionStarts = [:]
         automaticRecoveryAttempts = []
         capturedContentFeedbackTasks.values.forEach { $0.cancel() }
         capturedContentFeedbackTasks = [:]
@@ -2226,6 +2228,9 @@ final class AskConversationModel: ObservableObject {
                                   self.snapshots[identity.conversationId]?.run?.pending.first == call,
                                   self.approvalStore.validateDispatch(grantID, for: request) else {
                                 throw AskLocalError.message(L("ask.approval.changed"))
+                            }
+                            if AskImageCardState.isImageTool(call.function.name), self.imageExecutionStarts[identity.key] == nil {
+                                self.imageExecutionStarts[identity.key] = .init(identity: identity, date: Date())
                             }
                         }
                         if cloudDefinition != nil {

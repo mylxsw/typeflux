@@ -31,9 +31,16 @@ extension AskConversationModel {
                                    storageUnavailable: selectedRecoveryEntries.contains(where: \.readUnavailable))
     }
 
+    var selectedImageStartTimes: [String: Date] {
+        imageExecutionStarts.values.reduce(into: [:]) { result, start in
+            guard start.identity.conversationId == selectedId else { return }
+            result[start.identity.callId] = start.date
+        }
+    }
+
     var isGeneratingImage: Bool {
         runPhase?.isWorking == true && selected?.run?.pending.contains(where: {
-            AskImageCardState.isImageTool($0.function.name)
+            AskImageCardState.isImageTool($0.function.name) && selectedImageStartTimes[$0.id] != nil
         }) == true
     }
 

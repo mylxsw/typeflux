@@ -18,6 +18,7 @@ struct AskActivityBlock: View, Equatable {
     var runningToolIDs: Set<String> = []
     var queuedToolIDs: Set<String> = []
     var imageRunActive = true
+    var imageStartedAt: [String: Date] = [:]
     /// The run's step count from `AskRunPhase`, for the block that carries the run.
     var runStep: Int?
     var outputs = AskRunOutputs()
@@ -38,7 +39,7 @@ struct AskActivityBlock: View, Equatable {
             && lhs.status == rhs.status && lhs.resolution == rhs.resolution
             && lhs.streamingId == rhs.streamingId && lhs.approvalToolId == rhs.approvalToolId
             && lhs.runningToolIDs == rhs.runningToolIDs && lhs.queuedToolIDs == rhs.queuedToolIDs
-            && lhs.imageRunActive == rhs.imageRunActive
+            && lhs.imageRunActive == rhs.imageRunActive && lhs.imageStartedAt == rhs.imageStartedAt
             && lhs.runStep == rhs.runStep && lhs.outputs == rhs.outputs
             && lhs.fileChanges == rhs.fileChanges && lhs.startsExpanded == rhs.startsExpanded
     }
@@ -71,7 +72,7 @@ struct AskActivityBlock: View, Equatable {
                 AskImageGenerationCard(call: call,
                     result: results.first { $0.toolCallId == call.id },
                     status: status, active: imageRunActive,
-                    startedAt: group.messages.first { $0.toolCalls?.contains(where: { $0.id == call.id }) == true }?.createdAt ?? .now)
+                    startedAt: imageStartedAt[call.id])
             }
             if status == .attention { card } else { trace }
             if let resolution, !resolution.reason.isEmpty {

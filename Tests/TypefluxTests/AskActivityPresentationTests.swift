@@ -19,6 +19,28 @@ import Testing
         items.first { if case .outcome = $0.kind { return true }; return false }
     }
 
+    @Test func imageApprovalAndRefusalDoNotReserveImageSpace() throws {
+        let call = AskToolCall(id: "image", function: .init(name: "image_generate", arguments: "{}"))
+        let message = AskMessage(id: "proposal", role: "assistant", text: "", toolCalls: [call], createdAt: now)
+        let group = AskActivityGroup(id: "image", messages: [message])
+        let approval = AskActivityBlock(group: group, results: [], plan: nil, status: .attention,
+            approvalToolId: call.id, approval: AnyView(Text("Allow image generation?")))
+        let waitingHost = NSHostingView(rootView: approval.frame(width: 600))
+        waitingHost.layoutSubtreeIfNeeded()
+        #expect(waitingHost.fittingSize.height < 300)
+        let refusal = AskMessage(id: "refusal", role: "tool", text: "Denied", toolCallId: call.id,
+            isError: true, createdAt: now, harness: .init(version: 1, outcome: .init(status: "denied")))
+        let denied = AskActivityBlock(group: group, results: [refusal], plan: nil, status: .failed, imageRunActive: false)
+        let deniedHost = NSHostingView(rootView: denied.frame(width: 600))
+        deniedHost.layoutSubtreeIfNeeded()
+        #expect(deniedHost.fittingSize.height < 100)
+        let generating = AskActivityBlock(group: group, results: [], plan: nil, status: .running,
+            imageStartedAt: [call.id: now])
+        let generatingHost = NSHostingView(rootView: generating.frame(width: 600))
+        generatingHost.layoutSubtreeIfNeeded()
+        #expect(generatingHost.fittingSize.height > 400)
+    }
+
     @Test func imageCardRendersWaitingAndInterruptedStatesAtStableSize() throws {
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
@@ -27,7 +49,7 @@ import Testing
         let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
             .appendingPathComponent(".build/image-card-validation")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        for (name, status, active) in [("waiting", AskActivity.Status.running, true), ("interrupted", .paused, false), ("approval", .attention, true)] {
+        for (name, status, active) in [("waiting", AskActivity.Status.running, true), ("interrupted", .paused, false)] {
             let view = AskImageGenerationCard(call: call, result: nil, status: status, active: active,
                                              startedAt: Date().addingTimeInterval(-35))
                 .padding(24).frame(width: 448, height: 460).background(AskTheme.surface)

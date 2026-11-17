@@ -1674,6 +1674,7 @@ struct AskConversationView: View {
                              runningToolIDs: batch?.running ?? [],
                              queuedToolIDs: batch.map { Set((run?.pending ?? []).map(\.id)).subtracting($0.running).subtracting(completed.keys) } ?? [],
                              imageRunActive: run?.isActive == true && group.messages.contains { $0.runId == nil || $0.runId == run?.id },
+                             imageStartedAt: model.selectedImageStartTimes,
                              runStep: live || halted ? phase?.step : nil,
                              outputs: item.outputs,
                              fileChanges: [],

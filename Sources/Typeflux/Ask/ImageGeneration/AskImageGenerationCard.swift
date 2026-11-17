@@ -2,18 +2,22 @@ import SwiftUI
 
 /// Generation and image download are different operations; a download retry never creates a job.
 enum AskImageCardState: Equatable {
-    case generating, approval, interrupted, failed, ready(AskGeneratedImage)
+    case hidden, generating, interrupted, failed, ready(AskGeneratedImage)
 
     static func isImageTool(_ name: String) -> Bool { ["image_generate", "image_edit"].contains(name) }
 
-    static func resolve(result: AskMessage?, status: AskActivity.Status, active: Bool) -> Self {
+    static func resolve(result: AskMessage?, status: AskActivity.Status, active: Bool, started: Bool) -> Self {
         if let result {
             if result.isError != true, let image = result.generatedImage,
                AskRemoteImageLoader.eligible(image) != nil { return .ready(image) }
+            if let outcome = result.harness?.outcome,
+               outcome.safeStatus == .denied || outcome.safeStatus == .invalid || outcome.eventDispatched == false ||
+                (outcome.safeStatus == .cancelled && !started && outcome.eventDispatched != true) { return .hidden }
+            guard started || result.generatedImage != nil || result.harness?.outcome?.eventDispatched == true else { return .hidden }
             return .failed
         }
-        if status == .attention { return .approval }
-        if !active || status != .running { return .interrupted }
+        guard started else { return .hidden }
+        if !active || status == .paused { return .interrupted }
         return .generating
     }
 }
@@ -33,23 +37,22 @@ struct AskImageGenerationCard: View {
     let result: AskMessage?
     let status: AskActivity.Status
     let active: Bool
-    let startedAt: Date
+    let startedAt: Date?
 
-    private var state: AskImageCardState { .resolve(result: result, status: status, active: active) }
+    private var state: AskImageCardState { .resolve(result: result, status: status, active: active, started: startedAt != nil) }
 
     var body: some View {
         Group {
             switch state {
             case .ready(let image): AskRemoteImageView(asset: image)
+            case .hidden: EmptyView()
             case .generating:
+                let startedAt = startedAt ?? .now
                 TimelineView(.periodic(from: startedAt, by: 1)) { timeline in
                     AskImagePlaceholder(title: L("ask.image.creating"),
                         detail: L("ask.image.elapsed", max(0, Int(timeline.date.timeIntervalSince(startedAt)))),
                         hint: L("ask.image.waitHint"), spinning: true)
                 }
-            case .approval:
-                AskImagePlaceholder(title: L("ask.image.approval"), detail: nil,
-                                    hint: L("ask.image.approvalHint"), spinning: false)
             case .interrupted:
                 AskImagePlaceholder(title: L("ask.image.interrupted"), detail: nil,
                                     hint: L("ask.image.interruptedHint"), spinning: false)
@@ -59,7 +62,7 @@ struct AskImageGenerationCard: View {
             }
         }
         .frame(maxWidth: 400, alignment: .leading)
-        .padding(.bottom, 10)
+        .padding(.bottom, state == .hidden ? 0 : 10)
         .accessibilityIdentifier("ask.image.card." + call.id)
     }
 }
@@ -88,4 +91,10 @@ struct AskImagePlaceholder: View {
         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(StudioTheme.textPrimary.opacity(0.09)))
         .accessibilityElement(children: .combine)
     }
+}
+
+/// Session-local display evidence recorded only after dispatch authorization succeeds.
+struct AskImageExecutionStart {
+    let identity: AskExecutionIdentity
+    let date: Date
 }
