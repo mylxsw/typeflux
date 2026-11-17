@@ -4875,6 +4875,49 @@ extension WorkflowControllerProcessingTests {
         XCTAssertEqual(harness.presenter.dismissCount, 1)
     }
 
+    @MainActor func testClipboardDuringRecordingPreservesAudioAndFinalDictation() async throws {
+        let audioURL = try writeTestAudio(samples: sineWaveSamples(amplitude: 0.1, frameCount: 16_000))
+        defer { try? FileManager.default.removeItem(at: audioURL) }
+        let recorder = FileReturningAudioRecorder(fileURL: audioURL)
+        let injector = MockProcessingTextInjector()
+        let controller = makeWorkflowController(textInjector: injector, audioRecorder: recorder,
+            sttTranscriber: MockProcessingTranscriber(transcript: "voice after clipboard"))
+        let store = InMemoryClipboardHistoryStore()
+        seed(store)
+        controller.clipboardHistoryStore = store
+        let presenter = MockClipboardPanelPresenter()
+        controller.clipboardPanelPresenter = presenter
+        await controller.beginRecording(intent: .dictation, startLocked: true)
+        let session = controller.processingSessionID
+        controller.handleHistoryPickerRequested()
+        XCTAssertTrue(controller.isHistoryPickerPresented)
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(recorder.stopCallCount, 0)
+        XCTAssertEqual(controller.processingSessionID, session)
+        let entry = controller.historyPickerItems.first { $0.kind.isTextual }!
+        controller.performHistoryAction(.copy, on: entry)
+        XCTAssertFalse(controller.isHistoryPickerPresented)
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(recorder.stopCallCount, 0)
+        controller.finishRecordingFromCurrentMode()
+        await waitUntil { injector.insertedTexts == ["voice after clipboard"] }
+        XCTAssertFalse(controller.isRecording)
+        XCTAssertEqual(recorder.stopCallCount, 1)
+        XCTAssertEqual(injector.insertedTexts, ["voice after clipboard"])
+    }
+
+    @MainActor func testEmptyClipboardDuringRecordingKeepsVoiceControls() async {
+        let harness = makeClipboardPanelHarness()
+        await harness.controller.beginRecording(intent: .dictation, startLocked: true)
+        let presentation = harness.controller.overlayController.recordingPresentationForTesting
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+        XCTAssertTrue(harness.controller.isRecording)
+        XCTAssertEqual(harness.controller.overlayController.recordingPresentationForTesting, presentation)
+        harness.controller.dismissHistoryPicker()
+        harness.controller.cancelRecording()
+    }
+
     func testHistoryPanelDoesNotOpenWhenEmpty() {
         let harness = makeClipboardPanelHarness()
         harness.controller.handleHistoryPickerRequested()

@@ -71,9 +71,20 @@ extension WorkflowController {
             dismissPersonaPicker()
         }
 
-        guard !isRecording, processingTask == nil else { ShortcutLatency.record(.blocked); return }
+        guard processingTask == nil else { ShortcutLatency.record(.blocked); return }
 
         requestHistoryPanel(opening: true)
+    }
+
+    private func showHistoryPanelNotice(_ message: String) {
+        if isRecording {
+            // The voice overlay owns recording controls; a clipboard notice must not replace it.
+            presentHistoryEntries([])
+            historyPanelModel.showNotice(message)
+        } else {
+            overlayController.showNotice(message: message)
+            overlayController.dismiss(after: 2)
+        }
     }
 
     /// The rows currently shown in the panel.
@@ -251,8 +262,7 @@ extension WorkflowController {
                         ShortcutLatency.record(.failed)
                         if self.isHistoryPickerPresented { self.historyPanelModel.showNotice(L("ask.plugin.clip.unavailable")) }
                         else {
-                            self.overlayController.showNotice(message: L("ask.plugin.clip.unavailable"))
-                            self.overlayController.dismiss(after: 2)
+                            self.showHistoryPanelNotice(L("ask.plugin.clip.unavailable"))
                         }
                     case .success:
                         guard self.historyPanelCacheRevision == revision, self.historyPanelCachePolicy == policy else {
@@ -265,15 +275,14 @@ extension WorkflowController {
                         guard !entries.isEmpty else {
                             ShortcutLatency.record(.blocked)
                             if opening && !self.isHistoryPickerPresented {
-                                self.overlayController.showNotice(message: L("overlay.historyPicker.empty"))
-                                self.overlayController.dismiss(after: 2)
+                                self.showHistoryPanelNotice(L("overlay.historyPicker.empty"))
                             } else {
                                 self.dismissHistoryPicker()
                             }
                             return
                         }
                         if opening {
-                            guard !self.isRecording, self.processingTask == nil,
+                            guard self.processingTask == nil,
                                   !self.isPersonaPickerPresented else { ShortcutLatency.record(.blocked); return }
                             if presentedCachedEntries {
                                 ShortcutLatency.measure(.modelUpdateStarted, .modelUpdateFinished) {

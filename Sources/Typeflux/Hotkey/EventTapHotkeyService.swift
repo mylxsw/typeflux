@@ -480,7 +480,33 @@ final class EventTapHotkeyService: HotkeyService {
         }
         if recordingStopGesture.suppressesActivation { return canConsume }
         if stopEnabled, recordingStopGesture.isPress || isRepeat {
-            // New presses are stop candidates; releases retain hold-to-talk behavior.
+            // Independent features must not change the held voice gesture. In particular,
+            // passing their modifier chords to the voice arbiter can cancel hold-to-talk.
+            func matches(_ binding: HotkeyBinding?) -> Bool {
+                guard let binding else { return false }
+                let expectedType: HotkeyPhysicalEventType = binding.isModifierOnlyTrigger ? .flagsChanged : .keyDown
+                let heldVoiceBinding: HotkeyBinding?
+                switch arbiter.phase {
+                case .active(.activation), .pendingModifierActivation: heldVoiceBinding = activationHotkey
+                case .active(.auxiliary): heldVoiceBinding = auxiliaryBinding
+                case .active(.ask): heldVoiceBinding = askHotkey
+                default: heldVoiceBinding = nil
+                }
+                // Keep modifiers required by the feature, ignoring only extra modifiers
+                // belonging to the voice shortcut that is already being held.
+                let extraVoiceFlags = (heldVoiceBinding?.modifierFlags ?? 0) & ~binding.modifierFlags
+                let featureFlags = modifierFlags & ~extraVoiceFlags
+                return eventType == expectedType && binding.matches(keyCode: keyCode, modifierFlags: featureFlags)
+            }
+            if matches(historyHotkey) {
+                if recordingStopGesture.isPress { requestHistoryPicker() }
+                return canConsume
+            }
+            if matches(screenshotHotkey) {
+                if recordingStopGesture.isPress { requestScreenshot() }
+                return canConsume
+            }
+            // Voice presses remain stop candidates; releases retain hold-to-talk behavior.
             return shouldConsume
         }
 
