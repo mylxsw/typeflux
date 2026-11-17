@@ -37,6 +37,43 @@ struct AskLocalUsageTests {
         #expect(try encoder.encode(actual) == encoder.encode(expected))
     }
 
+    @Test func finishingRunKeepsImageReceiptPendingWithoutTokens() async throws {
+        let root = directory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let value = try await send(makeEngine(directory: root))
+        var record = AskLocalRecord(conversation: value)
+        record.conversation.messages.append(.init(id: "image", role: "tool", text: "", createdAt: Date(),
+            runId: value.run?.id, generatedImage: .init(assetId: UUID().uuidString, url: "https://example.com/image.png")))
+        record.backfillImageUsage()
+        record.closeUsage()
+        #expect(record.localUsage?.invocations.first?.usage.status == "pending")
+        #expect(record.conversation.usage?.total.missing == 0)
+    }
+
+    @Test func historicalImageReceiptsBackfillOnceAndSurviveRestart() async throws {
+        let root = directory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let engine = makeEngine(directory: root)
+        let imageID = UUID().uuidString.lowercased()
+        let message = AskMessage(id: "image-result", role: "tool", text: "Image created", createdAt: Date(),
+            runId: "original-run", generatedImage: .init(assetId: imageID, url: "https://example.com/image.png"))
+        let record = AskLocalRecord(conversation: .init(id: "images", title: "Images", revision: 1,
+            updatedAt: Date(), messages: [message]))
+        try await engine.persist(record)
+        let page = try await engine.usage(id: "images", runId: nil, cursor: nil, token: "")
+        #expect(page.items.count == 1 && page.items.first?.purpose == "image_generate")
+        #expect(page.items.first?.runId == "original-run")
+        let key = "image:" + imageID
+        #expect(try await engine.pendingBillingKeys(id: "images") == [key])
+        try await engine.reconcileUsage(id: "images", receipts: [.init(key: key, microcredits: 100_000_000_000, unitScale: 10_000)])
+        let restarted = makeEngine(directory: root)
+        _ = try await restarted.usage(id: "images", runId: nil, cursor: nil, token: "")
+        let totals = try await restarted.conversation(id: "images", token: "").usage?.total
+        #expect(totals?.creditsText == "10.00" && totals?.calls == 1)
+        #expect(totals?.missing == 0 && totals?.missingTokens == nil)
+        #expect(try await restarted.pendingBillingKeys(id: "images").isEmpty)
+    }
+
     @Test func billingSummaryBackfillAdvancesBeyondTheVisiblePage() async throws {
         let root = directory()
         defer { try? FileManager.default.removeItem(at: root) }

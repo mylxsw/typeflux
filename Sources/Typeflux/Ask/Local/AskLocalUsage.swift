@@ -49,7 +49,8 @@ struct AskLocalUsage: Codable, Equatable, Sendable {
 private extension AskUsageTotals {
     mutating func addLocal(_ item: AskUsageInvocation) {
         calls += 1
-        if item.tokens == nil || item.tokens?.incomplete == true {
+        let missingTokenReport = !item.purpose.hasPrefix("image_") && (item.tokens == nil || item.tokens?.incomplete == true)
+        if missingTokenReport {
             missingTokens = (missingTokens ?? 0) + 1
         } else if item.status == "unavailable" {
             // A missing charge does not make complete provider tokens a lower bound.
@@ -62,7 +63,7 @@ private extension AskUsageTotals {
         if item.status == "pending" {
             pending += 1
         }
-        if item.tokens == nil || item.tokens?.incomplete == true || item.status == "unavailable" {
+        if missingTokenReport || item.status == "unavailable" {
             missing += 1
         }
         if let tokens = item.tokens {
@@ -77,6 +78,26 @@ private extension AskUsageTotals {
 }
 
 extension AskLocalRecord {
+    /// Recover original image job identities from retained tool messages, including old chats.
+    mutating func backfillImageUsage() {
+        for message in conversation.messages where message.role == "tool" {
+            guard let image = message.generatedImage, UUID(uuidString: image.assetId) != nil,
+                  let runID = message.runId else { continue }
+            let key = "image:" + image.assetId.lowercased()
+            if localUsage?.invocations.contains(where: { $0.usage.billingKey == key }) == true { continue }
+            if localUsage == nil { localUsage = .init(since: message.createdAt, historicalGap: true) }
+            let call = conversation.messages.flatMap { $0.toolCalls ?? [] }.first { $0.id == message.toolCallId }
+            localUsage?.version += 1
+            let version = localUsage?.version ?? 0
+            localUsage?.invocations.append(.init(deviceId: conversation.run?.deviceId ?? "", usage: .init(
+                id: key, runId: runID, messageId: message.id, modelRef: "cloud:image",
+                purpose: call?.function.name == "image_edit" ? "image_edit" : "image_generate",
+                createdAt: message.createdAt, source: "provider", status: "pending",
+                version: version, billingKey: key)))
+        }
+        conversation.usage = localUsage?.summary
+    }
+
     mutating func startUsage(_ inference: AskInference, at date: Date) {
         guard let run = conversation.run else { return }
         if localUsage == nil {
@@ -133,7 +154,7 @@ extension AskLocalRecord {
             && usage.invocations[index].usage.status == "pending" {
             if usage.invocations[index].usage.modelRef.hasPrefix("cloud:"),
                usage.invocations[index].usage.billingKey != nil,
-               usage.invocations[index].usage.tokens != nil { continue }
+               (usage.invocations[index].usage.tokens != nil || usage.invocations[index].usage.purpose.hasPrefix("image_")) { continue }
             usage.version += 1
             usage.invocations[index].usage.status = usage.invocations[index].usage.modelRef.hasPrefix("cloud:") ? "unavailable" : "external"
             usage.invocations[index].usage.version = usage.version

@@ -255,7 +255,11 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     func usage(id: String, runId: String?, cursor: Int64?, token _: String) async throws -> AskUsagePage {
-        try record(id).localUsage?.page(runId: runId, cursor: cursor) ?? AskUsagePage(items: [], nextCursor: nil)
+        var record = try record(id)
+        let previous = record.localUsage
+        record.backfillImageUsage()
+        if record.localUsage != previous { try persist(record) }
+        return record.localUsage?.page(runId: runId, cursor: cursor) ?? AskUsagePage(items: [], nextCursor: nil)
     }
 
     func models(token _: String) async throws -> [AskCloudModel] { [] }
@@ -1145,6 +1149,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
                     toolCallId: call.id, isError: result.isError, createdAt: now(), runId: record.conversation.run?.id)
                 message.generatedImage = result.generatedImage
                 record.conversation.messages.append(message)
+                record.backfillImageUsage()
                 if !["update_plan", "read_conversation_history"].contains(call.function.name) { record.cloudCalls += 1 }
             }
             record.conversation.run?.pending.removeFirst(calls.count)
