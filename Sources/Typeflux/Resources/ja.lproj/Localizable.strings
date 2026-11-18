@@ -7583,3 +7583,11 @@
 "ask.image.load.http" = "画像サーバーが HTTP %d を返しました。";
 "ask.image.load.previewUnavailable" = "画像プレビューサービスは現在利用できません。";
 "ask.image.load.decode" = "画像をデコードできないか、表示制限を超えています。";
+
+// Persistent generated image cache
+"ask.image.redownload" = "再ダウンロード";
+"ask.image.cache.title" = "画像キャッシュ";
+"ask.image.cache.usage" = "使用量 %@ · 上限 256 MB";
+"ask.image.cache.clear" = "キャッシュを削除";
+"ask.image.cache.hint" = "ダウンロード済みの原画像はオフラインでも表示できます。この端末のキャッシュを削除してもクラウドの結果は消えません。";
+"ask.image.cache.clearFailed" = "画像キャッシュを削除できませんでした。";

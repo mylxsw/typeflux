@@ -7606,3 +7606,11 @@
 "ask.image.load.http" = "图片服务器返回 HTTP %d。";
 "ask.image.load.previewUnavailable" = "图片预览服务暂不可用。";
 "ask.image.load.decode" = "图片无法解码或超过显示限制。";
+
+// Persistent generated image cache
+"ask.image.redownload" = "重新下载";
+"ask.image.cache.title" = "图片缓存";
+"ask.image.cache.usage" = "已用 %@ · 上限 256 MB";
+"ask.image.cache.clear" = "清理缓存";
+"ask.image.cache.hint" = "已下载的原图可离线查看。清理本机缓存不会删除云端生成记录。";
+"ask.image.cache.clearFailed" = "图片缓存清理失败。";

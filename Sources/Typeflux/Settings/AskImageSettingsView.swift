@@ -4,6 +4,9 @@ import SwiftUI
 struct AskImageSettingsView: View {
     @StateObject private var model: AskImageSettingsModel
     @State private var showsAdvanced = false
+    @State private var imageCacheBytes = 0
+    @State private var cacheError: String?
+    @State private var clearingCache = false
     var onSaved: (Bool, Bool) -> Void
 
     init(store: AskImageSettings, onSaved: @escaping (Bool, Bool) -> Void = { _, _ in }) {
@@ -36,7 +39,29 @@ struct AskImageSettingsView: View {
                 TFDivider.form
                 actions
             }
+            TFFormSection(title: L("ask.image.cache.title")) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text(L("ask.image.cache.usage", ByteCountFormatter.string(fromByteCount: Int64(imageCacheBytes), countStyle: .file)))
+                        Spacer()
+                        TFButton(title: L("ask.image.cache.clear"), isLoading: clearingCache) {
+                            clearingCache = true; cacheError = nil
+                            Task {
+                                do {
+                                    try await AskGeneratedImageCache.shared.clear()
+                                    imageCacheBytes = try await AskGeneratedImageCache.shared.size()
+                                } catch { cacheError = L("ask.image.cache.clearFailed") }
+                                clearingCache = false
+                            }
+                        }.disabled(clearingCache)
+                    }
+                    TFFootnote(text: L("ask.image.cache.hint"))
+                    if let cacheError { Text(cacheError).foregroundStyle(.red) }
+                }
+                .padding(.horizontal, 14).padding(.vertical, 12)
+            }
         }
+        .task { imageCacheBytes = (try? await AskGeneratedImageCache.shared.size()) ?? 0 }
         .onChange(of: model.configuration) { _ in model.clearNotice() }
         .onChange(of: model.key) { _ in model.clearNotice() }
         .onDisappear { model.cancelDiscovery() }

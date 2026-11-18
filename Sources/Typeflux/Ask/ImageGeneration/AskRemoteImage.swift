@@ -9,6 +9,7 @@ struct AskRemoteImageLoader: Sendable {
     var transport: any AskImageTransport = AskImageHTTP(maximumRedirects: 3)
     var decode: Decoder? = nil
     var worker: MediaWorker = .previews
+    var cache: AskGeneratedImageCache = .shared
 
     /// Custom decoders keep their own contract; default presentation retains its native epoch.
     func authorization() -> MediaWorker.Authorization? { decode == nil ? worker.authorization() : nil }
@@ -19,39 +20,66 @@ struct AskRemoteImageLoader: Sendable {
         return image.safeURL
     }
 
-    func load(_ image: AskGeneratedImage, authorization original: MediaWorker.Authorization? = nil) async throws -> AskFilePreviewPDF.Result {
+    func load(_ image: AskGeneratedImage, authorization original: MediaWorker.Authorization? = nil,
+              owner: String? = nil, forceDownload: Bool = false) async throws -> AskFilePreviewPDF.Result {
         try Task.checkCancellation()
         guard let url = Self.eligible(image) else { throw MediaFailure.unreadable }
         let authorization = decode == nil ? (original ?? worker.authorization()) : nil
         let current: @Sendable () -> Bool = { [worker] in authorization.map { worker.permits($0) } ?? true }
         guard current() else { throw MediaFailure.unavailable }
-        let slot = try Self.admission.acquire(bytes: 1)
-        defer { withExtendedLifetime(slot) {} }
-        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
-        request.httpMethod = "GET"
-        let data: Data
-        do { data = try await transport.send(request, limit: Self.maximumBytes) }
-        catch {
-            guard Self.shouldRetryDownload(error) else { throw error }
-            try await Task.sleep(for: .milliseconds(300))
-            try Task.checkCancellation()
-            guard current() else { throw MediaFailure.unavailable }
-            // Only the existing public image GET is retried, never generation or authorization.
-            data = try await transport.send(request, limit: Self.maximumBytes)
+        let ticket: AskGeneratedImageCache.Ticket?
+        if let owner, !owner.isEmpty { ticket = try? await cache.lookup(owner: owner, asset: image.assetId, force: forceDownload) }
+        else { ticket = nil }
+        if let ticket, let data = ticket.data {
+            do {
+                let result = try await pixels(data, authorization: authorization)
+                try Task.checkCancellation()
+                guard current() else { throw MediaFailure.unavailable }
+                return result
+            } catch {
+                // Service outages and cancellation do not invalidate a good disk copy.
+                guard let failure = error as? MediaFailure,
+                      [.unreadable, .invalidProtocol, .tooLarge].contains(failure) else { throw error }
+                try? await cache.remove(ticket)
+            }
         }
+        let data: Data
+        if let ticket { data = try await cache.download(ticket: ticket) { try await fetch(url, authorization: authorization) } }
+        else { data = try await fetch(url, authorization: authorization) }
         try Task.checkCancellation()
         guard current() else { throw MediaFailure.unavailable }
+        let result = try await pixels(data, authorization: authorization)
+        try Task.checkCancellation()
+        guard current() else { throw MediaFailure.unavailable }
+        if let ticket { try? await cache.store(data, ticket: ticket) }
+        return result
+    }
+
+    private func pixels(_ data: Data, authorization: MediaWorker.Authorization?) async throws -> AskFilePreviewPDF.Result {
         guard !data.isEmpty, data.count <= Self.maximumBytes else { throw MediaFailure.unreadable }
         let result: AskFilePreviewPDF.Result
         if let decode { result = try await decode(data) }
         else { result = try await Self.decodePixels(data, worker: worker, authorization: authorization) }
-        try Task.checkCancellation()
-        guard current() else { throw MediaFailure.unavailable }
         guard result.images.count == 1, let pixels = result.images.first,
               pixels.width > 0, pixels.height > 0, pixels.width <= 1600, pixels.height <= 1600 else {
             throw MediaFailure.invalidProtocol
         }
         return result
+    }
+
+    private func fetch(_ url: URL, authorization: MediaWorker.Authorization?) async throws -> Data {
+        let slot = try Self.admission.acquire(bytes: 1)
+        defer { withExtendedLifetime(slot) {} }
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+        request.httpMethod = "GET"
+        do { return try await transport.send(request, limit: Self.maximumBytes) }
+        catch {
+            guard Self.shouldRetryDownload(error) else { throw error }
+            try await Task.sleep(for: .milliseconds(300))
+            try Task.checkCancellation()
+            if let authorization, !worker.permits(authorization) { throw MediaFailure.unavailable }
+            return try await transport.send(request, limit: Self.maximumBytes)
+        }
     }
 
     static func shouldRetryDownload(_ error: Error) -> Bool {
@@ -130,6 +158,7 @@ typealias AskRemoteImageScope = AskImagePresentationScope
 typealias AskRemoteImageAccess = AskImagePresentationAccess
 
 struct AskImagePresentationAccess {
+    var cacheOwner: String? = nil
     var scope: AskRemoteImageScope?
     var epoch: UUID?
     var authorize: @MainActor () -> Bool = { false }
@@ -150,7 +179,7 @@ extension AskConversationModel {
     var remoteImageAccess: AskRemoteImageAccess {
         guard let current = session(), let conversation = selectedId, !isDeletedConversation(conversation) else { return .init() }
         let generation = selectionGeneration
-        return .init(scope: remoteImageScope, epoch: remoteImageScope.epoch, authorize: { [weak self] in
+        return .init(cacheOwner: current.owner, scope: remoteImageScope, epoch: remoteImageScope.epoch, authorize: { [weak self] in
             guard let self, let live = self.session() else { return false }
             return live.owner == current.owner && live.token == current.token && self.selectedId == conversation &&
                 self.selectionGeneration == generation && !self.isDeletedConversation(conversation)
@@ -192,7 +221,7 @@ extension AskConversationModel {
         if let registration { scope?.remove(registration) }
         registration = nil; scope = nil; originalAccess = nil; source = nil; image = nil; pixels = nil; unavailable = false; failureDetail = nil
     }
-    func load(_ asset: AskGeneratedImage, access: AskRemoteImageAccess) async {
+    func load(_ asset: AskGeneratedImage, access: AskRemoteImageAccess, forceDownload: Bool = false) async {
         guard !Task.isCancelled else { return }
         let allowed = access.allows()
         guard !Task.isCancelled else { return }
@@ -212,7 +241,7 @@ extension AskConversationModel {
             let reservation = try budget.acquire(bytes: 1600 * 1600 * 4)
             let task = Task { [loader] in
                 defer { withExtendedLifetime(reservation) {} }
-                return try await loader.load(asset, authorization: authorization)
+                return try await loader.load(asset, authorization: authorization, owner: access.cacheOwner, forceDownload: forceDownload)
             }
             operation = task
             let result = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
@@ -256,6 +285,7 @@ struct AskRemoteImageView: View {
     @Environment(\.askEditGeneratedImage) private var editImage
     @StateObject private var model: AskRemoteImageModel
     @State private var reload = 0
+    @State private var forceDownload = false
     @State private var preview = false
     @State private var saveError: String?
     init(asset: AskGeneratedImage, enabled: Bool = true, loader: AskRemoteImageLoader = .init(), model: AskRemoteImageModel? = nil) {
@@ -287,6 +317,7 @@ struct AskRemoteImageView: View {
                             guard let current = model.displayed(asset, access: access) else { return }
                             do { try AskArtifactActions.save(current) } catch { saveError = error.localizedDescription }
                         } label: { Label(L("ask.image.save"), systemImage: "arrow.down.to.line") }
+                        Button(L("ask.image.redownload")) { forceDownload = true; reload += 1 }
                         if let editImage {
                             Button { if access.allows() { editImage(asset) } }
                                 label: { Label(L("ask.image.edit"), systemImage: "pencil") }
@@ -297,7 +328,8 @@ struct AskRemoteImageView: View {
                     AskImagePlaceholder(title: L("ask.image.generatedLoadFailed"), detail: model.failureDetail,
                                         hint: L("ask.image.reloadHint"), spinning: false)
                     HStack(spacing: 16) {
-                        if enabled { Button(L("ask.image.reload")) { reload += 1 } }
+                        if enabled { Button(L("ask.image.reload")) { forceDownload = false; reload += 1 } }
+                        if enabled { Button(L("ask.image.redownload")) { forceDownload = true; reload += 1 } }
                         Link(L("ask.preview"), destination: url)
                     }.font(.system(size: 12.5))
                 } else {
@@ -308,7 +340,13 @@ struct AskRemoteImageView: View {
             }
         }
         .frame(maxWidth: 400, alignment: .leading)
-        .task(id: taskIdentity) { if enabled { await model.load(asset, access: access) } else { model.cancel() } }
+        .task(id: taskIdentity) {
+            if enabled {
+                let force = forceDownload
+                forceDownload = false
+                await model.load(asset, access: access, forceDownload: force)
+            } else { model.cancel() }
+        }
         .onDisappear { model.cancel(); preview = false }
     }
 }

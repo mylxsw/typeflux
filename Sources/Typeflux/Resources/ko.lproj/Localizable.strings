@@ -7583,3 +7583,11 @@
 "ask.image.load.http" = "이미지 서버가 HTTP %d를 반환했습니다.";
 "ask.image.load.previewUnavailable" = "이미지 미리보기 서비스를 현재 사용할 수 없습니다.";
 "ask.image.load.decode" = "이미지를 디코딩할 수 없거나 표시 제한을 초과했습니다.";
+
+// Persistent generated image cache
+"ask.image.redownload" = "다시 다운로드";
+"ask.image.cache.title" = "이미지 캐시";
+"ask.image.cache.usage" = "%@ 사용 · 최대 256 MB";
+"ask.image.cache.clear" = "캐시 지우기";
+"ask.image.cache.hint" = "다운로드한 원본은 오프라인에서도 볼 수 있습니다. 이 기기의 캐시를 지워도 클라우드 결과는 삭제되지 않습니다.";
+"ask.image.cache.clearFailed" = "이미지 캐시를 지우지 못했습니다.";

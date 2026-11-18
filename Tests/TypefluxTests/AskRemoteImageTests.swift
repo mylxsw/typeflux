@@ -232,6 +232,74 @@ private actor RemoteGate {
         XCTAssertEqual(AskRemoteImageModel.failureDescription(MediaFailure.unavailable), L("ask.image.load.previewUnavailable"))
     }
 
+    func testPersistentCacheWorksOfflineAndRepairsCorruptBytes() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let cache = AskGeneratedImageCache(root: root), calls = RemoteRequests(), decoded = pixels()
+        let loader = AskRemoteImageLoader(transport: RemoteTransport { request, _ in
+            calls.record(request.httpMethod!); return Data([1])
+        }, decode: { data in
+            guard data == Data([1]) else { throw MediaFailure.unreadable }
+            return decoded
+        }, cache: cache)
+        _ = try await loader.load(asset, owner: "owner")
+        var offline = loader
+        offline.transport = RemoteTransport { _, _ in XCTFail("Cache hit accessed network"); throw URLError(.notConnectedToInternet) }
+        offline.cache = AskGeneratedImageCache(root: root)
+        _ = try await offline.load(asset, owner: "owner")
+        XCTAssertEqual(calls.values.count, 1)
+        let ticket = try await cache.lookup(owner: "owner", asset: asset.assetId)
+        try Data([0]).write(to: root.appendingPathComponent(ticket.key + ".image"))
+        _ = try await loader.load(asset, owner: "owner")
+        XCTAssertEqual(calls.values.count, 2)
+        _ = try await loader.load(asset, owner: "owner", forceDownload: true)
+        XCTAssertEqual(calls.values.count, 3)
+        _ = try await loader.load(asset, owner: "other-owner")
+        XCTAssertEqual(calls.values.count, 4)
+    }
+
+    func testLastCacheClientCancellationStopsDownloadAndDoesNotPersist() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let calls = RemoteRequests(), cache = AskGeneratedImageCache(root: root), decoded = pixels()
+        let loader = AskRemoteImageLoader(transport: RemoteTransport { _, _ in
+            calls.record("start")
+            do { try await Task.sleep(for: .seconds(30)) }
+            catch { calls.record("cancelled"); throw error }
+            return Data([1])
+        }, decode: { _ in decoded }, cache: cache)
+        let asset = self.asset
+        let task = Task { try await loader.load(asset, owner: "owner") }
+        for _ in 0..<200 {
+            if !calls.values.isEmpty { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        task.cancel()
+        do { _ = try await task.value; XCTFail("Cancelled request completed") } catch {}
+        XCTAssertEqual(calls.values, ["start", "cancelled"])
+        let size = try await cache.size()
+        XCTAssertEqual(size, 0)
+    }
+
+    func testConcurrentImageRequestsShareDownloadWithoutCancellingOtherClient() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gate = RemoteGate(), calls = RemoteRequests(), decoded = pixels()
+        let loader = AskRemoteImageLoader(transport: RemoteTransport { _, _ in
+            calls.record("GET"); return await gate.wait()
+        }, decode: { _ in decoded }, cache: AskGeneratedImageCache(root: root))
+        let asset = self.asset
+        let first = Task { try await loader.load(asset, owner: "owner") }
+        let second = Task { try await loader.load(asset, owner: "owner") }
+        try await entered(gate, 1)
+        try await Task.sleep(for: .milliseconds(50))
+        first.cancel()
+        await gate.release()
+        do { _ = try await first.value; XCTFail("Cancelled client returned pixels") } catch {}
+        _ = try await second.value
+        XCTAssertEqual(calls.values, ["GET"])
+    }
+
     func testRetryDownloadsTheSameImageWithoutCreatingAnotherJob() async throws {
         let calls = RemoteRequests(), scope = AskRemoteImageScope()
         let decoded = pixels()

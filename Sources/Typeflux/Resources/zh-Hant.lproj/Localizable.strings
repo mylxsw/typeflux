@@ -7608,3 +7608,11 @@
 "ask.image.load.http" = "圖片伺服器回傳 HTTP %d。";
 "ask.image.load.previewUnavailable" = "圖片預覽服務暫不可用。";
 "ask.image.load.decode" = "圖片無法解碼或超過顯示限制。";
+
+// Persistent generated image cache
+"ask.image.redownload" = "重新下載";
+"ask.image.cache.title" = "圖片快取";
+"ask.image.cache.usage" = "已用 %@ · 上限 256 MB";
+"ask.image.cache.clear" = "清除快取";
+"ask.image.cache.hint" = "已下載的原圖可離線查看。清除本機快取不會刪除雲端生成記錄。";
+"ask.image.cache.clearFailed" = "圖片快取清除失敗。";

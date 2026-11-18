@@ -7606,3 +7606,11 @@
 "ask.image.load.http" = "The image server returned HTTP %d.";
 "ask.image.load.previewUnavailable" = "The image preview service is currently unavailable.";
 "ask.image.load.decode" = "The image could not be decoded or exceeded the display limit.";
+
+// Persistent generated image cache
+"ask.image.redownload" = "Download again";
+"ask.image.cache.title" = "Image cache";
+"ask.image.cache.usage" = "%@ used · Up to 256 MB";
+"ask.image.cache.clear" = "Clear cache";
+"ask.image.cache.hint" = "Downloaded originals are reused offline. Clearing this device’s cache does not delete cloud results.";
+"ask.image.cache.clearFailed" = "Could not clear the image cache.";
