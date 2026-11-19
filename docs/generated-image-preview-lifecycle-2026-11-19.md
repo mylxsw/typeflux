@@ -17,3 +17,13 @@ The preview popover is attached to the stable image-card container rather than i
 The native-window regression uses accessibility presses to open and close the actual SwiftUI popover three times, verifies its image and close controls, retains the same NSImage instance, and asserts exactly one GET throughout. Another regression checks repeated loads, a failed explicit refresh and subsequent scope revocation. Existing cache, cancellation and view cleanup tests also pass. This verifies a real native fixture interaction, not a replay of the user's installed conversation or its original unavailable event. No paid image generation was requested.
 
 The local development application is installed using the debug configuration.
+
+## Additional fidelity and reopen acceptance
+
+The added `testRealPNGReopensOfflineWithFreshModelsAndDecoder` uses a real PNG and the production media-helper decoder, without an injected decoder. Five successive presentations use fresh model, worker, scope and disk-cache instances. The first fetch supplies the PNG; every later transport is explicitly offline. Each presentation must restore the expected dimensions, preserve the exact original PNG bytes on disk, and release its pixels when its scope becomes invisible. The whole sequence must issue exactly one GET. Fresh objects exercise disk reconstruction; this is not an installed-app process restart test.
+
+A read-only check of the installed development app's cache found three originals totaling 11,750,249 bytes. Each was copied to an isolated temporary directory and successfully decoded by the installed `TypefluxMediaHelper`, producing 1600x900, 1254x1254 and 1600x900 rasters. No network or generation request was involved, and the original cache files were not changed. The installed bundle also passed strict deep code-signature verification.
+
+Installed-chat acceptance remains incomplete: the UI connection could read the launcher and settings, but opening Chat timed out and a subsequent screenshot was unavailable. These checks do not establish that clicking the user's image, switching conversations, restarting the installed app or using it offline has passed. Do not replace this outstanding acceptance with a claim of complete resolution.
+
+Focused coverage for the new real-PNG regression passed one selected method; total runner wall time was 83.47 seconds including compilation and discovery. No production source changed in this acceptance pass.

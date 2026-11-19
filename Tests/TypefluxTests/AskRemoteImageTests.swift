@@ -258,6 +258,37 @@ private actor RemoteGate {
         XCTAssertEqual(calls.values.count, 4)
     }
 
+    func testRealPNGReopensOfflineWithFreshModelsAndDecoder() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let png = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 120, height: 60), type: .png)
+        let calls = RemoteRequests()
+        for cycle in 0..<5 {
+            let scope = AskRemoteImageScope()
+            let currentAccess = AskRemoteImageAccess(cacheOwner: "owner", scope: scope, epoch: scope.epoch, authorize: { true })
+            let loader = AskRemoteImageLoader(transport: RemoteTransport { _, _ in
+                calls.record("GET")
+                guard cycle == 0 else {
+                    XCTFail("Reopening a cached original must not need the network")
+                    throw URLError(.notConnectedToInternet)
+                }
+                return png
+            }, worker: MediaWorker(), cache: AskGeneratedImageCache(root: root))
+            let model = AskRemoteImageModel(loader: loader)
+            await model.load(asset, access: currentAccess)
+            let image = try XCTUnwrap(model.displayed(asset, access: currentAccess), model.failureDetail ?? "Missing image")
+            XCTAssertEqual(image.size.width, 120)
+            XCTAssertEqual(image.size.height, 60)
+            XCTAssertFalse(model.unavailable)
+            let ticket = try await loader.cache.lookup(owner: "owner", asset: asset.assetId)
+            XCTAssertEqual(ticket.data, png, "Persist the original bytes without re-encoding")
+            scope.setVisible(false)
+            XCTAssertNil(model.image)
+            XCTAssertFalse(currentAccess.allows())
+        }
+        XCTAssertEqual(calls.values, ["GET"])
+    }
+
     func testLastCacheClientCancellationStopsDownloadAndDoesNotPersist() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
