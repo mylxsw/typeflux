@@ -230,13 +230,20 @@ extension AskConversationModel {
             if originalAccess?.allows() != true { cancel() }
             return
         }
-        cancel()
+        let retainingImage = displayed(asset, access: access) != nil
+        if retainingImage && !forceDownload { return }
+        if retainingImage {
+            generation = UUID(); operation?.cancel(); operation = nil
+            failureDetail = nil; unavailable = false
+        } else { cancel() }
         let current = generation
         source = asset; originalAccess = access
         do {
             try Task.checkCancellation()
             guard let scope = access.scope, let epoch = access.epoch else { throw MediaFailure.unavailable }
-            self.scope = scope; registration = try scope.register(self, epoch: epoch)
+            if !retainingImage {
+                self.scope = scope; registration = try scope.register(self, epoch: epoch)
+            }
             let authorization = loader.authorization()
             let reservation = try budget.acquire(bytes: 1600 * 1600 * 4)
             let task = Task { [loader] in
@@ -256,10 +263,12 @@ extension AskConversationModel {
             guard current == generation else { return }
             if !Task.isCancelled && access.allows() {
                 // Keep ownership of the failed presentation until an explicit replacement or revocation.
-                operation = nil; pixels = nil; image = nil; unavailable = true
+                operation = nil
+                if !retainingImage { pixels = nil; image = nil; unavailable = true }
                 failureDetail = Self.failureDescription(error)
                 AskFailureDiagnostics.shared.record(.imageLoad, error: error)
-            } else { cancel() }
+            } else if retainingImage && access.allows() { operation = nil }
+            else { cancel() }
         }
     }
     static func failureDescription(_ error: Error) -> String {
@@ -306,12 +315,7 @@ struct AskRemoteImageView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(L("ask.preview"))
-                    .popover(isPresented: $preview) {
-                        if let displayed = model.displayed(asset, access: access) {
-                            Image(nsImage: displayed).resizable().scaledToFit()
-                                .frame(maxWidth: 800, maxHeight: 700).padding(12)
-                        }
-                    }
+                    .accessibilityIdentifier("ask.generatedImage.preview")
                     HStack(spacing: 16) {
                         Button {
                             guard let current = model.displayed(asset, access: access) else { return }
@@ -336,10 +340,26 @@ struct AskRemoteImageView: View {
                     AskImagePlaceholder(title: L("ask.image.generatedLoading"), detail: nil,
                                         hint: L("ask.image.loadingHint"), spinning: true)
                 }
+                if model.displayed(asset, access: access) != nil, let detail = model.failureDetail {
+                    Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                }
                 if let saveError { Text(saveError).font(.system(size: 12)).foregroundStyle(.red) }
             }
         }
         .frame(maxWidth: 400, alignment: .leading)
+        // Keep presentation attached to the stable container, not the conditional image branch.
+        .popover(isPresented: $preview) {
+            if let displayed = model.displayed(asset, access: access) {
+                VStack(alignment: .trailing, spacing: 8) {
+                    Button { preview = false } label: { Image(systemName: "xmark") }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("ask.generatedImage.preview.close")
+                    Image(nsImage: displayed).resizable().scaledToFit()
+                        .frame(width: 720, height: 540)
+                        .accessibilityIdentifier("ask.generatedImage.preview.pixels")
+                }.padding(12)
+            }
+        }
         .task(id: taskIdentity) {
             if enabled {
                 let force = forceDownload

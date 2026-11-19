@@ -318,6 +318,87 @@ private actor RemoteGate {
         model.cancel()
     }
 
+    func testReadyImageSurvivesRepeatedLoadsAndFailedExplicitRefresh() async throws {
+        let calls = RemoteRequests(), decoded = pixels(), scope = AskRemoteImageScope()
+        let loader = AskRemoteImageLoader(transport: RemoteTransport { _, _ in
+            calls.record("GET")
+            if calls.values.count > 1 { throw MediaFailure.unavailable }
+            return Data([1])
+        }, decode: { _ in decoded })
+        let model = AskRemoteImageModel(loader: loader)
+        await model.load(asset, access: access(scope))
+        let original = try XCTUnwrap(model.image)
+        await model.load(asset, access: access(scope))
+        XCTAssertEqual(calls.values, ["GET"])
+        XCTAssertTrue(model.image === original)
+        await model.load(asset, access: access(scope), forceDownload: true)
+        XCTAssertEqual(calls.values, ["GET", "GET"])
+        XCTAssertTrue(model.image === original)
+        XCTAssertFalse(model.unavailable)
+        XCTAssertNotNil(model.failureDetail)
+        scope.invalidate()
+        XCTAssertNil(model.image)
+    }
+
+    func testClickingAndClosingPreviewKeepsPixelsAndDoesNotLoadAgain() async throws {
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        let calls = RemoteRequests(), decoded = pixels(), scope = AskRemoteImageScope()
+        let loader = AskRemoteImageLoader(transport: RemoteTransport { _, _ in
+            calls.record("GET")
+            if calls.values.count > 1 { throw MediaFailure.unavailable }
+            return Data([1])
+        }, decode: { _ in decoded })
+        let model = AskRemoteImageModel(loader: loader)
+        let view = NSHostingView(rootView: AskRemoteImageView(asset: asset, model: model)
+            .padding(24).frame(width: 500, height: 520).environment(\.askRemoteImageAccess, access(scope)))
+        let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 500, height: 520),
+                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = view; window.makeKeyAndOrderFront(nil)
+        defer { window.contentView = nil; window.close(); model.cancel() }
+        for _ in 0..<200 where model.image == nil { try await Task.sleep(for: .milliseconds(10)) }
+        let original = try XCTUnwrap(model.image)
+        for _ in 0..<3 {
+            view.layoutSubtreeIfNeeded()
+            let button = try XCTUnwrap(findImageControl("ask.generatedImage.preview", in: window))
+            _ = button.perform(NSSelectorFromString("accessibilityPerformPress"))
+            var popup: NSWindow?
+            for _ in 0..<100 {
+                popup = window.childWindows?.first { findImageControl("ask.generatedImage.preview.close", in: $0) != nil }
+                if popup != nil { break }
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            let presented = try XCTUnwrap(popup, "Click must actually open a preview")
+            XCTAssertNotNil(findImageControl("ask.generatedImage.preview.pixels", in: presented))
+            XCTAssertTrue(model.image === original)
+            XCTAssertEqual(calls.values, ["GET"])
+            let close = try XCTUnwrap(findImageControl("ask.generatedImage.preview.close", in: presented))
+            _ = close.perform(NSSelectorFromString("accessibilityPerformPress"))
+            for _ in 0..<100 where presented.isVisible { try await Task.sleep(for: .milliseconds(10)) }
+            XCTAssertFalse(presented.isVisible)
+            XCTAssertTrue(model.image === original)
+            XCTAssertFalse(model.unavailable)
+            XCTAssertEqual(calls.values, ["GET"])
+        }
+        scope.invalidate()
+        XCTAssertNil(model.image)
+    }
+
+    private func findImageControl(_ identifier: String, in window: NSWindow) -> NSObject? {
+        var seen = Set<ObjectIdentifier>()
+        func walk(_ node: Any) -> NSObject? {
+            guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
+            if object.responds(to: NSSelectorFromString("accessibilityIdentifier")),
+               object.value(forKey: "accessibilityIdentifier") as? String == identifier { return object }
+            guard object.responds(to: NSSelectorFromString("accessibilityChildren")) else { return nil }
+            for child in object.value(forKey: "accessibilityChildren") as? [Any] ?? [] {
+                if let found = walk(child) { return found }
+            }
+            return nil
+        }
+        return walk(window)
+    }
+
     func testViewOwnsLoadingPixelsLinksAndCloseCleanup() async throws {
         let scope = AskRemoteImageScope(), model = AskRemoteImageModel(loader: loader())
         let view = NSHostingView(rootView: VStack(alignment: .leading, spacing: 20) {
