@@ -229,6 +229,11 @@ codesign_args=(
   --identifier "ai.gulu.app.typeflux"
   --entitlements "$entitlements_to_use"
 )
+python3 "$ROOT_DIR/scripts/embed_swift_runtime.py" "$APP_BUNDLE"
+for library in "$APP_BUNDLE"/Contents/Frameworks/libswift*.dylib; do
+  [[ -f "$library" ]] || continue
+  codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --timestamp --options runtime "$library"
+done
 sign_nested_binaries
 codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --timestamp --options runtime \
   "$APP_BUNDLE/Contents/Helpers/swift-transformers_Hub.bundle"

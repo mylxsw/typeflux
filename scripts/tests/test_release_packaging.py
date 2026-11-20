@@ -32,7 +32,7 @@ class ReleasePackagingTests(unittest.TestCase):
             scripts = root / 'scripts'
             scripts.mkdir()
             for name in ['build_release.sh', 'signing_keychain.sh', 'copy_inference_helper.sh', 'copy_media_helper.sh',
-                         'copy_resource_bundles.sh', 'copy_chat_window_helper.sh']:
+                         'copy_resource_bundles.sh', 'copy_chat_window_helper.sh', 'embed_swift_runtime.py']:
                 shutil.copyfile(ROOT / 'scripts' / name, scripts / name)
             app = root / 'app'
             app.mkdir()

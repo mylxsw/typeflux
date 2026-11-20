@@ -24,7 +24,7 @@ class MachOAuditTests(unittest.TestCase):
             tools.mkdir()
             for name, text in {
                 'file': '#!/bin/sh\necho Mach-O\n',
-                'vtool': '#!/bin/sh\nread minos arch < "$2"\necho "minos $minos"\n',
+                'vtool': '#!/bin/sh\nread minos arch < "$2"\necho "cmd LC_BUILD_VERSION"\necho "platform MACOS"\necho "minos $minos"\necho "cmd LC_BUILD_VERSION"\necho "platform MACCATALYST"\necho "minos 17.0"\n',
                 'lipo': '#!/bin/sh\nread minos arch < "$2"\necho "$arch"\n',
             }.items():
                 path = tools / name

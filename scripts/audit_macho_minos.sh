@@ -57,31 +57,26 @@ version_gt() {
   (( lhs_patch > rhs_patch ))
 }
 
+# A universal Swift runtime can carry both macOS and Mac Catalyst load commands.
+macos_versions() {
+  awk '
+    $1 == "cmd" { legacy = ($2 == "LC_VERSION_MIN_MACOSX"); macos = 0 }
+    $1 == "platform" { macos = (toupper($2) == "MACOS" || $2 == "1") }
+    $1 == "minos" && macos { print $2 }
+    $1 == "version" && legacy { print $2; legacy = 0 }
+  '
+}
+
 minos_versions_for_file() {
   local file_path="$1"
   local versions=""
 
   if command -v vtool >/dev/null 2>&1; then
-    versions="$(
-      vtool -show-build "$file_path" 2>/dev/null \
-        | awk '/^[[:space:]]*minos[[:space:]]/ { print $2 }' \
-        || true
-    )"
+    versions="$(vtool -show-build "$file_path" 2>/dev/null | macos_versions || true)"
   fi
-
   if [[ -z "$versions" ]] && command -v otool >/dev/null 2>&1; then
-    versions="$(
-      otool -l "$file_path" 2>/dev/null \
-        | awk '
-          /^[[:space:]]*cmd LC_BUILD_VERSION/ { in_build = 1; next }
-          in_build && /^[[:space:]]*minos[[:space:]]/ { print $2; in_build = 0; next }
-          /^[[:space:]]*cmd LC_VERSION_MIN_MACOSX/ { in_version_min = 1; next }
-          in_version_min && /^[[:space:]]*version[[:space:]]/ { print $2; in_version_min = 0; next }
-        ' \
-        || true
-    )"
+    versions="$(otool -l "$file_path" 2>/dev/null | macos_versions || true)"
   fi
-
   printf '%s\n' "$versions" | sed '/^$/d'
 }
 

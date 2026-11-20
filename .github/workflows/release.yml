@@ -242,8 +242,34 @@ jobs:
           security delete-keychain "$KEYCHAIN_PATH" || true
           rm -f "$APPLE_CERTIFICATE_PATH"
 
+  verify-macos-15-installer:
+    needs: build-signed-macos-app
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: typeflux-release-apple-silicon-${{ github.sha }}
+          path: ${{ runner.temp }}/installers
+      - name: Launch the signed DMG and verify a real clipboard screenshot on macOS 15
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RUNNER_ARCH" = ARM64
+          images=("$RUNNER_TEMP"/installers/*-minimal-apple-silicon.dmg)
+          dir="$(mktemp -d "$RUNNER_TEMP/installed.XXXXXX")"
+          mkdir "$dir/mount"
+          (
+            hdiutil attach -readonly -nobrowse -mountpoint "$dir/mount" "${images[0]}"
+            trap 'hdiutil detach "$dir/mount"' EXIT
+            ditto "$dir/mount/Typeflux.app" "$dir/Typeflux.app"
+          )
+          spctl --assess --type execute "$dir/Typeflux.app"
+          python3 scripts/verify_preview_recovery.py "$dir/Typeflux.app" --copy-screenshot
+
   publish-release-artifacts:
-    needs: [verify-apple-silicon-build, build-signed-macos-app]
+    needs: [verify-apple-silicon-build, build-signed-macos-app, verify-macos-15-installer]
     runs-on: macos-latest
     timeout-minutes: 45
     permissions:
