@@ -113,11 +113,11 @@ final class ModelSettingsPresentationTests: XCTestCase {
     func testUsageKeysReflectSceneAssignments() {
         XCTAssertEqual(
             ModelSettingsPresentation.usageKeys(reference: "m", rewriteReference: "m", defaultReference: "m"),
-            ["ask.models.rewrite", "models.askDefault"]
+            ["ask.models.rewrite", "ask.models.isDefault"]
         )
         XCTAssertEqual(
             ModelSettingsPresentation.usageKeys(reference: "m", rewriteReference: "x", defaultReference: "m"),
-            ["models.askDefault"]
+            ["ask.models.isDefault"]
         )
         XCTAssertEqual(
             ModelSettingsPresentation.usageKeys(reference: "m", rewriteReference: "m", defaultReference: "x"),

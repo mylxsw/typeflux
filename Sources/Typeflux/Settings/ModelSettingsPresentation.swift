@@ -67,7 +67,7 @@ enum ModelSettingsPresentation {
             keys.append("ask.models.rewrite")
         }
         if reference == defaultReference {
-            keys.append("models.askDefault")
+            keys.append("ask.models.isDefault")
         }
         return keys
     }
