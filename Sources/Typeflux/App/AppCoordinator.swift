@@ -70,16 +70,11 @@ final class AppCoordinator {
             }
         }
         moduleStartup?.cancel()
-        moduleStartup = Task { [di] in
-            guard FeatureProcess.owns(.launcher) else { return }
-            // Start the preview pool first and pay the helper/LaunchServices cold
-            // start before the first launcher search needs an application icon.
-            let previewReady = (try? await di.moduleRegistry.start(.mediaPreviews)) != nil
-            async let iconWarmup = previewReady
-                ? (try? AskFinderIcon.decode(.init(kind: .type, value: "public.folder"))) : nil
-            if !FeatureProcess.enabled { await SemanticFileSearchService.shared.startForApplication(using: di.moduleRegistry) }
-            else { SemanticFileSearchService.shared.start() }
-            _ = await iconWarmup
+        moduleStartup = Task { [weak self] in
+            guard let self else { return }
+            async let clipboard: Void = prewarmClipboardHistoryWhenReady()
+            await prewarmLauncherWhenReady()
+            await clipboard
         }
         di.analyticsReporter.reportFirstOpenIfNeeded()
         di.analyticsReporter.report(
@@ -151,8 +146,6 @@ final class AppCoordinator {
         if let ask = di.askConversationWindowController {
             ask.model.semanticSearch = semanticSearch
             workflowController.onAskRequested = { [weak ask] in ask?.toggleLauncher() }
-            // Build the launcher while the app is idle, so the first ⌥Space shows it at once.
-            DispatchQueue.main.async { [weak ask] in ask?.prewarmLauncher() }
             let voice = ask.model.voiceInput
             voice.recorder = FeatureProcess.enabled ? FeatureVoiceRecording() : WorkflowComposerRecording(workflowController)
             workflowController.composerVoiceInput = voice
@@ -305,6 +298,26 @@ final class AppCoordinator {
         } else {
             presentPermissionGuidanceIfNeeded()
         }
+    }
+
+    private func prewarmClipboardHistoryWhenReady() async {
+        guard FeatureProcess.owns(.clipboard),
+              (try? await di.moduleRegistry.start(.clipboardThumbnails)) != nil,
+              !Task.isCancelled else { return }
+        // An existing library has no new-copy notification on a quiet desktop.
+        workflowController?.prewarmHistoryPanelSnapshot()
+    }
+
+    private func prewarmLauncherWhenReady() async {
+        guard FeatureProcess.owns(.launcher) else { return }
+        let previewReady = (try? await di.moduleRegistry.start(.mediaPreviews)) != nil
+        guard !Task.isCancelled else { return }
+        di.askConversationWindowController?.prewarmLauncher()
+        async let iconWarmup = previewReady
+            ? (try? AskFinderIcon.decode(.init(kind: .type, value: "public.folder"))) : nil
+        if FeatureProcess.enabled { SemanticFileSearchService.shared.start() }
+        else { await SemanticFileSearchService.shared.startForApplication(using: di.moduleRegistry) }
+        _ = await iconWarmup
     }
 
     func makeWorkflowController() -> WorkflowController {

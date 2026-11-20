@@ -39,11 +39,10 @@ def has_visible_detail(pixels, width, height):
     return pixels != pixels[:4] * (width * height)
 
 
-def fresh_previews(cache, image_path):
+def preview_status(cache, image_path):
     icons = cache / "LauncherIcons"
     thumbs = cache / "clipboard-thumbnails-v1"
-    if not any(has_visible_detail(path.read_bytes(), 112, 112) for path in icons.glob("*.rgba")):
-        return False
+    has_icon = any(has_visible_detail(path.read_bytes(), 112, 112) for path in icons.glob("*.rgba"))
     prefix = hashlib.sha256(str(image_path).encode()).hexdigest()
     for path in thumbs.glob(f"{prefix}-*.rgba"):
         data = path.read_bytes()
@@ -51,8 +50,8 @@ def fresh_previews(cache, image_path):
             continue
         width, height = struct.unpack(">II", data[4:12])
         if 0 < width <= 480 and 0 < height <= 480 and has_visible_detail(data[12:], width, height):
-            return True
-    return False
+            return has_icon, True
+    return has_icon, False
 
 
 def seed_image(database, image, target):
@@ -103,11 +102,15 @@ def verify(app):
                                 with sqlite3.connect(database) as conn:
                                     if conn.execute("SELECT 1 FROM sqlite_master WHERE name='clipboard_items'").fetchone():
                                         break
-                            elif launch > 1 and fresh_previews(cache, image_path):
+                            elif launch > 1 and all(preview_status(cache, image_path)):
                                 break
                         time.sleep(0.2)
                     else:
-                        raise RuntimeError(f"Launch {launch}: services or cold-cache previews did not recover")
+                        has_icon, has_thumbnail = preview_status(cache, image_path)
+                        raise RuntimeError(
+                            f"Launch {launch}: services ready={services_available(health)}, "
+                            f"app icon present={has_icon}, fixture thumbnail present={has_thumbnail}"
+                        )
                 finally:
                     # Exercise the failure path without allowing graceful quit to reset the counters.
                     try:
