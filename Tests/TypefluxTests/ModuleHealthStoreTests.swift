@@ -83,12 +83,61 @@ struct ModuleHealthStoreTests {
         #expect(ModuleHealthStore.directory().lastPathComponent == "ModuleHealth")
     }
 
+    @Test func oldQuarantineAndRepeatedProcessExitsDoNotDisableHealthyServices() async throws {
+        let root = location()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        for module in ModuleID.allCases {
+            let url = root.appendingPathComponent(module.rawValue + ".json")
+            try Data(#"{"version":1,"attempts":4,"quarantined":true,"automaticRecoveryUsed":true}"#.utf8).write(to: url)
+            for _ in 0..<6 {
+                let handle = ModuleHandle(healthStore: ModuleHealthStore(url: url), factory: { 42 })
+                #expect(try await handle.perform { $0 } == 42)
+                // Simulate process loss by opening the next store without running shutdown.
+            }
+            let record = try JSONDecoder().decode(ModuleHealthStore.Record.self, from: Data(contentsOf: url))
+            #expect(record.version == 2 && record.attempts == 1 && !record.quarantined)
+        }
+    }
+
+    @Test func exitDuringReadinessChecksDoesNotQuarantineWorkerButItsOwnFailuresDo() throws {
+        let root = location(), url = root.appendingPathComponent("mediaPreviews.json")
+        defer { try? FileManager.default.removeItem(at: root) }
+        for _ in 0..<6 {
+            try ModuleHealthStore(url: url).reserve(protectingInitialization: false)
+        }
+        for _ in 0..<4 {
+            let store = ModuleHealthStore(url: url)
+            try store.reserve(protectingInitialization: false)
+            store.recordFailure()
+        }
+        #expect(throws: ModuleFailure.quarantined) {
+            try ModuleHealthStore(url: url).reserve(protectingInitialization: false)
+        }
+    }
+
+    @Test func successfulNativeInitializationReleasesOnlyTheCurrentReservation() throws {
+        let root = location(), url = root.appendingPathComponent("notebook.json")
+        defer { try? FileManager.default.removeItem(at: root) }
+        for _ in 0..<3 { try ModuleHealthStore(url: url).reserve() }
+        for _ in 0..<6 {
+            let store = ModuleHealthStore(url: url)
+            try store.reserve()
+            store.markReady()
+        }
+        let failed = ModuleHealthStore(url: url)
+        try failed.reserve()
+        failed.markReady()
+        failed.recordFailure()
+        #expect(throws: ModuleFailure.quarantined) { try ModuleHealthStore(url: url).reserve() }
+    }
+
     @Test func corruptOversizedUnknownVersionAndNonregularFilesFailClosed() throws {
         let root = location(), url = root.appendingPathComponent("conversations.json")
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let fixtures = [Data(), Data("broken".utf8), Data(repeating: 65, count: 4097),
-                        Data(#"{"version":2,"attempts":0,"quarantined":false}"#.utf8),
+                        Data(#"{"version":3,"attempts":0,"quarantined":false}"#.utf8),
                         Data(#"{"version":1,"attempts":-1,"quarantined":false}"#.utf8),
                         Data(#"{"version":1,"attempts":4,"quarantined":false}"#.utf8)]
         for data in fixtures {
@@ -198,7 +247,7 @@ struct StorageModuleRegistryTests {
             let record = try JSONDecoder().decode(ModuleHealthStore.Record.self,
                 from: Data(contentsOf: root.appendingPathComponent(file)))
             #expect(record.attempts == 1)
-            #expect(record.automaticRecoveryUsed == true)
+            #expect(record.version == 2 && record.reusable == true)
         }
         await storage.registry.shutdown()
     }

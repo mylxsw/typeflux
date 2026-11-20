@@ -55,6 +55,11 @@ verify_bundle_signature() {
   fi
 }
 
+source "$ROOT_DIR/scripts/signing_keychain.sh"
+if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]]; then
+  select_signing_identity release "$TYPEFLUX_CODESIGN_IDENTITY" "${TYPEFLUX_CODESIGN_KEYCHAIN:-}"
+fi
+
 if ! command -v create-dmg >/dev/null 2>&1; then
   echo "Error: create-dmg is not installed. Install it with: brew install create-dmg"
   exit 1
@@ -98,7 +103,7 @@ rm -rf "$STAGING_DIR"
 
 # Sign the DMG if a signing identity is available
 if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
-  codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp "$DMG_PATH"
+  codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --timestamp "$DMG_PATH"
   echo "Signed DMG with identity: $TYPEFLUX_CODESIGN_IDENTITY"
 fi
 

@@ -69,6 +69,7 @@ jobs:
 
           echo "APPLE_CERTIFICATE_PATH=$RUNNER_TEMP/developer-id-application.p12" >> "$GITHUB_ENV"
           echo "KEYCHAIN_PATH=$RUNNER_TEMP/typeflux-release.keychain-db" >> "$GITHUB_ENV"
+          echo "TYPEFLUX_CODESIGN_KEYCHAIN=$RUNNER_TEMP/typeflux-release.keychain-db" >> "$GITHUB_ENV"
           echo "TYPEFLUX_NOTARY_KEYCHAIN=$RUNNER_TEMP/typeflux-release.keychain-db" >> "$GITHUB_ENV"
 
       - name: Cache bundled model downloads
@@ -195,6 +196,18 @@ jobs:
             TYPEFLUX_PACKAGE_NAME="$package_name" \
             "$release_script"
             require_package_artifacts "$package_name"
+            if [[ "$release_arch" == "arm64" ]]; then
+              local smoke_dir
+              smoke_dir="$(mktemp -d "$RUNNER_TEMP/preview-recovery.XXXXXX")"
+              mkdir "$smoke_dir/mount"
+              (
+                hdiutil attach -readonly -nobrowse -mountpoint "$smoke_dir/mount" "$BUILD_DIR/$package_name.dmg"
+                trap 'hdiutil detach "$smoke_dir/mount"' EXIT
+                ditto "$smoke_dir/mount/Typeflux.app" "$smoke_dir/Typeflux.app"
+              )
+              python3 scripts/verify_preview_recovery.py "$smoke_dir/Typeflux.app"
+              rm -rf "$smoke_dir"
+            fi
             stage_package_artifacts "$package_name"
           }
 

@@ -23,9 +23,8 @@ enum FeatureHealthMigration {
                         ModuleHealthStore.Record.self,
                         from: data
                     ),
-                    record.version == 1, (0 ... 4).contains(record.attempts),
-                    record.attempts < 4 || record.quarantined {
-                    record
+                    record.isValid {
+                    record.migrated
                 } else {
                     .init(attempts: 4, quarantined: true)
                 }
@@ -41,8 +40,10 @@ enum FeatureHealthMigration {
     static func combine(_ previous: ModuleHealthStore.Record?, _ next: ModuleHealthStore.Record) -> ModuleHealthStore
         .Record {
         guard let previous else { return next }
-        return .init(attempts: max(previous.attempts, next.attempts),
-                     quarantined: previous.quarantined || next.quarantined,
+        // Merge consumed attempts. A live reservation can be reused on the next start.
+        let consumed = max(previous.attempts - (previous.reusable == true ? 1 : 0),
+                           next.attempts - (next.reusable == true ? 1 : 0))
+        return .init(attempts: consumed, quarantined: previous.quarantined || next.quarantined,
                      automaticRecoveryUsed: previous.automaticRecoveryUsed == true || next
                          .automaticRecoveryUsed == true)
     }

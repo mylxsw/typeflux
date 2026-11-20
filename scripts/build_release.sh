@@ -97,6 +97,9 @@ verify_main_executable_architecture() {
   esac
 }
 
+source "$ROOT_DIR/scripts/signing_keychain.sh"
+select_signing_identity release "${TYPEFLUX_CODESIGN_IDENTITY:-}" "${TYPEFLUX_CODESIGN_KEYCHAIN:-}"
+
 echo "Building Typeflux release bundle..."
 echo "Release variant: ${RELEASE_VARIANT}"
 echo "Release architecture: ${RELEASE_ARCH}"
@@ -204,70 +207,40 @@ fi
 # sealed. `codesign --deep` is deprecated for this and does not cover arbitrary
 # Mach-O files under Contents/Resources.
 sign_nested_binaries() {
-  local identity="$1"
-  local adhoc="$2"
   local resources_root="$APP_BUNDLE/Contents/Resources"
-
   [[ -d "$resources_root" ]] || return 0
-
-  local -a nested_args
-  if [[ "$adhoc" == true ]]; then
-    nested_args=(--force --sign - --identifier "ai.gulu.app.typeflux")
-  else
-    nested_args=(
-      --force
-      --sign "$identity"
-      --timestamp
-      --options runtime
-    )
-  fi
 
   while IFS= read -r -d '' candidate; do
     [[ -L "$candidate" ]] && continue
     if file "$candidate" 2>/dev/null | grep -qE 'Mach-O|dynamically linked shared library'; then
       echo "Signing nested binary: ${candidate#$APP_BUNDLE/}"
-      codesign "${nested_args[@]}" "$candidate"
+      codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --timestamp --options runtime "$candidate"
     fi
   done < <(find "$resources_root/LocalRuntimes" "$resources_root/BundledModels" -type f \( -perm -u+x -o -name '*.dylib' -o -name '*.so' \) -print0 2>/dev/null)
 }
 
-# Sign the bundle with a stable Developer ID identity. Hardened runtime is
-# required for notarization, and a stable identity is required for Keychain
-# continuity across app updates.
-if [[ -z "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]]; then
-  echo "Error: TYPEFLUX_CODESIGN_IDENTITY is required for release builds." >&2
-  echo "Refusing to create an ad-hoc signed release because it can break Keychain-backed login state." >&2
-  exit 1
-fi
-
-if ! command -v codesign >/dev/null 2>&1; then
-  echo "Error: codesign is required for release builds." >&2
-  exit 1
-fi
-
-if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]]; then
-  codesign_args=(
-    --force
-    --sign "$TYPEFLUX_CODESIGN_IDENTITY"
-    --timestamp
-    --options runtime
-    --identifier "ai.gulu.app.typeflux"
-    --entitlements "$entitlements_to_use"
-  )
-  sign_nested_binaries "$TYPEFLUX_CODESIGN_IDENTITY" false
-  codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp --options runtime \
-    "$APP_BUNDLE/Contents/Helpers/swift-transformers_Hub.bundle"
-  codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp --options runtime \
-    "$APP_BUNDLE/Contents/Helpers/TypefluxInferenceHelper"
-  codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp --options runtime \
-    "$APP_BUNDLE/Contents/Helpers/TypefluxMediaHelper"
-  codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp --options runtime \
-    "$APP_BUNDLE/Contents/Helpers/TypefluxChatWindowHelper.app"
-  codesign "${codesign_args[@]}" "$APP_EXECUTABLE"
-  codesign "${codesign_args[@]}" "$APP_BUNDLE"
-  codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
-  echo "Signed with identity: $TYPEFLUX_CODESIGN_IDENTITY"
-fi
+codesign_args=(
+  --keychain "$signing_keychain"
+  --force
+  --sign "$signing_hash"
+  --timestamp
+  --options runtime
+  --identifier "ai.gulu.app.typeflux"
+  --entitlements "$entitlements_to_use"
+)
+sign_nested_binaries
+codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --timestamp --options runtime \
+  "$APP_BUNDLE/Contents/Helpers/swift-transformers_Hub.bundle"
+codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --timestamp --options runtime \
+  "$APP_BUNDLE/Contents/Helpers/TypefluxInferenceHelper"
+codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --timestamp --options runtime \
+  "$APP_BUNDLE/Contents/Helpers/TypefluxMediaHelper"
+codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --timestamp --options runtime \
+  "$APP_BUNDLE/Contents/Helpers/TypefluxChatWindowHelper.app"
+codesign "${codesign_args[@]}" "$APP_EXECUTABLE"
+codesign "${codesign_args[@]}" "$APP_BUNDLE"
+codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
+echo "Signed with identity: $signing_name"
 
 if [[ "$use_apple_sign_in_entitlements" == true ]]; then
   echo "Embedded provisioning profile: $TYPEFLUX_PROVISIONING_PROFILE"

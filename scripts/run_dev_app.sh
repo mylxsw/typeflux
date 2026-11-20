@@ -2,6 +2,9 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/scripts/signing_keychain.sh"
+select_signing_identity dev "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" "${TYPEFLUX_DEV_CODESIGN_KEYCHAIN:-}"
+TYPEFLUX_DEV_CODESIGN_IDENTITY="$signing_name"
 APP_DIR="${TYPEFLUX_DEV_APP_DIR:-$HOME/Applications/Typeflux Dev.app}"
 DEV_VARIANT="${TYPEFLUX_DEV_VARIANT:-minimal}"
 BUILD_CONFIGURATION="${TYPEFLUX_DEV_BUILD_CONFIGURATION:-release}"
@@ -47,7 +50,7 @@ profile_contains_signing_identity() {
     return 1
   fi
 
-  if ! security find-certificate -c "$signing_identity" -p >"$identity_certificate" 2>/dev/null; then
+  if ! security find-certificate -c "$signing_identity" -p "$signing_keychain" >"$identity_certificate" 2>/dev/null; then
     rm -f "$decoded_profile" "$identity_certificate"
     return 1
   fi
@@ -180,33 +183,6 @@ add_dev_http_transport_exception_if_needed
 
 chmod +x "$APP_DIR/Contents/MacOS/Typeflux"
 
-# SwiftPM debug builds may carry a transient ad-hoc signature with a generated
-# identifier. Re-sign the assembled app bundle with a stable identifier so the
-# dev app is launchable and privacy services see a consistent app identity.
-if [[ -z "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" ]] && command -v security >/dev/null 2>&1; then
-  # Prefer Apple Development identities, then the project's self-signed cert
-  # ("Typeflux Dev"). A stable identity ensures macOS privacy permissions
-  # (microphone, accessibility, etc.) persist across rebuilds.
-  # Run 'scripts/setup_dev_cert.sh' once to create the reusable self-signed cert.
-  TYPEFLUX_DEV_CODESIGN_IDENTITY="$(
-    security find-identity -v -p codesigning 2>/dev/null \
-      | sed -n 's/.*"Apple Development: \(.*\)"/Apple Development: \1/p' \
-      | head -n 1
-  )"
-  if [[ -z "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" ]]; then
-    if security find-identity -v -p codesigning 2>/dev/null | grep -qF '"Typeflux Dev"'; then
-      TYPEFLUX_DEV_CODESIGN_IDENTITY="Typeflux Dev"
-    fi
-  fi
-fi
-
-if [[ -z "${TYPEFLUX_DEV_CODESIGN_IDENTITY:-}" ]]; then
-  echo "Error: no stable code-signing identity found for the Typeflux dev app." >&2
-  echo "Run scripts/setup_dev_cert.sh once, or set TYPEFLUX_DEV_CODESIGN_IDENTITY explicitly." >&2
-  echo "Refusing to use ad-hoc signing because it can break Keychain-backed login state." >&2
-  exit 1
-fi
-
 RUNTIME_ENTITLEMENTS="$ROOT_DIR/app/TypefluxRuntime.entitlements"
 APPLE_SIGN_IN_ENTITLEMENTS="$ROOT_DIR/app/Typeflux.entitlements"
 TYPEFLUX_DEV_PROVISIONING_PROFILE="${TYPEFLUX_DEV_PROVISIONING_PROFILE:-}"
@@ -257,20 +233,20 @@ fi
 #   TYPEFLUX_DEV_PROVISIONING_PROFILE="/path/to/profile.provisionprofile" \
 #   TYPEFLUX_DEV_CODESIGN_IDENTITY="Apple Development: Your Name (...)" ./scripts/run_dev_app.sh
 if command -v codesign >/dev/null 2>&1; then
-  codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
+  codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --options runtime \
     "$APP_DIR/Contents/Helpers/swift-transformers_Hub.bundle"
-  codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
+  codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --options runtime \
     "$APP_DIR/Contents/Helpers/TypefluxInferenceHelper"
-  codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
+  codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --options runtime \
     "$APP_DIR/Contents/Helpers/TypefluxMediaHelper"
-  codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
+  codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --options runtime \
     "$APP_DIR/Contents/Helpers/TypefluxChatWindowHelper.app"
   semantic_helper="$APP_DIR/Contents/Resources/LocalRuntimes/SemanticSearch/TypefluxSemanticHelper"
   if [[ -f "$semantic_helper" ]]; then
-    codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime "$semantic_helper"
+    codesign --keychain "$signing_keychain" --force --sign "$signing_hash" --options runtime "$semantic_helper"
   fi
   # Deep signing would copy the app's restricted entitlements onto the helpers.
-  codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" \
+  codesign --keychain "$signing_keychain" --force --sign "$signing_hash" \
     --entitlements "$entitlements_to_use" "$APP_DIR"
   verify_stable_signature
   echo "Signed with stable identity: $TYPEFLUX_DEV_CODESIGN_IDENTITY"

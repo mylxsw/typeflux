@@ -202,15 +202,15 @@ actor ModuleSupervisor<Service: Sendable> {
         state = .starting
         let current = generation
         let resetHealth = resetHealthOnNextStart
-        let automaticPersistentRecovery = policy.automaticallyRecoverPersistentQuarantine
         resetHealthOnNextStart = false
-        startup = Task.detached { [factory, admission, healthStore] in
+        startup = Task.detached { [factory, admission, healthStore, policy] in
             let result: Result<Service, any Error>
             do {
                 try Task.checkCancellation()
                 guard admission.permitsWork else { throw ModuleFailure.disabled }
                 if resetHealth { try healthStore?.reset() }
-                try healthStore?.reserve(automaticRecovery: automaticPersistentRecovery)
+                try healthStore?.reserve(automaticRecovery: policy.automaticallyRecoverPersistentQuarantine,
+                                         protectingInitialization: policy.protectsInitialization)
                 try Task.checkCancellation()
                 guard admission.permitsWork else { throw ModuleFailure.disabled }
                 result = .success(try await factory())
@@ -237,6 +237,7 @@ actor ModuleSupervisor<Service: Sendable> {
             state = .ready
             failure = nil
             budget.succeeded(at: uptime())
+            healthStore?.markReady()
             healthStore?.succeeded()
             finishWaiters(.success(ModuleLease(service: value, generation: current)))
         case let .failure(error):
@@ -298,7 +299,7 @@ actor ModuleSupervisor<Service: Sendable> {
     }
 
     private func failed(_ error: any Error, disposition: ModuleFailureDisposition) {
-        healthStore?.failed()
+        healthStore?.recordFailure()
         budget.failed(at: uptime())
         automaticRetryAllowed = disposition != .waitForExplicitRetry
         invalidate(with: error)

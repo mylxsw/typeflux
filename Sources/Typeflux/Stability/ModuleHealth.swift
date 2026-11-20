@@ -34,6 +34,8 @@ struct ModulePolicy: Sendable {
     var maxInFlight = 8
     var automaticallyRecover = true
     var automaticallyRecoverPersistentQuarantine = false
+    // Only factories opening native resources in this process need a crash reservation.
+    var protectsInitialization = false
 
     var isValid: Bool {
         [startupTimeout, operationTimeout, cleanupTimeout].allSatisfy {

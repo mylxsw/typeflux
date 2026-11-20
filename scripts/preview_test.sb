@@ -1,0 +1,10 @@
+;; A temporary home does not isolate the macOS keychain. Apply to the app
+;; and its workers so a release check cannot request the desktop user's keys.
+(version 1)
+(allow default)
+(deny mach-lookup
+    (global-name "com.apple.SecurityServer")
+    (global-name-prefix "com.apple.securityd.")
+    (global-name "com.apple.security.agent")
+    (global-name "com.apple.security.authhost"))
+(deny file-read* file-write* (regex #"/Library/Keychains(/|$)"))

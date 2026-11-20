@@ -127,6 +127,24 @@ struct FeatureProcessConsolidationTests {
         #expect(try JSONDecoder().decode(ModuleHealthStore.Record.self, from: Data(contentsOf: migrated)).attempts == 0)
     }
 
+    @Test func legacyOwnerCannotRequarantineAMigratedHealthyWorker() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let old = root.appendingPathComponent("features/clipboard")
+        try FileManager.default.createDirectory(at: old, withIntermediateDirectories: true)
+        try Data(#"{"version":1,"attempts":4,"quarantined":true}"#.utf8)
+            .write(to: old.appendingPathComponent("clipboardThumbnails.json"))
+        let url = root.appendingPathComponent("clipboardThumbnails.json")
+        let store = ModuleHealthStore(url: url)
+        try store.reserve(protectingInitialization: false)
+        store.recordFailure()
+        try store.reserve(protectingInitialization: false)
+        try FeatureHealthMigration.migrate(root: root, owner: .host)
+        try ModuleHealthStore(url: url).reserve(protectingInitialization: false)
+        let record = try JSONDecoder().decode(ModuleHealthStore.Record.self, from: Data(contentsOf: url))
+        #expect(record.attempts == 2 && record.reusable == true && !record.quarantined)
+    }
+
     @Test func `corrupt legacy health fails closed`() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

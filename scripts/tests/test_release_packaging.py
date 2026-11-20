@@ -26,12 +26,12 @@ class ReleasePackagingTests(unittest.TestCase):
                     offenders.append(f'{source.relative_to(ROOT)}:{line_number}')
         self.assertFalse(offenders, 'Use Bundle.appResources in the main app:\n' + '\n'.join(offenders))
 
-    def run_release(self, fail_tokenizer=False):
+    def run_release(self, fail_tokenizer=False, missing_identity=False):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             scripts = root / 'scripts'
             scripts.mkdir()
-            for name in ['build_release.sh', 'copy_inference_helper.sh', 'copy_media_helper.sh',
+            for name in ['build_release.sh', 'signing_keychain.sh', 'copy_inference_helper.sh', 'copy_media_helper.sh',
                          'copy_resource_bundles.sh', 'copy_chat_window_helper.sh']:
                 shutil.copyfile(ROOT / 'scripts' / name, scripts / name)
             app = root / 'app'
@@ -54,7 +54,14 @@ class ReleasePackagingTests(unittest.TestCase):
             (scripts / 'audit_macho_minos.sh').chmod(0o755)
             binaries = root / 'tools'
             binaries.mkdir()
+            keychain = root / 'test signing.keychain-db'
+            keychain.touch()
             tools = {
+                'security': """#!/bin/sh
+[ "$*" = "find-identity -v -p codesigning $TYPEFLUX_CODESIGN_KEYCHAIN" ] || exit 2
+[ "$FIXTURE_MISSING_IDENTITY" = 0 ] || exit 0
+echo '  1) 0123456789ABCDEF0123456789ABCDEF01234567 "Developer ID Application: fixture"'
+""",
                 'swift': '#!/bin/sh\ncase "$*" in *--show-bin-path*) echo "$FIXTURE_PRODUCTS";; esac\n',
                 'lipo': '#!/bin/sh\necho arm64\n',
                 'ditto': '#!/bin/sh\nexit 0\n',
@@ -79,7 +86,8 @@ if target.endswith('/MacOS/Typeflux') or target.endswith('.app'):
                 path.chmod(0o755)
             env = {key: value for key, value in os.environ.items() if not key.startswith('TYPEFLUX_')}
             env.update(PATH=str(binaries) + os.pathsep + env['PATH'],
-                       TYPEFLUX_RELEASE_VARIANT='app-only', TYPEFLUX_CODESIGN_IDENTITY='fixture-identity',
+                       TYPEFLUX_RELEASE_VARIANT='app-only', TYPEFLUX_CODESIGN_IDENTITY='Developer ID Application: fixture',
+                       TYPEFLUX_CODESIGN_KEYCHAIN=str(keychain), FIXTURE_MISSING_IDENTITY=str(int(missing_identity)),
                        FIXTURE_PRODUCTS=str(products), FIXTURE_SIGNATURES=str(root / 'signatures.json'),
                        FIXTURE_FAIL='1' if fail_tokenizer else '0')
             trace_env = root / 'trace-env'
@@ -90,7 +98,8 @@ if target.endswith('/MacOS/Typeflux') or target.endswith('.app'):
             if os.environ.get('SHELL_COVERAGE_TRACE'):
                 with open(os.environ['SHELL_COVERAGE_TRACE'], 'a') as trace:
                     trace.write(result.stderr)
-            rows = json.loads((root / 'signatures.json').read_text())
+            log = root / 'signatures.json'
+            rows = json.loads(log.read_text()) if log.exists() else []
             return result, rows
 
     def test_tokenizer_is_signed_before_workers_and_host_without_host_entitlements(self):
@@ -99,12 +108,22 @@ if target.endswith('/MacOS/Typeflux') or target.endswith('.app'):
         tokenizer = next(i for i, row in enumerate(rows) if row[-1].endswith('swift-transformers_Hub.bundle'))
         host = next(i for i, row in enumerate(rows) if row[-1].endswith('/MacOS/Typeflux'))
         worker = next(i for i, row in enumerate(rows) if row[-1].endswith('/TypefluxInferenceHelper'))
+        for row in rows:
+            if '--sign' in row:
+                self.assertTrue(row[row.index('--keychain') + 1].endswith('/test signing.keychain-db'))
         self.assertLess(tokenizer, worker)
         self.assertLess(worker, host)
         self.assertIn('--timestamp', rows[tokenizer])
         self.assertIn('runtime', rows[tokenizer])
         self.assertNotIn('--entitlements', rows[tokenizer])
         self.assertTrue(any('--verify' in row and '--strict' in row for row in rows))
+
+    def test_missing_identity_stops_before_building_or_signing(self):
+        result, rows = self.run_release(missing_identity=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(rows, [])
+        self.assertNotIn('Building Typeflux release bundle', result.stdout)
+        self.assertIn('No matching Developer ID', result.stderr)
 
     def test_tokenizer_signature_failure_stops_before_signing_host(self):
         result, rows = self.run_release(fail_tokenizer=True)

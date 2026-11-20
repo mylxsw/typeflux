@@ -12,7 +12,7 @@ struct StorageModules: Sendable {
          conversationFactory: @escaping @Sendable () throws -> any AskCaching,
          wordBookFactory: @escaping @Sendable () throws -> any AskWordBookStoring,
          noteFactory: @escaping @Sendable () throws -> any AskNoteStoring) {
-        let policy = ModulePolicy(automaticallyRecoverPersistentQuarantine: true)
+        let policy = ModulePolicy(automaticallyRecoverPersistentQuarantine: true, protectsInitialization: true)
         notes = RecoveringAskNoteStore(factory: noteFactory,
             policy: policy,
             healthStore: ModuleHealthStore(url: healthDirectory.appendingPathComponent("notebook.json")))

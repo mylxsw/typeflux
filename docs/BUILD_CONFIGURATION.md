@@ -218,8 +218,10 @@ The release script passes `--keychain` automatically when this variable is set.
 | Variable | Required for | What value it takes | Where it is used |
 | --- | --- | --- | --- |
 | `TYPEFLUX_DEV_CODESIGN_IDENTITY` | Optional, recommended for dev | Full string from `security find-identity`, e.g. `Apple Development: YIYAO GUAN (N95437SZ2A)` | `scripts/run_dev_app.sh`, `scripts/run_dev_attached.sh` |
+| `TYPEFLUX_DEV_CODESIGN_KEYCHAIN` | Optional | Path to the keychain containing the development identity. Defaults to searching the login and Typeflux Dev keychains. | Dev launch scripts |
 | `TYPEFLUX_DEV_PROVISIONING_PROFILE` | Optional; required for Sign In with Apple in dev | Absolute path to a `.provisionprofile` file | `scripts/run_dev_app.sh`, `scripts/run_dev_attached.sh` |
-| `TYPEFLUX_CODESIGN_IDENTITY` | Required by `release-notarize` | Full string from `security find-identity`, typically the Developer ID Application identity | `scripts/build_release.sh`, `scripts/build_dmg.sh`, `scripts/release_notarize.sh` |
+| `TYPEFLUX_CODESIGN_KEYCHAIN` | Optional locally, set by CI | Path to the signing keychain. Local release scripts search `~/Library/Keychains/typeflux-release.keychain-db` and the login keychain by default. | Release and DMG scripts |
+| `TYPEFLUX_CODESIGN_IDENTITY` | Optional when the selected keychain contains a Developer ID Application identity | Full string from `security find-identity`, typically the Developer ID Application identity | `scripts/build_release.sh`, `scripts/build_dmg.sh`, `scripts/release_notarize.sh` |
 | `TYPEFLUX_APPLE_DISTRIBUTION` | Optional alias for `TYPEFLUX_CODESIGN_IDENTITY` | Same value as above | `scripts/release_notarize.sh` (used as fallback when `TYPEFLUX_CODESIGN_IDENTITY` is unset) |
 | `TYPEFLUX_PROVISIONING_PROFILE` | Optional; required for Sign In with Apple in release | Absolute path to a Developer ID `.provisionprofile` file | `scripts/build_release.sh` |
 | `TYPEFLUX_NOTARY_PROFILE` | Required by `release-notarize` | Local notarytool keychain profile name (e.g. `typeflux-profile`) | `scripts/release_notarize.sh` |
