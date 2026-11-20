@@ -9,7 +9,7 @@ final class ShortcutLatencyEventCollector: @unchecked Sendable {
         lock.withLock { storage.append(event) }
     }
 
-    var sink: @Sendable (ShortcutLatencyEvent) -> Void { { self.append($0) } }
+    var sink: ShortcutLatency.EventSink { .init { self.append($0) } }
 
     var events: [ShortcutLatencyEvent] {
         lock.withLock { storage }
@@ -26,6 +26,18 @@ func diagnosticTestTrace(_ feature: FeatureRole) -> ShortcutLatencyTrace {
 
 @Suite("Detailed shortcut diagnostics", .serialized, .exclusiveUIState)
 struct ShortcutLatencyDetailTests {
+    @Test @MainActor func `launcher callbacks run in order with the production sink`() async {
+        let trace = diagnosticTestTrace(.launcher)
+        var delivered: [ShortcutLatencyTrace?] = []
+        ShortcutLatency.deliver(trace) { delivered.append(ShortcutLatency.current) }
+        ShortcutLatency.deliver(nil) { delivered.append(ShortcutLatency.current) }
+
+        #expect(delivered.isEmpty)
+        await drainMainQueue()
+        #expect(delivered == [trace, nil])
+        #expect(ShortcutLatency.current == nil)
+    }
+
     @Test func `spans preserve results errors and display ordinals`() {
         enum Failure: Error { case fixture }
         let collector = ShortcutLatencyEventCollector(), trace = diagnosticTestTrace(.screenshot)

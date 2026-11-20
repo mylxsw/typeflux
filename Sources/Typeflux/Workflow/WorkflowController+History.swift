@@ -240,7 +240,7 @@ extension WorkflowController {
 
     private func readHistoryPanel(opening: Bool, presentedCachedEntries: Bool, generation: UUID,
                                  policy: String, storeIdentity: ObjectIdentifier?, latency: ShortcutLatencyTrace?,
-                                 latencySink: (@Sendable (ShortcutLatencyEvent) -> Void)?,
+                                 latencySink: ShortcutLatency.EventSink,
                                  preparation: Result<Void, Error> = .success(())) {
         guard historyPanelCachePolicy == policy, clipboardHistoryStore.map(ObjectIdentifier.init) == storeIdentity else {
             requestHistoryPanel(opening: opening && !isHistoryPickerPresented)

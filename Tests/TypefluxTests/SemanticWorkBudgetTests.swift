@@ -16,6 +16,24 @@ private final class BudgetReasonRecorder: @unchecked Sendable {
 
 @Suite("Background compute budget", .serialized)
 struct SemanticWorkBudgetTests {
+    @Test func `nested work restores its parent budget and cancellation check`() throws {
+        let parent = SemanticWorkBudget(enabled: false)
+        let child = SemanticWorkBudget(enabled: false)
+        let token = AskSearchCancellation()
+
+        try parent.perform(cancelled: { false }) {
+            try child.perform(cancelled: { token.isCancelled }) {
+                token.cancel()
+                #expect(SemanticWorkBudget.current === child)
+                #expect(SemanticWorkBudget.cancellation?() == true)
+            }
+            #expect(SemanticWorkBudget.current === parent)
+            #expect(SemanticWorkBudget.cancellation?() == false)
+        }
+        #expect(SemanticWorkBudget.current == nil)
+        #expect(SemanticWorkBudget.cancellation == nil)
+    }
+
     @Test func `ordinary activity slows work without stopping useful progress`() throws {
         var now: Double = 0
         var state = SemanticWorkBudget.State()

@@ -137,15 +137,15 @@ struct SemanticBudgetLifecycleTests {
         }
     }
 
-    @Test func aRealBudgetPausesPreparationThenResumesWithoutReencoding() async throws {
+    @Test func aRealBudgetPreparesWhilePausedThenResumesIndexingWithoutReencoding() async throws {
         let encoder = SemanticFixtureEncoder()
         let (service, root, _) = try context(budgetEnabled: true, makeEncoder: { _, _ in encoder })
         defer { try? FileManager.default.removeItem(at: root) }
         service.pause(true)
         #expect(service.setEnabled(true))
         do {
-            try await SemanticFileServiceTests.wait { service.resourceWaitReason == .priority }
-            #expect(!service.modelReady && encoder.calls == 0)
+            try await SemanticFileServiceTests.wait { service.phase == .paused }
+            #expect(service.modelReady && encoder.calls == 0)
             service.pause(false)
             try await SemanticFileServiceTests.wait { service.phase == .ready }
             #expect(encoder.calls == 1)

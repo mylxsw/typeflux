@@ -11,8 +11,14 @@ extension Process: SemanticBudgetChild {}
 /// One owner executes background work. Owned CPU children are time-sliced during pipe I/O as well
 /// as between checkpoints. Query/voice work uses separate workers and never inherits this task local.
 final class SemanticWorkBudget: @unchecked Sendable {
-    @TaskLocal static var current: SemanticWorkBudget?
-    @TaskLocal static var cancellation: (@Sendable () -> Bool)?
+    private struct Context: Sendable {
+        let budget: SemanticWorkBudget
+        let cancelled: @Sendable () -> Bool
+    }
+
+    @TaskLocal private static var context: Context?
+    static var current: SemanticWorkBudget? { context?.budget }
+    static var cancellation: (@Sendable () -> Bool)? { context?.cancelled }
     static var defaultEnabled: Bool {
         !AskFileIndex.isTesting || ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_REFERENCE_BUDGET"] == "1"
     }
@@ -106,11 +112,9 @@ final class SemanticWorkBudget: @unchecked Sendable {
     }
 
     func perform<Value>(cancelled: @escaping @Sendable () -> Bool, operation: () throws -> Value) throws -> Value {
-        try Self.$cancellation.withValue(cancelled) {
-            try Self.$current.withValue(self) {
-                try checkpoint(cancelled: cancelled)
-                return try operation()
-            }
+        try Self.$context.withValue(Context(budget: self, cancelled: cancelled)) {
+            try checkpoint(cancelled: cancelled)
+            return try operation()
         }
     }
 

@@ -60,10 +60,15 @@ struct ShortcutLatencyEvent: Codable, Sendable {
 }
 
 enum ShortcutLatency {
+    // A nominal type keeps task-local binding independent of the runtime's ability
+    // to resolve specialized closure metadata in optimized macOS builds.
+    struct EventSink: Sendable {
+        let record: @Sendable (ShortcutLatencyEvent) -> Void
+    }
+
     @TaskLocal static var current: ShortcutLatencyTrace?
     @TaskLocal static var receivedUptime: TimeInterval?
-    /// Injected observers let focused tests inspect real instrumentation without writing user logs.
-    @TaskLocal static var eventSink: (@Sendable (ShortcutLatencyEvent) -> Void)?
+    @TaskLocal static var eventSink = EventSink { writer.record($0) }
     static let enabledKey = "diagnostics.shortcuts.enabled"
     static var directory: URL { TypefluxDataDirectories.cache.appendingPathComponent("shortcut-latency", isDirectory: true) }
     private static let writer = ShortcutLatencyWriter()
@@ -91,11 +96,7 @@ enum ShortcutLatency {
             itemIndex: itemIndex,
             itemCount: itemCount
         )
-        if let eventSink {
-            eventSink(event)
-        } else {
-            writer.record(event)
-        }
+        eventSink.record(event)
     }
 
     static func measure<T>(_ start: ShortcutLatencyStage, _ end: ShortcutLatencyStage,
