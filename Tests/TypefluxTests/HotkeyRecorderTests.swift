@@ -3,6 +3,18 @@ import AppKit
 import XCTest
 
 final class HotkeyRecorderTests: XCTestCase {
+    @MainActor
+    func testFallbackHandlesModifierWithoutReadingKeyRepeat() async throws {
+        let recorder = HotkeyRecorder()
+        defer { recorder.stop() }
+        let event = try XCTUnwrap(NSEvent.keyEvent(with: .flagsChanged, location: .zero, modifierFlags: .option,
+                                                  timestamp: 1, windowNumber: 0, context: nil,
+                                                  characters: "", charactersIgnoringModifiers: "",
+                                                  isARepeat: false, keyCode: UInt16(HotkeyBinding.rightOptionKeyCode)))
+
+        XCTAssertTrue(recorder.processRecordedEvent(event))
+    }
+
     func testIgnoresSingleNonModifierKeyDownWithoutModifiers() {
         let binding = HotkeyRecorder.recordedBinding(
             eventType: .keyDown,

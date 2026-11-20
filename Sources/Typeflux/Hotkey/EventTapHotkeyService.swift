@@ -392,12 +392,14 @@ final class EventTapHotkeyService: HotkeyService {
         _ = processNSEvent(event, canConsume: false)
     }
 
-    private func processNSEvent(_ event: NSEvent, canConsume: Bool) -> Bool {
-        processPhysicalEvent(
-            eventType: physicalEventType(for: event.type),
+    func processNSEvent(_ event: NSEvent, canConsume: Bool) -> Bool {
+        guard let eventType = physicalEventType(for: event.type) else { return false }
+        return processPhysicalEvent(
+            eventType: eventType,
             keyCode: Int(event.keyCode),
             modifierFlags: filteredFlags(event.modifierFlags),
-            isRepeat: event.isARepeat,
+            // AppKit raises an exception when isARepeat is read on a flags-changed event.
+            isRepeat: eventType == .keyDown && event.isARepeat,
             canConsume: canConsume,
             timestamp: event.timestamp
         )

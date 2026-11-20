@@ -47,15 +47,7 @@ final class HotkeyRecorder: ObservableObject {
         }
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { [weak self] event in
-            guard let self else { return event }
-
-            let shouldConsume = processRecordedEvent(
-                eventType: event.type,
-                keyCode: Int(event.keyCode),
-                modifierFlags: Self.filteredFlags(event.modifierFlags),
-                isRepeat: event.isARepeat
-            )
-            return shouldConsume ? nil : event
+            self?.processRecordedEvent(event) == true ? nil : event
         }
     }
 
@@ -127,6 +119,15 @@ final class HotkeyRecorder: ObservableObject {
             isRepeat: eventType == .keyDown && event.getIntegerValueField(.keyboardEventAutorepeat) != 0
         )
         return shouldConsume ? nil : Unmanaged.passUnretained(event)
+    }
+
+    func processRecordedEvent(_ event: NSEvent) -> Bool {
+        processRecordedEvent(
+            eventType: event.type,
+            keyCode: Int(event.keyCode),
+            modifierFlags: Self.filteredFlags(event.modifierFlags),
+            isRepeat: event.type == .keyDown && event.isARepeat
+        )
     }
 
     func processRecordedEvent(
