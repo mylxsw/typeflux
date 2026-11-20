@@ -44,6 +44,7 @@ final class AskConversationModel: ObservableObject {
     /// Applications the launcher can open; tests supply their own list.
     let quickSearch = AskQuickSearchSession()
     let launcherIconCache = AskLauncherIconCache(diskCache: .shared)
+    var appIndexIconObserver: AnyCancellable?
     var launcherIconWarmupEnabled = false
     /// The launcher card's visible height while its panel animates.
     let launcherViewport = AskLauncherViewport()

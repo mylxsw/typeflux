@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import Foundation
 
 /// What the launcher does after an action on a found application or file.
@@ -68,6 +69,15 @@ extension AskConversationModel {
 
     /// Keeps the application list and the file index current; called when the launcher is built and opened.
     func refreshQuickApps() {
+        if appIndexIconObserver == nil {
+            // A cold scan can finish before the offscreen launcher view subscribes.
+            appIndexIconObserver = NotificationCenter.default.publisher(for: AskAppIndex.didChange)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] notification in
+                    guard let self, (notification.object as AnyObject?) === self.appIndex else { return }
+                    self.prepareLauncherAppIcons()
+                }
+        }
         if quickAppsEnabled { appIndex.refreshIfStale() }
         prepareLauncherAppIcons()
         fileIndex.start()

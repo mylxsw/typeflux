@@ -1635,7 +1635,6 @@ struct AskComposer: View {
             .onReceive(NotificationCenter.default.publisher(for: AskAppIndex.didChange)) { notification in
                 if (notification.object as AnyObject?) === model.appIndex {
                     homeAppsRevision += 1
-                    model.prepareLauncherAppIcons()
                     refreshQuickResults(resetActions: false)
                 }
             }

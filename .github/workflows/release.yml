@@ -205,7 +205,11 @@ jobs:
                 trap 'hdiutil detach "$smoke_dir/mount"' EXIT
                 ditto "$smoke_dir/mount/Typeflux.app" "$smoke_dir/Typeflux.app"
               )
-              python3 scripts/verify_preview_recovery.py "$smoke_dir/Typeflux.app"
+              if [[ "$release_variant" == "minimal" ]]; then
+                python3 scripts/verify_preview_recovery.py "$smoke_dir/Typeflux.app" --copy-screenshot
+              else
+                python3 scripts/verify_preview_recovery.py "$smoke_dir/Typeflux.app"
+              fi
               rm -rf "$smoke_dir"
             fi
             stage_package_artifacts "$package_name"

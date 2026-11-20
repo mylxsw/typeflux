@@ -1,3 +1,4 @@
+import TypefluxMediaProtocol
 import AppKit
 import SwiftUI
 import Testing
@@ -264,6 +265,24 @@ struct AskQuickResultsInteractionTests {
             #expect(try await launcher.sentCount() == 1)
             #expect(launcher.opened.isEmpty)
         }
+    }
+
+    @Test func coldAppScanPreparesIconsBeforeTheLauncherWindowExists() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let apps = AskTestAppIndex([])
+        fixture.model.appIndex = apps
+        fixture.model.refreshQuickApps()
+        let app = AskAppEntry(name: "Finder", url: URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app"),
+                              bundleID: "com.apple.finder", names: [])
+        let icon = MediaNativeIcon(kind: .file, value: app.url.path)
+        apps.entries = [app]
+        #expect(fixture.model.launcherIconCache.cached(icon) == nil)
+        NotificationCenter.default.post(name: AskAppIndex.didChange, object: apps)
+        for _ in 0..<100 where fixture.model.launcherIconCache.cached(icon) == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(fixture.model.launcherIconCache.cached(icon) != nil)
     }
 
     @Test func refreshingAppsFollowsTheSetting() throws {

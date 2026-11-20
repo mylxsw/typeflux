@@ -69,7 +69,35 @@ def seed_image(database, image, target):
         )
 
 
-def verify(app):
+def verify_screen_copy(home, database, cache, proc):
+    # A real copy belongs only on a disposable hosted runner's clipboard.
+    if os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted":
+        raise RuntimeError("Screen-copy acceptance requires a disposable GitHub-hosted Mac")
+    screenshot = home / "screen.png"
+    subprocess.run(["/usr/sbin/screencapture", "-x", "-t", "png", screenshot], check=True, timeout=15)
+    width, height = struct.unpack(">II", screenshot.read_bytes()[16:24])
+    subprocess.run(["/usr/bin/swift", Path(__file__).with_name("copy_test_screenshot.swift"), screenshot],
+                   check=True, timeout=90)
+    with sqlite3.connect(database) as conn:
+        deadline = time.monotonic() + 60
+        while time.monotonic() < deadline:
+            if proc.poll() is not None:
+                raise RuntimeError(f"Typeflux exited after screenshot copy (exit {proc.returncode})")
+            rows = conn.execute(
+                "SELECT image_path FROM clipboard_items WHERE payload='image' AND image_width=? AND image_height=?",
+                (width, height),
+            )
+            for (image,) in rows:
+                path = Path(image)
+                if path.name != "fixture.png" and path.is_file() and all(preview_status(cache, path)):
+                    print(f"Verified one real {width} x {height} screenshot copy, history entry and visible pixels",
+                          flush=True)
+                    return
+            time.sleep(0.25)
+    raise RuntimeError("Copied screenshot did not produce a history image and nonblank preview")
+
+
+def verify(app, copy_screenshot=False):
     executable = (app / "Contents/MacOS/Typeflux").resolve(strict=True)
     image = (Path(__file__).resolve().parents[1] / "Sources/Typeflux/Resources/LauncherFeatureIcons"
              / "light/launcher-feature-light-chat.png")
@@ -111,6 +139,8 @@ def verify(app):
                             f"Launch {launch}: services ready={services_available(health)}, "
                             f"app icon present={has_icon}, fixture thumbnail present={has_thumbnail}"
                         )
+                    if copy_screenshot and launch == 6:
+                        verify_screen_copy(home, database, cache, proc)
                 finally:
                     # Exercise the failure path without allowing graceful quit to reset the counters.
                     try:
@@ -127,4 +157,6 @@ def verify(app):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("app", type=Path)
-    verify(parser.parse_args().app)
+    parser.add_argument("--copy-screenshot", action="store_true")
+    args = parser.parse_args()
+    verify(args.app, args.copy_screenshot)
