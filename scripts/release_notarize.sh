@@ -338,6 +338,7 @@ artifact_path_for_log() {
 
 main() {
   parse_args "$@"
+  use_local_release_credentials "$0" "$@"
   require_command swift
   require_command codesign
   require_command xcrun

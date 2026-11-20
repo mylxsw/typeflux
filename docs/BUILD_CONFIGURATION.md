@@ -113,6 +113,10 @@ export TYPEFLUX_APPLE_DISTRIBUTION="Developer ID Application: YIYAO GUAN (N95437
 
 > `TYPEFLUX_CODESIGN_IDENTITY` overrides `TYPEFLUX_APPLE_DISTRIBUTION` when both are set. The two names exist so you can keep your distribution identity stable in shell profiles while temporarily overriding it (e.g. in CI).
 
+For unattended local packaging, point `TYPEFLUX_RELEASE_CREDENTIALS_FILE` at a private dotenv file containing the same signing and notarization fields as the Release workflow. The required signing fields are `APPLE_CERTIFICATE_BASE64`, `APPLE_CERTIFICATE_PASSWORD`, and `CODESIGN_IDENTITY`. Notarization also uses `NOTARYTOOL_APPLE_ID`, `NOTARYTOOL_PASSWORD`, and `APPLE_TEAM_ID`.
+
+To make this the default for `make release`, store the absolute path to that file on one line in `~/.config/typeflux/release-credentials-path`. For a custom config directory, use `$XDG_CONFIG_HOME/typeflux/release-credentials-path`. Each run imports the identity into its own temporary keychain and deletes it afterwards. An explicitly configured `TYPEFLUX_CODESIGN_KEYCHAIN` takes precedence.
+
 ### 4.3 Export the cert for CI (`.p12` file)
 
 If you sign on a CI runner (the GitHub Actions workflow does), you need to export the certificate plus its private key as a password-protected `.p12`:

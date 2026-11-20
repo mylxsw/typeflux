@@ -56,6 +56,7 @@ verify_bundle_signature() {
 }
 
 source "$ROOT_DIR/scripts/signing_keychain.sh"
+use_local_release_credentials "$0" "$@"
 if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]]; then
   select_signing_identity release "$TYPEFLUX_CODESIGN_IDENTITY" "${TYPEFLUX_CODESIGN_KEYCHAIN:-}"
 fi

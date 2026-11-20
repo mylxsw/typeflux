@@ -39,3 +39,16 @@ select_signing_identity() {
   fi
   return 1
 }
+
+# A private pointer file opts local builds into the same credentials as CI.
+# The re-executed script and nested packaging steps share one temporary keychain.
+use_local_release_credentials() {
+  [[ -z "${TYPEFLUX_CODESIGN_KEYCHAIN:-}" ]] || return 0
+  local pointer="${XDG_CONFIG_HOME:-$HOME/.config}/typeflux/release-credentials-path"
+  local credentials="${TYPEFLUX_RELEASE_CREDENTIALS_FILE:-}"
+  if [[ -z "$credentials" && -f "$pointer" ]]; then
+    credentials="$(cat "$pointer")"
+  fi
+  [[ -n "$credentials" ]] || return 0
+  exec python3 "$ROOT_DIR/scripts/with_release_keychain.py" "$credentials" "$@"
+}

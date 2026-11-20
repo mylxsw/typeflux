@@ -98,6 +98,7 @@ verify_main_executable_architecture() {
 }
 
 source "$ROOT_DIR/scripts/signing_keychain.sh"
+use_local_release_credentials "$0" "$@"
 select_signing_identity release "${TYPEFLUX_CODESIGN_IDENTITY:-}" "${TYPEFLUX_CODESIGN_KEYCHAIN:-}"
 
 echo "Building Typeflux release bundle..."
