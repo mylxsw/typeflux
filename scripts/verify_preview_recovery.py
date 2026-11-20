@@ -2,6 +2,7 @@
 """Exercise the packaged macOS app across an upgrade and abrupt host exits."""
 
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -97,11 +98,48 @@ def verify_screen_copy(home, database, cache, proc):
     raise RuntimeError("Copied screenshot did not produce a history image and nonblank preview")
 
 
+def descendants(pid):
+    # Feature workers create their own process groups and outlive a killed host briefly.
+    found = set()
+    pending = [pid]
+    while pending:
+        children = subprocess.run(["/usr/bin/pgrep", "-P", str(pending.pop())],
+                                  capture_output=True, text=True)
+        if children.returncode not in (0, 1):
+            raise RuntimeError("Could not enumerate test workers")
+        for child in map(int, children.stdout.split()):
+            if child not in found:
+                found.add(child)
+                pending.append(child)
+    return found
+
+
+@contextmanager
+def retiring_workers():
+    tracked = set()
+    try:
+        yield tracked
+    finally:
+        # Keep restarts abrupt; wait only before removing the test user's home.
+        deadline = time.monotonic() + 25
+        while tracked:
+            state = subprocess.run(["/bin/ps", "-o", "pid=,stat=", "-p", ",".join(map(str, tracked))],
+                                   capture_output=True, text=True)
+            if state.returncode not in (0, 1):
+                raise RuntimeError("Could not check test worker shutdown")
+            tracked = {int(pid) for pid, status in (line.split() for line in state.stdout.splitlines())
+                       if not status.startswith("Z")}
+            if tracked:
+                if time.monotonic() >= deadline:
+                    raise RuntimeError(f"{len(tracked)} test workers still alive after host termination")
+                time.sleep(0.25)
+
+
 def verify(app, copy_screenshot=False):
     executable = (app / "Contents/MacOS/Typeflux").resolve(strict=True)
     image = (Path(__file__).resolve().parents[1] / "Sources/Typeflux/Resources/LauncherFeatureIcons"
              / "light/launcher-feature-light-chat.png")
-    with tempfile.TemporaryDirectory(prefix="typeflux-release-recovery-") as name:
+    with tempfile.TemporaryDirectory(prefix="typeflux-release-recovery-") as name, retiring_workers() as workers:
         home = Path(name).resolve()
         data = home / ".typeflux/data"
         cache = home / ".typeflux/cache"
@@ -144,10 +182,13 @@ def verify(app, copy_screenshot=False):
                 finally:
                     # Exercise the failure path without allowing graceful quit to reset the counters.
                     try:
-                        os.killpg(proc.pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-                    proc.wait()
+                        workers.update(descendants(proc.pid))
+                    finally:
+                        try:
+                            os.killpg(proc.pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+                        proc.wait()
             if launch == 1:
                 seed_image(database, image, image_path)
             print(f"Launch {launch}: " + ("legacy services recovered" if launch == 1
