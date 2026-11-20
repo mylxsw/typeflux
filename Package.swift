@@ -86,7 +86,10 @@ let package = Package(
                 .copy("WorkflowGallery")
             ],
             linkerSettings: [
-                .linkedLibrary("sqlite3")
+                .linkedLibrary("sqlite3"),
+                // Xcode 26.6 otherwise makes macOS 26 screenshot classes mandatory at launch,
+                // before the capture service can select its older-system implementation.
+                .unsafeFlags(["-Xlinker", "-weak_framework", "-Xlinker", "ScreenCaptureKit"])
             ]
         ),
         .executableTarget(
