@@ -29,6 +29,28 @@ struct ModuleRegistryTests {
         Issue.record("Lifecycle did not settle")
     }
 
+    @Test @MainActor func readyObserverRefreshesOncePerRecoveredGeneration() async throws {
+        let channel = ModuleHealthChannel()
+        let first = UUID(), replacement = UUID()
+        func publish(_ state: ModuleState, _ generation: UUID, active: Int = 0) {
+            channel.publish(.init(state: state, generation: generation, pendingStarts: 0,
+                                  activeOperations: active, hasLifecycleWork: false, failure: nil))
+        }
+        let log = RegistryLog()
+        publish(.ready, first)
+        let observer = Task { await channel.forEachReadyGeneration { log.append("ready") } }
+        defer { observer.cancel() }
+        try await eventually { log.values.count == 1 }
+        publish(.ready, first, active: 2)
+        publish(.recovering, replacement)
+        publish(.ready, replacement)
+        try await eventually { log.values.count == 2 }
+        observer.cancel()
+        await observer.value
+        publish(.ready, UUID())
+        #expect(log.values == ["ready", "ready"])
+    }
+
     private func handle(_ name: String, _ log: RegistryLog) -> ModuleHandle<Int> {
         ModuleHandle(factory: { log.append("start " + name); return 1 },
                      cleanup: { _ in log.append("stop " + name) })

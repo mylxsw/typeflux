@@ -42,7 +42,7 @@ enum ClipboardThumbnailProvider {
         defer { withExtendedLifetime((slot, pixels)) {} }
         let cancellation = AskSearchCancellation()
         return try await withTaskCancellationHandler {
-            let result = try await Task.detached(priority: .utility) {
+            let result: AskFilePreviewPDF.Result = try await MediaWorker.runPreview {
                 if cancellation.isCancelled || !worker.permits(authorization) { throw CancellationError() }
                 let options = MediaPreviewOptions(width: Int(edge), height: Int(edge))
                 // An extension chooses the adapter, never grants proof that the bytes are valid.
@@ -60,7 +60,7 @@ enum ClipboardThumbnailProvider {
                 }
                 return try MediaPreviewDisplay.renderQuickLook(.init(path: url.path, representation: .all),
                     options: options, cancellation: cancellation, worker: worker)
-            }.value
+            }
             try Task.checkCancellation()
             guard worker.permits(authorization) else { throw MediaFailure.unavailable }
             return result

@@ -24,12 +24,11 @@ enum AskFinderIcon {
                     try await Task.sleep(for: .milliseconds(20))
                     continue
                 }
-                let result = try await Task.detached(priority: .utility) {
-                    try Task.checkCancellation()
+                let result = try await MediaWorker.runPreview {
                     guard !cancellation.isCancelled, worker.permits(original) else { throw MediaFailure.unavailable }
                     return try MediaPreviewDisplay.renderIcon(icon, edge: edge, cancellation: cancellation, worker: worker,
                                                               authorization: original)
-                }.value
+                }
                 try Task.checkCancellation()
                 guard worker.permits(original) else { throw MediaFailure.unavailable }
                 return result

@@ -54,6 +54,16 @@ final class MediaWorker: @unchecked Sendable {
             .appendingPathComponent("TypefluxMediaHelper")
     }
 
+    // The synchronous helper call waits for IPC responses dispatched through Swift tasks.
+    // Holders of the two preview slots must leave executor threads free for those responses.
+    static func runPreview<T: Sendable>(_ body: @escaping @Sendable () throws -> T) async throws -> T {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                continuation.resume(with: Result { try body() })
+            }
+        }
+    }
+
     /// Snapshot existing availability before a caller defers source preparation.
     /// This does not reserve capacity, spend recovery budget or start work.
     func authorization() -> Authorization {

@@ -25,6 +25,18 @@ final class ModuleHealthChannel: @unchecked Sendable {
         return stream
     }
 
+    @MainActor
+    func forEachReadyGeneration(_ action: () -> Void) async {
+        guard let stream = try? observe() else { return }
+        var delivered: UUID?
+        for await health in stream {
+            guard !Task.isCancelled else { return }
+            guard health.state == .ready, health.generation != delivered else { continue }
+            delivered = health.generation
+            action()
+        }
+    }
+
     func publish(_ health: ModuleHealth) {
         lock.withLock {
             latest = health

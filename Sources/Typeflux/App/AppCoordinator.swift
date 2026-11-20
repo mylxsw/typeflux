@@ -72,6 +72,12 @@ final class AppCoordinator {
         moduleStartup?.cancel()
         moduleStartup = Task { [weak self] in
             guard let self else { return }
+            // Packaged helpers share the background process. Its first launch can
+            // take longer than an individual image request on a cold system.
+            if FeatureProcess.enabled {
+                _ = try? await FeatureProcess.route(.init(destination: .background, action: "ping"), timeout: .seconds(30))
+            }
+            guard !Task.isCancelled else { return }
             async let clipboard: Void = prewarmClipboardHistoryWhenReady()
             await prewarmLauncherWhenReady()
             await clipboard
@@ -301,23 +307,25 @@ final class AppCoordinator {
     }
 
     private func prewarmClipboardHistoryWhenReady() async {
-        guard FeatureProcess.owns(.clipboard),
-              (try? await di.moduleRegistry.start(.clipboardThumbnails)) != nil,
-              !Task.isCancelled else { return }
-        // An existing library has no new-copy notification on a quiet desktop.
-        workflowController?.prewarmHistoryPanelSnapshot()
+        guard FeatureProcess.owns(.clipboard) else { return }
+        try? await di.moduleRegistry.start(.clipboardThumbnails)
+        await di.moduleRegistry.registrations.first { $0.id == .clipboardThumbnails }?.health.forEachReadyGeneration {
+            self.workflowController?.prewarmHistoryPanelSnapshot()
+        }
     }
 
     private func prewarmLauncherWhenReady() async {
         guard FeatureProcess.owns(.launcher) else { return }
-        let previewReady = (try? await di.moduleRegistry.start(.mediaPreviews)) != nil
+        try? await di.moduleRegistry.start(.mediaPreviews)
         guard !Task.isCancelled else { return }
         di.askConversationWindowController?.prewarmLauncher()
-        async let iconWarmup = previewReady
-            ? (try? AskFinderIcon.decode(.init(kind: .type, value: "public.folder"))) : nil
         if FeatureProcess.enabled { SemanticFileSearchService.shared.start() }
         else { await SemanticFileSearchService.shared.startForApplication(using: di.moduleRegistry) }
-        _ = await iconWarmup
+        // Submissions from a retired helper generation are deliberately discarded.
+        // Re-read the current installed-app list when its replacement is ready.
+        await di.moduleRegistry.registrations.first { $0.id == .mediaPreviews }?.health.forEachReadyGeneration {
+            self.di.askConversationWindowController?.model.prepareLauncherAppIcons()
+        }
     }
 
     func makeWorkflowController() -> WorkflowController {
