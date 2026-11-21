@@ -72,6 +72,7 @@ struct BackgroundActivityRowView: View {
         switch activity.kind {
         case .agent: return ("sparkles", StudioTheme.aiIcon)
         case .download: return ("arrow.down", .blue)
+        case .terminal: return ("terminal", .secondary)
         case .index: return ("doc.text.magnifyingglass", .indigo)
         }
     }

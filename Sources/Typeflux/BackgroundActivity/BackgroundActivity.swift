@@ -7,6 +7,7 @@ struct BackgroundActivity: Identifiable, Equatable {
         case agent
         case download
         case index
+        case terminal
     }
 
     enum State: Equatable {
