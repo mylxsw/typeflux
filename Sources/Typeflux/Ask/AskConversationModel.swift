@@ -63,6 +63,7 @@ final class AskConversationModel: ObservableObject {
     var terminalSessionWindow = TerminalSessionWindowController.shared
     var terminalPresentationObservation: AnyCancellable?
     var terminalCloseInProgress = false
+    @Published var pendingTerminalRisk: TerminalRiskSubmission?
     @Published var terminalCommandSending = false
     var confirmSystemCommand: (AskSystemCommand) -> Bool = AskSystemCommandConfirmation.confirm
     var appIndex: any AskAppSearching = AskAppIndex.shared
@@ -72,7 +73,15 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherHistoryMode = false
     @Published var launcherHistoryIndex = 0
     @Published var launcherHistoryFillID: UUID?
-    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true); launcherImageScope.invalidate(); workflowImageCopyTask?.cancel(); clipboardAction.cancelPreparation() } }
+    @Published var launcherPresentationID = UUID() {
+        didSet {
+            pendingTerminalRisk = nil
+            cancelAttachmentWork(launcher: true)
+            launcherImageScope.invalidate()
+            workflowImageCopyTask?.cancel()
+            clipboardAction.cancelPreparation()
+        }
+    }
     var launcherDismissedAt: Date?
     var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.

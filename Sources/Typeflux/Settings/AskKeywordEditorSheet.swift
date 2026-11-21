@@ -37,10 +37,12 @@ struct AskKeywordEditorSheet: View {
                     }
                     aliasFields
                     kindFields
-                    field(L("ask.settings.keywords.sheet.preview")) { preview }
+                    if draft.kind != .terminal {
+                        field(L("ask.settings.keywords.sheet.preview")) { preview }
+                    }
                 }
                 .padding(.horizontal, 22).padding(.vertical, 2)
-            }.frame(maxHeight: 460)
+            }.frame(maxHeight: draft.kind == .terminal ? 540 : 460)
             footer.padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 20)
         }
         .frame(width: 560)
@@ -67,7 +69,7 @@ struct AskKeywordEditorSheet: View {
             }
             .buttonStyle(.plain).foregroundStyle(ModelVisualStyle.accent).font(.system(size: 12))
             .accessibilityIdentifier("ask.settings.keywords.sheet.addAlias")
-            hint(L("ask.settings.keywords.aliasHint"))
+            if draft.kind != .terminal { hint(L("ask.settings.keywords.aliasHint")) }
         }
     }
 
@@ -75,9 +77,17 @@ struct AskKeywordEditorSheet: View {
         HStack(spacing: 12) {
             AskKeywordKindTile(kind: draft.kind, size: AskTheme.launcherResultIconSize, keyword: draft.result())
             VStack(alignment: .leading, spacing: 2) {
-                Text(draft.isNew ? L("ask.settings.keywords.sheet.addTitle", draft.kind.title)
-                    : L("ask.settings.keywords.sheet.editTitle"))
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                HStack(spacing: 8) {
+                    Text(draft.kind == .terminal ? L("terminal.command.title")
+                        : draft.isNew ? L("ask.settings.keywords.sheet.addTitle", draft.kind.title)
+                        : L("ask.settings.keywords.sheet.editTitle"))
+                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                    if draft.kind == .terminal {
+                        Text(">").font(.system(size: 12, design: .monospaced))
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(ModelVisualStyle.control, in: Capsule())
+                    }
+                }
             }
         }
     }
@@ -228,7 +238,8 @@ struct AskKeywordEditorSheet: View {
         case .worldClock:
             WorldClockKeywordSettingsView(options: $draft.worldClockOptions)
         case .terminal:
-            terminalFields
+            TerminalKeywordSettingsView(runner: $draft.runner, terminal: $draft.terminal,
+                                        settings: $draft.terminalSettings)
         case .system:
             field(L("ask.system.title")) {
                 Picker("", selection: $draft.systemCommand) {
@@ -243,72 +254,6 @@ struct AskKeywordEditorSheet: View {
         }
     }
 
-    @ViewBuilder private var terminalFields: some View {
-        field(L("terminal.runner.settings.runner")) {
-            Picker("", selection: $draft.runner) {
-                Text(L("terminal.launcher.destination")).tag(TerminalRunner.launcher)
-                Text(L("terminal.launcher.windowDestination")).tag(TerminalRunner.window)
-                Text(L("terminal.runner.external")).tag(TerminalRunner.external)
-            }
-            .pickerStyle(.segmented).labelsHidden().fixedSize()
-            .accessibilityIdentifier("terminal.runner.settings.runner")
-        }
-        field(L("terminal.command.application")) {
-            Picker("", selection: $draft.terminal) {
-                ForEach(TerminalApplication.allCases, id: \.self) { terminal in
-                    Text(terminal.title).tag(terminal)
-                }
-            }.labelsHidden().fixedSize()
-            .accessibilityIdentifier("terminal.command.application")
-        }
-        field(L("terminal.runner.settings.finish")) {
-            Picker("", selection: $draft.terminalSettings.finish) {
-                Text(L("terminal.runner.finish.auto")).tag(TerminalFinishPolicy.auto)
-                Text(L("terminal.runner.finish.keep")).tag(TerminalFinishPolicy.keep)
-                Text(L("terminal.runner.finish.close")).tag(TerminalFinishPolicy.close)
-            }
-            .pickerStyle(.segmented).labelsHidden().fixedSize()
-            .accessibilityIdentifier("terminal.runner.settings.finish")
-            hint(L("terminal.runner.finish.\(draft.terminalSettings.finish.rawValue).hint"))
-        }
-        field(L("terminal.runner.settings.shell")) {
-            Picker("", selection: $draft.terminalSettings.shell) {
-                Text(L("terminal.runner.shell.interactive")).tag(TerminalShellProfile.interactive)
-                Text(L("terminal.runner.shell.login")).tag(TerminalShellProfile.login)
-            }
-            .pickerStyle(.segmented).labelsHidden().fixedSize()
-            .accessibilityIdentifier("terminal.runner.settings.shell")
-            hint(L("terminal.runner.shell.\(draft.terminalSettings.shell.rawValue).hint",
-                   TerminalShellLaunch.supportedShell(TerminalShellLaunch.accountShell())))
-        }
-        field(L("terminal.runner.settings.directory")) {
-            HStack(spacing: 8) {
-                TextField(TerminalRunSettings.defaultDirectory, text: $draft.terminalSettings.directory)
-                    .textFieldStyle(ModelFieldStyle())
-                    .accessibilityIdentifier("terminal.runner.settings.directory")
-                Button(L("terminal.runner.settings.chooseDirectory"), action: chooseDirectory)
-                    .buttonStyle(ModelActionStyle())
-            }
-        }
-        field(L("terminal.runner.settings.window")) {
-            Toggle(L("terminal.runner.settings.pinned"), isOn: $draft.terminalSettings.pinned)
-                .toggleStyle(.checkbox).font(.system(size: 12.5))
-            Toggle(L("terminal.runner.settings.notify"), isOn: $draft.terminalSettings.notifies)
-                .toggleStyle(.checkbox).font(.system(size: 12.5))
-        }
-    }
-
-    private func chooseDirectory() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = URL(fileURLWithPath: TerminalRunSettings.expand(draft.terminalSettings.directory,
-                                                                             home: NSHomeDirectory()))
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        draft.terminalSettings.directory = TerminalRunSettings.abbreviate(url.path, home: NSHomeDirectory())
-    }
-
     /// The keyword as the launcher will show it, with sample text after it.
     private var preview: some View {
         HStack(spacing: 8) {
@@ -318,7 +263,7 @@ struct AskKeywordEditorSheet: View {
                 .padding(.horizontal, 8).frame(height: 22)
                 .background(ModelVisualStyle.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
                 .lineLimit(1)
-            Text(draft.kind == .terminal ? "pwd" : draft.kind == .web ? "swift actor" : "hello world").font(.system(size: 13))
+            Text(draft.kind == .web ? "swift actor" : "hello world").font(.system(size: 13))
                 .foregroundStyle(StudioTheme.textPrimary)
             Spacer(minLength: 0)
         }

@@ -7656,3 +7656,34 @@
 "terminal.session.window.pin" = "置顶";
 
 "terminal.session.window.back" = "收回到启动器 ⌘O";
+
+/* Launcher terminal settings and confirmation */
+"terminal.settings.group.run" = "运行";
+"terminal.settings.group.sessions" = "会话";
+"terminal.settings.group.window" = "独立窗口";
+"terminal.settings.runner" = "↩ 在哪里运行";
+"terminal.settings.start" = "新会话的起始目录";
+"terminal.settings.start.last" = "上次的目录";
+"terminal.settings.start.finder" = "跟随访达";
+"terminal.settings.start.fixed" = "固定目录";
+"terminal.settings.idle" = "空闲会话保留";
+"terminal.settings.idle.thirtyMinutes" = "30 分钟";
+"terminal.settings.idle.always" = "一直";
+"terminal.settings.idle.never" = "不保留";
+"terminal.settings.confirm" = "运行前确认高风险命令";
+"terminal.settings.insert" = "插入的内容";
+"terminal.settings.insert.output" = "仅输出";
+"terminal.settings.insert.commandAndOutput" = "命令 + 输出";
+"terminal.settings.finish" = "运行结束后";
+"terminal.settings.external" = "外部终端";
+"terminal.launcher.runInLauncher" = "在启动器内运行";
+"terminal.risk.delete" = "永久删除文件，不进废纸篓";
+"terminal.risk.forcePush" = "强制覆盖远端分支";
+"terminal.risk.reset" = "丢弃未提交的改动";
+"terminal.risk.clean" = "删除未跟踪的文件";
+"terminal.risk.disk" = "直接写入或抹掉磁盘";
+"terminal.risk.permissions" = "递归修改文件权限或所有者";
+"terminal.risk.cancel" = "取消";
+"terminal.risk.cancelled" = "已取消";
+"terminal.risk.runAnyway" = "仍然运行";
+"terminal.settings.notify" = "后台命令完成时通知";

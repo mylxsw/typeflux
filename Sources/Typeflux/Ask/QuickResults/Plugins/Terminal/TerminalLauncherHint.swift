@@ -3,6 +3,7 @@ import SwiftUI
 struct TerminalLauncherHint: View {
     let keyword: AskKeyword
     let text: String
+    let directory: String?
     let recent: [String]
     let sessions: [AskLauncherHome.Row]
     @Binding var highlighted: Int
@@ -13,9 +14,11 @@ struct TerminalLauncherHint: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
                     row(0, text.isEmpty ? L("terminal.launcher.open") : text, "terminal",
-                        detail: TerminalRunSettings(options: keyword.options).directory, shortcut: "↩")
+                        detail: directory, shortcut: "↩")
                     if !text.isEmpty {
-                        row(1, L("terminal.launcher.window"), "macwindow", shortcut: "⌘↩")
+                        let alternate = TerminalRunSettings.alternateRunner(in: keyword.options)
+                        row(1, L(alternate == .window ? "terminal.launcher.window" : "terminal.launcher.runInLauncher"),
+                            alternate == .window ? "macwindow" : "terminal", shortcut: "⌘↩")
                         let app = TerminalApplication.configured(in: keyword.options) ?? .terminal
                         row(2, L("terminal.command.runIn", app.title), "arrow.up.forward.app", shortcut: "⌥↩")
                     }

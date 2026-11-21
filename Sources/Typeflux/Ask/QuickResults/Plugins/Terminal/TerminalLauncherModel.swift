@@ -11,7 +11,15 @@ final class TerminalLauncherModel: ObservableObject {
     let session: TerminalSession
     let settings: TerminalRunSettings
     let source: NSRunningApplication?
-    @Published var text = ""
+    @Published var text = "" {
+        didSet {
+            if oldValue != text { pendingRisk = nil }
+        }
+    }
+    @Published private(set) var pendingRisk: TerminalCommandRisk?
+    @Published private(set) var completionCandidates: [String] = []
+    private var completion = TerminalCompletion()
+    var completionSelection: String? { completion.selectedCandidate }
     @Published var secret = ""
     @Published private(set) var selected: UUID?
     @Published private(set) var collapsed: Set<UUID> = []
@@ -52,7 +60,9 @@ final class TerminalLauncherModel: ObservableObject {
 
     func synchronizePrompt() {
         let current = prompt
+        if current != .idle { pendingRisk = nil }
         if current != lastPrompt {
+            resetCompletion()
             if current == .idle || current == .secure || lastPrompt == .input { text = "" }
             secret = ""
             lastPrompt = current
@@ -61,12 +71,15 @@ final class TerminalLauncherModel: ObservableObject {
 
     @discardableResult
     func submit() -> Bool {
+        resetCompletion()
         switch prompt {
         case .idle:
-            guard session.submit(text) else { return false }
-            history = History()
-            text = ""
-            selected = nil
+            guard pendingRisk == nil, TerminalCommandRequest.problem(with: text) == nil else { return false }
+            if settings.confirmsRisky, let risk = TerminalCommandRisk.detect(text) {
+                pendingRisk = risk
+                return false
+            }
+            return runCommand()
         case .input, .secure:
             let hidden = prompt == .secure
             let line = hidden ? secret : text
@@ -79,12 +92,57 @@ final class TerminalLauncherModel: ObservableObject {
         return true
     }
 
+    @discardableResult
+    func confirmRisk() -> Bool {
+        guard pendingRisk != nil, prompt == .idle else { return false }
+        pendingRisk = nil
+        return runCommand()
+    }
+
+    @discardableResult
+    func cancelRisk() -> Bool {
+        guard pendingRisk != nil, prompt == .idle else { return false }
+        pendingRisk = nil
+        session.recordCancellation(text)
+        fill("")
+        return true
+    }
+
+    private func runCommand() -> Bool {
+        guard session.submit(text) else { return false }
+        fill("")
+        selected = nil
+        return true
+    }
+
+    func complete() -> Bool {
+        guard prompt == .idle, pendingRisk == nil,
+              let completed = completion.advance(text, cwd: session.cwd, path: session.searchPath) else {
+            resetCompletion()
+            return false
+        }
+        text = completed
+        completionCandidates = completion.candidates
+        history = History()
+        return true
+    }
+
+    @discardableResult
+    func resetCompletion() -> Bool {
+        let hadCandidates = !completionCandidates.isEmpty
+        completion = TerminalCompletion()
+        if hadCandidates { completionCandidates = [] }
+        return hadCandidates
+    }
+
     func recall(_ delta: Int, commands: [String]) {
         guard prompt == .idle else { return }
+        resetCompletion()
         text = history.move(delta, commands: commands, current: text)
     }
 
     func fill(_ command: String) {
+        resetCompletion()
         text = command
         history = History()
     }
@@ -105,12 +163,21 @@ final class TerminalLauncherModel: ObservableObject {
 
     var actionBlock: TerminalCommandBlock? {
         if let selected { return session.blocks.first { $0.id == selected && $0.endedAt != nil } }
-        return session.blocks.last { $0.endedAt != nil && $0.output.length > 0 }
+        return session.blocks.last {
+            $0.endedAt != nil && $0.state != .cancelled
+                && (settings.insert == .commandAndOutput || $0.output.length > 0)
+        }
     }
 
     func insertSelected(using deliver: (String) -> Void) {
-        guard let text = actionBlock?.output.string, !text.isEmpty else { return }
-        deliver(text)
+        guard let block = actionBlock else { return }
+        insert(block, using: deliver)
+    }
+
+    func insert(_ block: TerminalCommandBlock, using deliver: (String) -> Void) {
+        guard block.state != .cancelled else { return }
+        let text = settings.insertion(command: block.command, output: block.output.string)
+        if !text.isEmpty { deliver(text) }
     }
 
     func clear() {
@@ -137,11 +204,12 @@ final class TerminalLauncherModel: ObservableObject {
         case .running, .alternateScreen:
             return TerminalRunModel.format(Date().timeIntervalSince(block.startedAt))
         case .finished: return block.exitCode == 0 ? nil : mark(block)
-        case .interrupted: return mark(block)
+        case .interrupted, .cancelled: return mark(block)
         }
     }
 
     static func mark(_ block: TerminalCommandBlock) -> String {
+        if block.state == .cancelled { return L("terminal.risk.cancelled") }
         if block.state == .interrupted { return "⌃C" }
         guard let code = block.exitCode else { return "" }
         return code == 0 ? "✓" : "✗ \(code)"

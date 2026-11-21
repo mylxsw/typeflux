@@ -7628,3 +7628,34 @@
 "ask.image.cache.clear" = "清除快取";
 "ask.image.cache.hint" = "已下載的原圖可離線查看。清除本機快取不會刪除雲端生成記錄。";
 "ask.image.cache.clearFailed" = "圖片快取清除失敗。";
+
+/* Launcher terminal settings and confirmation */
+"terminal.settings.group.run" = "執行";
+"terminal.settings.group.sessions" = "工作階段";
+"terminal.settings.group.window" = "獨立視窗";
+"terminal.settings.runner" = "↩ 執行位置";
+"terminal.settings.start" = "新工作階段的起始資料夾";
+"terminal.settings.start.last" = "上次的資料夾";
+"terminal.settings.start.finder" = "Finder 資料夾";
+"terminal.settings.start.fixed" = "固定資料夾";
+"terminal.settings.idle" = "保留閒置工作階段";
+"terminal.settings.idle.thirtyMinutes" = "30 分鐘";
+"terminal.settings.idle.always" = "一律保留";
+"terminal.settings.idle.never" = "不保留";
+"terminal.settings.confirm" = "執行高風險指令前確認";
+"terminal.settings.insert" = "插入內容";
+"terminal.settings.insert.output" = "僅輸出";
+"terminal.settings.insert.commandAndOutput" = "指令 + 輸出";
+"terminal.settings.finish" = "執行完畢後";
+"terminal.settings.external" = "外部終端機";
+"terminal.launcher.runInLauncher" = "在啟動器中執行";
+"terminal.risk.delete" = "永久刪除檔案，不移到垃圾桶";
+"terminal.risk.forcePush" = "強制覆寫遠端分支";
+"terminal.risk.reset" = "捨棄未提交的變更";
+"terminal.risk.clean" = "刪除未追蹤的檔案";
+"terminal.risk.disk" = "直接寫入或清除磁碟";
+"terminal.risk.permissions" = "遞迴變更檔案權限或擁有者";
+"terminal.risk.cancel" = "取消";
+"terminal.risk.cancelled" = "已取消";
+"terminal.risk.runAnyway" = "仍要執行";
+"terminal.settings.notify" = "背景指令完成時通知";

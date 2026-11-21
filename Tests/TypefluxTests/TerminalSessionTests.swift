@@ -114,6 +114,36 @@ struct TerminalSessionTests {
         #expect(center.sessions.isEmpty && visible.terminations == 1)
     }
 
+    @Test func savedDirectoryAndIdlePoliciesApplyToEachSession() throws {
+        let firstProcess = FakeTerminalProcess()
+        let secondProcess = FakeTerminalProcess()
+        var peers = [firstProcess, secondProcess]
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        let history = TerminalCommandHistory(defaults: defaults)
+        let center = TerminalSessionCenter(history: history, makeProcess: { peers.removeFirst() }, finderDirectory: { "/tmp" })
+        let always = try center.create(settings: .init(startDirectory: .finder, idle: .always))
+        defer { center.terminateAll() }
+        #expect(always.cwd == "/tmp")
+        firstProcess.emit(osc("7;file://localhost/Users") + osc("133;P;TypefluxPath=/custom%20bin%3A/usr/bin"))
+        #expect(always.searchPath == "/custom bin:/usr/bin")
+        #expect(defaults.string(forKey: TerminalSessionCenter.lastDirectoryKey) == "/Users")
+        center.setVisible(false, session: always)
+        center.expireIdle(now: .distantFuture)
+        #expect(center.sessions.first === always)
+
+        let never = try center.create(settings: .init(idle: .never))
+        #expect(never.cwd == "/Users")
+        secondProcess.emit(osc("133;B"))
+        #expect(never.submit("sleep 1"))
+        center.setVisible(false, session: never)
+        center.expireIdle(now: .distantFuture)
+        #expect(center.sessions.contains { $0 === never })
+        secondProcess.emit(osc("133;C") + osc("133;D;0"))
+        #expect(!center.sessions.contains { $0 === never })
+        center.setVisible(false, session: never)
+        #expect(center.sessions.count == 1 && firstProcess.terminations == 0 && secondProcess.terminations == 1)
+    }
+
     @Test func `second interrupt kills an interrupt ignoring job and preserves shell state`() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)

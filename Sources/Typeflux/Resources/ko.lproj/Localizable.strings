@@ -7603,3 +7603,34 @@
 "ask.image.cache.clear" = "캐시 지우기";
 "ask.image.cache.hint" = "다운로드한 원본은 오프라인에서도 볼 수 있습니다. 이 기기의 캐시를 지워도 클라우드 결과는 삭제되지 않습니다.";
 "ask.image.cache.clearFailed" = "이미지 캐시를 지우지 못했습니다.";
+
+/* Launcher terminal settings and confirmation */
+"terminal.settings.group.run" = "실행";
+"terminal.settings.group.sessions" = "세션";
+"terminal.settings.group.window" = "독립 창";
+"terminal.settings.runner" = "↩ 실행 위치";
+"terminal.settings.start" = "새 세션 시작 폴더";
+"terminal.settings.start.last" = "마지막 폴더";
+"terminal.settings.start.finder" = "Finder 폴더";
+"terminal.settings.start.fixed" = "고정 폴더";
+"terminal.settings.idle" = "유휴 세션 유지";
+"terminal.settings.idle.thirtyMinutes" = "30분";
+"terminal.settings.idle.always" = "항상";
+"terminal.settings.idle.never" = "유지 안 함";
+"terminal.settings.confirm" = "위험한 명령 실행 전 확인";
+"terminal.settings.insert" = "삽입할 내용";
+"terminal.settings.insert.output" = "출력만";
+"terminal.settings.insert.commandAndOutput" = "명령 및 출력";
+"terminal.settings.finish" = "실행 후";
+"terminal.settings.external" = "외부 터미널";
+"terminal.launcher.runInLauncher" = "런처에서 실행";
+"terminal.risk.delete" = "휴지통을 거치지 않고 파일을 영구 삭제합니다";
+"terminal.risk.forcePush" = "원격 브랜치를 강제로 덮어씁니다";
+"terminal.risk.reset" = "커밋하지 않은 변경 사항을 버립니다";
+"terminal.risk.clean" = "추적되지 않는 파일을 삭제합니다";
+"terminal.risk.disk" = "디스크에 직접 쓰거나 디스크를 지웁니다";
+"terminal.risk.permissions" = "파일 권한 또는 소유자를 재귀적으로 변경합니다";
+"terminal.risk.cancel" = "취소";
+"terminal.risk.cancelled" = "취소됨";
+"terminal.risk.runAnyway" = "그래도 실행";
+"terminal.settings.notify" = "백그라운드 명령 완료 시 알림";

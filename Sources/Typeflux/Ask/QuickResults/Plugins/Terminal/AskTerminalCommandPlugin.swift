@@ -142,12 +142,13 @@ struct AskTerminalCommandPlugin: AskLauncherPlugin {
                          shortcut: shortcut)
         }
         let external = L("terminal.command.runIn", externalRequest.terminal.title)
-        let window = L("terminal.launcher.window")
+        let alternate = TerminalRunSettings.alternateRunner(in: request.options)
+        let alternateTitle = L(alternate == .window ? "terminal.launcher.window" : "terminal.launcher.runInLauncher")
         return .init(mode: .onSubmit, title: request.text,
                      meta: [.init(text: settings.directory)],
                      actions: [
                          action(runner, .enter, title: request.text),
-                         action(.window, .commandEnter, title: window),
+                         action(alternate, .commandEnter, title: alternateTitle),
                          action(.external, .optionEnter, title: external),
                          .init(kind: .copy(request.text), title: L("terminal.command.copy"),
                                symbol: "doc.on.doc", shortcut: .commandC)

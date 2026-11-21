@@ -52,6 +52,16 @@ final class TerminalSessionShell {
     unset _typeflux_user_dir _typeflux_shim
     setopt hist_ignore_space
     unsetopt prompt_sp
+    _typeflux_escape() {
+      local LC_ALL=C p="" c
+      for c in ${(s::)1}; do
+        case "$c" in
+          [a-zA-Z0-9/._~-]) p+="$c" ;;
+          *) builtin printf -v c '%%%02X' "'$c"; p+="$c" ;;
+        esac
+      done
+      REPLY=$p
+    }
     _typeflux_precmd() {
       local result=$?
       emulate -L zsh
@@ -59,14 +69,15 @@ final class TerminalSessionShell {
         builtin printf '\033]133;D;%d\007' "$result"
         unset _typeflux_executing
       fi
-      local LC_ALL=C p="" c
-      for c in ${(s::)PWD}; do
-        case "$c" in
-          [a-zA-Z0-9/._~-]) p+="$c" ;;
-          *) builtin printf -v c '%%%02X' "'$c"; p+="$c" ;;
-        esac
-      done
-      builtin printf '\033]7;file://%s%s\007\033]133;A\007' "$HOST" "$p"
+      local REPLY
+      _typeflux_escape "$PWD"
+      builtin printf '\033]7;file://%s%s\007' "$HOST" "$REPLY"
+      if [[ ! -v _typeflux_last_path || "$PATH" != "$_typeflux_last_path" ]]; then
+        _typeflux_last_path=$PATH
+        _typeflux_escape "$PATH"
+        builtin printf '\033]133;P;TypefluxPath=%s\007' "$REPLY"
+      fi
+      builtin printf '\033]133;A\007'
     }
     _typeflux_preexec() {
       _typeflux_executing=1

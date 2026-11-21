@@ -53,7 +53,7 @@ extension AskConversationModel {
     func resumeLauncherTerminal(_ id: UUID) {
         guard let session = terminalLauncherSessions.first(where: { $0.id == id }) else { return }
         finishPluginResult()
-        showLauncherTerminal(terminalPresentation(for: session, settings: .init()))
+        showLauncherTerminal(terminalPresentation(for: session, settings: session.settings))
     }
 
     func openTerminalHomeSession(_ id: UUID, dismiss: () -> Void) {

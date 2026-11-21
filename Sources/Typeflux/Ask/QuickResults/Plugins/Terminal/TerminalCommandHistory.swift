@@ -2,7 +2,7 @@ import Foundation
 
 @MainActor
 final class TerminalCommandHistory {
-    private let defaults: UserDefaults
+    let defaults: UserDefaults
     private let key = "terminal.session.commandHistory"
     private(set) var commands: [String]
 
