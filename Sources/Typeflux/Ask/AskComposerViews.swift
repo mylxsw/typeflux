@@ -1567,7 +1567,7 @@ struct AskComposer: View {
                 refreshQuickResults(); updateFilePreview(); reportHeight()
             }
             .onChange(of: historyHeight) { _ in reportHeight() }
-            .onChange(of: model.launcherTerminal?.session.id) { _ in reportHeight() }
+            .onChange(of: terminalPaneHeight) { _ in if launcher { reportHeight() } }
             .onChange(of: terminalHintHeight) { _ in if launcher { reportHeight() } }
             .onChange(of: homeHeight) { _ in reportHeight() }
             .onChange(of: model.noteCapture.panelHeight) { _ in
@@ -1687,7 +1687,7 @@ struct AskComposer: View {
                                      }, commands: { terminalCenter.history.commands },
                                      error: model.passiveNotice)
                     .id(terminal.session.id)
-                    .frame(height: max(160, min(520, availableHeight ?? 520)))
+                    .frame(height: max(160, min(terminalPaneHeight, availableHeight ?? terminalPaneHeight)))
                     .background {
                         if let glass { chrome.glassBackground(glass) } else { chrome.fill }
                     }
@@ -1836,8 +1836,24 @@ struct AskComposer: View {
     /// deleting and new results never resize it, so nothing jumps or animates while
     /// the user types. Only the simple window mode's empty search bar is shorter, and
     /// a keyword view designed taller than the card makes it grow.
+    private var terminalPaneHeight: CGFloat {
+        guard launcher, !active, let terminal = model.launcherTerminal else { return 0 }
+        var height: CGFloat = 106
+        for block in terminal.session.blocks {
+            height += 38
+            if block.endedAt == nil {
+                height += 160
+            } else {
+                let rows = block.output.string.split(separator: "\n", maxSplits: 13)
+                height += CGFloat(rows.count) * 16
+            }
+            if height >= 520 { return 520 }
+        }
+        return max(220, height)
+    }
+
     private var launcherTargetHeight: CGFloat {
-        if model.launcherTerminal != nil, !active { return 520 + AskMetrics.launcherGutter * 2 }
+        if terminalPaneHeight > 0 { return terminalPaneHeight + AskMetrics.launcherGutter * 2 }
         if launcherCollapsed { return AskLauncherWindowMode.simpleHeight }
         if terminalHintKeyword != nil, !active {
             return max(AskLauncherWindowMode.expandedHeight, launcherChromeHeight + terminalHintHeight)

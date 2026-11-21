@@ -351,8 +351,9 @@ private struct TerminalLiveOutput: NSViewRepresentable {
     let session: TerminalSession
 
     func makeNSView(context: Context) -> NSView {
-        let container = NSView()
         let terminal = session.terminalView
+        // Preserve the emulator's existing grid until SwiftUI assigns the host its size.
+        let container = NSView(frame: NSRect(origin: .zero, size: terminal.frame.size))
         terminal.removeFromSuperview()
         terminal.frame = container.bounds
         terminal.autoresizingMask = [.width, .height]
