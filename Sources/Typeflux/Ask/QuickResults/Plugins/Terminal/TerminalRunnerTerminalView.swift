@@ -7,6 +7,24 @@ final class TerminalRunnerTerminalView: TerminalView, TerminalViewDelegate {
     static let scrollback = 10000
     static let fontSize: CGFloat = 12
 
+    var inlineBackground: NSColor? {
+        didSet { if oldValue != inlineBackground { applyPalette() } }
+    }
+
+    var rowHeight: CGFloat {
+        getOptimalFrameSize().height / CGFloat(max(1, getTerminal().rows))
+    }
+
+    func outputRows() -> Int {
+        let terminal = getTerminal()
+        for row in (0 ..< terminal.rows).reversed() {
+            if let line = terminal.getLine(row: row), !line.translateToString(trimRight: true).isEmpty {
+                return terminal.getTopVisibleRow() + row + 1
+            }
+        }
+        return max(1, terminal.getTopVisibleRow())
+    }
+
     private weak var model: TerminalRunModel?
 
     private weak var session: TerminalSession?
@@ -79,7 +97,8 @@ final class TerminalRunnerTerminalView: TerminalView, TerminalViewDelegate {
 
     private func applyPalette() {
         let palette = TerminalRunnerPalette.forAppearance(effectiveAppearance)
-        nativeBackgroundColor = palette.background
+        nativeBackgroundColor = inlineBackground ?? palette.background
+        layer?.backgroundColor = nativeBackgroundColor.cgColor
         nativeForegroundColor = palette.foreground
         caretColor = palette.caret
         selectedTextBackgroundColor = palette.selection

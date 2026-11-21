@@ -16,7 +16,7 @@ extension AskConversationModel {
     var terminalHomeRows: [AskLauncherHome.Row] {
         terminalHomeSessions.map { session in
             let block = session.blocks.last
-            let detail = (session.cwd as NSString).abbreviatingWithTildeInPath
+            let detail = session.displayDirectory(session.cwd)
             return .init(id: "terminal." + session.id.uuidString,
                          title: block?.command ?? L("terminal.command.title"), detail: detail,
                          symbol: session.host == .launcher ? "terminal" : "macwindow",

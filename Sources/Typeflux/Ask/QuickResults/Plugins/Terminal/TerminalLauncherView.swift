@@ -23,11 +23,11 @@ struct TerminalLauncherView: View {
                     .padding(.horizontal, 7).padding(.vertical, 4)
                     .background(Color.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                 HStack(spacing: 7) {
-                    Label((session.cwd as NSString).abbreviatingWithTildeInPath, systemImage: "folder")
+                    Label(session.displayDirectory(session.cwd), systemImage: "folder")
                         .lineLimit(1).truncationMode(.middle)
                         .help(session.cwd)
                     if let git = session.git {
-                        Label(git.branch + (git.dirty ? "*" : ""), systemImage: "arrow.triangle.branch")
+                        Text("⎇ " + git.branch + (git.dirty ? "*" : ""))
                             .foregroundStyle(Color.purple)
                             .lineLimit(1)
                     }
@@ -94,7 +94,7 @@ struct TerminalLauncherView: View {
     }
 
     private func name(_ candidate: TerminalSession) -> String {
-        candidate.blocks.last?.command ?? (candidate.cwd as NSString).abbreviatingWithTildeInPath
+        candidate.blocks.last?.command ?? candidate.displayDirectory(candidate.cwd)
     }
 }
 
@@ -134,18 +134,22 @@ struct TerminalSessionContent: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 6) {
                         ForEach(session.blocks) { block in
-                            row(block)
+                            row(block, viewportHeight: viewport.size.height)
                         }
                         Color.clear.frame(height: 1).id("terminal-tail")
                             .onAppear { atTail = true }
                             .onDisappear { atTail = false }
                     }
-                    .padding(10)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, TerminalRunnerHost.inset.left)
                 }
                 .onChange(of: session.blocks.last?.id) { _ in
                     if atTail { scroll.scrollTo("terminal-tail", anchor: .bottom) }
                 }
                 .onChange(of: session.blocks.last?.endedAt) { _ in
+                    if atTail { scroll.scrollTo("terminal-tail", anchor: .bottom) }
+                }
+                .onChange(of: session.liveOutputRows) { _ in
                     if atTail { scroll.scrollTo("terminal-tail", anchor: .bottom) }
                 }
                 .onChange(of: model.selected) { id in
@@ -162,17 +166,23 @@ struct TerminalSessionContent: View {
         appearance == .dark ? .dark : .light
     }
 
-    private func row(_ block: TerminalCommandBlock) -> some View {
+    private func row(_ block: TerminalCommandBlock, viewportHeight: CGFloat) -> some View {
         let running = block.endedAt == nil
         let selected = model.selected == block.id
         let collapsed = model.collapsed.contains(block.id)
         let failed = block.exitCode.map { $0 != 0 } ?? false
+        let tint: NSColor = selected ? .controlAccentColor : appearance == .dark ? .white : .black
+        let background = palette.background.blended(withFraction: selected ? 0.12 : 0.04, of: tint)
+            ?? palette.background
         return VStack(alignment: .leading, spacing: 6) {
             blockHeader(block, running: running, selected: selected, collapsed: collapsed, failed: failed)
             if running {
-                TerminalLiveOutput(session: session)
-                    .frame(height: 160)
-                    .allowsHitTesting(session.alternateScreen)
+                let rowHeight = session.terminalView.rowHeight
+                let availableRows = max(1, Int(max(0, viewportHeight - 50) / rowHeight))
+                let height = CGFloat(min(session.liveOutputRows, availableRows)) * rowHeight
+                TerminalLiveOutput(session: session, background: background,
+                                   availableRows: viewportHeight > 0 ? availableRows : 0)
+                    .frame(height: height).allowsHitTesting(false)
             } else if collapsed {
                 Text(L("terminal.launcher.lines", block.output.string.components(separatedBy: "\n").count))
                     .foregroundStyle(.secondary)
@@ -185,8 +195,7 @@ struct TerminalSessionContent: View {
         }
         .font(.system(size: 12, design: .monospaced))
         .padding(9)
-        .background((selected ? Color.accentColor : Color.primary).opacity(selected ? 0.12 : 0.04),
-                    in: RoundedRectangle(cornerRadius: 7))
+        .background(Color(nsColor: background), in: RoundedRectangle(cornerRadius: 7))
         .overlay(alignment: .leading) {
             if selected || failed {
                 Capsule().fill(selected ? Color.accentColor : .red).frame(width: 2)
@@ -203,8 +212,12 @@ struct TerminalSessionContent: View {
             Text(block.command).lineLimit(1).truncationMode(.middle)
                 .help(block.command)
             if block.cwd != session.cwd {
-                Text((block.cwd as NSString).abbreviatingWithTildeInPath)
-                    .foregroundStyle(.secondary).lineLimit(1)
+                Label(session.displayDirectory(block.cwd), systemImage: "folder")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Color.primary.opacity(0.06), in: Capsule())
             }
             Spacer(minLength: 4)
             if selected || hovered == block.id {
@@ -349,33 +362,6 @@ private func terminalButton(_ symbol: String, _ title: String, action: @escaping
     .buttonStyle(.borderless)
     .help(title)
     .accessibilityLabel(title)
-}
-
-/// The emulator belongs to the session. A host only borrows it for the active block.
-private struct TerminalLiveOutput: NSViewRepresentable {
-    let session: TerminalSession
-
-    func makeNSView(context: Context) -> OutputContainer {
-        let terminal = session.terminalView
-        let container = OutputContainer(frame: NSRect(origin: .zero, size: terminal.frame.size))
-        terminal.removeFromSuperview()
-        terminal.frame = container.bounds
-        terminal.autoresizingMask = []
-        container.autoresizesSubviews = false
-        container.addSubview(terminal)
-        return container
-    }
-
-    func updateNSView(_ view: OutputContainer, context: Context) {}
-
-    final class OutputContainer: NSView {
-        override func setFrameSize(_ newSize: NSSize) {
-            super.setFrameSize(newSize)
-            // SwiftUI can transiently propose a near-zero size when replacing a block.
-            guard newSize.width >= 120, newSize.height >= 32 else { return }
-            subviews.first?.frame = bounds
-        }
-    }
 }
 
 /// Intercepts session shortcuts only while that host's window is receiving keys.

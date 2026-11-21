@@ -364,22 +364,29 @@ extension TerminalCommandTests {
         let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
         history.record("git status --short")
         history.record("git log -5")
-        let center = TerminalSessionCenter(history: history, makeProcess: { process })
+        let project = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Projects/typeflux")
+        let center = TerminalSessionCenter(history: history, makeProcess: { process }, readGitStatus: {
+            $0 == project.path ? TerminalGitStatus(branch: "main", dirty: true) : nil
+        })
+        let tabbedWindow = TerminalSessionWindowController()
         let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "> git sta", prepare: {
             $0.terminalSessionCenter = center
+            $0.terminalSessionWindow = tabbedWindow
         })
-        defer { launcher.close(); center.terminateAll() }
+        defer { tabbedWindow.moveBack(); launcher.close(); center.terminateAll() }
         let model = launcher.fixture.model
         let window = launcher.window
-        let view = try #require(window.contentView)
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let theme = dark ? "dark" : "light"
 
-        func capture(_ name: String) async throws {
+        func capture(_ name: String, in panel: NSWindow? = nil) async throws {
             try await Task.sleep(for: .milliseconds(120))
-            if let height = launcher.heights.last {
+            let host = panel ?? window
+            host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            if panel == nil, let height = launcher.heights.last {
                 window.setContentSize(NSSize(width: window.frame.width, height: height))
             }
+            let view = try #require(panel == nil ? host.contentView : host.contentView?.superview)
             view.layoutSubtreeIfNeeded()
             let image = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
             view.cacheDisplay(in: view.bounds, to: image)
@@ -389,13 +396,16 @@ extension TerminalCommandTests {
         func osc(_ text: String) -> String { "\u{1b}]" + text + "\u{7}" }
 
         try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
+        for _ in 0 ..< 3 { try await launcher.press(125) }
         try await capture("hint")
         try await launcher.press(124)
         #expect(model.launcherDraft.text == "git status --short")
         try await launcher.press(36)
         let presentation = try #require(model.launcherTerminal)
         let session = presentation.session
-        process.emit(osc("7;file://localhost/Users/demo/Projects/typeflux") + osc("133;A") + osc("133;B"))
+        process.emit(osc("7;" + project.absoluteString) + osc("133;A") + osc("133;B"))
+        try await AskQuickSearchSessionTests.wait { session.git?.dirty == true }
+        #expect(session.displayDirectory(session.cwd) == "~/Projects/typeflux")
         process.emit(osc("133;C") + " M Sources/Typeflux/Ask/AskComposerViews.swift\r\n")
         try await capture("inline")
         process.emit(osc("133;D;0") + osc("133;B"))
@@ -408,6 +418,7 @@ extension TerminalCommandTests {
         #expect(presentation.submit())
         process.emit(osc("133;C") + "Continue? ")
         #expect(presentation.prompt == .input)
+        #expect(session.liveOutputRows == 1)
         try await capture("stdin")
         #expect(session.terminalView.normalScreenText().contains("Continue?"))
         process.readsHiddenInput = true
@@ -415,7 +426,13 @@ extension TerminalCommandTests {
         try await capture("password")
         model.foldLauncherKeyword()
         #expect(center.sessions.first === session)
+        #expect(model.terminalHomeRows.first?.detail == "~/Projects/typeflux")
         try await capture("home")
+        process.readsHiddenInput = false
+        process.emit(osc("133;D;0") + osc("133;B"))
+        model.resumeLauncherTerminal(session.id)
+        model.moveLauncherTerminal {}
+        try await capture("window", in: tabbedWindow.panel)
     }
 
     @Test(arguments: [true, false]) func `return modifiers choose window or external terminal`(inWindow: Bool) async throws {

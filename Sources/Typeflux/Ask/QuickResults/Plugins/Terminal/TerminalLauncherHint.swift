@@ -47,21 +47,26 @@ struct TerminalLauncherHint: View {
     }
 
     private func row(_ index: Int, _ title: String, _ symbol: String, detail: String? = nil,
-                     shortcut: String? = nil, match: String = "") -> some View {
+                     shortcut: String? = nil, match: String? = nil) -> some View {
         Button {
             highlighted = index
             activate()
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 18)
-                Text(matchedTitle(title, match: match)).lineLimit(1).truncationMode(.middle)
+                Text(matchedTitle(title, match: match ?? "")).lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 6)
                 if let detail { Text(detail).lineLimit(1).foregroundStyle(.secondary) }
                 if let shortcut { Text(shortcut).foregroundStyle(.secondary) }
             }
             .padding(.horizontal, 8).frame(height: 32)
-            .background(Color.accentColor.opacity(index == highlighted ? 0.15 : 0),
+            .background(Color.accentColor.opacity(index == highlighted && match == nil ? 0.15 : 0),
                         in: RoundedRectangle(cornerRadius: 7))
+            .overlay {
+                if index == highlighted, match != nil {
+                    RoundedRectangle(cornerRadius: 7).strokeBorder(AskTheme.accentText.opacity(0.6))
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -72,7 +77,7 @@ struct TerminalLauncherHint: View {
     private func matchedTitle(_ title: String, match: String) -> AttributedString {
         var result = AttributedString(title)
         if !match.isEmpty, let range = result.range(of: match, options: .caseInsensitive) {
-            result[range].foregroundColor = .accentColor
+            result[range].foregroundColor = AskTheme.accentText
         }
         return result
     }

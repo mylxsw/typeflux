@@ -1839,11 +1839,11 @@ struct AskComposer: View {
     private var terminalPaneHeight: CGFloat {
         guard launcher, !active, let terminal = model.launcherTerminal else { return 0 }
         if terminal.session.alternateScreen { return 520 }
-        var height: CGFloat = 106
+        var height: CGFloat = 108
         for block in terminal.session.blocks {
-            height += 38
+            height += 48
             if block.endedAt == nil {
-                height += 160
+                height += terminal.session.liveOutputHeight
             } else {
                 let rows = block.output.string.split(separator: "\n", maxSplits: 13)
                 height += CGFloat(rows.count) * 16
