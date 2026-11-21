@@ -95,11 +95,11 @@ struct AskUsageTotals: Codable, Equatable, Sendable {
         return formatter.string(from: NSDecimalNumber(decimal: amount)) ?? "—"
     }
 
-    var statusKey: String {
-        if pending > 0 { return "ask.usage.pending" }
+    var statusKey: String? {
+        if pending > 0 { return nil }
         if missing > 0 { return "ask.usage.incomplete" }
         if external == calls && calls > 0 { return "ask.usage.external" }
-        return "ask.usage.confirmed"
+        return nil
     }
 }
 

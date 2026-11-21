@@ -76,7 +76,7 @@ final class AskSidePanelFilePreviewTests: XCTestCase {
         guard case let .text(code, false) = try load("main.py", Data("print(1)\nprint(2)".utf8)) else {
             return XCTFail("Code loads as text")
         }
-        XCTAssertEqual(AskLineNumberedText.lines(code), ["print(1)", "print(2)"])
+        XCTAssertEqual(AskLineNumberedText.visibleSource(code).text, "print(1)\nprint(2)")
         guard case let .markdown(markdown, false) = try load("notes.md", Data("# Title".utf8)) else {
             return XCTFail("Markdown")
         }
@@ -105,8 +105,12 @@ final class AskSidePanelFilePreviewTests: XCTestCase {
         XCTAssertEqual(data, pdf as Data)
 
         guard case .unsupported = try load("archive.bin", Data([0, 1, 2, 3])) else { return XCTFail("Binary") }
-        XCTAssertEqual(AskLineNumberedText.lines("a\n\nb\n"), ["a", "", "b"])
-        XCTAssertEqual(AskLineNumberedText.lines(""), [])
+        XCTAssertEqual(AskLineNumberedText.visibleSource("a\r\n\r\nb\n").text, "a\r\n\r\nb\n")
+        XCTAssertEqual(AskLineNumberedText.visibleSource("").text, "")
+        let limit = String(repeating: "a\n", count: AskLineNumberedText.lineLimit)
+        XCTAssertFalse(AskLineNumberedText.visibleSource(limit).truncated)
+        XCTAssertEqual(AskLineNumberedText.visibleSource(limit + "tail").text, limit)
+        XCTAssertTrue(AskLineNumberedText.visibleSource(limit + "tail").truncated)
     }
 
     func testLargeTextIsClippedAndDeniedFilesFail() throws {
@@ -264,5 +268,165 @@ extension AskSidePanelFilePreviewTests {
                 XCTAssertGreaterThan(hosting.fittingSize.height, 0)
             }
         }
+    }
+}
+
+extension AskSidePanelFilePreviewTests {
+    func testFileSyntaxFollowsExtension() {
+        XCTAssertEqual(AskFileSourceStyle(path: "outputs/clone-typeflux.sh").language, .shell)
+        XCTAssertEqual(AskFileSourceStyle(path: "notes.txt").language, .plain)
+        XCTAssertEqual(AskFileSourceStyle(path: "main.swift").language, .generic)
+    }
+
+    func testShellTabInDarkAppearance() async throws {
+        let script = """
+        #!/usr/bin/env bash
+        # 一键克隆 Typeflux 仓库
+        set -euo pipefail
+
+        TARGET_DIR="${1:-$HOME/Workspace/codes/typeflux}"
+        echo "📁 目标目录: $TARGET_DIR"
+
+        for repo in "$@"; do
+            git clone "$repo"
+        done
+        """
+        let store = AskConversationWorkspaceStore(rootURL: base.appendingPathComponent("workspaces"))
+        let fixture = try AskTestFixture(workspaces: store)
+        defer { fixture.model.resetSession() }
+        await fixture.api.seed(.init(id: "preview", title: "Shell file preview", revision: 1, updatedAt: Date(), messages: [
+            .init(id: "message", role: "assistant", text: "outputs/clone-typeflux.sh", createdAt: Date())
+        ]))
+        await fixture.model.select("preview")
+        let owner = try XCTUnwrap(fixture.model.credentials(for: "preview")).account
+        let root = try await store.ensure(owner: owner, conversationId: "preview")
+        let path = "outputs/clone-typeflux.sh"
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("outputs"), withIntermediateDirectories: true)
+        try Data(script.utf8).write(to: root.appendingPathComponent(path))
+        let target = try AskSidePanelFileAccess.resolve(path, workspaceRoot: root)
+        let panel = AskSidePanel(browser: nil)
+        let suite = "shell-file-tab-" + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(true, forKey: "ask.sidebarCollapsed")
+        let view = AskConversationView(model: fixture.model, sidePanel: panel).defaultAppStorage(defaults)
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1120, height: 640),
+                              styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: .darkAqua)
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        let host = NSHostingView(rootView: view.background(Color(nsColor: .windowBackgroundColor)))
+        host.sizingOptions = []
+        window.contentView = host
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil); window.close() }
+        try await Task.sleep(for: .milliseconds(250))
+        let toggle = try AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.sidePanel", in: window)
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            window.sendEvent(try mouse(type, toggle))
+        }
+        try await Task.sleep(for: .milliseconds(250))
+        try panel.open(target, conversationId: "preview")
+        for width in [920, 1120, 1400] {
+            window.setContentSize(NSSize(width: width, height: 640))
+            try await Task.sleep(for: .milliseconds(150))
+            host.layoutSubtreeIfNeeded()
+            let more = try AskWorkspaceTestAccessibility.frame(identifier: "ask.sidePanel.file.more", in: window)
+            let reference = try AskWorkspaceTestAccessibility.frame(identifier: "ask.sidePanel.file.reference", in: window)
+            XCTAssertLessThanOrEqual(more.width, TFControlSize.regular.height + 1)
+            XCTAssertEqual(more.midY, reference.midY, accuracy: 2)
+            XCTAssertLessThan(CGFloat(width) - more.maxX, 22)
+        }
+        window.setContentSize(NSSize(width: 1120, height: 640))
+        try await Task.sleep(for: .milliseconds(350))
+        host.layoutSubtreeIfNeeded()
+        func source(in view: NSView) -> AskWorkflowTextView? {
+            view as? AskWorkflowTextView ?? view.subviews.lazy.compactMap { source(in: $0) }.first
+        }
+        let textView = try XCTUnwrap(source(in: host))
+        XCTAssertFalse(textView.isEditable)
+        XCTAssertTrue(textView.isSelectable)
+        XCTAssertEqual(textView.string, script)
+        let raw = script as NSString
+        let keyword = raw.range(of: "echo")
+        XCTAssertEqual(textView.textStorage?.attribute(.foregroundColor, at: keyword.location, effectiveRange: nil)
+                       as? NSColor, AskWorkflowSyntaxHighlighter.Token.keyword.color)
+        let range = raw.range(of: "for repo in \"$@\"; do\n    git clone \"$repo\"")
+        XCTAssertNotEqual(range.location, NSNotFound)
+        // Route the same AppKit drag events as a pointer moving across two lines.
+        let layout = try XCTUnwrap(textView.layoutManager)
+        let container = try XCTUnwrap(textView.textContainer)
+        func point(_ index: Int) -> NSPoint {
+            let glyph = layout.glyphIndexForCharacter(at: index)
+            let bounds = layout.boundingRect(forGlyphRange: NSRange(location: glyph, length: 1), in: container)
+            return textView.convert(NSPoint(x: textView.textContainerOrigin.x + bounds.minX + 0.1,
+                                            y: textView.textContainerOrigin.y + bounds.midY), to: nil)
+        }
+        func mouse(_ type: NSEvent.EventType, _ point: NSPoint) throws -> NSEvent {
+            try XCTUnwrap(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                                             timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                                             context: nil, eventNumber: 1, clickCount: 1, pressure: 1))
+        }
+        let start = point(range.location), end = point(NSMaxRange(range))
+        let hit = host.hitTest(host.convert(start, from: nil))
+        XCTAssertTrue(hit === textView, "Expected the source text at \(start), hit \(String(describing: hit.map { type(of: $0) })), source bounds \(textView.bounds)")
+        let down = try mouse(.leftMouseDown, start)
+        let drag = try mouse(.leftMouseDragged, end)
+        let up = try mouse(.leftMouseUp, end)
+        NSApp.postEvent(drag, atStart: false)
+        NSApp.postEvent(up, atStart: false)
+        NSApp.sendEvent(down)
+        // AppKit may begin text tracking during mouseDown or on the subsequent drag.
+        // Dispatch any events it did not consume in its nested tracking loop.
+        while let next = NSApp.nextEvent(matching: [.leftMouseDragged, .leftMouseUp], until: .distantPast,
+                                         inMode: .default, dequeue: true) {
+            NSApp.sendEvent(next)
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertTrue(window.firstResponder === textView, "Responder: \(String(describing: window.firstResponder.map { type(of: $0) }))")
+        XCTAssertEqual(textView.selectedRange(), range)
+        guard window.firstResponder === textView, textView.selectedRange() == range else { return }
+        let board = NSPasteboard.general
+        let original: [NSPasteboardItem] = board.pasteboardItems?.map { item in
+            let saved = NSPasteboardItem()
+            for type in item.types { if let data = item.data(forType: type) { saved.setData(data, forType: type) } }
+            return saved
+        } ?? []
+        defer { board.clearContents(); board.writeObjects(original) }
+        board.clearContents()
+        func command(_ letter: String, code: UInt16) throws {
+            let event = try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command,
+                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
+                characters: letter, charactersIgnoringModifiers: letter, isARepeat: false, keyCode: code))
+            XCTAssertTrue(window.performKeyEquivalent(with: event))
+        }
+        try command("c", code: 8)
+        XCTAssertTrue(board.string(forType: .string) == raw.substring(with: range))
+        let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+        XCTAssertGreaterThan(png.count, 3000)
+        if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_PREVIEW_SNAPSHOTS"] {
+            let url = URL(fileURLWithPath: directory, isDirectory: true)
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            try png.write(to: url.appendingPathComponent("shell-file-tab-dark.png"))
+        }
+        try command("a", code: 0)
+        try command("c", code: 8)
+        XCTAssertTrue(board.string(forType: .string) == script)
+        let menuOpened = expectation(description: "File menu starts tracking")
+        let observation = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification,
+                                                                  object: nil, queue: nil) { note in
+            guard let menu = note.object as? NSMenu else { return }
+            menuOpened.fulfill()
+            RunLoop.main.perform(inModes: [.eventTracking, .default]) { menu.cancelTracking() }
+        }
+        defer { NotificationCenter.default.removeObserver(observation) }
+        let center = try AskWorkspaceTestAccessibility.center(identifier: "ask.sidePanel.file.more", in: window)
+        NSApp.postEvent(try mouse(.leftMouseUp, center), atStart: true)
+        window.sendEvent(try mouse(.leftMouseDown, center))
+        await fulfillment(of: [menuOpened], timeout: 2)
     }
 }

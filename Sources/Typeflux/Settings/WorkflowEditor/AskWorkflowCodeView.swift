@@ -34,7 +34,9 @@ struct AskWorkflowCodeView: NSViewRepresentable {
         scrollView.documentView = textView
         textView.delegate = context.coordinator
         textView.isRichText = false
-        textView.allowsUndo = true
+        textView.isEditable = isEditable
+        textView.isSelectable = true
+        textView.allowsUndo = isEditable
         textView.usesFindBar = true
         textView.isIncrementalSearchingEnabled = true
         textView.isAutomaticQuoteSubstitutionEnabled = false
@@ -138,7 +140,7 @@ struct AskWorkflowCodeView: NSViewRepresentable {
 
         /// Reports the caret's line and column (1-based) for the status bar.
         func textViewDidChangeSelection(_: Notification) {
-            guard let textView else { return }
+            guard parent.isEditable, let textView else { return }
             let content = textView.string as NSString
             let caret = min(textView.selectedRange().location, content.length)
             let before = content.substring(to: caret)
@@ -156,6 +158,7 @@ struct AskWorkflowCodeView: NSViewRepresentable {
 
         /// Return keeps the line's indentation; Tab inserts spaces.
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+            guard parent.isEditable else { return false }
             if selector == #selector(NSResponder.insertNewline(_:)) {
                 let content = textView.string as NSString
                 let caret = textView.selectedRange().location
@@ -196,20 +199,9 @@ struct AskWorkflowCodeView: NSViewRepresentable {
             storage.beginEditing()
             storage.setAttributes([.font: Self.font, .foregroundColor: NSColor.textColor], range: range)
             for span in highlighter.spans(in: textView.string, range: range) {
-                storage.addAttribute(.foregroundColor, value: Self.color(span.token), range: span.range)
+                storage.addAttribute(.foregroundColor, value: span.token.color, range: span.range)
             }
             storage.endEditing()
-        }
-
-        static func color(_ token: AskWorkflowSyntaxHighlighter.Token) -> NSColor {
-            switch token {
-            case .comment: .systemGray
-            case .string: .systemRed
-            case .keyword: .systemPink
-            case .number: .systemYellow.blended(withFraction: 0.35, of: .systemOrange) ?? .systemOrange
-            case .call: .systemTeal
-            case .key: .systemBlue
-            }
         }
 
         func reveal(line: Int) {
@@ -310,6 +302,23 @@ final class AskWorkflowLineRuler: NSRulerView {
 /// at the right edge, where the eye already is.
 final class AskWorkflowTextView: NSTextView {
     var problems: [Int: String] = [:]
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        !isEditable || super.acceptsFirstMouse(for: event)
+    }
+
+    // The conversation can run as an accessory process without a native Edit menu.
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if !isEditable, window?.firstResponder === self,
+           event.modifierFlags.intersection([.command, .shift, .option, .control]) == .command {
+            switch event.charactersIgnoringModifiers?.lowercased() {
+            case "a": selectAll(nil); return true
+            case "c": copy(nil); return true
+            default: break
+            }
+        }
+        return super.performKeyEquivalent(with: event)
+    }
 
     override func drawBackground(in rect: NSRect) {
         super.drawBackground(in: rect)

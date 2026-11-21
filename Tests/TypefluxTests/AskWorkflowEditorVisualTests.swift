@@ -392,7 +392,7 @@ struct AskWorkflowEditorWindowTests {
         coordinator.reveal(line: 2)
         #expect(textView.selectedRange().location == 11)
         for token in [AskWorkflowSyntaxHighlighter.Token.comment, .string, .keyword, .number, .call, .key] {
-            _ = AskWorkflowCodeView.Coordinator.color(token)
+            _ = token.color
         }
     }
 

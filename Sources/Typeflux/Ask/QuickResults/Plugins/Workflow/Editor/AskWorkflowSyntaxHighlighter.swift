@@ -1,11 +1,11 @@
-import Foundation
+import AppKit
 
 /// Colors for the editor's code view: comments, strings, keywords, numbers and
 /// calls, by regular expressions per language. Not a parser; good enough to read
 /// a workflow script, and fast enough to run on every edit of a visible range.
 struct AskWorkflowSyntaxHighlighter: Sendable {
     enum Language: String, CaseIterable, Sendable {
-        case python, javascript, typescript, shell, applescript, json, plain
+        case python, javascript, typescript, shell, applescript, json, generic, plain
 
         /// From the file's extension, then the runtime that runs it.
         static func detect(path: String, runtime: AskWorkflowRuntime? = nil) -> Language {
@@ -147,7 +147,26 @@ struct AskWorkflowSyntaxHighlighter: Sendable {
             (words("true false null"), .keyword),
             (rx(#"-?\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b"#), .number)
         ]
-        return [.python: python, .javascript: script, .typescript: script, .shell: shell,
+        let generic: [(NSRegularExpression, Token)] = [
+            (rx(#"(?m)^[ \t]*(?://|#)[^\r\n]*"#), .comment),
+            (rx(#""(?:\\.|[^"\\\n])*""#), .string),
+            (words("func let var const return if else import class struct enum def for while true false null nil"), .keyword),
+            (number, .number)
+        ]
+        return [.generic: generic, .python: python, .javascript: script, .typescript: script, .shell: shell,
                 .applescript: applescript, .json: json]
     }()
+}
+
+extension AskWorkflowSyntaxHighlighter.Token {
+    var color: NSColor {
+        switch self {
+        case .comment: .systemGray
+        case .string: .systemRed
+        case .keyword: .systemPink
+        case .number: .systemYellow.blended(withFraction: 0.35, of: .systemOrange) ?? .systemOrange
+        case .call: .systemTeal
+        case .key: .systemBlue
+        }
+    }
 }

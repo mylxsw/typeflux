@@ -16,7 +16,6 @@ struct AskFileTabView: View {
     var actions = AskFileExternalActions()
     @State private var content: AskSidePanelFileContent?
     @State private var htmlError: String?
-    @State private var menuHovered = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -44,7 +43,7 @@ struct AskFileTabView: View {
     // MARK: - Toolbar
 
     private var toolbar: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        HStack(spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: AskFileIcon.symbol(for: tab.kind))
                     .foregroundStyle(TFColors.textTertiary)
@@ -54,6 +53,7 @@ struct AskFileTabView: View {
                     .lineLimit(1).truncationMode(.middle)
                     .help(tab.target.relativePath)
             }
+            Spacer(minLength: 0)
             HStack(spacing: 4) {
                 if tab.kind.hasSource {
                     TFSegmentedControl(options: [
@@ -62,7 +62,6 @@ struct AskFileTabView: View {
                     ], selection: $tab.showsSource, size: .regular)
                     .accessibilityIdentifier("ask.sidePanel.file.mode")
                 }
-                Spacer(minLength: 8)
                 if let onLocate {
                     toolbarButton("ask.sidePanel.locateMessage", symbol: "text.bubble", action: onLocate)
                         .accessibilityIdentifier("ask.sidePanel.file.locate")
@@ -76,22 +75,21 @@ struct AskFileTabView: View {
                     AskFileOpenMenuItems(file: tab.target.url, actions: actions, onReference: onReference,
                                          onError: onError)
                 } label: {
-                    TFButtonChrome(kind: .plain, destructive: false, size: .regular, iconOnly: true,
-                                   isPressed: false, hoverOverride: menuHovered) {
-                        Image(systemName: "ellipsis").font(.system(size: 13, weight: .medium))
-                    }
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: TFControlSize.regular.iconSize, weight: .semibold))
                 }
-                .menuStyle(.borderlessButton)
+                .menuStyle(.button)
                 .menuIndicator(.hidden)
+                .buttonStyle(TFButtonStyle(kind: .plain, size: .regular, iconOnly: true))
                 .fixedSize()
-                .onHover { menuHovered = $0 }
+                .frame(width: TFControlSize.regular.height, height: TFControlSize.regular.height)
                 .help(L("ask.sidePanel.open.menu"))
                 .accessibilityLabel(L("ask.sidePanel.open.menu"))
                 .accessibilityIdentifier("ask.sidePanel.file.more")
             }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.vertical, 5)
     }
 
     private func toolbarButton(_ key: String, symbol: String, action: @escaping () -> Void) -> some View {
@@ -120,10 +118,10 @@ struct AskFileTabView: View {
         case .unsupported:
             unsupported
         case let .text(text, truncated):
-            AskLineNumberedText(text: text, truncated: truncated)
+            AskLineNumberedText(text: text, truncated: truncated, path: tab.target.relativePath)
         case let .markdown(text, truncated):
             if tab.showsSource {
-                AskLineNumberedText(text: text, truncated: truncated)
+                AskLineNumberedText(text: text, truncated: truncated, path: tab.target.relativePath)
             } else {
                 AskTopLeadingScroll(axes: .vertical) {
                     VStack(alignment: .leading, spacing: 8) {
@@ -135,13 +133,13 @@ struct AskFileTabView: View {
             }
         case let .csv(table, source):
             if tab.showsSource {
-                AskLineNumberedText(text: source, truncated: false)
+                AskLineNumberedText(text: source, truncated: false, path: tab.target.relativePath)
             } else {
                 AskCSVTableView(table: table)
             }
         case let .html(bundle, source):
             if tab.showsSource {
-                AskLineNumberedText(text: source, truncated: false)
+                AskLineNumberedText(text: source, truncated: false, path: tab.target.relativePath)
             } else {
                 VStack(spacing: 0) {
                     if let htmlError {
@@ -227,44 +225,31 @@ struct AskLineNumberedText: View {
     static let lineLimit = 20000
     let text: String
     let truncated: Bool
+    let path: String
 
     var body: some View {
-        let lines = Self.lines(text)
-        let width = CGFloat(String(lines.count).count) * 7.5 + 10
-        AskTopLeadingScroll(axes: [.vertical, .horizontal]) {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                if truncated || lines.count >= Self.lineLimit {
-                    Text(L("ask.sidePanel.file.truncated"))
-                        .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-                        .padding(.bottom, 6)
-                }
-                ForEach(lines.indices, id: \.self) { index in
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Text("\(index + 1)")
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .frame(width: width, alignment: .trailing)
-                            .accessibilityHidden(true)
-                        Text(lines[index].isEmpty ? " " : lines[index])
-                            .foregroundStyle(StudioTheme.textPrimary)
-                            .fixedSize(horizontal: true, vertical: false)
-                            .textSelection(.enabled)
-                    }
-                    .font(.system(size: 12, design: .monospaced))
-                    .padding(.vertical, 1)
-                }
+        let source = Self.visibleSource(text)
+        VStack(alignment: .leading, spacing: 0) {
+            if truncated || source.truncated {
+                Text(L("ask.sidePanel.file.truncated"))
+                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    .padding(8)
             }
-            .padding(12)
+            AskWorkflowCodeView(text: .constant(source.text), language: AskFileSourceStyle(path: path).language,
+                                isEditable: false)
         }
         .accessibilityIdentifier("ask.sidePanel.file.text")
     }
 
-    static func lines(_ text: String) -> [String] {
-        var lines: [String] = []
-        text.enumerateLines { line, stop in
-            lines.append(line)
-            if lines.count >= lineLimit { stop = true }
+    /// Keep the original line endings and trailing newline when copying a selection.
+    static func visibleSource(_ text: String) -> (text: String, truncated: Bool) {
+        let source = text as NSString
+        var end = 0
+        for _ in 0 ..< lineLimit {
+            guard end < source.length else { break }
+            end = NSMaxRange(source.lineRange(for: NSRange(location: end, length: 0)))
         }
-        return lines
+        return end < source.length ? (source.substring(to: end), true) : (text, false)
     }
 }
 

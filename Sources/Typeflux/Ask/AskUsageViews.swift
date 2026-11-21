@@ -58,7 +58,6 @@ struct AskUsagePanel: View {
     var focusCloseOnAppear = false
     /// Shown as a drawer over the conversation rather than beside it.
     var floating = false
-    @ObservedObject private var auth = AuthState.shared
     @Binding var runId: String?
     var close: () -> Void
     @StateObject private var details = AskUsageDetails()
@@ -102,7 +101,9 @@ struct AskUsagePanel: View {
                 // Two questions, two cards: "does the next message still fit?"
                 // and "what did this cost?".
                 VStack(alignment: .leading, spacing: compact ? 8 : 12) {
-                    if let context = model.usageContext, context.remaining != nil { contextCard(context) }
+                    if let context = model.usageContext, let capacity = context.capacity, let remaining = context.remaining {
+                        contextCard(context, capacity: capacity, remaining: remaining)
+                    }
                     if let budget = model.selected?.run?.budget { AskBudgetView(budget: budget) }
                     if scopeOptions.count > 1 {
                         AskSegmentedControl(options: scopeOptions, selection: $runId)
@@ -130,21 +131,8 @@ struct AskUsagePanel: View {
                     }
                     if usage?.historicalGap == true { help("ask.usage.historicalGap") }
                     callsSection
-                    if model.hasUsageRecords { help("ask.usage.scopeHelp") }
                 }
                 .padding(compact ? 12 : 16)
-            }
-            if !local, let credits = auth.usageCredits {
-                Rectangle().fill(AskTheme.separator).frame(height: 1)
-                HStack {
-                    Text(L("ask.usage.balance"))
-                    Spacer()
-                    Text(credits.unlimited ? "∞" : AccountUsageDisplayFormatter.creditAmount(credits.remaining))
-                        .monospacedDigit()
-                }
-                .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, 16).padding(.vertical, compact ? 8 : 12)
-                // Account-wide data is independently refreshed by AuthState.
             }
         }
         // The sidebar's twin on the trailing side: a full-height column flush
@@ -174,38 +162,29 @@ struct AskUsagePanel: View {
         return options
     }
 
-    /// Unused context is shared by future input, reasoning and replies.
-    /// A budget reservation is future work, not context already consumed.
-    private func contextCard(_ context: AskContextUsage) -> some View {
-        card {
-            cardLabel(L("ask.usage.remaining")) {
-                Text(L(context.remaining == nil ? "ask.usage.capacityUnknown"
-                       : context.isHigh ? "ask.usage.high" : "ask.usage.available"))
-                    .font(.system(size: 10.5, weight: .medium))
-                    .foregroundStyle(context.remaining == nil ? StudioTheme.textSecondary : context.isHigh ? StudioTheme.warning : StudioTheme.success)
+    private func contextCard(_ context: AskContextUsage, capacity: Int, remaining: Int) -> some View {
+        let percent = AskContextUsageButton.percentText(context.fraction)
+        return card {
+            cardLabel(L("ask.usage.conversationContext")) {
+                Text(L("ask.usage.contextLimit", AccountUsageDisplayFormatter.count(Int64(capacity))))
+                    .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textSecondary)
             }
-            figure(context.remaining.map { "≈ " + AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—",
-                   unit: "tokens")
+            Text(L("ask.usage.contextPercentUsed", percent))
+                .font(.system(size: compact ? 19 : 22, weight: .semibold)).monospacedDigit()
+                .foregroundStyle(context.isHigh ? StudioTheme.warning : StudioTheme.textPrimary)
             budgetBar(context)
-            HStack(spacing: 12) {
-                legend(color: context.isHigh ? StudioTheme.warning : AskTheme.accent,
-                       title: L("ask.usage.inputEstimate"),
-                       value: AccountUsageDisplayFormatter.count(Int64(context.inputTokens)))
-                legend(color: AskTheme.border,
-                       title: L("ask.usage.reserve"),
-                       value: AccountUsageDisplayFormatter.count(Int64(context.outputReserve)))
-                if let capacity = context.capacity {
-                    Text(L("ask.usage.capacity") + " " + AccountUsageDisplayFormatter.count(Int64(capacity)))
-                        .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
-                }
-                Spacer(minLength: 0)
+            HStack {
+                Text(L("ask.usage.contextUsed", AccountUsageDisplayFormatter.count(Int64(max(0, context.inputTokens)))))
+                Spacer()
+                Text(L("ask.usage.contextFree", AccountUsageDisplayFormatter.count(Int64(remaining))))
             }
-            help("ask.usage.contextShared")
+            .font(.system(size: 11)).monospacedDigit().foregroundStyle(StudioTheme.textSecondary)
             if context.summarized { help("ask.usage.summarized") }
             if context.isHigh { help("ask.usage.highHelp") }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.usage.contextCard")
+        .help(L("ask.usage.contextHelp"))
     }
 
     private func totalsCard(_ totals: AskUsageTotals) -> some View {
@@ -216,7 +195,8 @@ struct AskUsagePanel: View {
             }
             figure(local ? totals.tokenText(totals.totalTokens) : totals.creditsText,
                    unit: local ? "tokens" : "credits")
-            help(local ? "ask.usage.localHelp" : totals.statusKey)
+            if local { help("ask.usage.localHelp") }
+            else if let key = totals.statusKey { help(key) }
             VStack(spacing: 0) {
                 detail("ask.usage.input", totals.tokenText(totals.inputTokens))
                 rule
@@ -227,12 +207,9 @@ struct AskUsagePanel: View {
                 detail("ask.usage.output", totals.tokenText(totals.outputTokens))
                 rule
                 detail("ask.usage.total", totals.tokenText(totals.totalTokens))
-                rule
-                detail("ask.usage.callCount", String(totals.calls))
             }
             .padding(.top, 2)
             if totals.estimated > 0 { help("ask.usage.estimated") }
-            if !local, (totals.cachedInputTokens ?? 0) > 0 { help("ask.usage.cachedHelp") }
         }
     }
 
@@ -308,14 +285,6 @@ struct AskUsagePanel: View {
         .accessibilityHidden(true)
     }
 
-    private func legend(color: Color, title: String, value: String) -> some View {
-        HStack(spacing: 5) {
-            RoundedRectangle(cornerRadius: 2, style: .continuous).fill(color).frame(width: 7, height: 7)
-            Text(title + " " + value).font(.system(size: 10.5))
-                .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
-        }
-    }
-
     private func invocation(_ item: AskUsageInvocation) -> some View {
         let expanded = expandedCall == item.id
         return VStack(alignment: .leading, spacing: 0) {
@@ -351,12 +320,6 @@ struct AskUsagePanel: View {
                         detail("ask.usage.output", String(tokens.completionTokens))
                         detail("ask.usage.total", String(tokens.totalTokens))
                     } else if !item.purpose.hasPrefix("image_") { help("ask.usage.unavailable") }
-                    if item.source != "unknown" {
-                        help(item.source == "estimated" ? "ask.usage.estimated"
-                             : item.source == "client" ? "ask.usage.clientSource" : "ask.usage.providerSource")
-                    }
-                    Text(item.createdAt, style: .time).font(.system(size: 10.5))
-                        .foregroundStyle(StudioTheme.textTertiary).padding(.top, 4)
                 }
                 .padding(.leading, 28).padding(.trailing, 12).padding(.bottom, 10)
             }

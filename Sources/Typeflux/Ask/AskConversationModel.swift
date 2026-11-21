@@ -2371,6 +2371,16 @@ final class AskConversationModel: ObservableObject {
     }
 
     func approvalID(_ conversationId: String) -> UUID? { approvalRequests[conversationId]?.id }
+    func approvalFilePath(_ call: AskToolCall, conversationId: String) -> String? {
+        guard let path = approvalRequests[conversationId]?.request.binding.target.path else { return nil }
+        switch call.function.name {
+        case "files": return path
+        case "project_files":
+            return AskApprovalPresentation.detail(call).map { URL(fileURLWithPath: path).appendingPathComponent($0).path }
+        default: return nil
+        }
+    }
+
     func approvalTarget(_ conversationId: String) -> String? { approvalRequests[conversationId]?.request.binding.summary }
     func mcpServerName(of call: AskToolCall) -> String? { tools.mcpServerName(of: call) }
 

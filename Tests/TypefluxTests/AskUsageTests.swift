@@ -94,9 +94,9 @@ struct AskUsageTests {
         #expect(AskUsageTotals(calls: 1, external: 1).creditsText == "0")
         #expect(AskUsageTotals(calls: 1, external: 1).statusKey == "ask.usage.external")
         #expect(AskUsageTotals(calls: 2, missing: 1).statusKey == "ask.usage.incomplete")
-        #expect(AskUsageTotals(calls: 1, pending: 1).statusKey == "ask.usage.pending")
+        #expect(AskUsageTotals(calls: 1, pending: 1).statusKey == nil)
         #expect(AskUsageTotals(microcredits: 1_000_000, calls: 1).creditsText == "1")
-        #expect(AskUsageTotals(calls: 1).statusKey == "ask.usage.confirmed")
+        #expect(AskUsageTotals(calls: 1).statusKey == nil)
     }
 
     @Test func contextReserveAndUnknownCapacity() {

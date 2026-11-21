@@ -15,22 +15,32 @@ enum AskApprovalCopy {
     static let maxFacts = 3
     static let reasonLimit = 160
 
-    // MARK: Question
+    enum Decision: String {
+        case run, create, overwrite, edit
 
-    static func question(_ call: AskToolCall, mcpServer: String? = nil,
-                         fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) -> String {
+        var allowLabel: String { L("ask.approval.allow." + rawValue) }
+    }
+
+    static func decision(_ call: AskToolCall, boundPath: String? = nil,
+                         fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) -> Decision? {
         let args = arguments(call)
-        let action = args["action"] as? String ?? ""
-        switch (call.function.name, action) {
+        switch (call.function.name, args["action"] as? String ?? "") {
+        case ("run_command", _), ("command_job", "start"): return .run
         case ("files", "write"), ("project_files", "write"):
-            guard let path = path(args) else { break }
-            let key = fileExists(expanded(path)) ? "ask.approval.q.overwrite" : "ask.approval.q.create"
-            return L(key, filename(path))
-        case ("files", "edit"), ("project_files", "edit"):
-            guard let path = path(args) else { break }
-            return L("ask.approval.q.edit", filename(path))
-        case ("run_command", _), ("command_job", "start"):
-            return L("ask.approval.q.command")
+            guard let path = path(args) else { return nil }
+            return fileExists(boundPath ?? expanded(path)) ? .overwrite : .create
+        case ("files", "edit"), ("project_files", "edit"): return path(args) == nil ? nil : .edit
+        default: return nil
+        }
+    }
+
+    static func title(_ call: AskToolCall, decision: Decision?, mcpServer: String? = nil) -> String {
+        let args = arguments(call)
+        if let decision {
+            if decision == .run { return L("ask.approval.q.command") }
+            if let path = path(args) { return L("ask.approval.q." + decision.rawValue, filename(path)) }
+        }
+        switch (call.function.name, args["action"] as? String ?? "") {
         case ("image_generate", _): return L("ask.approval.q.imageGenerate")
         case ("image_edit", _): return L("ask.approval.q.imageEdit")
         case ("run_code", _):
@@ -62,30 +72,28 @@ enum AskApprovalCopy {
     // MARK: Facts
 
     static func facts(_ call: AskToolCall, risk: AskToolRisk, targetSummary: String? = nil,
-                      fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) -> [Fact] {
+                      boundPath: String? = nil, workingDirectory: String? = nil) -> [Fact] {
         let args = arguments(call)
         let action = args["action"] as? String ?? ""
         var facts: [Fact] = []
         switch (call.function.name, action) {
         case ("files", "write"), ("project_files", "write"):
             if let path = path(args) {
-                facts.append(location(path))
-                if fileExists(expanded(path)) {
-                    facts.append(.init(symbol: "exclamationmark.triangle", text: L("ask.approval.fact.overwrite"), warning: true))
-                } else {
-                    facts.append(.init(symbol: "plus", text: L("ask.approval.fact.newFile")))
-                }
+                facts.append(location(path, boundPath: boundPath))
             }
             if let content = args["content"] as? String, !content.isEmpty {
                 facts.append(.init(symbol: "text.alignleft", text: L("ask.approval.fact.lines", lineCount(content))))
             }
         case ("files", "edit"), ("project_files", "edit"):
-            if let path = path(args) { facts.append(location(path)) }
+            if let path = path(args) { facts.append(location(path, boundPath: boundPath)) }
             let removed = lineCount(args["old_text"] as? String ?? "")
             let added = lineCount(args["new_text"] as? String ?? "")
             facts.append(.init(symbol: "pencil", text: L("ask.approval.fact.change", added, removed)))
         case ("run_command", _), ("command_job", "start"):
             facts.append(.init(symbol: "person", text: L("ask.approval.fact.account")))
+            if let workingDirectory {
+                facts.append(location((workingDirectory as NSString).abbreviatingWithTildeInPath, boundPath: workingDirectory))
+            }
         case ("computer", "screenshot"):
             facts.append(.init(symbol: "camera.viewfinder", text: L("ask.approval.fact.screenshot")))
         case ("computer", _), ("browser", _):
@@ -190,13 +198,9 @@ enum AskApprovalCopy {
 
     private static func filename(_ path: String) -> String { (path as NSString).lastPathComponent }
 
-    /// "Downloads / snake.html": the file and the folder it lives in.
-    static func location(_ path: String) -> Fact {
-        let full = expanded(path)
-        let folder = ((full as NSString).deletingLastPathComponent as NSString).lastPathComponent
-        let name = filename(path)
-        let text = folder.isEmpty || folder == "/" ? name : folder + " / " + name
-        return .init(symbol: "folder", text: text, revealPath: full.hasPrefix("/") ? full : nil)
+    static func location(_ path: String, boundPath: String? = nil) -> Fact {
+        let resolved = boundPath ?? expanded(path)
+        return .init(symbol: "folder", text: path, revealPath: resolved.hasPrefix("/") ? resolved : nil)
     }
 
     static func lineCount(_ text: String) -> Int {

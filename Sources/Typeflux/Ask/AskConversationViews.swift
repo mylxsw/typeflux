@@ -1355,7 +1355,7 @@ struct AskConversationView: View {
 
     /// The decision sits at the end of the conversation it belongs to.
     private func approval(_ call: AskToolCall, id: String) -> some View {
-        approvalCard(call, id: id, embedded: false)
+        approvalCard(call, id: id, embedded: false).id(call.id)
             .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
     }
 
@@ -1365,6 +1365,8 @@ struct AskConversationView: View {
             call: call, risk: model.approvalRisk(id) ?? .destructive,
             mcpServer: model.mcpServerName(of: call),
             targetSummary: model.approvalTarget(id),
+            boundPath: model.approvalFilePath(call, conversationId: id),
+            workingDirectory: model.workspaces?.url(owner: model.owner, conversationId: id).path ?? NSHomeDirectory(),
             reason: Self.approvalReason(call, messages: model.selected?.messages ?? []),
             canAllowForConversation: model.canAllowForConversation(id),
             embedded: embedded,
@@ -1680,7 +1682,7 @@ struct AskConversationView: View {
                              fileChanges: [],
                              approval: pending.flatMap { pending in
                                  group.calls.contains { $0.id == pending.call.id }
-                                     ? AnyView(approvalCard(pending.call, id: pending.id, embedded: true)) : nil
+                                     ? AnyView(approvalCard(pending.call, id: pending.id, embedded: true).id(pending.call.id)) : nil
                              }, exportProjectPatch: model.exportProjectPatch, actionIdentity: ObjectIdentifier(model))
                 .equatable()
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)

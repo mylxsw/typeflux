@@ -152,12 +152,22 @@ struct AskActivityBlock: View, Equatable {
 
     private var card: some View {
         VStack(alignment: .leading, spacing: 0) {
-            cardHeader
+            if approval == nil || plan?.isEmpty == false {
+                cardHeader
+            } else if group.steps.count > 1 || group.messages.contains(where: { $0.reasoning?.isEmpty == false }) {
+                Button(action: toggle) {
+                    Label(L("ask.activity.steps", group.steps.count), systemImage: expanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 16).padding(.top, 10)
+            }
             if let plan, !plan.isEmpty {
                 AskPlanList(items: plan, active: status == .running).padding(.horizontal, 14).padding(.bottom, 10)
             }
             if let approval {
-                approval.padding(.horizontal, 8).padding(.bottom, 8)
+                approval
             }
             if expanded {
                 Rectangle().fill(AskTheme.separator).frame(height: 1)
@@ -170,7 +180,8 @@ struct AskActivityBlock: View, Equatable {
         // shape and hairline on an opaque surface: live glass belongs to the
         // floating controls layer. One neutral frame: the approval inside it
         // carries the colour, so the card is not a box around a box.
-        .askInWindowGlass(corner: cardCorner, opaqueFill: AskTheme.raisedSurface)
+        .background(AskTheme.raisedSurface, in: RoundedRectangle(cornerRadius: cardCorner, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: cardCorner, style: .continuous).strokeBorder(AskTheme.border))
         .environment(\.askGlassMaterialOverride, .opaque)
     }
 

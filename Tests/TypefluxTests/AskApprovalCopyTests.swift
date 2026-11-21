@@ -13,6 +13,11 @@ struct AskApprovalCopyTests {
         return AskToolCall(id: id, function: .init(name: name, arguments: String(decoding: data, as: UTF8.self)))
     }
 
+    private func title(_ call: AskToolCall, mcpServer: String? = nil,
+                       fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) -> String {
+        AskApprovalCopy.title(call, decision: AskApprovalCopy.decision(call, fileExists: fileExists), mcpServer: mcpServer)
+    }
+
     private func fits<V: View>(_ view: V, width: CGFloat = 640) -> CGFloat {
         let hosting = NSHostingView(rootView: view.frame(width: width))
         hosting.layoutSubtreeIfNeeded()
@@ -25,23 +30,23 @@ struct AskApprovalCopyTests {
 
     @Test func questionsNameTheActionAndItsObject() {
         let write = call("files", ["action": "write", "path": "~/Downloads/snake.html", "content": "x"])
-        #expect(AskApprovalCopy.question(write, fileExists: { _ in false }) == L("ask.approval.q.create", "snake.html"))
-        #expect(AskApprovalCopy.question(write, fileExists: { _ in true }) == L("ask.approval.q.overwrite", "snake.html"))
+        #expect(title(write, fileExists: { _ in false }) == L("ask.approval.q.create", "snake.html"))
+        #expect(title(write, fileExists: { _ in true }) == L("ask.approval.q.overwrite", "snake.html"))
         let edit = call("project_files", ["action": "edit", "path": "src/a.swift"])
-        #expect(AskApprovalCopy.question(edit) == L("ask.approval.q.edit", "a.swift"))
-        #expect(AskApprovalCopy.question(call("run_command", ["command": "ls"])) == L("ask.approval.q.command"))
-        #expect(AskApprovalCopy.question(call("run_code", ["language": "python", "code": "1"]))
+        #expect(title(edit) == L("ask.approval.q.edit", "a.swift"))
+        #expect(title(call("run_command", ["command": "ls"])) == L("ask.approval.q.command"))
+        #expect(title(call("run_code", ["language": "python", "code": "1"]))
             == L("ask.approval.q.code", "python"))
-        #expect(AskApprovalCopy.question(call("run_code", ["code": "1"])) == L("ask.approval.q.codeGeneric"))
-        #expect(AskApprovalCopy.question(call("computer", ["action": "screenshot"])) == L("ask.approval.q.screen"))
+        #expect(title(call("run_code", ["code": "1"])) == L("ask.approval.q.codeGeneric"))
+        #expect(title(call("computer", ["action": "screenshot"])) == L("ask.approval.q.screen"))
         let click = call("computer", ["action": "click"])
-        #expect(AskApprovalCopy.question(click) == L("ask.approval.q.generic", AskTheme.toolTitle(click)))
+        #expect(title(click) == L("ask.approval.q.generic", AskTheme.toolTitle(click)))
         let mcp = call("mcp_delete_issue", ["id": "1"])
-        #expect(AskApprovalCopy.question(mcp, mcpServer: "Linear")
+        #expect(title(mcp, mcpServer: "Linear")
             == L("ask.approval.q.generic", AskTheme.toolTitle(mcp, mcpServer: "Linear")))
         // A write without a path falls back to the tool's own name.
         let pathless = call("files", ["action": "write"])
-        #expect(AskApprovalCopy.question(pathless) == L("ask.approval.q.generic", AskTheme.toolTitle(pathless)))
+        #expect(title(pathless) == L("ask.approval.q.generic", AskTheme.toolTitle(pathless)))
     }
 
     @Test func questionsReadNaturallyInChinese() {
@@ -49,8 +54,8 @@ struct AskApprovalCopyTests {
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previous) }
         let write = call("files", ["action": "write", "path": "/tmp/snake.html"])
-        #expect(AskApprovalCopy.question(write, fileExists: { _ in false }) == "允许创建 snake.html？")
-        #expect(AskApprovalCopy.question(call("computer", ["action": "screenshot"])) == "允许查看你的屏幕？")
+        #expect(title(write, fileExists: { _ in false }) == "创建 snake.html")
+        #expect(title(call("computer", ["action": "screenshot"])) == "允许查看你的屏幕？")
         #expect(AskStepLimitPrompt.title(steps: 24) == "已运行 24 步，要继续吗？")
     }
 
@@ -84,20 +89,19 @@ struct AskApprovalCopyTests {
 
     @Test func writeFactsSayWhereHowMuchAndWhetherItOverwrites() {
         let write = call("files", ["action": "write", "path": "/Users/me/Downloads/snake.html", "content": "a\nb\nc\n"])
-        let fresh = AskApprovalCopy.facts(write, risk: .write, fileExists: { _ in false })
-        #expect(fresh == [
-            .init(symbol: "folder", text: "Downloads / snake.html", revealPath: "/Users/me/Downloads/snake.html"),
-            .init(symbol: "plus", text: L("ask.approval.fact.newFile")),
+        let facts = AskApprovalCopy.facts(write, risk: .write)
+        #expect(facts == [
+            .init(symbol: "folder", text: "/Users/me/Downloads/snake.html", revealPath: "/Users/me/Downloads/snake.html"),
             .init(symbol: "text.alignleft", text: L("ask.approval.fact.lines", 3)),
         ])
-        let existing = AskApprovalCopy.facts(write, risk: .write, fileExists: { _ in true })
-        #expect(existing[1] == .init(symbol: "exclamationmark.triangle", text: L("ask.approval.fact.overwrite"), warning: true))
+        #expect(AskApprovalCopy.decision(write, fileExists: { _ in false })?.allowLabel == L("ask.approval.allow.create"))
+        #expect(AskApprovalCopy.decision(write, boundPath: "/resolved/snake.html", fileExists: { $0 == "/resolved/snake.html" }) == .overwrite)
     }
 
     @Test func editFactsCountChangedLines() {
         let edit = call("files", ["action": "edit", "path": "/a/b.txt", "old_text": "one\ntwo", "new_text": "uno"])
         let facts = AskApprovalCopy.facts(edit, risk: .write)
-        #expect(facts.map(\.text) == ["a / b.txt", L("ask.approval.fact.change", 1, 2)])
+        #expect(facts.map(\.text) == ["/a/b.txt", L("ask.approval.fact.change", 1, 2)])
     }
 
     @Test func commandAndScreenFactsReplaceTechnicalTargets() {
@@ -123,13 +127,13 @@ struct AskApprovalCopyTests {
 
     @Test func factsAreCappedAtThree() {
         let write = call("files", ["action": "write", "path": "/a/b", "content": "x"])
-        // Location, overwrite, line count, plus the irreversible warning would make four.
-        let facts = AskApprovalCopy.facts(write, risk: .destructive, fileExists: { _ in true })
+        // The path and line count leave room for an irreversible warning.
+        let facts = AskApprovalCopy.facts(write, risk: .destructive)
         #expect(facts.count == AskApprovalCopy.maxFacts)
     }
 
     @Test func locationsAndLineCounts() {
-        #expect(AskApprovalCopy.location("/snake.html") == .init(symbol: "folder", text: "snake.html", revealPath: "/snake.html"))
+        #expect(AskApprovalCopy.location("/snake.html") == .init(symbol: "folder", text: "/snake.html", revealPath: "/snake.html"))
         #expect(AskApprovalCopy.location("notes.md") == .init(symbol: "folder", text: "notes.md", revealPath: nil))
         #expect(AskApprovalCopy.location("~/x.txt").revealPath?.hasPrefix("/") == true)
         #expect(AskApprovalCopy.lineCount("") == 0)
@@ -182,9 +186,9 @@ struct AskApprovalCopyTests {
         #expect(AskApprovalCard.panelTint(.none) == AskTheme.accent)
     }
 
-    @Test func commandsAndDiffsStartOpenWhileWrittenContentStartsFolded() {
+    @Test func commandAndFilePreviewsStartFoldedWhileDiffsStayOpen() {
         let command = call("run_command", ["command": "ls"])
-        #expect(AskApprovalCard.previewStartsExpanded(.content("ls"), call: command))
+        #expect(!AskApprovalCard.previewStartsExpanded(.content("ls"), call: command))
         #expect(AskApprovalCard.previewStartsExpanded(.diff(removed: "a", added: "b"), call: call("files")))
         #expect(!AskApprovalCard.previewStartsExpanded(.content("<html>"), call: call("files", ["action": "write"])))
         #expect(!AskApprovalCard.previewStartsExpanded(.none, call: command))
@@ -193,7 +197,7 @@ struct AskApprovalCopyTests {
         #expect(AskApprovalCard.previewTitle(call("files", ["action": "edit", "old_text": "a", "new_text": "b"]))
             == L("ask.approval.preview.diff"))
         #expect(AskApprovalCard.previewTitle(call("files", ["action": "write", "content": "a"]))
-            == L("ask.approval.preview.content"))
+            == L("ask.approval.preview.file"))
         #expect(AskApprovalCard.previewTitle(call("computer", ["action": "type", "text": "hi"]))
             == L("ask.approval.preview.content"))
         #expect(AskApprovalPresentation.Preview.diff(removed: "", added: "").isDiff)
@@ -214,19 +218,61 @@ struct AskApprovalCopyTests {
         #expect(fits(remove) > 90)
         let check = AskApprovalCard(call: call("run_command", ["command": checkCommand]), risk: .destructive,
                                     targetSummary: checkCommand, onDeny: {}, onAllow: {})
-        // The command is shown open, once.
-        #expect(fits(check) > fits(AskApprovalCard(call: call("computer", ["action": "screenshot"]), risk: .read,
-                                                    onDeny: {}, onAllow: {})))
-        let chip = AskApprovalFactChip(fact: .init(symbol: "folder", text: "a / b", revealPath: "/a/b"))
+        #expect(fits(check) < fits(remove))
+        #expect(fits(embedded, width: 300) >= fits(embedded))
+        let chip = AskApprovalFactLabel(fact: .init(symbol: "folder", text: "a / b", revealPath: "/a/b"))
         #expect(fits(chip, width: 200) > 0)
-        #expect(fits(AskApprovalFactChip(fact: .init(symbol: "x", text: "warn", warning: true)), width: 200) > 0)
+        #expect(fits(AskApprovalFactLabel(fact: .init(symbol: "x", text: "warn", warning: true)), width: 200) > 0)
+    }
+
+    @Test func compactCardsExposePreviewsAndRouteTheDecisionButtons() async throws {
+        typealias UI = SettingsBehaviorTestSupport
+        _ = NSApplication.shared
+        let enhanced = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previousAX = NSApp.accessibilityAttributeValue(enhanced)
+        NSApp.accessibilitySetValue(true, forAttribute: enhanced)
+        defer { NSApp.accessibilitySetValue(previousAX ?? false, forAttribute: enhanced) }
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let command = "git remote get-url origin"
+        let script = (1...39).map { "# line " + String($0) }.joined(separator: "\n")
+        var denied = false, allowed = false
+        let run = AskApprovalCard(call: call("run_command", ["command": command]), risk: .destructive,
+                                  workingDirectory: "~/Workspace/codes/typeflux", reason: "读取仓库远程地址",
+                                  onDeny: { denied = true }, onAllow: {})
+        let file = AskApprovalCard(call: call("files", ["action": "write", "path": "outputs/clone-typeflux.sh",
+                                                       "content": script]), risk: .write,
+                                   onDeny: {}, onAllow: { allowed = true })
+        let cards = VStack(spacing: 16) { run; file }.padding(18).background(AskTheme.surface)
+        try await UI.withWindow(cards.environment(\.colorScheme, .dark), width: 640,
+                                height: fits(cards, width: 640)) { window, host in
+            window.appearance = NSAppearance(named: .darkAqua)
+            host.displayIfNeeded()
+            let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+                .appendingPathComponent(".build/approval-validation")
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            try #require(bitmap.representation(using: .png, properties: [:])).write(to: root.appendingPathComponent("compact.png"))
+            #expect(!UI.contains(command, in: host))
+            try UI.button(L("ask.approval.preview.command"), in: host).press()
+            try await UI.wait { UI.contains(command, in: host) }
+            try UI.button(L("ask.approval.preview.command"), in: host).press()
+            try await UI.wait { !UI.contains(command, in: host) }
+            try UI.button(L("ask.approval.preview.file"), in: host).press()
+            try await UI.wait { UI.contains(script, in: host) }
+            try UI.button(L("ask.deny"), in: host).press()
+            try UI.button(L("ask.approval.allow.create"), in: host).press()
+            try await UI.wait { denied && allowed }
+        }
     }
 
     @Test func imageApprovalShowsDecodedPromptAndReadableFactsWithoutDuplicatePreview() {
         let prompt = "A newspaper front page.\n标题：深夜书店\n" + String(repeating: "Texture and typography. ", count: 150)
         let image = call("image_generate", ["prompt": prompt, "aspect_ratio": "9:16", "resolution": "2K", "model": "image:gpt-image-2"])
-        #expect(AskApprovalCopy.question(image) == L("ask.approval.q.imageGenerate"))
-        #expect(AskApprovalCopy.question(call("image_edit")) == L("ask.approval.q.imageEdit"))
+        #expect(title(image) == L("ask.approval.q.imageGenerate"))
+        #expect(title(call("image_edit")) == L("ask.approval.q.imageEdit"))
         #expect(AskApprovalPresentation.preview(image) == .none)
         #expect(AskApprovalCopy.imagePrompt(image) == prompt)
         #expect(AskApprovalCopy.facts(image, risk: .write, targetSummary: "image_generate").map(\.text) == [

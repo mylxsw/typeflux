@@ -176,7 +176,7 @@ struct AskFilePreviewView: View {
                                 width: 28,
                                 alignment: .trailing
                             )
-                            Text(highlight(line)).fixedSize(horizontal: true, vertical: false)
+                            Text(AskFileSourceStyle.genericLine(line)).fixedSize(horizontal: true, vertical: false)
                         }
                     }
                     truncation(content)
@@ -184,26 +184,6 @@ struct AskFilePreviewView: View {
                     .frame(minWidth: geometry.size.width, minHeight: geometry.size.height, alignment: .topLeading)
             }
         }
-    }
-
-    private func highlight(_ line: String) -> AttributedString {
-        var value = AttributedString(line)
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-        if trimmed.hasPrefix("//") || trimmed.hasPrefix("#") {
-            value.foregroundColor = .secondary; return value
-        }
-        // swiftlint:disable:next line_length
-        let pattern = #""(?:[^"\\]|\\.)*"|\b(?:func|let|var|const|return|if|else|import|class|struct|enum|def|for|while|true|false|null|nil)\b|\b\d+(?:\.\d+)?\b"#
-        if let regex = try? NSRegularExpression(pattern: pattern) {
-            for match in regex.matches(in: line, range: NSRange(line.startIndex..., in: line)) {
-                guard let range = Range(match.range, in: line),
-                      let attributedRange = Range(range, in: value) else { continue }
-                let token = line[range]
-                value[attributedRange].foregroundColor = token.hasPrefix("\"") ? .green : token.first?
-                    .isNumber == true ? .orange : .purple
-            }
-        }
-        return value
     }
 
     private func markdownLine(_ line: String) -> some View {

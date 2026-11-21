@@ -129,6 +129,11 @@ struct AskWorkspaceTestAccessibility {
     }
 
     static func center(identifier: String, in window: NSWindow) throws -> NSPoint {
+        let frame = try frame(identifier: identifier, in: window)
+        return NSPoint(x: frame.midX, y: frame.midY)
+    }
+
+    static func frame(identifier: String, in window: NSWindow) throws -> NSRect {
         var seen = Set<ObjectIdentifier>()
         func value(_ object: NSObject, _ key: String) -> Any? {
             object.responds(to: NSSelectorFromString(key)) ? object.value(forKey: key) : nil
@@ -147,8 +152,7 @@ struct AskWorkspaceTestAccessibility {
         }
         let frame = try #require(find(window) ?? window.contentView.flatMap(find),
                                  "Missing native control: \(identifier)")
-        let local = window.convertFromScreen(frame)
-        return NSPoint(x: local.midX, y: local.midY)
+        return window.convertFromScreen(frame)
     }
 }
 

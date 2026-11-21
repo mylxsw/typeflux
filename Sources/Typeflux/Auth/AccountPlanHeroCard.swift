@@ -115,7 +115,9 @@ struct AccountPlanHeroCard: View {
                                           AccountStatusText.percent(credits.remainingFraction ?? 0)))
                 periodProgress(status)
                 addon(credits)
-                forecast(status)
+                if status.level == .exhausted {
+                    exhaustedNotice
+                }
             }
         case .unlimited:
             Text(L("auth.account.usageQuotaUnlimited"))
@@ -172,41 +174,16 @@ struct AccountPlanHeroCard: View {
         return from + " – " + AccountStatusText.shortDate(end, locale: locale)
     }
 
-    @ViewBuilder
-    private func forecast(_ status: AccountStatusPresentation) -> some View {
-        if status.level == .exhausted {
-            HStack(spacing: 6) {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(StudioTheme.danger)
-                Text(L("account.offer.exhaustedDetail"))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
-            .padding(.top, 10)
-        } else if let forecast = status.forecast {
-            let runsOut = forecast.daysUntilExhausted != nil
-            HStack(spacing: 6) {
-                Image(systemName: runsOut ? "exclamationmark.triangle.fill" : "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(runsOut ? StudioTheme.warning : StudioTheme.textTertiary)
-                Text(forecastText(forecast))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.top, 10)
+    private var exhaustedNotice: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(StudioTheme.danger)
+            Text(L("account.offer.exhaustedDetail"))
+                .font(.studioBody(StudioTheme.Typography.bodySmall))
+                .foregroundStyle(StudioTheme.textSecondary)
         }
-    }
-
-    private func forecastText(_ forecast: AccountUsageForecast) -> String {
-        if let days = forecast.daysUntilExhausted {
-            return L("account.page.forecastRunsOut", days)
-        }
-        if let projected = forecast.projectedFraction {
-            return L("account.page.forecastEnough", AccountStatusText.percent(min(projected, 1)))
-        }
-        return L("account.page.forecastEarly")
+        .padding(.top, 10)
     }
 
     @ViewBuilder

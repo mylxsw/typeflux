@@ -48,6 +48,9 @@ struct AskFirstQuestionVisualTests {
         await signedIn.api.setFailUsage(false)
         let totals = AskUsageTotals(inputTokens: 1200, outputTokens: 240, totalTokens: 1440, microcredits: 80000, calls: 1)
         conversation.usage = .init(version: 1, since: Date(), historicalGap: false, total: totals, runs: ["run": totals])
+        conversation.contextUsage = .init(modelRef: signedIn.model.modelReference(launcher: false),
+                                          inputTokens: 37_900, outputReserve: 4096, capacity: 204_800,
+                                          summarized: false, estimated: true)
         conversation.revision += 1
         await signedIn.api.seed(conversation)
         await signedIn.model.select(conversation.id, reload: true)
@@ -56,14 +59,14 @@ struct AskFirstQuestionVisualTests {
                                                                               totalTokens: 1440), source: "provider",
                                                 microcredits: 80000, status: "confirmed", version: 1)])
         try await render(AskUsagePanel(model: signedIn.model, runId: .constant(nil), close: {}),
-                         size: NSSize(width: 330, height: 640), file: root.appendingPathComponent("usage-data.png"))
+                         size: NSSize(width: 330, height: 640), file: root.appendingPathComponent("usage-data.png"), dark: true)
     }
 
-    private func render<V: View>(_ view: V, size: NSSize, file: URL) async throws {
+    private func render<V: View>(_ view: V, size: NSSize, file: URL, dark: Bool = false) async throws {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        window.appearance = NSAppearance(named: .aqua)
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let hosting = NSHostingView(rootView: view.environment(\.askGlassMaterialOverride, .opaque)
             .frame(width: size.width, height: size.height, alignment: .top))
         hosting.sizingOptions = []
