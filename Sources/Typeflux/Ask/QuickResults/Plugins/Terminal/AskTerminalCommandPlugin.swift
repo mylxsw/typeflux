@@ -21,17 +21,20 @@ struct TerminalCommandRequest: Equatable, Sendable {
     var command: String
     /// The external terminal app, which also offers to run a built-in command again.
     var terminal: TerminalApplication
-    /// Set to run the command in Typeflux's own terminal window instead of `terminal`.
+    /// Settings for Typeflux-hosted sessions. An external terminal runs with its own settings.
     var builtin: TerminalRunSettings?
+    var destination: TerminalRunner
 
-    init(command: String, terminal: TerminalApplication, builtin: TerminalRunSettings? = nil) {
+    init(command: String, terminal: TerminalApplication, builtin: TerminalRunSettings? = nil,
+         destination: TerminalRunner? = nil) {
         self.command = command
         self.terminal = terminal
         self.builtin = builtin
+        self.destination = destination ?? (builtin == nil ? .external : .window)
     }
 
     var runner: TerminalRunner {
-        builtin == nil ? .external : .builtin
+        destination
     }
 
     static let maximumBytes = 16 * 1024
@@ -40,15 +43,27 @@ struct TerminalCommandRequest: Equatable, Sendable {
         if command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return L("terminal.command.empty")
         }
-        if command.utf8.count > maximumBytes {
+        return lineProblem(command)
+    }
+
+    static func lineProblem(_ line: String) -> String? {
+        if line.utf8.count > maximumBytes {
             return L("terminal.command.tooLarge")
         }
-        if command.unicodeScalars.contains(where: {
+        if line.unicodeScalars.contains(where: {
             CharacterSet.controlCharacters.contains($0) || CharacterSet.newlines.contains($0)
         }) {
             return L("terminal.command.singleLine")
         }
         return nil
+    }
+
+    static func configured(command: String, options: [String: String], destination: TerminalRunner) -> Self? {
+        guard problem(with: command) == nil,
+              let target = TerminalApplication.configured(in: options) else { return nil }
+        return .init(command: command, terminal: target,
+                     builtin: destination == .external ? nil : TerminalRunSettings(options: options),
+                     destination: destination)
     }
 }
 
@@ -98,8 +113,8 @@ struct AskTerminalCommandPlugin: AskLauncherPlugin {
         L("terminal.command.placeholder")
     }
 
-    func inputChipTitle(for keyword: AskKeyword) -> String {
-        keyword.keyword
+    func inputChipTitle(for _: AskKeyword) -> String {
+        L("terminal.launcher.label")
     }
 
     func chipDetail(for _: AskKeyword, language _: AppLanguage) -> String? {
@@ -108,34 +123,31 @@ struct AskTerminalCommandPlugin: AskLauncherPlugin {
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
         let problem = TerminalCommandRequest.problem(with: request.text)
-        guard problem == nil, let terminal = TerminalApplication.configured(in: request.options) else {
+        guard let externalRequest = TerminalCommandRequest.configured(
+            command: request.text, options: request.options, destination: .external
+        ) else {
             return .init(mode: .onSubmit, title: problem ?? L("terminal.command.invalidTerminal"))
         }
         let runner = TerminalRunSettings.runner(in: request.options)
         let settings = TerminalRunSettings(options: request.options)
-        func command(_ runner: TerminalRunner) -> TerminalCommandRequest {
-            .init(command: request.text, terminal: terminal, builtin: runner == .builtin ? settings : nil)
+        func action(_ destination: TerminalRunner, _ shortcut: AskPluginAction.Shortcut, title: String) -> AskPluginAction {
+            var command = externalRequest
+            command.destination = destination
+            command.builtin = destination == .external ? nil : settings
+            return .init(kind: .terminalCommand(command), title: title,
+                         symbol: destination == .external ? "arrow.up.forward.app" : "terminal",
+                         shortcut: shortcut)
         }
-        func title(_ runner: TerminalRunner) -> String {
-            runner == .builtin ? L("terminal.runner.runBuiltin") : L("terminal.command.runIn", terminal.title)
-        }
-        let detail = runner == .builtin
-            ? L("terminal.runner.planDetail", settings.directory,
-                settings.shell == .interactive ? L("terminal.runner.shell.interactive")
-                    : L("terminal.runner.shell.login"))
-            : L("terminal.command.directory")
-        return .init(mode: .onSubmit, title: title(runner),
-                     meta: [.init(text: request.text), .init(text: detail)],
+        let external = L("terminal.command.runIn", externalRequest.terminal.title)
+        let window = L("terminal.launcher.window")
+        return .init(mode: .onSubmit, title: request.text,
+                     meta: [.init(text: settings.directory)],
                      actions: [
-                         .init(kind: .terminalCommand(command(runner)), title: L("terminal.command.run"),
-                               symbol: "terminal", shortcut: .enter),
-                         .init(kind: .terminalCommand(command(runner.other)), title: title(runner.other),
-                               symbol: runner.other == .builtin ? "terminal" : "arrow.up.forward.app",
-                               shortcut: .commandEnter),
+                         action(runner, .enter, title: request.text),
+                         action(.window, .commandEnter, title: window),
+                         action(.external, .optionEnter, title: external),
                          .init(kind: .copy(request.text), title: L("terminal.command.copy"),
-                               symbol: "doc.on.doc", shortcut: .commandC),
-                         .init(kind: .terminalAutomationSettings, title: L("ask.browser.automationSettings"),
-                               symbol: "lock.shield", shortcut: .optionEnter)
+                               symbol: "doc.on.doc", shortcut: .commandC)
                      ])
     }
 

@@ -76,6 +76,10 @@ final class TerminalSession: ObservableObject, Identifiable {
         poll = timer
     }
 
+    func clearFinishedBlocks() {
+        blocks.removeAll { $0.endedAt != nil }
+    }
+
     func move(to host: Host) {
         self.host = host
         lastActivity = Date()
@@ -121,6 +125,17 @@ final class TerminalSession: ObservableObject, Identifiable {
         guard !closing, !exited else { return }
         inputPrompt = false
         process.write(bytes)
+    }
+
+    /// Recheck the PTY's echo setting just before writing. A password prompt can
+    /// finish between the view rendering its secure field and the user pressing Return.
+    func writeInputLine(_ line: String, hidden: Bool) -> Bool {
+        let expected: TerminalCommandBlock.State = hidden ? .hiddenInput : .waitingForInput
+        guard !closing, !exited, runningBlock?.state == expected, process.readsHiddenInput == hidden,
+              TerminalCommandRequest.lineProblem(line) == nil else { return false }
+        write(Array((line + "\r").utf8))
+        refreshInput()
+        return true
     }
 
     func eof() {

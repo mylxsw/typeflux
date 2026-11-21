@@ -36,7 +36,7 @@ extension SettingsStore {
 extension AskConversationModel {
     /// Captured context does not expand an otherwise empty launcher.
     var launcherNeedsFullWindow: Bool {
-        plugins.isActive || (voiceInput.context == "launcher" && voiceInput.isActive)
+        launcherTerminal != nil || !terminalHomeSessions.isEmpty || plugins.isActive || (voiceInput.context == "launcher" && voiceInput.isActive)
             || isLoadingAttachments(launcher: true) || workflowApproval != nil || submissionIssues[true] != nil
     }
 

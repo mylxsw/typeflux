@@ -11,15 +11,17 @@ struct TerminalRunSettingsTests {
         #expect(defaults == TerminalRunSettings())
         #expect(defaults.finish == .auto && defaults.shell == .interactive && defaults.directory == "~")
         #expect(defaults.pinned && defaults.notifies)
-        #expect(TerminalRunSettings.runner(in: [:]) == .builtin)
+        #expect(TerminalRunSettings.runner(in: [:]) == .launcher)
         let odd = TerminalRunSettings(options: [
             TerminalRunSettings.finishOption: "sometimes", TerminalRunSettings.shellOption: "csh",
             TerminalRunSettings.directoryOption: "   ", TerminalRunSettings.pinnedOption: "maybe"
         ])
         #expect(odd == TerminalRunSettings())
-        #expect(TerminalRunSettings.runner(in: [TerminalRunSettings.runnerOption: "remote"]) == .builtin)
+        #expect(TerminalRunSettings.runner(in: [TerminalRunSettings.runnerOption: "remote"]) == .launcher)
         #expect(TerminalRunSettings.runner(in: [TerminalRunSettings.runnerOption: "external"]) == .external)
-        #expect(TerminalRunner.builtin.other == .external && TerminalRunner.external.other == .builtin)
+        #expect(TerminalRunSettings.runner(in: ["runner": "builtin"]) == .launcher)
+        #expect(TerminalRunSettings.runner(in: ["runner": "launcher"]) == .launcher)
+        #expect(TerminalRunSettings.runner(in: ["runner": "window"]) == .window)
     }
 
     @Test func `options round trip and store only changes`() {

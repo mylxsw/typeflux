@@ -108,7 +108,7 @@ struct AskLauncherSuggestions: View {
             switch row.action {
             case .keyword: action = L("ask.home.hint.run")
             case .ask: action = L("ask.home.hint.ask")
-            case .conversation: action = L("ask.home.hint.open")
+            case .conversation, .terminalSession: action = L("ask.home.hint.open")
             case .application: action = L("ask.quick.hint.app")
             }
         case .chip: action = L("ask.home.hint.chip")
@@ -303,16 +303,18 @@ struct AskLauncherSuggestions: View {
         Button { onPick(.row(row)) } label: {
             HStack(spacing: 12) {
                 tile(row)
-                Text(row.title).font(.system(size: 13.5))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
+                if case .terminalSession = row.action {
+                    VStack(alignment: .leading, spacing: 2) {
+                        rowTitle(row.title)
+                        if let detail = row.detail { rowDetail(detail) }
+                    }
                     .layoutPriority(1)
-                if let detail = row.detail {
-                    Text(detail).font(.system(size: 11.5))
-                        .foregroundStyle(AskTheme.launcherResultDetail)
-                        .lineLimit(1)
+                } else {
+                    rowTitle(row.title).layoutPriority(1)
+                    if let detail = row.detail { rowDetail(detail) }
                 }
                 Spacer(minLength: 8)
+                if let status = row.status { rowDetail(status) }
                 if let keyword = row.keyword { keywordLabel(keyword) }
                 if let date = row.date {
                     Text(Self.relative(date, now: now)).font(.system(size: 11.5))
@@ -337,6 +339,16 @@ struct AskLauncherSuggestions: View {
         .modifier(AskLauncherNumberBadge(number: number))
         .accessibilityHint(row.detail ?? "")
         .accessibilityAddTraits(highlighted ? .isSelected : [])
+    }
+
+    private func rowTitle(_ title: String) -> some View {
+        Text(title).font(.system(size: 13.5))
+            .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+    }
+
+    private func rowDetail(_ detail: String) -> some View {
+        Text(detail).font(.system(size: 11.5))
+            .foregroundStyle(AskTheme.launcherResultDetail).lineLimit(1)
     }
 
     @ViewBuilder

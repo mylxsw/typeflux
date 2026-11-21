@@ -18,6 +18,8 @@ struct AskComposerTextView: NSViewRepresentable {
     /// Explicitly recalled input moves the caret even when its text equals the filter.
     var caretRequestID: UUID?
     var fontSize: CGFloat = StudioTheme.Typography.bodyLarge
+    var monospaced = false
+    var ghost = ""
     var maximumHeight: CGFloat = 148
     var onSubmit: () -> Void
     var onDismiss: () -> Void = {}
@@ -46,6 +48,10 @@ struct AskComposerTextView: NSViewRepresentable {
     /// Carries an opaque timing trace from committed native edits into launcher search.
     var onAcceptedInput: ((SemanticSearchTrace) -> Void)?
 
+    private var editorFont: NSFont {
+        monospaced ? .monospacedSystemFont(ofSize: fontSize, weight: .regular) : .systemFont(ofSize: fontSize)
+    }
+
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -62,9 +68,10 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.isAutomaticTextReplacementEnabled = false
         editor.allowsUndo = true
         editor.drawsBackground = false
-        editor.font = .systemFont(ofSize: fontSize)
+        editor.font = editorFont
         editor.textColor = .labelColor
         editor.insertionPointColor = .labelColor
+        editor.ghost = ghost
         editor.placeholder = placeholder
         editor.placeholderSingleLine = placeholderSingleLine
         editor.placeholderColor = NSColor(placeholderColor)
@@ -137,7 +144,8 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onContextShortcut = onContextShortcut
         editor.onOpenChat = onOpenChat
         editor.onKindShortcut = onKindShortcut
-        if editor.font?.pointSize != fontSize { editor.font = .systemFont(ofSize: fontSize) }
+        if editor.font != editorFont { editor.font = editorFont }
+        editor.ghost = ghost
         let recalled = editor.caretRequestID != caretRequestID
         if editor.string != text || recalled, !editor.hasMarkedText() {
             editor.string = text
@@ -218,6 +226,10 @@ struct AskComposerTextView: NSViewRepresentable {
 
         /// Composition changes the native text before textDidChange publishes
         /// the draft. Drawing here keeps the hint and marked text in sync.
+        var ghost = "" {
+            didSet { if ghost != oldValue { needsDisplay = true } }
+        }
+
         var showsPlaceholder: Bool { !placeholder.isEmpty && string.isEmpty && !hasMarkedText() }
 
         private var placeholderText: NSAttributedString {
@@ -240,6 +252,21 @@ struct AskComposerTextView: NSViewRepresentable {
 
         override func draw(_ dirtyRect: NSRect) {
             super.draw(dirtyRect)
+            if !ghost.isEmpty, !hasMarkedText(), !string.contains("\n") {
+                let attributes: [NSAttributedString.Key: Any] = [
+                    .font: font ?? NSFont.systemFont(ofSize: StudioTheme.Typography.bodyLarge),
+                    .foregroundColor: placeholderColor
+                ]
+                let start = placeholderRect.origin
+                let x = start.x + (string as NSString).size(withAttributes: attributes).width
+                let rect = NSRect(x: x, y: start.y, width: max(0, bounds.maxX - x), height: placeholderRect.height)
+                let paragraph = NSMutableParagraphStyle()
+                paragraph.lineBreakMode = .byTruncatingTail
+                let hint = NSAttributedString(string: ghost, attributes: attributes.merging(
+                    [.paragraphStyle: paragraph], uniquingKeysWith: { _, latest in latest }
+                ))
+                hint.draw(with: rect, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
+            }
             guard showsPlaceholder else { return }
             placeholderText.draw(with: placeholderRect,
                                  options: [.usesLineFragmentOrigin, .usesFontLeading])

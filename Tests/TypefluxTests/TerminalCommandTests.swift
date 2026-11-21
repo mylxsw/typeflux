@@ -92,6 +92,8 @@ struct TerminalCommandTests {
             #expect(argument == text)
         }
         #expect(AskKeywordMatcher.match("cmdlet pwd", keywords: AskTerminalCommandPlugin.keywords) == nil)
+        #expect(AskKeywordMatcher.match(">", keywords: AskTerminalCommandPlugin.keywords) ==
+            .active(AskTerminalCommandPlugin.keywords[0], argument: ""))
         #expect(AskKeywordMatcher.match(">pwd", keywords: AskTerminalCommandPlugin.keywords) == nil)
         #expect(AskKeywordMatcher.match("fy   hello  ", keywords: AskTranslatePlugin.keywords)
             == .active(AskTranslatePlugin.keywords[0], argument: "hello  "))
@@ -123,20 +125,20 @@ struct TerminalCommandTests {
             for terminal in TerminalApplication.allCases {
                 let keyword = AskKeyword(keyword: word, pluginID: plugin.id,
                                          options: [AskTerminalCommandPlugin.terminalOption: terminal.rawValue])
-                #expect(plugin.inputChipTitle(for: keyword) == word)
+                #expect(plugin.inputChipTitle(for: keyword) == L("terminal.launcher.label"))
                 #expect(plugin.chipDetail(for: keyword, language: .english) == nil)
                 #expect(AskConversationModel.chipTitle(plugin: plugin, keyword: keyword, language: .english) == plugin
                     .title)
                 let plan = await plugin.plan(.init(text: "pwd", origin: .argument, keyword: keyword,
                                                    options: keyword.options, interfaceLanguage: .english))
-                #expect(plan.title == L("terminal.runner.runBuiltin"))
-                #expect(plan.action(for: .commandEnter)?.title == L("terminal.command.runIn", terminal.title))
+                #expect(plan.title == "pwd")
+                #expect(plan.action(for: .optionEnter)?.title == L("terminal.command.runIn", terminal.title))
                 var external = keyword.options
                 external[TerminalRunSettings.runnerOption] = TerminalRunner.external.rawValue
                 let externalPlan = await plugin.plan(.init(text: "pwd", origin: .argument, keyword: keyword,
                                                            options: external, interfaceLanguage: .english))
-                #expect(externalPlan.title == L("terminal.command.runIn", terminal.title))
-                #expect(externalPlan.action(for: .commandEnter)?.title == L("terminal.runner.runBuiltin"))
+                #expect(externalPlan.action(for: .enter)?.kind == .terminalCommand(.init(command: "pwd", terminal: terminal)))
+                #expect(externalPlan.action(for: .commandEnter)?.title == L("terminal.launcher.window"))
             }
         }
         let other: any AskLauncherPlugin = AskQuickAskPlugin()
@@ -152,11 +154,14 @@ struct TerminalCommandTests {
             #expect(plan.action(for: .enter)?.kind == .terminalCommand(.init(
                 command: request.text,
                 terminal: terminal,
-                builtin: TerminalRunSettings()
+                builtin: TerminalRunSettings(),
+                destination: .launcher
             )))
             #expect(plan.action(for: .commandEnter)?.kind == .terminalCommand(.init(
-                command: request.text,
-                terminal: terminal
+                command: request.text, terminal: terminal, builtin: TerminalRunSettings()
+            )))
+            #expect(plan.action(for: .optionEnter)?.kind == .terminalCommand(.init(
+                command: request.text, terminal: terminal
             )))
             #expect(plan.meta.last?.text.contains("~") == true)
             #expect(plan.action(for: .commandC)?.kind == .copy(request.text))
@@ -223,8 +228,8 @@ struct TerminalCommandTests {
         #expect(!AskKeywordKind.terminal.hint.hasPrefix("ask."))
         #expect(AskKeywordSection.system.kinds.contains(.terminal))
         let row = AskKeywordListPresentation.row(keyword, kind: .terminal, interface: .english, secondLanguage: "ja")
-        #expect(row.summary.contains("iTerm2") && row.summary.contains(L("terminal.runner.runBuiltin")))
-        #expect(draft.runner == .builtin && draft.terminalSettings == TerminalRunSettings())
+        #expect(row.summary.contains("iTerm2") && row.summary.contains(L("terminal.launcher.destination")))
+        #expect(draft.runner == .launcher && draft.terminalSettings == TerminalRunSettings())
         draft.runner = .external
         draft.terminalSettings = .init(finish: .keep, shell: .login, directory: "~/Code", pinned: false, notifies: true)
         let custom = draft.result()
@@ -235,7 +240,7 @@ struct TerminalCommandTests {
                                                          secondLanguage: "ja")
         #expect(externalRow.summary == L("terminal.command.runIn", "iTerm2"))
         var restored = reopened
-        restored.runner = .builtin
+        restored.runner = .launcher
         restored.terminalSettings = TerminalRunSettings()
         #expect(restored.result().options == [AskTerminalCommandPlugin.terminalOption: "iterm"])
         var added = AskKeywordDraft(adding: .terminal)

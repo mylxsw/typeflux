@@ -8,7 +8,7 @@ extension AskConversationModel {
     /// Consent dialogs receive clicks outside the panel. Keep its input until
     /// dispatch settles; explicit Escape and hotkey dismissal still work.
     var allowsLauncherOutsideDismissal: Bool {
-        !recordingIsActive() && !(terminalCommandSending && isTerminalCommandMode)
+        !recordingIsActive() && !terminalCloseInProgress && !(terminalCommandSending && isTerminalCommandMode)
     }
 
     /// Called only by the composer's explicit user action, never by plugin.run.
@@ -19,13 +19,16 @@ extension AskConversationModel {
             properties["execution_kind"] = "submitted"
             featureAnalytics.event(.keyword, "executed", properties: properties)
         }
-        if request.builtin != nil {
-            // Nothing to authorize: the command runs in Typeflux's own window, which
-            // takes keyboard focus once the launcher has gone.
-            let services = terminalRunnerServices
-            finishPluginResult()
-            completed()
-            terminalRunner.present(request, services: services)
+        if let settings = request.builtin {
+            if request.runner == .window, let terminalRunnerOverride {
+                let services = terminalRunnerServices
+                finishPluginResult()
+                completed()
+                terminalRunnerOverride.present(request, services: services)
+            } else {
+                launchTerminal(command: request.command, settings: settings,
+                               window: request.runner == .window, dismiss: completed)
+            }
             return
         }
         terminalCommandSending = true
@@ -72,13 +75,11 @@ extension AskConversationModel {
     }
 
     func currentTerminalCommand(_ request: TerminalCommandRequest) -> Bool {
-        guard isTerminalCommandMode, plugins.isPlanCurrent,
-              launcherKeywords.contains(where: { $0.enabled && $0 == plugins.keyword }),
-              plugins.request?.origin == .argument, plugins.request?.text == request.command,
-              launcherDraft.text == request.command,
-              TerminalApplication.configured(in: plugins.request?.options ?? [:]) == request.terminal,
-              TerminalCommandRequest.problem(with: request.command) == nil else { return false }
-        return plugins.plan?.actions.contains(where: { $0.kind == .terminalCommand(request) }) == true
+        guard isTerminalCommandMode, let keyword = plugins.keyword,
+              launcherKeywords.contains(where: { $0.enabled && $0 == keyword }),
+              launcherDraft.text == request.command else { return false }
+        return TerminalCommandRequest.configured(command: request.command, options: keyword.options,
+                                                 destination: request.runner) == request
     }
 
     /// Also catches input closed before its keyword was converted into a chip.

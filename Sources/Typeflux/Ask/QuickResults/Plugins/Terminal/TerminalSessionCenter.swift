@@ -77,6 +77,7 @@ extension TerminalSessionCenter {
                 settings: TerminalRunSettings = .init()) throws -> TerminalSession {
         let session = try TerminalSession(host: host, settings: settings, process: makeProcess(), history: history)
         session.changed = { [weak self] in
+            self?.objectWillChange.send()
             self?.publish()
             self?.expireIdle()
         }

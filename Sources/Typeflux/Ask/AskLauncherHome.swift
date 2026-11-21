@@ -12,6 +12,7 @@ enum AskLauncherHome {
         /// Opens a conversation in the workspace.
         case conversation(id: String)
         case application(AskAppEntry)
+        case terminalSession(UUID)
     }
 
     enum Tint: Equatable {
@@ -29,6 +30,7 @@ enum AskLauncherHome {
         /// When the conversation was last active; nil for other rows.
         var date: Date?
         var action: Action
+        var status: String? = nil
     }
 
     /// A keyword shown as a chip in the bottom section.

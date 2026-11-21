@@ -300,10 +300,12 @@ enum AskKeywordListPresentation {
         case .calendar, .terminal:
             guard keyword.pluginID == AskTerminalCommandPlugin.id else { return L("ask.settings.keywords.kind.calendar.hint") }
             let external = L("terminal.command.runIn", TerminalApplication.configured(in: keyword.options)?.title ?? "?")
-            guard TerminalRunSettings.runner(in: keyword.options) == .builtin else { return external }
-            let finish = TerminalRunSettings(options: keyword.options).finish
-            return [L("terminal.runner.runBuiltin"), L("terminal.runner.finish.\(finish.rawValue)"),
-                    "⌘↩ " + external].joined(separator: " · ")
+            let destination = TerminalRunSettings.runner(in: keyword.options)
+            switch destination {
+            case .launcher: return L("terminal.launcher.destination") + " · ⌥↩ " + external
+            case .window: return L("terminal.launcher.windowDestination") + " · ⌥↩ " + external
+            case .external: return external
+            }
         case .system:
             return L("ask.settings.keywords.kind.system.hint")
         case .workflow, nil:

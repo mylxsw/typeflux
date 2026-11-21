@@ -120,6 +120,7 @@ struct AskComposer: View {
     @ObservedObject private var plugins: AskPluginSession
     @ObservedObject private var launcherMonitor: SystemMonitorLauncherModel
     @ObservedObject private var launcherCalendar: CalendarLauncherModel
+    @ObservedObject private var terminalCenter: TerminalSessionCenter
     @ObservedObject private var launcherWorldClock: WorldClockLauncherModel
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var glassOverride
@@ -150,6 +151,7 @@ struct AskComposer: View {
         self.plugins = model.plugins
         self.launcherMonitor = model.systemMonitor
         self.launcherCalendar = model.calendarLauncher
+        self.terminalCenter = model.terminalSessionCenter
         self.launcherWorldClock = model.worldClock
         self.inputHistory = model.launcherInputHistory
         self._quickSearch = StateObject(wrappedValue: launcher ? model.quickSearch : AskQuickSearchSession())
@@ -356,6 +358,11 @@ struct AskComposer: View {
     }
 
     private func runLauncherPrimaryAction() {
+        if let keyword = plugins.keyword, keyword.pluginID == AskTerminalCommandPlugin.id,
+           !active, !launcherEditorIsComposing {
+            activateTerminalHint(keyword)
+            return
+        }
         if model.isNoteCaptureMode {
             guard !launcherEditorIsComposing, !active else { return }
             model.activateNoteCapture()
@@ -891,6 +898,10 @@ struct AskComposer: View {
             performPluginAction(.init(kind: AskScreenshotPlugin.captureKind(for: hint), title: "", symbol: ""))
             return
         }
+        if pluginDisplay?.hint?.pluginID == AskTerminalCommandPlugin.id {
+            if acceptPluginHint(), let keyword = plugins.keyword { activateTerminalHint(keyword) }
+            return
+        }
         if pluginDisplay?.hint != nil { _ = acceptPluginHint(run: true); return }
         if plugins.currentOutput?.translation?.submitted == false, plugins.run() { return }
         if plugins.plugin?.id == AskTranslatePlugin.id, !plugins.isPlanCurrent, plugins.run() { return }
@@ -1302,7 +1313,11 @@ struct AskComposer: View {
         guard showsLauncherSuggestions else { return [] }
         _ = homeAppsRevision
         if let sections = homeMemo.sections { return sections }
-        let sections = model.presentedLauncherHome()
+        let rows = model.terminalHomeRows
+        let terminal: [AskLauncherHome.Section] = rows.isEmpty ? [] : [
+            .context(title: L("terminal.launcher.sessions"), subtitle: nil, rows: rows)
+        ]
+        let sections = terminal + model.presentedLauncherHome()
         homeMemo.sections = sections
         return sections
     }
@@ -1449,6 +1464,10 @@ struct AskComposer: View {
             case let .ask(question): model.askFromLauncherHome(question); return
             case let .conversation(id): model.openConversationFromLauncher(id); return
             case let .application(app): model.openQuickApp(app); onDismiss(); return
+            case let .terminalSession(id):
+                model.openTerminalHomeSession(id, dismiss: onDismiss)
+                reportHeight()
+                return
             }
         case let .chip(chip): keyword = chip.keyword; run = false
         }
@@ -1548,11 +1567,14 @@ struct AskComposer: View {
                 refreshQuickResults(); updateFilePreview(); reportHeight()
             }
             .onChange(of: historyHeight) { _ in reportHeight() }
+            .onChange(of: model.launcherTerminal?.session.id) { _ in reportHeight() }
+            .onChange(of: terminalHintHeight) { _ in if launcher { reportHeight() } }
             .onChange(of: homeHeight) { _ in reportHeight() }
             .onChange(of: model.noteCapture.panelHeight) { _ in
                 if launcher, model.isNoteCaptureMode { reportHeight() }
             }
             .onChange(of: draft.wrappedValue.text) { _ in
+                terminalHintIndex = 0
                 canvasHighlight = nil
                 if launcher, model.launcherHistoryMode { model.launcherHistoryIndex = 0 }
                 refreshQuickResults()
@@ -1653,6 +1675,30 @@ struct AskComposer: View {
     }
 
     private var card: some View {
+        Group {
+            if launcher, !active, let terminal = model.launcherTerminal {
+                TerminalLauncherView(model: terminal, session: terminal.session,
+                                     sessions: model.terminalLauncherSessions,
+                                     select: model.resumeLauncherTerminal, new: model.newLauncherTerminal,
+                                     close: model.closeLauncherTerminal, move: {
+                                         model.moveLauncherTerminal(dismiss: onDismiss)
+                                     }, dismiss: onDismiss, insert: {
+                                         model.insertTerminalOutput($0, from: terminal, dismiss: onDismiss)
+                                     }, commands: { terminalCenter.history.commands },
+                                     error: model.passiveNotice)
+                    .id(terminal.session.id)
+                    .frame(height: max(160, min(520, availableHeight ?? 520)))
+                    .background {
+                        if let glass { chrome.glassBackground(glass) } else { chrome.fill }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
+            } else {
+                standardCard
+            }
+        }
+    }
+
+    private var standardCard: some View {
         VStack(spacing: 0) {
             if launcher && !launcherCollapsed {
                 supplementalContent
@@ -1764,7 +1810,7 @@ struct AskComposer: View {
     /// An entered keyword owns the results area. Full-screen features include
     /// their own footer; other plugins keep only their actions and key hints.
     private var showsFeatureBar: Bool {
-        !active && plugins.isActive && pluginDisplay != nil
+        !active && plugins.isActive && pluginDisplay != nil && terminalHintKeyword == nil
             && pluginDisplay?.permission == nil
             && pluginDisplay?.systemMonitor != true && pluginDisplay?.systemInfo != true
             && pluginDisplay?.calendar != true && pluginDisplay?.worldClock != true
@@ -1772,7 +1818,7 @@ struct AskComposer: View {
     }
 
     private var showsChatBar: Bool {
-        active || !plugins.isActive || pluginDisplay == nil
+        active || terminalHintKeyword == nil && (!plugins.isActive || pluginDisplay == nil)
     }
 
     private var launcherBottomBarHeight: CGFloat {
@@ -1791,7 +1837,11 @@ struct AskComposer: View {
     /// the user types. Only the simple window mode's empty search bar is shorter, and
     /// a keyword view designed taller than the card makes it grow.
     private var launcherTargetHeight: CGFloat {
+        if model.launcherTerminal != nil, !active { return 520 + AskMetrics.launcherGutter * 2 }
         if launcherCollapsed { return AskLauncherWindowMode.simpleHeight }
+        if terminalHintKeyword != nil, !active {
+            return max(AskLauncherWindowMode.expandedHeight, launcherChromeHeight + terminalHintHeight)
+        }
         if model.isNoteCaptureMode { return launcherChromeHeight + model.noteCapture.panelHeight }
         let content = launcherResultsFillViewport ? 0 : launcherNaturalResultsHeight
         return max(AskLauncherWindowMode.expandedHeight, launcherChromeHeight + content)
@@ -1809,6 +1859,8 @@ struct AskComposer: View {
             if active {
                 // Recording takes the results' place at their height, so the panel stays put.
                 AskVoicePanel(live: voice.live, listening: listening, height: launcherResultsViewportHeight)
+            } else if let keyword = terminalHintKeyword {
+                terminalHint(keyword)
             } else if model.launcherHistoryMode {
                 AskLauncherInputHistoryView(model: model, store: inputHistory,
                                             viewportHeight: launcherResultsViewportHeight)
@@ -2202,7 +2254,115 @@ struct AskComposer: View {
         reportHeight()
     }
 
+    @State private var terminalHintIndex = 0
+
+    private var terminalHintKeyword: AskKeyword? {
+        guard launcher, plugins.keyword?.pluginID == AskTerminalCommandPlugin.id else { return nil }
+        return plugins.keyword
+    }
+
+    private var terminalSuggestion: String? {
+        guard terminalHintKeyword != nil else { return nil }
+        return TerminalLauncherModel.History.suggestion(for: draft.wrappedValue.text,
+                                                       commands: terminalCenter.history.commands)
+    }
+
+    private var terminalRecent: [String] {
+        let text = draft.wrappedValue.text
+        return Array(terminalCenter.history.commands.lazy.filter {
+            $0 != text && (text.isEmpty || $0.localizedCaseInsensitiveContains(text))
+        }.prefix(5))
+    }
+
+    private var terminalHintRoutes: [AskPluginAction.Shortcut] {
+        draft.wrappedValue.text.isEmpty ? [.enter] : [.enter, .commandEnter, .optionEnter]
+    }
+
+    private var terminalHintCount: Int {
+        terminalHintRoutes.count + terminalRecent.count + model.terminalHomeSessions.count
+    }
+
+    private var terminalHintHeight: CGFloat {
+        guard terminalHintKeyword != nil else { return 0 }
+        return min(354, CGFloat(terminalHintCount * 34 + 46))
+    }
+
+    private func activateTerminalHint(_ keyword: AskKeyword) {
+        let index = max(0, min(terminalHintIndex, terminalHintCount - 1))
+        if index < terminalHintRoutes.count {
+            runTerminalHint(terminalHintRoutes[index], keyword: keyword)
+        } else {
+            let index = index - terminalHintRoutes.count
+            if terminalRecent.indices.contains(index) {
+                let command = terminalRecent[index]
+                draft.wrappedValue.text = command
+                runTerminalHint(.enter, keyword: keyword)
+            } else {
+                let sessions = model.terminalHomeSessions
+                let index = index - terminalRecent.count
+                if sessions.indices.contains(index) {
+                    model.openTerminalHomeSession(sessions[index].id, dismiss: onDismiss)
+                }
+            }
+        }
+    }
+
+    private func runTerminalHint(_ shortcut: AskPluginAction.Shortcut, keyword: AskKeyword) {
+        let text = draft.wrappedValue.text
+        guard model.launcherKeywords.contains(where: { $0.enabled && $0 == keyword }) else { return }
+        if text.isEmpty, shortcut == .enter {
+            if let recent = model.terminalLauncherSessions.max(by: { $0.lastActivity < $1.lastActivity }) {
+                model.resumeLauncherTerminal(recent.id)
+            } else {
+                model.launchTerminal(settings: .init(options: keyword.options))
+            }
+            return
+        }
+        let destination: TerminalRunner = switch shortcut {
+        case .commandEnter: .window
+        case .optionEnter: .external
+        default: TerminalRunSettings.runner(in: keyword.options)
+        }
+        if let request = TerminalCommandRequest.configured(command: text, options: keyword.options,
+                                                           destination: destination) {
+            model.submitTerminalCommand(request, completed: onDismiss)
+        } else {
+            model.passiveNotice(TerminalCommandRequest.problem(with: text) ?? L("terminal.command.invalidTerminal"))
+        }
+    }
+
+    private func terminalHintKey(_ key: AskCommandKey, keyword: AskKeyword) -> Bool {
+        switch key {
+        case .up: terminalHintIndex = max(0, terminalHintIndex - 1)
+        case .down: terminalHintIndex = min(terminalHintCount - 1, terminalHintIndex + 1)
+        case .right:
+            guard let suggestion = terminalSuggestion else { return false }
+            draft.wrappedValue.text = suggestion
+        case .tab:
+            let index = terminalHintIndex - terminalHintRoutes.count
+            if terminalRecent.indices.contains(index) {
+                draft.wrappedValue.text = terminalRecent[index]
+            } else if let suggestion = terminalSuggestion {
+                draft.wrappedValue.text = suggestion
+            } else { return false }
+        case .commandEnter: runTerminalHint(.commandEnter, keyword: keyword)
+        case .optionEnter: runTerminalHint(.optionEnter, keyword: keyword)
+        default: return false
+        }
+        return true
+    }
+
+    private func terminalHint(_ keyword: AskKeyword) -> some View {
+        TerminalLauncherHint(keyword: keyword, text: draft.wrappedValue.text, recent: terminalRecent,
+                             sessions: model.terminalHomeRows, highlighted: $terminalHintIndex) {
+            activateTerminalHint(keyword)
+        }
+    }
+
     private func commandKey(_ key: AskCommandKey) -> Bool {
+        if launcher, !active, let keyword = terminalHintKeyword, terminalHintKey(key, keyword: keyword) {
+            return true
+        }
         if launcher, key == .enter { runLauncherPrimaryAction(); return true }
         if launcher, key == .commandO { openChatOrMonitorWindow(); return true }
         if launcher, key == .commandEnter {
@@ -2471,6 +2631,8 @@ struct AskComposer: View {
             contextID: contextID,
             caretRequestID: launcher ? model.launcherHistoryFillID : nil,
             fontSize: chrome.editorFontSize,
+            monospaced: launcher && terminalHintKeyword != nil,
+            ghost: terminalSuggestion.map { String($0.dropFirst(draft.wrappedValue.text.count)) } ?? "",
             maximumHeight: layout.editorMaximumHeight,
             onSubmit: submit,
             onDismiss: { if editingQueued { model.cancelQueuedEdit() } else { onDismiss() } },

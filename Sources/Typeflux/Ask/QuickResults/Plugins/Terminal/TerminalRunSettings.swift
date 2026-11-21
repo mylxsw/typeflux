@@ -1,12 +1,8 @@
 import Foundation
 
-/// Where Return sends a command: Typeflux's own terminal window or an external terminal app.
+/// Where Return sends a command: the launcher, a standalone window or an external terminal app.
 enum TerminalRunner: String, CaseIterable, Sendable {
-    case builtin, external
-
-    var other: Self {
-        self == .builtin ? .external : .builtin
-    }
+    case launcher, window, external
 }
 
 /// What the built-in terminal window does once its command exits.
@@ -51,7 +47,7 @@ struct TerminalRunSettings: Equatable, Sendable {
     var directory: String = Self.defaultDirectory
     /// Keeps the window above other apps' windows.
     var pinned = true
-    /// Sends a notification when a long command finishes while its window is in the background.
+    /// Sends a notification when a long command finishes in the background.
     var notifies = true
 
     init(finish: TerminalFinishPolicy = .auto, shell: TerminalShellProfile = .interactive,
@@ -74,7 +70,9 @@ struct TerminalRunSettings: Equatable, Sendable {
     }
 
     static func runner(in options: [String: String]) -> TerminalRunner {
-        options[runnerOption].flatMap(TerminalRunner.init(rawValue:)) ?? .builtin
+        let saved = options[runnerOption]
+        if saved == "builtin" { return .launcher }
+        return saved.flatMap(TerminalRunner.init(rawValue:)) ?? .launcher
     }
 
     /// Only values that differ from the defaults are stored.
