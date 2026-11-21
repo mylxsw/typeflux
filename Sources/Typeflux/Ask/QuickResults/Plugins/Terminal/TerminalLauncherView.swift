@@ -350,18 +350,27 @@ private func terminalButton(_ symbol: String, _ title: String, action: @escaping
 private struct TerminalLiveOutput: NSViewRepresentable {
     let session: TerminalSession
 
-    func makeNSView(context: Context) -> NSView {
+    func makeNSView(context: Context) -> OutputContainer {
         let terminal = session.terminalView
-        // Preserve the emulator's existing grid until SwiftUI assigns the host its size.
-        let container = NSView(frame: NSRect(origin: .zero, size: terminal.frame.size))
+        let container = OutputContainer(frame: NSRect(origin: .zero, size: terminal.frame.size))
         terminal.removeFromSuperview()
         terminal.frame = container.bounds
-        terminal.autoresizingMask = [.width, .height]
+        terminal.autoresizingMask = []
+        container.autoresizesSubviews = false
         container.addSubview(terminal)
         return container
     }
 
-    func updateNSView(_ view: NSView, context: Context) {}
+    func updateNSView(_ view: OutputContainer, context: Context) {}
+
+    final class OutputContainer: NSView {
+        override func setFrameSize(_ newSize: NSSize) {
+            super.setFrameSize(newSize)
+            // SwiftUI can transiently propose a near-zero size when replacing a block.
+            guard newSize.width >= 120, newSize.height >= 32 else { return }
+            subviews.first?.frame = bounds
+        }
+    }
 }
 
 /// Intercepts session shortcuts only while that host's window is receiving keys.

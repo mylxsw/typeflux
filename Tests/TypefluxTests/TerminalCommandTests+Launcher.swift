@@ -321,6 +321,7 @@ extension TerminalCommandTests {
         process.emit(osc("133;C") + "Continue? ")
         #expect(presentation.prompt == .input)
         try await capture("stdin")
+        #expect(session.terminalView.normalScreenText().contains("Continue?"))
         process.readsHiddenInput = true
         session.refreshInput()
         try await capture("password")
