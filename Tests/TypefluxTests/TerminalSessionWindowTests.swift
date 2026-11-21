@@ -44,7 +44,8 @@ struct TerminalSessionWindowTests {
     @Test func liveProgramKeepsTerminalAndRequestsConfirmation() throws {
         let process = FakeTerminalProcess()
         let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
-        var processes = [process, FakeTerminalProcess()]
+        let secondProcess = FakeTerminalProcess()
+        var processes = [process, secondProcess]
         let center = TerminalSessionCenter(history: history, makeProcess: { processes.removeFirst() })
         defer { center.terminateAll() }
         let session = try center.create()
@@ -52,6 +53,7 @@ struct TerminalSessionWindowTests {
         controller.present(session, center: center, settings: .init(), content: { _ in AnyView(EmptyView()) },
                            returnToLauncher: { _ in })
         controller.addTab()
+        secondProcess.emit("\u{1b}]7;file://localhost/tmp/scratch\u{7}")
         controller.select(0)
         process.emit("\u{1b}]7;file://localhost/tmp/typeflux\u{7}")
         #expect(session.submit("top"))

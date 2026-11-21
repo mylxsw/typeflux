@@ -9,6 +9,7 @@ struct TerminalAlternateScreenView: NSViewRepresentable {
         let container = AlternateScreenContainer()
         let terminal = session.terminalView
         terminal.removeFromSuperview()
+        terminal.inlineBackground = nil
         container.frame = terminal.frame
         terminal.frame = container.bounds
         terminal.autoresizingMask = [.width, .height]
@@ -243,7 +244,7 @@ private struct SessionWindowDirectory: View {
     @ObservedObject var session: TerminalSession
 
     var body: some View {
-        Text((session.cwd as NSString).abbreviatingWithTildeInPath)
+        Text(session.displayDirectory(session.cwd))
             .font(.system(.caption, design: .monospaced))
             .lineLimit(1)
             .truncationMode(.middle)
@@ -266,12 +267,17 @@ private struct SessionTabLabel: View {
 }
 
 private struct SessionWindowBody: View {
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var session: TerminalSession
     let content: (TerminalSession) -> AnyView
 
     var body: some View {
         if session.alternateScreen {
             TerminalAlternateScreenView(session: session)
+                .padding(.leading, TerminalRunnerHost.inset.left)
+                .padding(.trailing, TerminalRunnerHost.inset.right)
+                .background(Color(nsColor: colorScheme == .dark
+                                  ? TerminalRunnerPalette.dark.background : TerminalRunnerPalette.light.background))
         } else {
             content(session)
         }

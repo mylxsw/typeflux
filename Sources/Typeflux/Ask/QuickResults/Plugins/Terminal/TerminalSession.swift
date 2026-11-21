@@ -23,6 +23,7 @@ final class TerminalSession: ObservableObject, Identifiable {
     @Published private(set) var exited = false
     @Published private(set) var git: TerminalGitStatus?
     @Published private(set) var alternateScreen = false
+    @Published private(set) var liveOutputRows = 1
     var runningBlock: TerminalCommandBlock? {
         blocks.last.flatMap { $0.endedAt == nil ? $0 : nil }
     }
@@ -35,6 +36,7 @@ final class TerminalSession: ObservableObject, Identifiable {
     private(set) var lastActivity: Date
     var changed: (() -> Void)?
 
+    private let readGitStatus: (String) async -> TerminalGitStatus?
     private let shell: TerminalSessionShell
     private let process: any TerminalProcess
     private let history: TerminalCommandHistory
@@ -49,10 +51,12 @@ final class TerminalSession: ObservableObject, Identifiable {
     private var poll: Timer?
 
     init(host: Host, settings: TerminalRunSettings, process: any TerminalProcess,
-         history: TerminalCommandHistory) throws {
+         history: TerminalCommandHistory,
+         readGitStatus: @escaping (String) async -> TerminalGitStatus? = TerminalGitStatus.read) throws {
         self.host = host
         self.process = process
         self.history = history
+        self.readGitStatus = readGitStatus
         shell = try TerminalSessionShell(settings: settings)
         let launch = shell.launch(settings: settings)
         cwd = launch.directory
@@ -76,6 +80,10 @@ final class TerminalSession: ObservableObject, Identifiable {
         poll = timer
     }
 
+    func clearFinishedBlocks() {
+        blocks.removeAll { $0.endedAt != nil }
+    }
+
     func move(to host: Host) {
         self.host = host
         lastActivity = Date()
@@ -86,6 +94,7 @@ final class TerminalSession: ObservableObject, Identifiable {
         guard !closing, !exited, runningBlock == nil, TerminalCommandRequest.problem(with: command) == nil,
               !process.readsHiddenInput else { return false }
         lastActivity = Date()
+        liveOutputRows = 1
         blocks.append(TerminalCommandBlock(command: command, cwd: cwd, startedAt: lastActivity))
         pollWhileRunning()
         interruptSent = false
@@ -121,6 +130,17 @@ final class TerminalSession: ObservableObject, Identifiable {
         guard !closing, !exited else { return }
         inputPrompt = false
         process.write(bytes)
+    }
+
+    /// Recheck the PTY's echo setting just before writing. A password prompt can
+    /// finish between the view rendering its secure field and the user pressing Return.
+    func writeInputLine(_ line: String, hidden: Bool) -> Bool {
+        let expected: TerminalCommandBlock.State = hidden ? .hiddenInput : .waitingForInput
+        guard !closing, !exited, runningBlock?.state == expected, process.readsHiddenInput == hidden,
+              TerminalCommandRequest.lineProblem(line) == nil else { return false }
+        write(Array((line + "\r").utf8))
+        refreshInput()
+        return true
     }
 
     func eof() {
@@ -193,6 +213,21 @@ final class TerminalSession: ObservableObject, Identifiable {
                 }
             }
         }
+        updateLiveOutputRows()
+    }
+
+    private func updateLiveOutputRows() {
+        guard runningBlock != nil, !alternateScreen else { return }
+        let rows = terminalView.outputRows()
+        guard liveOutputRows != rows else { return }
+        liveOutputRows = rows
+        changed?()
+    }
+
+    var liveOutputHeight: CGFloat { CGFloat(liveOutputRows) * terminalView.rowHeight }
+
+    func displayDirectory(_ path: String) -> String {
+        TerminalRunSettings.abbreviate(path, home: NSHomeDirectory())
     }
 
     func refreshInput() {
@@ -222,7 +257,7 @@ final class TerminalSession: ObservableObject, Identifiable {
         gitTask?.cancel()
         let path = cwd
         gitTask = Task {
-            let result = await TerminalGitStatus.read(path)
+            let result = await readGitStatus(path)
             if !Task.isCancelled, path == cwd {
                 git = result
             }

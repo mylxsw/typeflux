@@ -602,6 +602,7 @@ extension AskConversationModel {
 
     /// Closing folds the keyword into its text after input history has recorded it.
     func foldLauncherKeyword() {
+        hideLauncherTerminal()
         let retainedCapture = retainNoteCaptureOnDismissal()
         if isTerminalCommandMode || isTerminalCommandInput(launcherDraft.text) {
             plugins.deactivate()

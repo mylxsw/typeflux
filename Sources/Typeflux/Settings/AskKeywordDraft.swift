@@ -28,7 +28,7 @@ struct AskKeywordDraft: Equatable {
     var worldClockOptions: [String: String] = [:]
     var terminal: TerminalApplication = .terminal
     /// Terminal command: what Return does; ⌘↩ does the other.
-    var runner: TerminalRunner = .builtin
+    var runner: TerminalRunner = .launcher
     var terminalSettings = TerminalRunSettings()
 
     init(editing keyword: AskKeyword) {
@@ -231,7 +231,7 @@ struct AskKeywordDraft: Equatable {
             options = worldClockOptions
         case .terminal:
             options[AskTerminalCommandPlugin.terminalOption] = terminal.rawValue
-            options[TerminalRunSettings.runnerOption] = runner == .builtin ? nil : runner.rawValue
+            options[TerminalRunSettings.runnerOption] = runner == .launcher ? nil : runner.rawValue
             terminalSettings.write(into: &options)
         case .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .noteCapture, .appleNotes, .appleNotesSearch, .appleReminders, .appleRemindersSearch, .prefix, .setting, .history, .clip, .emoji,
              .kill, .system, .workflow:

@@ -105,7 +105,7 @@ extension TerminalCommandTests {
         try await AskQuickSearchSessionTests.wait { !model.terminalCommandSending }
         #expect(dispatcher.requests.isEmpty && model.launcherDraft.text == "pwd")
         #expect(model.commandFeedback == TerminalCommandError.permissionDenied.localizedDescription)
-        #expect(model.plugins.plan?.action(for: .optionEnter)?.kind == .terminalAutomationSettings)
+        #expect(model.plugins.plan?.action(for: .optionEnter)?.kind == .terminalCommand(request))
     }
 
     @Test func `disabled keyword during consent does not dispatch`() async throws {
@@ -202,27 +202,22 @@ extension TerminalCommandTests {
         ">"
     ]) func `actual launcher requires return and esc clears input`(word: String) async throws {
         let dispatcher = TestTerminalDispatcher()
-        let runner = TestTerminalRunner()
+        let process = FakeTerminalProcess()
+        let center = TerminalSessionCenter(
+            history: TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!),
+            makeProcess: { process }
+        )
         let launcher = try await AskQuickResultsInteractionTests.Launcher(text: word + " pwd", prepare: {
             $0.terminalCommandDispatcher = dispatcher
-            $0.terminalRunner = runner
+            $0.terminalSessionCenter = center
         })
-        defer { launcher.close() }
+        defer { launcher.close(); center.terminateAll() }
         let model = launcher.fixture.model
         try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
-        #expect(dispatcher.requests.isEmpty && runner.requests.isEmpty)
-        if let path = ProcessInfo.processInfo.environment["TYPEFLUX_TERMINAL_SNAPSHOTS"], word == "cmd",
-           let view = launcher.window.contentView {
-            view.layoutSubtreeIfNeeded()
-            let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
-            view.cacheDisplay(in: view.bounds, to: bitmap)
-            let png = try #require(bitmap.representation(using: .png, properties: [:]))
-            let folder = URL(fileURLWithPath: path)
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            try png.write(to: folder.appendingPathComponent("terminal-launcher.png"))
-        }
+        #expect(model.isTerminalCommandMode && launcher.editor.font?.isFixedPitch == true)
+        #expect(dispatcher.requests.isEmpty && center.sessions.isEmpty)
         try await launcher.press(15, .command)
-        #expect(dispatcher.requests.isEmpty && runner.requests.isEmpty)
+        #expect(dispatcher.requests.isEmpty && center.sessions.isEmpty)
         #expect(await launcher.fixture.api.sends.isEmpty)
         try await launcher.press(53)
         #expect(model.launcherDraft.text.isEmpty && !model.plugins.isActive)
@@ -230,27 +225,235 @@ extension TerminalCommandTests {
         model.launcherDraft.text = word + " pwd"
         try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
         try await launcher.press(36)
-        try await AskQuickSearchSessionTests.wait { !runner.requests.isEmpty }
-        #expect(runner.requests == [.init(command: "pwd", terminal: .terminal, builtin: TerminalRunSettings())])
+        let terminal = try #require(model.launcherTerminal)
+        #expect(terminal.session.runningBlock?.command == "pwd")
+        process.emit("\u{1b}]133;B\u{7}")
+        #expect(!process.writes.isEmpty)
         #expect(dispatcher.requests.isEmpty && dispatcher.authorizations.isEmpty)
-        #expect(launcher.dismissed == 1 && !model.plugins.isActive)
+        #expect(launcher.dismissed == 0 && !model.plugins.isActive)
+        model.foldLauncherKeyword()
+        #expect(model.launcherTerminal == nil && process.terminations == 0)
+        #expect(model.terminalHomeRows.first?.action == .terminalSession(terminal.session.id))
+        model.resumeLauncherTerminal(terminal.session.id)
+        #expect(model.launcherTerminal === terminal)
         #expect(model.launcherInputHistory.history.entries.isEmpty)
     }
 
-    @Test func `command return runs the other way`() async throws {
+    @Test func `moving the launcher terminal keeps its running PTY and output`() throws {
+        let fixture = try AskTestFixture()
+        let model = fixture.model
+        let process = FakeTerminalProcess()
+        let center = TerminalSessionCenter(
+            history: TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!),
+            makeProcess: { process }
+        )
+        model.terminalSessionCenter = center
+        let window = TerminalSessionWindowController()
+        model.terminalSessionWindow = window
+        defer {
+            window.moveBack()
+            center.terminateAll()
+            model.resetSession()
+        }
+        model.launchTerminal(command: "printf output", settings: .init())
+        let session = try #require(model.launcherTerminal?.session)
+        process.emit("\u{1b}]133;B\u{7}\u{1b}]133;C\u{7}output")
+        let block = session.runningBlock?.id
+        var dismissed = false
+        model.moveLauncherTerminal { dismissed = true }
+        #expect(dismissed && model.launcherTerminal == nil && model.terminalHomeRows.first?.symbol == "macwindow")
+        #expect(window.selected === session && session.host == .window(window.windowID))
+        #expect(center.sessions.first === session)
+        #expect(session.runningBlock?.id == block && process.started.count == 1 && process.terminations == 0)
+        process.emit("\r\n\u{1b}]133;D;0\u{7}")
+        #expect(session.blocks.last?.output.string == "output")
+        window.moveBack()
+        #expect(model.launcherTerminal?.session === session && session.host == .launcher)
+    }
+
+    @Test func `terminal hint fills a recent command without running it`() async throws {
+        let process = FakeTerminalProcess()
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        history.record("git status")
+        let center = TerminalSessionCenter(history: history, makeProcess: { process })
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "> gi", prepare: {
+            $0.terminalSessionCenter = center
+        })
+        defer { launcher.close(); center.terminateAll() }
+        let model = launcher.fixture.model
+        try await AskQuickSearchSessionTests.wait { model.isTerminalCommandMode }
+        for _ in 0 ..< 3 { try await launcher.press(125) }
+        try await launcher.press(48)
+        #expect(model.launcherDraft.text == "git status" && center.sessions.isEmpty)
+        try await launcher.press(36)
+        #expect(model.launcherTerminal?.session.runningBlock?.command == "git status")
+    }
+
+    @Test func `launcher terminal handles block and session shortcuts`() async throws {
+        let processes = [FakeTerminalProcess(), FakeTerminalProcess()]
+        var nextProcess = 0
+        let center = TerminalSessionCenter(
+            history: TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!),
+            makeProcess: {
+                defer { nextProcess += 1 }
+                return processes[nextProcess]
+            }
+        )
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "> printf first", prepare: {
+            $0.terminalSessionCenter = center
+            $0.passiveNotice = { _ in }
+        })
+        let previousPasteboard = AskQuickResults.pasteboard
+        let pasteboard = NSPasteboard(name: .init("terminal-keys." + UUID().uuidString))
+        AskQuickResults.pasteboard = pasteboard
+        defer {
+            AskQuickResults.pasteboard = previousPasteboard
+            launcher.close()
+            center.terminateAll()
+        }
+        let model = launcher.fixture.model
+        try await AskQuickSearchSessionTests.wait { model.isTerminalCommandMode }
+        try await launcher.press(36)
+        let presentation = try #require(model.launcherTerminal)
+        let session = presentation.session
+        let process = processes[0]
+        func osc(_ text: String) -> String { "\u{1b}]" + text + "\u{7}" }
+        process.emit(osc("133;B") + osc("133;C") + "first\r\n")
+
+        try await terminalKey(2, .control, in: launcher.window)
+        #expect(process.writes.last == [4])
+        try await terminalKey(8, .control, in: launcher.window)
+        #expect(process.writes.last == [3])
+        process.emit(osc("133;D;130") + osc("133;B"))
+        try await terminalKey(126, .option, in: launcher.window)
+        #expect(presentation.actionBlock?.state == .interrupted)
+        try await terminalKey(8, .command, in: launcher.window)
+        #expect(pasteboard.string(forType: .string) == "first")
+        try await terminalKey(15, .command, in: launcher.window)
+        #expect(session.runningBlock?.command == "printf first")
+        try await terminalKey(40, .command, in: launcher.window)
+        #expect(session.blocks.count == 1)
+        try await terminalKey(17, .command, in: launcher.window)
+        let second = try #require(model.launcherTerminal?.session)
+        #expect(second !== session && center.sessions.count == 2)
+        try await terminalKey(18, .command, characters: "1", in: launcher.window)
+        #expect(model.launcherTerminal?.session === session)
+        try await terminalKey(19, .command, characters: "2", in: launcher.window)
+        #expect(model.launcherTerminal?.session === second)
+        try await terminalKey(13, .command, in: launcher.window)
+        #expect(model.launcherTerminal?.session === session && center.sessions.count == 1)
+        try await terminalKey(53, [], in: launcher.window)
+        #expect(launcher.dismissed == 1)
+    }
+
+    private func terminalKey(_ code: UInt16, _ modifiers: NSEvent.ModifierFlags,
+                             characters: String = "", in window: NSWindow) async throws {
+        let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
+                                                 timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                                 characters: characters, charactersIgnoringModifiers: characters,
+                                                 isARepeat: false, keyCode: code))
+        NSApplication.shared.sendEvent(event)
+        try await Task.sleep(for: .milliseconds(55))
+    }
+
+    @Test(arguments: [true, false]) func `capture launcher terminal states`(dark: Bool) async throws {
+        guard let path = ProcessInfo.processInfo.environment["TYPEFLUX_TERMINAL_SNAPSHOTS"] else { return }
+        let folder = URL(fileURLWithPath: path)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let process = FakeTerminalProcess()
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        history.record("git status --short")
+        history.record("git log -5")
+        let project = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Projects/typeflux")
+        let center = TerminalSessionCenter(history: history, makeProcess: { process }, readGitStatus: {
+            $0 == project.path ? TerminalGitStatus(branch: "main", dirty: true) : nil
+        })
+        let tabbedWindow = TerminalSessionWindowController()
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "> git sta", prepare: {
+            $0.terminalSessionCenter = center
+            $0.terminalSessionWindow = tabbedWindow
+        })
+        defer { tabbedWindow.moveBack(); launcher.close(); center.terminateAll() }
+        let model = launcher.fixture.model
+        let window = launcher.window
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        let theme = dark ? "dark" : "light"
+
+        func capture(_ name: String, in panel: NSWindow? = nil) async throws {
+            try await Task.sleep(for: .milliseconds(120))
+            let host = panel ?? window
+            host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            if panel == nil, let height = launcher.heights.last {
+                window.setContentSize(NSSize(width: window.frame.width, height: height))
+            }
+            let view = try #require(panel == nil ? host.contentView : host.contentView?.superview)
+            view.layoutSubtreeIfNeeded()
+            let image = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+            view.cacheDisplay(in: view.bounds, to: image)
+            let png = try #require(image.representation(using: .png, properties: [:]))
+            try png.write(to: folder.appendingPathComponent("\(name)-\(theme).png"))
+        }
+        func osc(_ text: String) -> String { "\u{1b}]" + text + "\u{7}" }
+
+        try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
+        for _ in 0 ..< 3 { try await launcher.press(125) }
+        try await capture("hint")
+        try await launcher.press(124)
+        #expect(model.launcherDraft.text == "git status --short")
+        try await launcher.press(36)
+        let presentation = try #require(model.launcherTerminal)
+        let session = presentation.session
+        process.emit(osc("7;" + project.absoluteString) + osc("133;A") + osc("133;B"))
+        try await AskQuickSearchSessionTests.wait { session.git?.dirty == true }
+        #expect(session.displayDirectory(session.cwd) == "~/Projects/typeflux")
+        process.emit(osc("133;C") + " M Sources/Typeflux/Ask/AskComposerViews.swift\r\n")
+        try await capture("inline")
+        process.emit(osc("133;D;0") + osc("133;B"))
+        presentation.fill("git diff --check")
+        #expect(presentation.submit())
+        process.emit(osc("133;C") + "Sources/Example.swift:12: trailing whitespace.\r\n" + osc("133;D;2") + osc("133;B"))
+        presentation.select(-1)
+        try await capture("session")
+        presentation.fill("read response")
+        #expect(presentation.submit())
+        process.emit(osc("133;C") + "Continue? ")
+        #expect(presentation.prompt == .input)
+        #expect(session.liveOutputRows == 1)
+        try await capture("stdin")
+        #expect(session.terminalView.normalScreenText().contains("Continue?"))
+        process.readsHiddenInput = true
+        session.refreshInput()
+        try await capture("password")
+        model.foldLauncherKeyword()
+        #expect(center.sessions.first === session)
+        #expect(model.terminalHomeRows.first?.detail == "~/Projects/typeflux")
+        try await capture("home")
+        process.readsHiddenInput = false
+        process.emit(osc("133;D;0") + osc("133;B"))
+        model.resumeLauncherTerminal(session.id)
+        model.moveLauncherTerminal {}
+        try await capture("window", in: tabbedWindow.panel)
+    }
+
+    @Test(arguments: [true, false]) func `return modifiers choose window or external terminal`(inWindow: Bool) async throws {
         let dispatcher = TestTerminalDispatcher()
         let runner = TestTerminalRunner()
         let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "cmd pwd", prepare: {
             $0.terminalCommandDispatcher = dispatcher
-            $0.terminalRunner = runner
+            $0.terminalRunnerOverride = runner
         })
         defer { launcher.close() }
         let model = launcher.fixture.model
         try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
-        try await launcher.press(36, .command)
-        try await AskQuickSearchSessionTests.wait { !dispatcher.requests.isEmpty }
-        #expect(dispatcher.requests == [.init(command: "pwd", terminal: .terminal)])
-        #expect(runner.requests.isEmpty && launcher.dismissed == 1)
+        try await launcher.press(36, inWindow ? .command : .option)
+        try await AskQuickSearchSessionTests.wait { launcher.dismissed == 1 }
+        if inWindow {
+            #expect(runner.requests == [.init(command: "pwd", terminal: .terminal, builtin: .init())])
+            #expect(dispatcher.requests.isEmpty)
+        } else {
+            #expect(dispatcher.requests == [.init(command: "pwd", terminal: .terminal)])
+            #expect(runner.requests.isEmpty)
+        }
         #expect(await launcher.fixture.api.sends.isEmpty)
     }
 
@@ -261,7 +464,7 @@ extension TerminalCommandTests {
         let dispatcher = TestTerminalDispatcher()
         let runner = TestTerminalRunner()
         model.terminalCommandDispatcher = dispatcher
-        model.terminalRunner = runner
+        model.terminalRunnerOverride = runner
         _ = try await prepare(model, command: "ls -la", terminal: .iterm)
         let builtin = TerminalCommandRequest(command: "ls -la", terminal: .iterm, builtin: TerminalRunSettings())
         var forged = builtin

@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 启动器内置终端（可交互设计稿）</title>
+<style>
+:root {
+  --bg: #1b1b1d; --card: rgba(255,255,255,.045); --card-hover: rgba(255,255,255,.075);
+  --border: rgba(255,255,255,.115); --border-soft: rgba(255,255,255,.07);
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16);
+  --ok: #29c76e; --ok-soft: rgba(41,199,110,.14); --warn: #eb8040; --warn-soft: rgba(235,128,64,.15);
+  --danger: #dc5252; --danger-soft: rgba(220,82,82,.13); --tile: rgba(255,255,255,.07); --key: rgba(255,255,255,.09);
+  --term: rgba(0,0,0,.24); --term-solid: #161618; --sel: rgba(47,140,255,.10);
+  --a-red: #ff6b68; --a-green: #5fd38d; --a-yellow: #e5c07b; --a-blue: #61afef; --a-mag: #c678dd; --a-cyan: #56b6c2;
+  --chip-bg: rgba(52,199,120,.17); --chip-fg: #74e0a2; --chip-g: #24a865;
+  --stage: #0e0e10; --pop: #2a2a2d; --glass: rgba(34,34,38,.90);
+  --desk: radial-gradient(1200px 700px at 20% 10%, #2a3f63 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #4a2e3e 0%, transparent 60%), linear-gradient(135deg, #1b2538 0%, #271d33 55%, #33241f 100%);
+  --shadow: 0 30px 80px rgba(0,0,0,.5);
+}
+body.light {
+  --bg: #f4f5f7; --card: rgba(255,255,255,.75); --card-hover: rgba(0,0,0,.045);
+  --border: rgba(97,115,143,.2); --border-soft: rgba(97,115,143,.12);
+  --text: #141414; --text2: #474747; --text3: #85868a; --accent: #1f6fe0; --accent-soft: rgba(31,111,224,.12);
+  --ok: #1fab63; --ok-soft: rgba(31,171,99,.12); --warn: #d9601f; --warn-soft: rgba(224,102,42,.12);
+  --danger: #d23f3f; --danger-soft: rgba(210,63,63,.09); --tile: rgba(0,0,0,.055); --key: #fff;
+  --term: rgba(255,255,255,.62); --term-solid: #fbfbfc; --sel: rgba(31,111,224,.08);
+  --a-red: #d23f3f; --a-green: #1f8f50; --a-yellow: #a36b00; --a-blue: #1f6fe0; --a-mag: #a626a4; --a-cyan: #0f7f8c;
+  --chip-bg: rgba(36,168,101,.14); --chip-fg: #13834a; --chip-g: #24a865;
+  --stage: #d9dde3; --pop: #fff; --glass: rgba(250,250,252,.92);
+  --desk: radial-gradient(1200px 700px at 20% 10%, #c7d8f2 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #ecd3df 0%, transparent 60%), linear-gradient(135deg, #b9cbe6 0%, #d8c8e8 55%, #ecd6c6 100%);
+  --shadow: 0 30px 80px rgba(30,40,60,.22);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button, input { font: inherit; color: inherit; }
+svg { flex: none; display: block; }
+.mono, .mono * { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1200px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1200px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 34px; }
+.caption b { color: var(--text2); font-weight: 600; }
+.caption code { font: 11.5px ui-monospace, Menlo, monospace; background: var(--tile); padding: 0 4px; border-radius: 4px; color: var(--text2); }
+body.solo .stagebar, body.solo .caption { display: none; }
+body.solo { justify-content: center; }
+
+/* ---------- Desktop ---------- */
+.desk { position: relative; width: 1200px; height: 800px; border-radius: 14px; overflow: hidden; background: var(--desk); box-shadow: var(--shadow); flex: none; }
+.menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 12.5px; background: rgba(0,0,0,.22); color: rgba(255,255,255,.92); backdrop-filter: blur(20px); position: relative; z-index: 80; }
+body.light .menubar { background: rgba(255,255,255,.45); color: #1a1a1a; }
+.menubar .sp { flex: 1; }
+.menubar .tf { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 1px 6px; border-radius: 5px; cursor: pointer; }
+.menubar .tf:hover { background: rgba(255,255,255,.15); }
+.menubar .tf .live { position: absolute; right: 2px; top: 1px; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 1.5px rgba(0,0,0,.35); display: none; }
+.menubar .tf.busy .live { display: block; animation: live 1.6s infinite; }
+@keyframes live { 50% { opacity: .35; } }
+
+/* Stand-in app the launcher came from (Insert target) */
+.app { position: absolute; left: 40px; top: 60px; width: 560px; height: 520px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: 0 22px 60px rgba(0,0,0,.35); overflow: hidden; display: flex; flex-direction: column; }
+.app .tb { height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid var(--border-soft); color: var(--text3); font-size: 12px; flex: none; }
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.app .note { padding: 18px 22px; color: var(--text2); font-size: 13.5px; line-height: 1.7; overflow: auto; flex: 1; }
+.app .note h3 { margin: 0 0 8px; color: var(--text); font-size: 17px; }
+.app .note pre { font: 12px/1.6 ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; margin: 8px 0; color: var(--text); }
+.app .note pre.fresh { animation: fresh 1.4s ease; }
+@keyframes fresh { 0% { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent); } }
+.app .caret { display: inline-block; width: 1.5px; height: 16px; background: var(--accent); vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------- Launcher ---------- */
+.launcher { position: absolute; left: 50%; top: 96px; transform: translateX(-50%); width: 680px; background: var(--glass); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: 0 26px 70px rgba(0,0,0,.45); backdrop-filter: blur(28px) saturate(1.4); z-index: 60; display: none; overflow: hidden; flex-direction: column; }
+.launcher.show { display: flex; animation: lin .16s ease-out; }
+@keyframes lin { from { opacity: 0; transform: translateX(-50%) scale(.985); } }
+.launcher.to-window { animation: tow .28s ease-in forwards; }
+@keyframes tow { to { opacity: 0; transform: translateX(-38%) translateY(70px) scale(.86); } }
+.lin { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); flex: none; }
+.lin input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 17px; }
+.lin input::placeholder { color: var(--text3); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 5px; border-radius: 9px; flex: none; font-size: 13px; font-weight: 600; white-space: nowrap; background: var(--chip-bg); color: var(--chip-fg); }
+.chip .g { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: var(--chip-g); color: #fff; }
+.chip.sm { height: 24px; font-size: 12px; border-radius: 7px; padding: 0 8px 0 3px; }
+.chip.sm .g { width: 18px; height: 18px; border-radius: 5px; }
+.ghostwrap { position: relative; flex: 1; min-width: 0; display: flex; }
+.ghostwrap input { position: relative; z-index: 1; width: 100%; }
+.ghost { position: absolute; inset: 0; display: flex; align-items: center; pointer-events: none; white-space: pre; color: var(--text3); opacity: .75; overflow: hidden; }
+.ghost .typed { visibility: hidden; }
+.lbody { padding: 0 8px 6px; overflow: auto; }
+kbd, .kbd { font: 10.5px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; margin-right: 3px; color: var(--text2); }
+.sec { font-size: 11.5px; font-weight: 600; color: var(--text3); padding: 10px 8px 4px; display: flex; align-items: center; gap: 8px; }
+.sec .r { margin-left: auto; font-weight: 400; }
+.item { display: flex; align-items: center; gap: 11px; padding: 0 10px; height: 44px; border-radius: 10px; cursor: pointer; }
+.item.on { background: var(--card-hover); box-shadow: inset 0 0 0 1px rgba(52,199,120,.5); }
+.item:hover { background: var(--card-hover); }
+.item .ic { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; flex: none; color: #fff; }
+.item .tx { min-width: 0; flex: 1; }
+.item .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .t.mono { font-weight: 500; font-size: 12.5px; }
+.item .d { color: var(--text3); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .r { margin-left: auto; color: var(--text3); font-size: 11.5px; display: flex; gap: 6px; align-items: center; white-space: nowrap; flex: none; }
+.item mark { background: none; color: var(--chip-fg); font-weight: 700; }
+.badge { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px; border-radius: 5px; font-size: 10.5px; font-weight: 600; background: var(--tile); color: var(--text2); white-space: nowrap; }
+.badge.ok { background: var(--ok-soft); color: var(--ok); } .badge.err { background: var(--danger-soft); color: var(--danger); }
+.badge.run { background: var(--accent-soft); color: var(--accent); } .badge.warn { background: var(--warn-soft); color: var(--warn); }
+
+/* ---------- Terminal surface (shared by launcher and window) ---------- */
+.thead { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 12px; border-bottom: 1px solid var(--border-soft); flex: none; min-width: 0; }
+.cwd { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 7px; background: var(--tile); color: var(--text2); font: 11.5px ui-monospace, Menlo, monospace; white-space: nowrap; min-width: 0; overflow: hidden; cursor: default; }
+.cwd .br { color: var(--a-mag); display: inline-flex; align-items: center; gap: 3px; }
+.cwd .dirty { color: var(--warn); }
+.tabs { display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; }
+.tab { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 7px; font-size: 11.5px; color: var(--text3); cursor: pointer; white-space: nowrap; border: 1px solid transparent; max-width: 170px; }
+.tab span.n { overflow: hidden; text-overflow: ellipsis; }
+.tab:hover { background: var(--card-hover); color: var(--text2); }
+.tab.on { background: var(--card); border-color: var(--border); color: var(--text); }
+.tab .st { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); flex: none; }
+.tab .st.run { background: var(--ok); animation: live 1.6s infinite; } .tab .st.err { background: var(--danger); } .tab .st.in { background: var(--warn); }
+.tab .x { opacity: 0; font-size: 12px; line-height: 1; padding: 0 1px; }
+.tab:hover .x { opacity: .7; }
+.ibtn { height: 26px; min-width: 26px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 7px; border-radius: 7px; border: 1px solid transparent; background: transparent; cursor: pointer; color: var(--text2); font-size: 12px; white-space: nowrap; flex: none; }
+.ibtn:hover { background: var(--card-hover); border-color: var(--border-soft); }
+.ibtn .s { color: var(--text3); font-size: 10.5px; font-family: ui-monospace, Menlo, monospace; }
+.ibtn.on { color: var(--accent); }
+.btn { height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-size: 12px; white-space: nowrap; }
+.btn:hover { background: var(--card-hover); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn .s { opacity: .7; font-size: 10.5px; font-family: ui-monospace, Menlo, monospace; }
+
+.tbody { position: relative; overflow-y: auto; overflow-x: hidden; background: var(--term); flex: 1 1 auto; min-height: 0; padding: 4px 0 2px; scroll-behavior: auto; }
+.launcher .tbody { max-height: 430px; }
+.tbody:empty { min-height: 96px; }
+.launcher.tall .tbody { max-height: none; height: 470px; }
+.block { position: relative; padding: 7px 12px 7px 14px; border-left: 2px solid transparent; }
+.block + .block { border-top: 1px solid var(--border-soft); }
+.block:hover { background: rgba(127,127,127,.04); }
+.block.sel { background: var(--sel); border-left-color: var(--accent); }
+.block.err { border-left-color: rgba(220,82,82,.55); }
+.block.sel.err { border-left-color: var(--danger); }
+.bh { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+.bh .pr { font: 600 12.5px ui-monospace, Menlo, monospace; color: var(--chip-fg); flex: none; }
+.block.err .bh .pr { color: var(--danger); }
+.bh .cmd { font: 600 12.5px ui-monospace, Menlo, monospace; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.bh .where { font: 10.5px ui-monospace, Menlo, monospace; color: var(--text3); white-space: nowrap; flex: none; }
+.bh .sp { flex: 1; }
+.bh .meta { display: flex; align-items: center; gap: 6px; color: var(--text3); font-size: 11px; flex: none; }
+.bh .acts { display: none; align-items: center; gap: 1px; margin-right: 2px; }
+.block:hover .bh .acts, .block.sel .bh .acts { display: flex; }
+.bh .acts .ibtn { height: 22px; min-width: 22px; padding: 0 5px; color: var(--text3); }
+.bh .acts .ibtn:hover { color: var(--text); }
+.out { margin: 3px 0 0; font: 12px/1.55 ui-monospace, "SF Mono", Menlo, monospace; white-space: pre-wrap; word-break: break-all; color: var(--text2); }
+.out:empty { display: none; }
+.block.collapsed .out { max-height: 0; overflow: hidden; margin: 0; }
+.more { font-size: 11px; color: var(--text3); padding-top: 2px; cursor: pointer; }
+.more:hover { color: var(--accent); }
+.c-red { color: var(--a-red); } .c-green { color: var(--a-green); } .c-yellow { color: var(--a-yellow); } .c-blue { color: var(--a-blue); }
+.c-mag { color: var(--a-mag); } .c-cyan { color: var(--a-cyan); } .c-dim { color: var(--text3); } .c-b { font-weight: 700; color: var(--text); }
+.out a { color: var(--a-blue); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.spin { width: 12px; height: 12px; border-radius: 50%; border: 1.6px solid var(--accent-soft); border-top-color: var(--accent); animation: sp .8s linear infinite; flex: none; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.cursor { display: inline-block; width: 7px; height: 14px; background: var(--text2); vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+
+/* inline cards inside a block */
+.card { margin: 8px 0 4px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); padding: 10px 12px; font-size: 12.5px; }
+.card.danger { border-color: rgba(220,82,82,.45); background: var(--danger-soft); }
+.card .h { display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 4px; }
+.card.danger .h { color: var(--danger); margin: 0; }
+.card .h .sp { flex: 1; }
+.card .h .btn { font-weight: 400; }
+.card .b { color: var(--text2); }
+.card .h code, .card .b code { font: 11.5px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; color: var(--text); }
+.card .row { display: flex; gap: 8px; align-items: center; margin-top: 9px; }
+.card .row .sp { flex: 1; }
+.card.ai { border-color: rgba(176,124,255,.35); background: linear-gradient(180deg, rgba(176,124,255,.08), transparent); }
+.card.ai .h { color: var(--a-mag); margin: 0; }
+.card .aic { display: inline-block; color: var(--a-mag); margin-right: 6px; vertical-align: -1px; }
+.card .aic svg { display: inline; }
+.suggest { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 6px; background: var(--tile); font: 11.5px ui-monospace, Menlo, monospace; color: var(--text); cursor: pointer; border: 1px solid var(--border-soft); }
+.suggest:hover { border-color: var(--accent); }
+.dots i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: currentColor; margin-right: 3px; animation: dot 1s infinite; }
+.dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes dot { 50% { opacity: .2; } }
+
+
+/* prompt line */
+.prompt { display: flex; align-items: center; gap: 8px; padding: 9px 12px 9px 14px; border-top: 1px solid var(--border-soft); flex: none; background: var(--term); }
+.prompt .pg { font: 700 13.5px ui-monospace, Menlo, monospace; color: var(--chip-fg); flex: none; }
+.prompt .ghostwrap input, .prompt .ghost { font: 13.5px ui-monospace, "SF Mono", Menlo, monospace; }
+.prompt input { border: 0; outline: none; background: transparent; }
+.prompt input::placeholder { color: var(--text3); font-family: -apple-system, "PingFang SC", sans-serif; font-size: 12.5px; }
+.prompt.stdin { background: var(--accent-soft); }
+.prompt.stdin .pg { color: var(--accent); }
+.prompt.secret { background: var(--warn-soft); }
+.prompt.secret .pg { color: var(--warn); }
+.prompt.locked { opacity: .55; }
+.prompt .to { font-size: 11px; font-weight: 600; color: var(--accent); white-space: nowrap; flex: none; }
+.prompt.secret .to { color: var(--warn); }
+.complete { border-top: 1px solid var(--border-soft); padding: 4px 8px; display: flex; flex-wrap: wrap; gap: 4px; background: var(--term); }
+.complete span { font: 11.5px ui-monospace, Menlo, monospace; padding: 1px 7px; border-radius: 5px; color: var(--text2); cursor: pointer; }
+.complete span.on, .complete span:hover { background: var(--accent-soft); color: var(--text); }
+.complete span.dir { color: var(--a-blue); }
+
+/* full-screen program */
+.tui { font: 11.5px/1.5 ui-monospace, Menlo, monospace; color: var(--text2); padding: 8px 12px; white-space: pre; overflow: hidden; height: 100%; }
+.tui .bar { display: inline-block; vertical-align: -1px; height: 10px; }
+.tui .hl { background: var(--a-cyan); color: #111; }
+.tui .hdr { background: var(--a-green); color: #111; }
+.tui .hl, .tui .hdr.row { display: inline-block; width: 100%; }
+
+/* ---------- Standalone window ---------- */
+.win { position: absolute; left: 250px; top: 120px; width: 820px; height: 560px; border-radius: 12px; background: var(--glass); border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,.5); backdrop-filter: blur(28px) saturate(1.4); z-index: 55; display: none; flex-direction: column; overflow: hidden; }
+.win.show { display: flex; animation: win .22s ease-out; }
+@keyframes win { from { opacity: 0; transform: translateY(-30px) scale(.94); } }
+.win .titlebar { height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 14px; border-bottom: 1px solid var(--border-soft); flex: none; }
+.win .titlebar .lights { margin-right: 10px; }
+.win .titlebar .sp { flex: 1; min-width: 8px; }
+.win .tbody { flex: 1; }
+
+/* ---------- Notification + toast ---------- */
+.notif { position: absolute; right: 14px; top: 36px; width: 330px; border-radius: 14px; background: var(--glass); border: 1px solid var(--border); box-shadow: 0 16px 40px rgba(0,0,0,.35); backdrop-filter: blur(24px); padding: 11px 13px; z-index: 90; display: none; gap: 10px; cursor: pointer; }
+.notif.show { display: flex; animation: nin .25s ease-out; }
+@keyframes nin { from { opacity: 0; transform: translateX(30px); } }
+.notif .ic { width: 32px; height: 32px; border-radius: 8px; background: var(--chip-g); display: grid; place-items: center; color: #fff; flex: none; }
+.notif .t { font-weight: 600; font-size: 12.5px; display: flex; gap: 6px; }
+.notif .t .ago { margin-left: auto; font-weight: 400; color: var(--text3); font-size: 11px; }
+.notif .d { color: var(--text2); font-size: 12px; }
+.notif .d code { font: 11.5px ui-monospace, Menlo, monospace; }
+.toast { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); background: var(--pop); border: 1px solid var(--border); border-radius: 10px; padding: 7px 13px; font-size: 12.5px; box-shadow: 0 10px 30px rgba(0,0,0,.3); z-index: 95; display: none; white-space: nowrap; }
+.toast.show { display: block; animation: nin .2s ease-out; }
+
+/* ---------- Settings ---------- */
+.settings { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); width: 760px; height: 680px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: var(--shadow); z-index: 70; display: none; flex-direction: column; overflow: hidden; }
+.settings.show { display: flex; }
+.settings .titlebar { height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border-bottom: 1px solid var(--border-soft); flex: none; color: var(--text2); font-weight: 600; }
+.settings .sbody { padding: 18px 26px; overflow: auto; }
+.settings h2 { margin: 0 0 14px; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+.group { border: 1px solid var(--border-soft); background: var(--card); border-radius: 12px; margin-bottom: 14px; }
+.group .gt { font-size: 11.5px; font-weight: 600; color: var(--text3); padding: 10px 14px 0; }
+.srow { display: flex; align-items: center; gap: 14px; padding: 11px 14px; }
+.srow + .srow { border-top: 1px solid var(--border-soft); }
+.srow .l { flex: 1; min-width: 0; }
+.srow .l .t { font-weight: 600; font-size: 12.5px; }
+.seg { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--tile); gap: 2px; flex: none; }
+.seg button { border: 0; background: transparent; padding: 3px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; color: var(--text2); white-space: nowrap; }
+.seg button.on { background: var(--pop); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.sw { width: 32px; height: 19px; border-radius: 999px; background: var(--tile); position: relative; cursor: pointer; flex: none; border: 1px solid var(--border-soft); }
+.sw::after { content: ""; position: absolute; left: 2px; top: 1.5px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.sw.on { background: var(--ok); border-color: var(--ok); }
+.sw.on::after { left: 15px; }
+.field { height: 26px; border-radius: 7px; border: 1px solid var(--border); background: var(--pop); padding: 0 9px; display: inline-flex; align-items: center; gap: 6px; font: 12px ui-monospace, Menlo, monospace; color: var(--text); min-width: 150px; }
+</style>
+</head>
+<body>
+
+<div class="stagebar" id="stagebar">
+  <b>启动器内置终端</b>
+  <span class="pill" data-s="hint">① 输入 &gt;</span>
+  <span class="pill" data-s="inline">② 启动器内运行</span>
+  <span class="pill" data-s="session">③ 多轮会话</span>
+  <span class="pill" data-s="stdin">④ 交互输入</span>
+  <span class="pill" data-s="tui">⑤ 全屏程序</span>
+  <span class="pill" data-s="danger">⑥ 高风险确认</span>
+  <span class="pill" data-s="bg">⑦ 后台继续</span>
+  <span class="pill" data-s="window">⑧ 独立窗口</span>
+  <span class="pill" data-s="settings">⑨ 设置</span>
+  <span class="sp"></span>
+  <span class="pill" id="lightBtn">浅色</span>
+  <span class="pill" id="resetBtn">重置</span>
+</div>
+<div class="caption" id="caption"></div>
+
+<div class="desk" id="desk">
+  <div class="menubar">
+    <b></b><span style="font-weight:700">备忘录</span><span>文件</span><span>编辑</span><span>格式</span><span>窗口</span>
+    <span class="sp"></span>
+    <span class="tf" id="tfIcon" title="Typeflux · 点按打开启动器（⌥Space）">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10M8 4v9M5.5 13h5"/></svg>
+      <i class="live"></i>
+    </span>
+    <span>􀙇</span><span class="num">11月21日 周六 23:40</span>
+  </div>
+
+  <!-- The app the launcher came from -->
+  <div class="app" id="app">
+    <div class="tb"><div class="lights"><i></i><i></i><i></i></div><span>发布检查 — 备忘录</span></div>
+    <div class="note" id="note"><h3>发布前检查</h3>
+      <div>1. 跑一遍单元测试，结果贴在下面</div>
+      <div>2. 确认分支没有未提交的改动</div>
+      <div id="noteTail"><span class="caret"></span></div>
+    </div>
+  </div>
+
+  <!-- Launcher -->
+  <div class="launcher" id="launcher"></div>
+
+  <!-- Standalone terminal window -->
+  <div class="win" id="win"></div>
+
+  <!-- Settings -->
+  <div class="settings" id="settings"></div>
+
+  <div class="notif" id="notif"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+'use strict';
+// ======================================================================
+//  Icons
+// ======================================================================
+const I = {
+  term: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4l4 4-4 4M8.5 12.5H13"/></svg>',
+  branch: '<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="4.5" cy="3.5" r="1.8"/><circle cx="4.5" cy="12.5" r="1.8"/><circle cx="11.5" cy="5" r="1.8"/><path d="M4.5 5.3v5.4M11.5 6.8c0 3-7 2-7 3.9"/></svg>',
+  folder: '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4.5c0-.8.6-1.5 1.5-1.5h3l1.5 1.5h4.5c.8 0 1.5.7 1.5 1.5v5.5c0 .8-.7 1.5-1.5 1.5h-9C2.6 13 2 12.3 2 11.5z"/></svg>',
+  popout: '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="4" width="9" height="9" rx="2"/><path d="M8 2h6v6M14 2L8.5 7.5"/></svg>',
+  popin: '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2.5" width="12" height="11" rx="2.2"/><path d="M5 6h6"/></svg>',
+  plus: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>',
+  copy: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="8.5" height="8.5" rx="1.8"/><path d="M3 10.5V4.2C3 3.5 3.5 3 4.2 3h6.3"/></svg>',
+  insert: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg>',
+  rerun: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3"/></svg>',
+  ai: '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l1.4 3.6 3.6 1.4-3.6 1.4L8 11.5 6.6 7.9 3 6.5l3.6-1.4zM12.5 10l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>',
+  fold: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6l4 4 4-4"/></svg>',
+  pin: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M6 2h4l-.5 4 2.5 2.5H4L6.5 6zM8 8.5V14"/></svg>',
+  warn: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 2l6.5 11.5h-13zM8 6.5v3.2M8 11.6v.1"/></svg>',
+  lock: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1.6"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>',
+  check: '<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
+  x: '<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
+  stop: '<svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>',
+  search: '<svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>',
+  gear: '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6l1.4 1.4M11 11l1.4 1.4M3.6 12.4L5 11M11 5l1.4-1.4"/></svg>',
+};
+
+// ======================================================================
+//  Helpers
+// ======================================================================
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const span = (cls, t) => `<span class="${cls}">${esc(t)}</span>`;
+const fmt = (ms) => {
+  const s = Math.max(0, ms / 1000);
+  if (s < 60) return s.toFixed(1) + 's';
+  const w = Math.floor(s);
+  return w < 3600 ? `${Math.floor(w / 60)}m ${w % 60}s` : `${Math.floor(w / 3600)}h ${Math.floor((w % 3600) / 60)}m`;
+};
+const plain = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent; };
+const HOME = '/Users/me';
+let toastTimer = 0;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ======================================================================
+//  Mock machine: file system + git
+// ======================================================================
+const FS = {
+  '~': ['Projects/', 'Downloads/', 'Documents/', 'Desktop/', '.zshrc'],
+  '~/Projects': ['typeflux/', 'typeflux-api/', 'notes.md'],
+  '~/Projects/typeflux': ['Package.swift', 'Makefile', 'README.md', 'Sources/', 'Tests/', 'docs/', 'scripts/', 'build/'],
+  '~/Projects/typeflux/Sources': ['Typeflux/', 'TypefluxCore/'],
+  '~/Projects/typeflux/Sources/Typeflux': ['App/', 'Ask/', 'Settings/'],
+  '~/Projects/typeflux/Sources/TypefluxCore': ['Models/'],
+  '~/Projects/typeflux/Tests': ['TypefluxTests/'],
+  '~/Projects/typeflux/docs': ['design/', 'USAGE.md', 'TESTING.md'],
+  '~/Projects/typeflux/scripts': ['release.sh', 'lint.sh'],
+  '~/Projects/typeflux/build': ['Typeflux.app/', 'logs/'],
+  '~/Projects/typeflux-api': ['go.mod', 'go.sum', 'main.go', 'internal/', 'Makefile', 'package.json'],
+  '~/Projects/typeflux-api/internal': ['billing/', 'auth/'],
+  '~/Downloads': ['Typeflux-2.4.0.dmg', 'invoice-2026-11.pdf', 'screenshot-1121.png'],
+  '~/Documents': ['周报.md'],
+  '~/Desktop': [],
+};
+const FILES = {
+  '~/.zshrc': 'export PATH="/opt/homebrew/bin:$PATH"\nalias gs="git status -sb"\nalias ll="ls -la"\n[ -n "$TYPEFLUX_TERMINAL" ] && export PAGER=cat',
+  '~/Projects/notes.md': '# Notes\n- 发布 2.4.1 之前跑 make test\n- API 的计费测试偶发失败，需要排查',
+  '~/Projects/typeflux/README.md': '# Typeflux\n\nVoice-first launcher and AI assistant for macOS.\n\n  make build   Build the app\n  make test    Run unit tests',
+  '~/Projects/typeflux/Makefile': 'build:\n\tswift build -c release\n\ntest:\n\tswift test --parallel\n\nlint:\n\t./scripts/lint.sh',
+  '~/Projects/typeflux-api/main.go': 'package main\n\nfunc main() {\n\tserver.Run(":8080")\n}',
+  '~/Projects/typeflux-api/package.json': '{\n  "name": "typeflux-api-tools",\n  "scripts": { "dev": "vite" }\n}',
+  '~/Documents/周报.md': '# 周报 11/17 – 11/21\n- 启动器内置终端：设计稿',
+};
+function norm(p) {
+  const parts = []; for (const x of p.split('/')) { if (!x || x === '.') continue; if (x === '..') { if (parts.length > 1) parts.pop(); } else parts.push(x); }
+  return parts.join('/') || '~';
+}
+function resolve(cwd, arg) {
+  if (!arg || arg === '~') return '~';
+  arg = arg.replace(/\/+$/, '');
+  if (arg.startsWith(HOME)) arg = '~' + arg.slice(HOME.length);
+  if (arg.startsWith('~')) return norm(arg);
+  if (arg.startsWith('/')) return arg;
+  return norm(cwd + '/' + arg);
+}
+const isDir = (p) => Object.prototype.hasOwnProperty.call(FS, p);
+const absPath = (p) => p === '~' ? HOME : p.replace(/^~/, HOME);
+function repoOf(cwd) {
+  if (cwd.startsWith('~/Projects/typeflux-api')) return { name: 'typeflux-api', branch: 'main', dirty: 0 };
+  if (cwd.startsWith('~/Projects/typeflux')) return { name: 'typeflux', branch: 'feat/inline-terminal', dirty: 3 };
+  return null;
+}
+
+// ======================================================================
+//  Sessions and blocks
+// ======================================================================
+const INTR = Symbol('interrupt');
+let seq = 0;
+const S = {
+  scr: 'hint', light: false,
+  sessions: [], cur: { launcher: null, window: null },
+  launcher: { shown: false, mode: 'home', q: '', sel: 0, tall: false },
+  win: { shown: false, pinned: true },
+  hist: ['git status', 'make test', 'cd ~/Projects/typeflux-api', 'go test ./...', 'npm run dev', 'git log --oneline -5', 'ls -la', 'brew upgrade', 'ping 1.1.1.1', 'htop'],
+  fast: false,
+  settings: { where: 'launcher', dir: 'last', keep: '30m', danger: true, notify: true, insertFmt: 'output', profile: 'interactive', finish: 'auto' },
+  complete: null, // {surface, items, idx, base}
+};
+
+function newSession(where, cwd = '~') {
+  const s = { id: ++seq, where, cwd, blocks: [], tui: null, ended: false, histIdx: -1, draft: '', selBlock: null };
+  S.sessions.push(s); S.cur[where] = s.id; return s;
+}
+const sess = (id) => S.sessions.find((s) => s.id === id);
+const curSess = (where) => sess(S.cur[where]);
+const running = (s) => s.blocks.find((b) => b.status === 'run' || b.status === 'confirm');
+const progName = (cmd) => cmd.split(' ')[0];
+const sessName = (s) => {
+  const r = running(s);
+  const dir = s.cwd === '~' ? '~' : s.cwd.split('/').pop();
+  return r && r.status === 'run' ? `${dir} — ${r.cmd.split(' ').slice(0, 3).join(' ')}` : dir;
+};
+const sessState = (s) => {
+  const r = running(s);
+  if (r) return r.prompt ? 'in' : 'run';
+  const last = s.blocks[s.blocks.length - 1];
+  return last && last.status === 'err' ? 'err' : '';
+};
+
+// A program writes lines, asks for input, and sleeps; Ctrl-C rejects the pending sleep or prompt.
+function ctxFor(s, b) {
+  const wake = () => { if (b.wake) { const w = b.wake; b.wake = null; w(); } };
+  b.interrupt = () => { b.intr = true; wake(); };
+  return {
+    s, b,
+    out(html) { b.lines.push(html); paint(s, b); },
+    sleep(ms) {
+      if (b.intr) return Promise.reject(INTR);
+      if (S.fast) return Promise.resolve();
+      return new Promise((res, rej) => { const t = setTimeout(() => { b.wake = null; res(); }, ms); b.wake = () => { clearTimeout(t); rej(INTR); }; });
+    },
+    ask(label, hidden = false) {
+      if (b.intr) return Promise.reject(INTR);
+      b.prompt = { label, hidden }; b.lines.push(span('c-b', label)); paint(s, b, true);
+      return new Promise((res, rej) => { b.answer = (v) => { b.prompt = null; b.answer = null; b.wake = null; res(v); }; b.wake = () => { b.prompt = null; b.answer = null; rej(INTR); }; });
+    },
+    tui(kind) { s.tui = { kind, b, tick: 0 }; renderAll(); return new Promise((res) => { b.answer = () => { s.tui = null; b.answer = null; res(); }; b.wake = () => { s.tui = null; res(); }; }); },
+  };
+}
+
+const DANGER = [
+  [/\brm\s+(-[a-zA-Z]*[rf][a-zA-Z]*\s+)+/, (c, s) => {
+    const t = c.replace(/^sudo\s+/, '').split(/\s+/).filter((x) => !x.startsWith('-')).slice(1);
+    const n = t.map((x) => resolve(s.cwd, x)).map((p) => isDir(p) ? (p.endsWith('build') ? 1284 : 312) : 1).reduce((a, b) => a + b, 0);
+    return `永久删除 <code>${esc(t.join(' ') || '…')}</code>（约 ${n.toLocaleString()} 个文件），不进废纸篓`;
+  }],
+  [/\bgit\s+push\b.*(\s-f\b|--force)/, () => '强制覆盖远端分支'],
+  [/\bgit\s+reset\s+--hard\b/, (c, s) => `丢弃 ${repoOf(s.cwd)?.dirty || 0} 个未提交的改动`],
+  [/\bgit\s+clean\s+-[a-z]*f/, () => '删除所有未跟踪的文件'],
+  [/\b(mkfs|dd\s+if=|diskutil\s+erase)/, () => '直接写入或抹掉磁盘'],
+  [/\bsudo\s+rm\b|\bchmod\s+-R\s+777\b|\bchown\s+-R\b/, () => '批量修改或删除文件'],
+];
+const dangerOf = (cmd, s) => { for (const [re, why] of DANGER) if (re.test(cmd)) return why(cmd, s); return null; };
+
+async function run(s, cmd, opts = {}) {
+  cmd = cmd.trim(); if (!cmd || s.ended) return;
+  if (S.hist[0] !== cmd) S.hist.unshift(cmd);
+  s.histIdx = -1; s.draft = ''; s.selBlock = null;
+  const b = { id: ++seq, cmd, cwd: s.cwd, lines: [], status: 'run', code: null, t0: Date.now(), t1: null, prompt: null, ai: null, collapsed: false, intr: false };
+  s.blocks.push(b);
+  const why = S.settings.danger && !opts.confirmed ? dangerOf(cmd, s) : null;
+  if (why) { b.status = 'confirm'; b.why = why; renderAll(); return; }
+  renderAll();
+  const ctx = ctxFor(s, b);
+  let code = 0;
+  try { code = await exec(ctx, cmd); }
+  catch (e) { if (e === INTR) { ctx.out(span('c-dim', '^C')); code = 130; } else { ctx.out(span('c-red', String(e))); code = 1; } }
+  if (s.tui && s.tui.b === b) s.tui = null;
+  b.prompt = null; b.t1 = Date.now(); b.code = code;
+  b.status = code === 0 ? 'ok' : (code === 130 ? 'int' : 'err');
+  if (b.endSession) s.ended = true;
+  renderAll();
+  onFinished(s, b);
+  return b;
+}
+
+function interrupt(s) {
+  const b = running(s); if (!b) return false;
+  if (b.status === 'confirm') { cancelConfirm(s, b); return true; }
+  if (b.interrupt) b.interrupt();
+  return true;
+}
+function cancelConfirm(s, b) { b.status = 'cancel'; b.t1 = Date.now(); renderAll(); }
+function confirmDanger(s, b) {
+  s.blocks = s.blocks.filter((x) => x !== b);
+  run(s, b.cmd, { confirmed: true });
+}
+
+function onFinished(s, b) {
+  const long = b.t1 - b.t0 > 8000;
+  const hidden = (s.where === 'launcher' && !S.launcher.shown) || (s.where === 'window' && !S.win.shown);
+  if (S.settings.notify && long && hidden) notify(s, b);
+}
+
+// ======================================================================
+//  Programs (simulated)
+// ======================================================================
+function tokens(cmd) { return cmd.match(/"[^"]*"|'[^']*'|\S+/g)?.map((t) => t.replace(/^["']|["']$/g, '')) || []; }
+
+async function exec(c, cmd) {
+  const s = c.s;
+  if (/^sudo\s/.test(cmd)) {
+    await c.ask('Password:', true);
+    await c.sleep(500);
+    return exec(c, cmd.replace(/^sudo\s+/, ''));
+  }
+  const alias = { gs: 'git status -sb', ll: 'ls -la' };
+  const t = tokens(cmd); let [p, ...a] = t;
+  if (alias[p]) return exec(c, alias[p] + (a.length ? ' ' + a.join(' ') : ''));
+  const repo = repoOf(s.cwd);
+  switch (p) {
+    case 'ls': {
+      const long = a.some((x) => x.startsWith('-') && x.includes('l'));
+      const target = resolve(s.cwd, a.find((x) => !x.startsWith('-')) || '.');
+      if (!isDir(target)) { c.out(`ls: ${esc(a.find((x) => !x.startsWith('-')))}: No such file or directory`); return 1; }
+      const items = FS[target].filter((x) => long || !x.startsWith('.'));
+      if (long) {
+        c.out(span('c-dim', `total ${items.length * 8}`));
+        items.forEach((x, i) => {
+          const d = x.endsWith('/');
+          c.out(span('c-dim', `${d ? 'drwxr-xr-x' : '-rw-r--r--'}  ${d ? 6 + i : 1}  me  staff  ${String(d ? 192 : 1200 + i * 517).padStart(6)}  Nov ${String(12 + (i % 9)).padStart(2)} 1${i % 10}:2${i % 6}  `) + (d ? span('c-blue c-b', x.slice(0, -1)) : esc(x)));
+        });
+      } else if (items.length) {
+        c.out(items.map((x) => x.endsWith('/') ? span('c-blue c-b', x.slice(0, -1)) : esc(x)).join('   '));
+      }
+      return 0;
+    }
+    case 'cd': {
+      const target = resolve(s.cwd, a[0]);
+      if (!isDir(target)) { c.out(`cd: no such file or directory: ${esc(a[0])}`); return 1; }
+      s.cwd = target; return 0;
+    }
+    case 'pwd': c.out(esc(absPath(s.cwd))); return 0;
+    case 'whoami': c.out('me'); return 0;
+    case 'echo': c.out(esc(a.join(' ').replace(/\$TYPEFLUX_TERMINAL/g, 'launcher').replace(/\$HOME/g, HOME).replace(/\$SHELL/g, '/bin/zsh'))); return 0;
+    case 'date': c.out('2026年11月21日 星期六 23时40分12秒 CST'); return 0;
+    case 'clear': s.blocks = s.blocks.filter((x) => x === c.b); c.b.hidden = true; return 0;
+    case 'history': S.hist.slice(0, 12).reverse().forEach((h, i) => c.out(span('c-dim', String(i + 1).padStart(4) + '  ') + esc(h))); return 0;
+    case 'exit': c.b.endSession = true; return 0;
+    case 'cat': {
+      const f = resolve(s.cwd, a[0]);
+      if (!FILES[f]) { c.out(`cat: ${esc(a[0] || '')}: No such file or directory`); return 1; }
+      FILES[f].split('\n').forEach((l) => c.out(esc(l))); return 0;
+    }
+    case 'open': await c.sleep(300); return 0;
+    case 'git': {
+      if (!repo) { c.out('fatal: not a git repository (or any of the parent directories): .git'); return 128; }
+      const sub = a[0];
+      if (sub === 'status') {
+        if (a.includes('-sb')) { c.out(span('c-green', `## ${repo.branch}`) + span('c-red', '...origin/' + repo.branch + ' [ahead 2]')); }
+        else { c.out(`On branch ${span('c-b', repo.branch)}`); c.out("Your branch is ahead of 'origin/" + esc(repo.branch) + "' by 2 commits."); c.out(''); c.out('Changes not staged for commit:'); }
+        if (repo.dirty) ['Sources/Typeflux/Ask/QuickResults/Plugins/Terminal/TerminalRunModel.swift', 'Sources/Typeflux/Ask/AskComposerViews.swift', 'docs/design/launcher-inline-terminal.md'].forEach((f) => c.out(span('c-red', (a.includes('-sb') ? ' M ' : '\tmodified:   ') + f)));
+        else c.out('nothing to commit, working tree clean');
+        return 0;
+      }
+      if (sub === 'log') {
+        const L = repo.name === 'typeflux'
+          ? [['54b268e', 'Omit trailing decimal zeros from displayed credits'], ['6d24d17', 'Restore account quota layout and progress indicators'], ['03430fb', 'test: stabilize visual snapshots and add motion coverage'], ['0a4b4c9', 'refactor(account): remove invoice portal shortcut'], ['444a8bd', 'Show available credits and actual usage together']]
+          : [['a91c2e0', 'billing: round quota to cents before compare'], ['7b3d118', 'auth: rotate refresh tokens on use'], ['c02f4aa', 'billing: add monthly quota reset job'], ['19de7b2', 'chore: bump go to 1.25'], ['e4410fd', 'api: paginate usage export']];
+        L.forEach(([h, m], i) => c.out(span('c-yellow', h) + (i === 0 ? ' ' + span('c-cyan', `(HEAD -> ${repo.branch})`) : '') + ' ' + esc(m)));
+        return 0;
+      }
+      if (sub === 'branch') { c.out('* ' + span('c-green', repo.branch)); c.out('  main'); c.out('  release/2.4'); return 0; }
+      if (sub === 'pull') {
+        c.out('remote: Enumerating objects: 23, done.'); await c.sleep(500);
+        for (let i = 25; i <= 100; i += 25) { c.b.lines[c.b.lines.length - (i === 25 ? 0 : 1)] = `Receiving objects: ${String(i).padStart(3)}% (${Math.round(i * 0.23)}/23)`; paint(s, c.b); await c.sleep(260); }
+        c.out(`Updating 54b268e..e81f0aa`); c.out('Fast-forward'); c.out(' 4 files changed, ' + span('c-green', '62 insertions(+)') + ', ' + span('c-red', '9 deletions(-)')); return 0;
+      }
+      if (sub === 'diff') { c.out(' Sources/Typeflux/Ask/AskComposerViews.swift            | 48 ' + span('c-green', '+++++++') + span('c-red', '--')); c.out(' .../Plugins/Terminal/TerminalRunModel.swift          | 31 ' + span('c-green', '+++++') + span('c-red', '-')); c.out(' 2 files changed, 71 insertions(+), 8 deletions(-)'); return 0; }
+      if (sub === 'push' || sub === 'reset' || sub === 'clean') { await c.sleep(600); c.out(sub === 'push' ? `+ e81f0aa...54b268e ${repo.branch} -> ${repo.branch} (forced update)` : sub === 'reset' ? 'HEAD is now at 54b268e Omit trailing decimal zeros from displayed credits' : 'Removing build/'); return 0; }
+      c.out(`git: '${esc(sub || '')}' is not a git command. See 'git --help'.`); return 1;
+    }
+    case 'make':
+    case 'swift': {
+      if (repo?.name !== 'typeflux') { c.out(p === 'make' ? 'make: *** No targets specified and no makefile found.  Stop.' : 'error: Could not find Package.swift in this directory or any of its parent directories.'); return 2; }
+      if (p === 'make' && a[0] !== 'test' && a[0] !== 'build') { c.out(`make: *** No rule to make target \`${esc(a[0] || '')}'.  Stop.`); return 2; }
+      if (a[0] === 'build') { c.out(span('c-dim', 'swift build -c release')); await c.sleep(700); c.out('Building for production...'); await c.sleep(1600); c.out('[1/412] Compiling TypefluxCore Models.swift'); await c.sleep(900); c.out(span('c-green', 'Build complete!') + ' (3.81s)'); return 0; }
+      c.out(span('c-dim', 'swift test --parallel'));
+      await c.sleep(600); c.out('Building for debugging...'); await c.sleep(1200);
+      c.out('[412/412] Linking TypefluxPackageTests');
+      c.out(span('c-b', 'Build complete!') + ' (14.62s)');
+      const suites = ['TerminalRunModelTests', 'TerminalRunSettingsTests', 'AskKeywordMatcherTests', 'AskLauncherPluginTests', 'TerminalShellLaunchTests', 'AskQuickResultsTests', 'LauncherInputHistoryTests'];
+      for (const x of suites) { await c.sleep(520); c.out(`Test Suite '${x}' ` + span('c-green', 'passed') + span('c-dim', ` (${(Math.random() * 0.8 + 0.1).toFixed(3)} seconds)`)); }
+      await c.sleep(400);
+      c.out(span('c-green c-b', '✔') + ' Executed 1,286 tests, with 0 failures (0 unexpected) in 21.448 seconds');
+      return 0;
+    }
+    case 'go': {
+      if (repo?.name !== 'typeflux-api') { c.out('go: go.mod file not found in current directory or any parent directory'); return 1; }
+      c.out('ok  \ttypeflux-api/internal/auth\t0.412s'); await c.sleep(900);
+      c.out('--- ' + span('c-red c-b', 'FAIL') + ': TestQuotaRollover (0.00s)');
+      c.out('    quota_test.go:58: remaining = 0.30000000000000004, want 0.3');
+      c.out(span('c-red', 'FAIL'));
+      c.out(span('c-red', 'FAIL') + '\ttypeflux-api/internal/billing\t0.287s');
+      c.out(span('c-red', 'FAIL'));
+      return 1;
+    }
+    case 'npm':
+    case 'pnpm': {
+      if (a[0] === 'init') {
+        c.out('This utility will walk you through creating a package.json file.'); c.out('Press ^C at any time to quit.');
+        const name = (await c.ask('package name: (typeflux-tools) ')) || 'typeflux-tools';
+        const ver = (await c.ask('version: (1.0.0) ')) || '1.0.0';
+        const desc = await c.ask('description: ');
+        await c.ask('entry point: (index.js) ');
+        const ok = (await c.ask('Is this OK? (yes) ')) || 'yes';
+        if (!/^y/i.test(ok)) { c.out('Aborted.'); return 1; }
+        c.out(`Wrote to ${esc(absPath(s.cwd))}/package.json:`);
+        c.out(span('c-dim', `{ "name": "${esc(name)}", "version": "${esc(ver)}", "description": "${esc(desc)}" }`));
+        return 0;
+      }
+      if (a[0] === 'run' && a[1] === 'dev' || a[0] === 'dev') {
+        if (repo?.name !== 'typeflux-api') { c.out('npm ' + span('c-red', 'error') + ' enoent Could not read package.json'); return 254; }
+        c.out(''); c.out('> typeflux-api-tools@0.3.0 dev'); c.out('> vite'); await c.sleep(700);
+        c.out(''); c.out('  ' + span('c-green c-b', 'VITE v7.2.1') + '  ready in ' + span('c-b', '412 ms'));
+        c.out(''); c.out('  ' + span('c-green', '➜') + '  ' + span('c-b', 'Local:') + '   <a>http://localhost:5173/</a>');
+        c.out('  ' + span('c-green', '➜') + '  ' + span('c-dim', 'Network: use --host to expose'));
+        const paths = ['/', '/src/main.ts', '/@vite/client', '/api/usage', '/src/App.vue'];
+        for (let i = 0; ; i++) { await c.sleep(2600); c.out(span('c-dim', `23:${String(41 + Math.floor(i / 20)).padStart(2, '0')}:${String((i * 3) % 60).padStart(2, '0')}`) + ' ' + span('c-cyan', '[vite]') + ' hmr update ' + span('c-dim', paths[i % paths.length])); }
+      }
+      if (a[0] === 'test') { c.out('npm ' + span('c-red', 'error') + ' Missing script: "test"'); return 1; }
+      c.out(`Unknown command: "${esc(a[0] || '')}"`); return 1;
+    }
+    case 'ping': {
+      const host = a.find((x) => !x.startsWith('-')) || '1.1.1.1';
+      c.out(`PING ${esc(host)} (${esc(host)}): 56 data bytes`);
+      for (let i = 0; ; i++) { await c.sleep(1000); c.out(`64 bytes from ${esc(host)}: icmp_seq=${i} ttl=57 time=${(11 + Math.random() * 6).toFixed(3)} ms`); }
+    }
+    case 'brew': {
+      if (a[0] !== 'upgrade' && a[0] !== 'update') { c.out('Example usage:\n  brew search TEXT|/REGEX/'); return 1; }
+      c.out(span('c-blue c-b', '==>') + span('c-b', ' Auto-updating Homebrew...')); await c.sleep(900);
+      c.out(span('c-blue c-b', '==>') + span('c-b', ' Upgrading 3 outdated packages:')); c.out('git 2.52.0 -> 2.52.1, node 26.8.0 -> 26.8.1, ripgrep 15.0.0 -> 15.1.0');
+      for (const x of ['git', 'node', 'ripgrep']) { await c.sleep(1100); c.out(span('c-blue c-b', '==>') + ' Pouring ' + x + '--bottle.arm64_tahoe.tar.gz'); c.out('🍺  /opt/homebrew/Cellar/' + x + ': ' + (Math.round(Math.random() * 900) + 100) + ' files'); }
+      return 0;
+    }
+    case 'top': case 'htop': case 'vim': case 'vi': case 'less': case 'man':
+      await c.tui(p === 'vi' ? 'vim' : p === 'top' ? 'htop' : p); return 0;
+    case 'python3': case 'python': {
+      c.out('Python 3.14.0 (main, Oct  7 2026) [Clang 17.0.0] on darwin');
+      for (;;) {
+        const l = await c.ask('>>> ');
+        if (l === 'exit()' || l === 'quit()') return 0;
+        if (/^\d[\d\s+\-*/().]*$/.test(l)) { try { c.out(esc(String(Function('return (' + l + ')')()))); } catch { c.out('SyntaxError: invalid syntax'); } }
+        else if (/^print\((.*)\)$/.test(l)) c.out(esc(l.slice(6, -1).replace(/^["']|["']$/g, '')));
+        else if (l) c.out(`NameError: name '${esc(l.split(/\W/)[0])}' is not defined`);
+      }
+    }
+    default:
+      c.out(`zsh: command not found: ${esc(p)}`); return 127;
+  }
+}
+
+// ======================================================================
+//  AI explanation (mock)
+// ======================================================================
+function explain(s, b) {
+  if (b.ai) { b.ai = null; renderAll(); return; }
+  b.ai = { loading: true }; renderAll();
+  setTimeout(() => {
+    let text, fix;
+    if (b.code === 127) { const p = b.cmd.split(' ')[0]; text = `当前环境里找不到 <code>${esc(p)}</code>。如果它是用 Homebrew 安装的工具，可以先安装；如果是拼写错误，最接近的命令是 <code>${p.startsWith('gti') ? 'git' : 'ls'}</code>。`; fix = p.startsWith('gti') ? b.cmd.replace(/^gti/, 'git') : `brew install ${p}`; }
+    else if (b.cmd.startsWith('go test')) { text = '<code>TestQuotaRollover</code> 用浮点数比较金额：<code>0.1 + 0.2</code> 得到 <code>0.30000000000000004</code>，与期望的 <code>0.3</code> 不相等。最近一次提交 <code>a91c2e0</code> 把取整挪到了比较之后。建议金额改用整数（分）或 <code>decimal</code>，或在比较前取整。'; fix = 'go test ./internal/billing -run TestQuotaRollover -v'; }
+    else { text = `命令以退出码 <code>${b.code}</code> 结束。输出最后几行显示了失败原因：<code>${esc(plain(b.lines[b.lines.length - 1] || '').slice(0, 80))}</code>。`; fix = null; }
+    b.ai = { text, fix }; renderAll();
+  }, S.fast ? 0 : 900);
+}
+
+// ======================================================================
+//  Rendering — terminal surface (launcher + window share it)
+// ======================================================================
+function blockHTML(s, b, surface) {
+  if (b.hidden) return '';
+  const sel = s.selBlock === b.id;
+  const err = b.status === 'err';
+  const meta = [];
+  if (b.status === 'run') meta.push(b.prompt ? '' : '<span class="spin"></span>', `<span class="num" data-el="${b.id}">${fmt(Date.now() - b.t0)}</span>`);
+  else if (b.status === 'ok') meta.push(`<span class="num">${fmt(b.t1 - b.t0)}</span>`, `<span class="badge ok">${I.check}</span>`);
+  else if (b.status === 'err') meta.push(`<span class="num">${fmt(b.t1 - b.t0)}</span>`, `<span class="badge err">${I.x} ${b.code}</span>`);
+  else if (b.status === 'int') meta.push(`<span class="num">${fmt(b.t1 - b.t0)}</span>`, '<span class="badge">⌃C</span>');
+  else if (b.status === 'cancel') meta.push('<span class="badge">已取消</span>');
+  const done = b.status !== 'run' && b.status !== 'confirm';
+  const hasOut = b.lines.length > 0;
+  const acts = done && b.status !== 'cancel' ? `<span class="acts">
+      ${hasOut ? `<button class="ibtn" data-act="copy" data-b="${b.id}" title="复制输出 ⌘C">${I.copy}</button>` : ''}
+      ${hasOut ? `<button class="ibtn" data-act="insert" data-b="${b.id}" title="插入到 备忘录 ⌘↩">${I.insert}</button>` : ''}
+      <button class="ibtn" data-act="rerun" data-b="${b.id}" title="重新运行 ⌘R">${I.rerun}</button>
+      ${err ? `<button class="ibtn" data-act="ai" data-b="${b.id}" title="让 AI 解释 ⌘E" style="color:var(--a-mag)">${I.ai}</button>` : ''}
+      ${hasOut ? `<button class="ibtn" data-act="fold" data-b="${b.id}" title="${b.collapsed ? '展开' : '折叠'}">${I.fold}</button>` : ''}
+    </span>` : (b.status === 'run' ? `<span class="acts" style="display:flex"><button class="ibtn" data-act="stop" data-b="${b.id}" title="中断 ⌃C">${I.stop}</button></span>` : '');
+  const where = b.cwd !== s.cwd ? `<span class="where">${esc(b.cwd)}</span>` : '';
+  let body = `<div class="out">${b.lines.join('\n')}${b.status === 'run' && !b.prompt && !(s.tui && s.tui.b === b) ? '' : ''}</div>`;
+  if (b.collapsed && hasOut) body = `<div class="more" data-act="fold" data-b="${b.id}">⋯ ${b.lines.length} 行</div>`;
+  let card = '';
+  if (b.status === 'confirm') {
+    card = `<div class="card danger"><div class="h">${I.warn}<span>${b.why}</span><span class="sp"></span>
+        <button class="btn" data-act="cancel" data-b="${b.id}">取消 <span class="s">esc</span></button>
+        <button class="btn danger" data-act="confirm" data-b="${b.id}">仍然运行 <span class="s">⌘↩</span></button></div></div>`;
+  }
+  if (b.ai) {
+    card += b.ai.loading
+      ? `<div class="card ai"><div class="h">${I.ai}<span class="dots"><i></i><i></i><i></i></span></div></div>`
+      : `<div class="card ai"><div class="b"><span class="aic">${I.ai}</span>${b.ai.text}</div>
+         ${b.ai.fix ? `<div class="row"><span class="suggest" data-act="usefix" data-b="${b.id}">${esc(b.ai.fix)} <kbd style="margin:0">⇥</kbd></span><span class="sp"></span><button class="btn" data-act="askmore" data-b="${b.id}">在 Ask 中继续</button></div>` : ''}</div>`;
+  }
+  return `<div class="block ${sel ? 'sel' : ''} ${err ? 'err' : ''} ${b.collapsed ? 'collapsed' : ''}" data-block="${b.id}">
+    <div class="bh"><span class="pr">❯</span><span class="cmd" title="${esc(b.cmd)}">${esc(b.cmd)}</span>${where}<span class="sp"></span>${acts}<span class="meta">${meta.join('')}</span></div>
+    ${body}${card}</div>`;
+}
+
+function tuiHTML(s) {
+  const t = s.tui; t.tick++;
+  if (t.kind === 'htop') {
+    const bar = (v, col) => `<span class="bar" style="width:${Math.round(v * 1.3)}px;background:${col}"></span><span class="bar" style="width:${130 - Math.round(v * 1.3)}px"></span>`;
+    const cpu = [...Array(8)].map((_, i) => Math.round(8 + Math.abs(Math.sin(t.tick / 3 + i)) * (i === 2 ? 80 : 45)));
+    let h = cpu.map((v, i) => `  ${i}[${bar(v, i % 3 ? 'var(--a-green)' : 'var(--a-red)')}${String(v).padStart(3)}%]`).reduce((acc, x, i) => acc + x + (i % 2 ? '\n' : '   '), '');
+    h += `  Mem[${bar(62, 'var(--a-yellow)')} 14.9G/24.0G]   Tasks: 612, 2318 thr; 3 running\n  Swp[${bar(4, 'var(--a-red)')}  0.2G/4.00G]   Load average: 2.41 2.08 1.97   Uptime: 6 days, 03:12\n\n`;
+    h += '<span class="hdr row">    PID USER       CPU%  MEM%   TIME+   Command                                   </span>\n';
+    const procs = [['4121', 'me', 38.2, 3.1, 'swift-frontend -frontend -c'], ['913', 'me', 12.6, 6.8, 'Typeflux'], ['2207', 'me', 9.1, 4.2, 'node vite'], ['388', '_windowserver', 7.4, 1.9, 'WindowServer'], ['1502', 'me', 4.0, 8.4, 'Google Chrome Helper'], ['77', 'root', 1.2, 0.3, 'kernel_task'], ['3920', 'me', 0.8, 0.6, 'zsh -i'], ['644', 'me', 0.4, 1.1, 'Finder']];
+    procs.forEach((p, i) => { const cpuv = (p[2] + Math.sin(t.tick + i) * 3).toFixed(1); h += `${i === 0 ? '<span class="hl">' : ''}  ${p[0].padStart(5)} ${p[1].padEnd(13).slice(0, 13)} ${cpuv.padStart(5)} ${p[3].toFixed(1).padStart(5)}  ${'0:' + String(12 + i).padStart(2, '0') + '.4' + i}   ${p[4].padEnd(42)}${i === 0 ? '</span>' : ''}\n`; });
+    h += '\n<span class="hdr">F1</span>Help  <span class="hdr">F3</span>Search <span class="hdr">F6</span>Sort  <span class="hdr">F9</span>Kill  <span class="hdr">F10</span>Quit (q)';
+    return h;
+  }
+  if (t.kind === 'vim') {
+    const lines = (FILES['~/Projects/typeflux/Makefile']).split('\n');
+    let h = lines.map((l) => esc(l.replace(/\t/g, '    '))).join('\n') + '\n' + '<span class="c-blue">~</span>\n'.repeat(14);
+    return h + '<span class="c-dim">"Makefile" 8L, 92B                                                    1,1    All</span>';
+  }
+  return esc((FILES['~/Projects/typeflux/README.md'] || '')) + '\n\n' + span('c-dim', '(END)');
+}
+
+function surfaceHTML(where) {
+  const s = curSess(where);
+  const list = S.sessions.filter((x) => x.where === where);
+  const repo = repoOf(s.cwd);
+  const r = running(s);
+  const cwd = `<span class="cwd" title="${esc(absPath(s.cwd))}">${I.folder}${esc(s.cwd)}${repo ? ` <span class="br">${I.branch}${esc(repo.branch)}${repo.dirty ? '<span class="dirty">*</span>' : ''}</span>` : ''}</span>`;
+  const tabs = list.length > 1 || where === 'window'
+    ? `<div class="tabs">${list.map((x, i) => `<span class="tab ${x.id === s.id ? 'on' : ''}" data-tab="${x.id}" title="⌘${i + 1}"><i class="st ${sessState(x)}"></i><span class="n">${esc(sessName(x))}</span><span class="x" data-close="${x.id}">×</span></span>`).join('')}<button class="ibtn" data-act="newtab" data-where="${where}" title="新会话 ⌘T">${I.plus}</button></div>` : '';
+  const blocks = s.blocks.map((b) => blockHTML(s, b, where)).join('');
+  const body = s.tui
+    ? `<div class="tbody" data-tbody="${where}"><div class="tui" id="tui-${where}">${tuiHTML(s)}</div></div>`
+    : `<div class="tbody" data-tbody="${where}">${blocks}</div>`;
+  // prompt
+  let pcls = '', pg = '❯', to = '', ph = '';
+  if (r && r.status === 'run' && r.prompt) { pcls = r.prompt.hidden ? 'secret' : 'stdin'; pg = r.prompt.hidden ? I.lock : '›'; to = esc(progName(r.cmd)); }
+  else if (r) pcls = 'locked';
+  else if (s.ended) ph = '会话已结束 · ↩ 新会话';
+  const comp = S.complete && S.complete.where === where ? `<div class="complete">${S.complete.items.map((x, i) => `<span class="${i === S.complete.idx ? 'on' : ''} ${x.endsWith('/') ? 'dir' : ''}" data-comp="${i}">${esc(x)}</span>`).join('')}</div>` : '';
+  const prompt = s.tui ? '' : `${comp}<div class="prompt ${pcls}">${to ? `<span class="to">${to}</span>` : ''}<span class="pg">${pg}</span>
+      <span class="ghostwrap"><span class="ghost mono" id="ghost-${where}"></span><input id="pin-${where}" class="mono" ${pcls === 'secret' ? 'type="password"' : ''} autocomplete="off" spellcheck="false" placeholder="${esc(ph)}"></span></div>`;
+  return { s, cwd, tabs, body, prompt };
+}
+
+function renderLauncher() {
+  const L = $('#launcher');
+  L.classList.toggle('show', S.launcher.shown);
+  if (!S.launcher.shown) return;
+  const keep = keepFocus('launcher');
+  if (S.launcher.mode === 'term' && curSess('launcher')) {
+    const { s, cwd, tabs, body, prompt } = surfaceHTML('launcher');
+    L.classList.toggle('tall', !!s.tui);
+    const r = running(s);
+    L.innerHTML = `<div class="thead"><span class="chip sm"><span class="g">${I.term}</span>终端</span>${cwd}${tabs || '<span style="flex:1"></span>'}
+        ${tabs ? '' : `<button class="ibtn" data-act="newtab" data-where="launcher" title="新会话 ⌘T">${I.plus}</button>`}
+        <button class="ibtn" data-act="popout" title="移到窗口 ⌘O">${I.popout}</button></div>
+      ${body}${prompt}`;
+  } else {
+    L.classList.remove('tall');
+    L.innerHTML = homeHTML();
+  }
+  bindSurface(L, 'launcher');
+  restoreFocus('launcher', keep);
+}
+
+
+function homeHTML() {
+  const q = S.launcher.q;
+  const isCmd = S.launcher.mode === 'hint';
+  const live = S.sessions.filter((s) => !s.ended && (s.blocks.length || s.where === 'window'));
+  let rows = [];
+  if (isCmd) {
+    const cs = curSess('launcher') && !curSess('launcher').ended ? curSess('launcher') : null;
+    const where = cs ? cs.cwd : (S.settings.dir === 'last' ? '~/Projects/typeflux' : '~');
+    const qq = q.trim();
+    rows.push({ id: 'run', ic: I.term, bg: 'var(--chip-g)', t: qq ? `<span class="mono">${esc(qq)}</span>` : '打开终端', mono: !!qq, r: `<span class="mono">${esc(where)}</span><kbd>↩</kbd>` });
+    if (qq) {
+      rows.push({ id: 'runwin', ic: I.popout, bg: '#5b6b86', t: '在窗口中运行', r: '<kbd>⌘↩</kbd>' });
+      rows.push({ id: 'runext', ic: I.popout, bg: '#3a3a3f', t: '在 Terminal 中运行', r: '<kbd>⌥↩</kbd>' });
+    }
+    const hits = S.hist.filter((h) => !qq || h.includes(qq)).slice(0, qq ? 4 : 5);
+    if (hits.length) {
+      rows.push({ sec: '最近' });
+      hits.forEach((h) => rows.push({ id: 'h:' + h, ic: I.rerun, bg: 'var(--tile)', fg: 'var(--text2)', t: `<span class="mono">${qq ? esc(h).replace(esc(qq), `<mark>${esc(qq)}</mark>`) : esc(h)}</span>`, mono: true, d: '' }));
+    }
+    if (live.length) {
+      rows.push({ sec: '终端会话' });
+      live.forEach((s) => rows.push(sessRow(s)));
+    }
+  } else {
+    if (live.length && !q) {
+      rows.push({ sec: '终端会话' });
+      live.forEach((s) => rows.push(sessRow(s)));
+    }
+    rows.push({ sec: q ? '应用' : '建议' });
+    rows.push({ id: 'kw', ic: I.term, bg: 'var(--chip-g)', t: '终端命令', r: '<span class="badge">&gt;</span>' });
+    rows.push({ id: 'app:term', ic: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4 6l2 2-2 2"/></svg>', bg: '#222', t: '终端', d: '应用程序 · /System/Applications/Utilities', r: '' });
+    rows.push({ id: 'app:notes', ic: '<svg width="16" height="16" viewBox="0 0 16 16" fill="#fff"><rect x="3" y="2" width="10" height="12" rx="2"/></svg>', bg: '#e8b423', t: '备忘录', d: '应用程序', r: '' });
+  }
+  const selectable = rows.filter((r) => r.id);
+  S.launcher.sel = Math.min(S.launcher.sel, Math.max(0, selectable.length - 1));
+  const selId = selectable[S.launcher.sel]?.id;
+  S.launcher.rows = selectable;
+  const list = rows.map((r) => r.sec
+    ? `<div class="sec">${r.sec}${r.r ? `<span class="r">${r.r}</span>` : ''}</div>`
+    : `<div class="item ${r.id === selId ? 'on' : ''}" data-row="${esc(r.id)}"><span class="ic" style="background:${r.bg};color:${r.fg || '#fff'}">${r.ic}</span><span class="tx"><div class="t ${r.mono ? 'mono' : ''}">${r.t}</div>${r.d ? `<div class="d">${r.d}</div>` : ''}</span><span class="r">${r.r || ''}</span></div>`).join('');
+  const head = isCmd
+    ? `<span class="chip"><span class="g">${I.term}</span>终端</span><span class="ghostwrap"><span class="ghost mono" id="ghost-home" style="font-size:16px"></span><input id="homeIn" class="mono" style="font-size:16px" placeholder="输入 Shell 命令" autocomplete="off" spellcheck="false" value="${esc(q)}"></span>`
+    : `<span style="color:var(--text3)">${I.search}</span><input id="homeIn" placeholder="搜索应用、计算，或直接提问" autocomplete="off" spellcheck="false" value="${esc(q)}">`;
+  return `<div class="lin">${head}</div><div class="lbody">${list}</div>`;
+}
+function sessRow(s) {
+  const r = running(s);
+  const last = r || s.blocks[s.blocks.length - 1];
+  const st = r ? (r.prompt ? '<span class="badge warn">等待输入</span>' : `<span class="badge run"><span class="num">${fmt(Date.now() - r.t0)}</span></span>`) : (last && last.status === 'err' ? `<span class="badge err">${I.x} ${last.code}</span>` : '');
+  return { id: 'sess:' + s.id, ic: s.where === 'window' ? I.popout : I.term, bg: s.where === 'window' ? '#5b6b86' : 'var(--chip-g)', t: `<span class="mono">${esc(last ? last.cmd : 'zsh')}</span>`, mono: true, d: `<span class="mono">${esc(s.cwd)}</span>`, r: st };
+}
+
+function renderWindow() {
+  const W = $('#win');
+  W.classList.toggle('show', S.win.shown);
+  if (!S.win.shown || !curSess('window')) return;
+  const keep = keepFocus('window');
+  const { s, cwd, tabs, body, prompt } = surfaceHTML('window');
+  const r = running(s);
+  W.innerHTML = `<div class="titlebar"><div class="lights"><i data-act="closewin" style="cursor:pointer"></i><i></i><i></i></div>${tabs}<span class="sp"></span>${cwd}
+      <button class="ibtn ${S.win.pinned ? 'on' : ''}" data-act="pin" title="置顶">${I.pin}</button>
+      <button class="ibtn" data-act="popin" title="收回到启动器 ⌘O">${I.popin}</button></div>
+    ${body}${prompt}`;
+  bindSurface(W, 'window');
+  restoreFocus('window', keep);
+}
+
+// The menu bar icon never changes with background work (see CLAUDE.md); running
+// commands are listed in the status menu's background tasks section instead.
+function renderMenubar() {}
+
+let renderQueued = false;
+function renderAll() { renderLauncher(); renderWindow(); renderMenubar(); scrollDown(); }
+function paint(s, b, force) {
+  // Streaming output: re-render just the affected block when possible.
+  for (const where of ['launcher', 'window']) {
+    if (s.where !== where || S.cur[where] !== s.id) continue;
+    if (where === 'launcher' ? !S.launcher.shown || S.launcher.mode !== 'term' : !S.win.shown) continue;
+    const el = document.querySelector(`#${where === 'launcher' ? 'launcher' : 'win'} [data-block="${b.id}"]`);
+    if (!el || force) { renderAll(); return; }
+    const box = el.closest('.tbody');
+    const stick = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+    el.outerHTML = blockHTML(s, b, where);
+    if (stick) box.scrollTop = box.scrollHeight;
+  }
+}
+function scrollDown() { document.querySelectorAll('.tbody').forEach((t) => { t.scrollTop = t.scrollHeight; }); }
+
+// focus: rerenders replace the input; keep its value and caret
+function keepFocus(where) {
+  const id = where === 'launcher' ? (S.launcher.mode === 'term' ? 'pin-launcher' : 'homeIn') : 'pin-window';
+  const el = document.getElementById(id);
+  if (!el) return null;
+  return { id, value: el.value, focused: document.activeElement === el, pos: el.selectionStart };
+}
+function restoreFocus(where, k) {
+  const id = where === 'launcher' ? (S.launcher.mode === 'term' ? 'pin-launcher' : 'homeIn') : 'pin-window';
+  const el = document.getElementById(id); if (!el) return;
+  // The home input is rendered from S.launcher.q; only the prompt keeps its unsaved text.
+  if (k && k.id === id && id !== 'homeIn' && el.type !== 'password') el.value = k.value;
+  const s = where === 'launcher' && S.launcher.mode !== 'term' ? null : curSess(where);
+  if (s && s.draft && !el.value && el.type !== 'password') el.value = s.draft;
+  const shouldFocus = k ? k.focused || (where === 'launcher' && S.launcher.shown) : where === activeSurface();
+  if (shouldFocus && !S.noFocus) { el.focus(); if (k && k.pos != null && el.type !== 'password') el.setSelectionRange(k.pos, k.pos); }
+  updateGhost(where);
+}
+function activeSurface() { return S.launcher.shown ? 'launcher' : (S.win.shown ? 'window' : null); }
+
+// ghost suggestion from history
+function ghostFor(text, s) {
+  if (!text) return '';
+  const h = S.hist.find((x) => x.startsWith(text) && x !== text);
+  return h ? h.slice(text.length) : '';
+}
+function updateGhost(where) {
+  const isHome = where === 'launcher' && S.launcher.mode !== 'term';
+  const g = document.getElementById(isHome ? 'ghost-home' : 'ghost-' + where);
+  const inp = document.getElementById(isHome ? 'homeIn' : 'pin-' + where);
+  if (!g || !inp) return;
+  const s = isHome ? null : curSess(where);
+  const blocked = s && running(s);
+  const rest = blocked || inp.type === 'password' ? '' : ghostFor(inp.value, s);
+  g.innerHTML = `<span class="typed">${esc(inp.value)}</span>${esc(rest)}`;
+}
+
+// ======================================================================
+//  Completion
+// ======================================================================
+const CMDS = ['cd', 'ls', 'git', 'make', 'swift', 'go', 'npm', 'ping', 'brew', 'htop', 'vim', 'cat', 'pwd', 'echo', 'clear', 'history', 'python3', 'open', 'exit', 'sudo'];
+function complete(where, inp) {
+  const s = curSess(where); const v = inp.value;
+  const parts = v.split(' ');
+  const last = parts[parts.length - 1];
+  let items;
+  if (parts.length === 1) items = CMDS.filter((c) => c.startsWith(last));
+  else if (parts[0] === 'git' && parts.length === 2) items = ['status', 'log', 'branch', 'pull', 'push', 'diff', 'reset'].filter((c) => c.startsWith(last));
+  else if (parts[0] === 'make' && parts.length === 2) items = ['build', 'test', 'lint'].filter((c) => c.startsWith(last));
+  else {
+    const slash = last.lastIndexOf('/');
+    const dirPart = slash >= 0 ? last.slice(0, slash + 1) : '';
+    const base = slash >= 0 ? last.slice(slash + 1) : last;
+    const dir = resolve(s.cwd, dirPart || '.');
+    const onlyDirs = parts[0] === 'cd';
+    items = (FS[dir] || []).filter((x) => x.startsWith(base) && (!onlyDirs || x.endsWith('/')) && (base.startsWith('.') || !x.startsWith('.'))).map((x) => dirPart + x);
+  }
+  if (!items.length) return;
+  const prefix = parts.slice(0, -1).join(' ') + (parts.length > 1 ? ' ' : '');
+  if (items.length === 1) { inp.value = prefix + items[0] + (items[0].endsWith('/') ? '' : ' '); S.complete = null; renderAll(); return; }
+  // common prefix first, then a list to cycle with Tab
+  let cp = items[0]; for (const x of items) while (!x.startsWith(cp)) cp = cp.slice(0, -1);
+  if (cp.length > last.length) { inp.value = prefix + cp; S.complete = null; renderAll(); return; }
+  if (S.complete && S.complete.where === where) { S.complete.idx = (S.complete.idx + 1) % items.length; inp.value = prefix + items[S.complete.idx]; }
+  else S.complete = { where, items, idx: -1, prefix };
+  renderAll();
+}
+
+// ======================================================================
+//  Events
+// ======================================================================
+function bindSurface(root, where) {
+  const inp = root.querySelector(where === 'launcher' && S.launcher.mode !== 'term' ? '#homeIn' : '#pin-' + where);
+  if (inp) {
+    inp.addEventListener('input', () => {
+      if (where === 'launcher' && S.launcher.mode !== 'term') {
+        const v = inp.value;
+        if (S.launcher.mode === 'home' && (v === '>' || v.startsWith('> ') || /^cmd\s/.test(v))) { S.launcher.mode = 'hint'; S.launcher.q = v.replace(/^(>|cmd)\s?/, ''); S.launcher.sel = 0; renderLauncher(); return; }
+        S.launcher.q = v; S.launcher.sel = 0; renderLauncher(); return;
+      }
+      const s = curSess(where); if (s && !running(s)) s.draft = inp.value;
+      S.complete = null; const c = root.querySelector('.complete'); if (c) c.remove();
+      updateGhost(where);
+    });
+    inp.addEventListener('keydown', (e) => onKey(e, where, inp));
+  }
+  root.querySelectorAll('[data-row]').forEach((el) => el.addEventListener('click', () => activateRow(el.dataset.row, 'click')));
+  root.querySelectorAll('[data-tab]').forEach((el) => el.addEventListener('click', (e) => {
+    if (e.target.dataset.close) { closeSession(sess(+e.target.dataset.close)); return; }
+    S.cur[where] = +el.dataset.tab; S.complete = null; renderAll(); focusPrompt(where);
+  }));
+  root.querySelectorAll('[data-comp]').forEach((el) => el.addEventListener('click', () => {
+    const inp2 = document.getElementById('pin-' + where); inp2.value = S.complete.prefix + S.complete.items[+el.dataset.comp]; S.complete = null; renderAll(); focusPrompt(where);
+  }));
+  root.querySelectorAll('[data-block]').forEach((el) => el.addEventListener('click', (e) => {
+    if (e.target.closest('[data-act]') || e.target.closest('a') || window.getSelection().toString()) return;
+    const s = curSess(where); const id = +el.dataset.block; s.selBlock = s.selBlock === id ? null : id; renderAll(); focusPrompt(where);
+  }));
+  root.querySelectorAll('[data-act]').forEach((el) => el.addEventListener('click', (e) => { e.stopPropagation(); action(el.dataset.act, where, el); }));
+  root.querySelectorAll('.out a').forEach((el) => el.addEventListener('click', () => toast('http://localhost:5173/')));
+}
+function focusPrompt(where) { const el = document.getElementById(where === 'launcher' && S.launcher.mode !== 'term' ? 'homeIn' : 'pin-' + where); if (el) el.focus(); }
+
+function action(act, where, el) {
+  const s = curSess(where);
+  const b = el.dataset.b ? s.blocks.find((x) => x.id === +el.dataset.b) : null;
+  switch (act) {
+    case 'copy': toast('已复制'); s.selBlock = b.id; break;
+    case 'insert': insertBlock(s, b); return;
+    case 'rerun': run(s, b.cmd); break;
+    case 'ai': explain(s, b); return;
+    case 'askmore': toast('Ask（示意）'); return;
+    case 'usefix': { const inp = document.getElementById('pin-' + where); inp.value = b.ai.fix; s.draft = b.ai.fix; inp.focus(); updateGhost(where); return; }
+    case 'fold': b.collapsed = !b.collapsed; break;
+    case 'stop': interrupt(s); break;
+    case 'cancel': cancelConfirm(s, b); break;
+    case 'confirm': confirmDanger(s, b); return;
+    case 'newtab': { const n = newSession(where, s ? s.cwd : '~'); S.cur[where] = n.id; break; }
+    case 'popout': popOut(); return;
+    case 'popin': popIn(); return;
+    case 'pin': S.win.pinned = !S.win.pinned; break;
+    case 'closewin': closeWindow(); return;
+  }
+  renderAll(); focusPrompt(where);
+}
+
+function insertBlock(s, b) {
+  const fmtSel = S.settings.insertFmt;
+  const text = (fmtSel === 'both' ? `$ ${b.cmd}\n` : '') + b.lines.map(plain).join('\n');
+  hideLauncher(true);
+  const pre = document.createElement('pre'); pre.className = 'fresh'; pre.textContent = text;
+  $('#noteTail').before(pre);
+  $('#note').scrollTop = 1e6;
+}
+
+function closeSession(s) {
+  const r = running(s);
+  if (r && r.status === 'run' && !confirm(`“${r.cmd}” 仍在运行。关闭会话会挂断它及其子进程。`)) return;
+  if (r && r.interrupt) r.interrupt();
+  S.sessions = S.sessions.filter((x) => x !== s);
+  const rest = S.sessions.filter((x) => x.where === s.where);
+  S.cur[s.where] = rest.length ? rest[rest.length - 1].id : null;
+  if (!rest.length) { if (s.where === 'window') S.win.shown = false; else { S.launcher.mode = 'home'; S.launcher.q = ''; } }
+  renderAll();
+}
+
+function popOut() {
+  const s = curSess('launcher'); if (!s) return;
+  const L = $('#launcher'); L.classList.add('to-window');
+  setTimeout(() => {
+    L.classList.remove('to-window');
+    s.where = 'window'; S.cur.window = s.id;
+    const rest = S.sessions.filter((x) => x.where === 'launcher');
+    S.cur.launcher = rest.length ? rest[rest.length - 1].id : null;
+    S.launcher.shown = false; S.launcher.mode = 'home'; S.launcher.q = '';
+    S.win.shown = true; renderAll(); focusPrompt('window');
+  }, S.fast ? 0 : 260);
+}
+function popIn() {
+  const s = curSess('window'); if (!s) return;
+  s.where = 'launcher'; S.cur.launcher = s.id;
+  const rest = S.sessions.filter((x) => x.where === 'window');
+  S.cur.window = rest.length ? rest[rest.length - 1].id : null;
+  if (!rest.length) S.win.shown = false;
+  S.launcher.shown = true; S.launcher.mode = 'term';
+  renderAll(); focusPrompt('launcher');
+}
+function closeWindow() {
+  const busy = S.sessions.filter((x) => x.where === 'window' && running(x));
+  if (busy.length && !confirm(`${busy.length} 个会话仍有命令在运行。关闭窗口会挂断它们。`)) return;
+  S.sessions.filter((x) => x.where === 'window').forEach((x) => { const r = running(x); if (r && r.interrupt) r.interrupt(); });
+  S.sessions = S.sessions.filter((x) => x.where !== 'window'); S.cur.window = null; S.win.shown = false; renderAll();
+}
+
+function showLauncher(mode = 'home', q = '') {
+  S.launcher.shown = true; S.launcher.q = q; S.launcher.sel = 0;
+  const cs = curSess('launcher');
+  S.launcher.mode = mode === 'term' && cs ? 'term' : mode;
+  renderAll(); focusPrompt('launcher');
+}
+function hideLauncher(silent) {
+  S.launcher.shown = false; S.complete = null;
+  const cs = curSess('launcher');
+  if (cs && running(cs) && !silent) toast(`${running(cs).cmd} 继续运行`);
+  renderAll();
+}
+
+function activateRow(id, how, mod = {}) {
+  if (id === 'run' || id === 'runwin' || id === 'runext') {
+    const cmd = $('#homeIn').value.trim();
+    if (id === 'runext' || mod.alt) { if (!cmd) return; hideLauncher(true); toast(`Terminal：${cmd}`); return; }
+    if (id === 'runwin' || mod.meta) {
+      if (!cmd) return;
+      const s = newSession('window', S.settings.dir === 'last' ? '~/Projects/typeflux' : '~');
+      S.launcher.shown = false; S.win.shown = true; renderAll(); run(s, cmd); focusPrompt('window'); return;
+    }
+    let s = curSess('launcher');
+    if (!s || s.ended) s = newSession('launcher', S.settings.dir === 'last' ? '~/Projects/typeflux' : '~');
+    S.launcher.mode = 'term'; S.launcher.q = '';
+    if (cmd) run(s, cmd); else renderAll();
+    focusPrompt('launcher');
+    return;
+  }
+  if (id.startsWith('h:')) { const inp = $('#homeIn'); inp.value = id.slice(2); S.launcher.q = inp.value; if (how === 'click') activateRow('run'); else renderLauncher(); return; }
+  if (id.startsWith('sess:')) {
+    const s = sess(+id.slice(5));
+    if (s.where === 'window') { S.launcher.shown = false; S.cur.window = s.id; S.win.shown = true; renderAll(); focusPrompt('window'); }
+    else { S.cur.launcher = s.id; S.launcher.mode = 'term'; renderAll(); focusPrompt('launcher'); }
+    return;
+  }
+  if (id === 'kw') { S.launcher.mode = 'hint'; S.launcher.q = ''; renderLauncher(); return; }
+  toast('打开应用（示意）');
+}
+
+function onKey(e, where, inp) {
+  const meta = e.metaKey || e.ctrlKey && !['c', 'd'].includes(e.key.toLowerCase());
+  // ---------- launcher home / hint ----------
+  if (where === 'launcher' && S.launcher.mode !== 'term') {
+    const rows = S.launcher.rows || [];
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); S.launcher.sel = (S.launcher.sel + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length; renderLauncher(); return; }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (S.launcher.mode === 'hint') {
+        const r = rows[S.launcher.sel];
+        if (e.metaKey) return activateRow('runwin', 'key');
+        if (e.altKey) return activateRow('runext', 'key');
+        return activateRow(r && r.id.startsWith('sess:') ? r.id : (r && r.id.startsWith('h:') ? r.id : 'run'), 'key');
+      }
+      const r = rows[S.launcher.sel]; if (r) activateRow(r.id, 'key'); return;
+    }
+    if (e.key === 'Tab' && S.launcher.mode === 'hint') {
+      e.preventDefault();
+      const g = ghostFor(inp.value); const r = rows[S.launcher.sel];
+      if (g) inp.value += g; else if (r && r.id.startsWith('h:')) inp.value = r.id.slice(2);
+      S.launcher.q = inp.value; renderLauncher(); return;
+    }
+    if (e.key === 'ArrowRight' && S.launcher.mode === 'hint' && inp.selectionStart === inp.value.length) { const g = ghostFor(inp.value); if (g) { e.preventDefault(); inp.value += g; S.launcher.q = inp.value; renderLauncher(); } return; }
+    if (e.key === 'Backspace' && S.launcher.mode === 'hint' && !inp.value) { e.preventDefault(); S.launcher.mode = 'home'; renderLauncher(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); if (S.launcher.mode === 'hint' && inp.value) { inp.value = ''; S.launcher.q = ''; renderLauncher(); } else hideLauncher(); return; }
+    return;
+  }
+  // ---------- terminal prompt ----------
+  const s = curSess(where); const r = running(s);
+  const sel = s.selBlock && s.blocks.find((b) => b.id === s.selBlock);
+  const key = e.key.toLowerCase();
+  if (e.ctrlKey && key === 'c') {
+    e.preventDefault();
+    if (r) interrupt(s); else if (inp.value) { s.blocks.push({ id: ++seq, cmd: inp.value, cwd: s.cwd, lines: [], status: 'int', t0: Date.now(), t1: Date.now() }); inp.value = ''; s.draft = ''; renderAll(); }
+    return;
+  }
+  if (e.ctrlKey && key === 'd' && r && r.prompt) { e.preventDefault(); r.answer && r.answer(''); return; }
+  if (meta && key === 'o') { e.preventDefault(); where === 'launcher' ? popOut() : popIn(); return; }
+  if (meta && key === 'k') { e.preventDefault(); s.blocks = s.blocks.filter((b) => b.status === 'run' || b.status === 'confirm'); s.selBlock = null; renderAll(); return; }
+  if (meta && key === 't') { e.preventDefault(); newSession(where, s.cwd); renderAll(); focusPrompt(where); return; }
+  if (meta && key === 'w') { e.preventDefault(); closeSession(s); focusPrompt(where); return; }
+  if (meta && /^[1-9]$/.test(key)) { const list = S.sessions.filter((x) => x.where === where); const t = list[+key - 1]; if (t) { e.preventDefault(); S.cur[where] = t.id; renderAll(); focusPrompt(where); } return; }
+  if (r && r.status === 'confirm') {
+    if (e.key === 'Enter' && e.metaKey) { e.preventDefault(); confirmDanger(s, r); return; }
+    if (e.key === 'Escape') { e.preventDefault(); cancelConfirm(s, r); return; }
+    e.preventDefault(); return;
+  }
+  if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    e.preventDefault();
+    const vis = s.blocks.filter((b) => !b.hidden && b.status !== 'run');
+    if (!vis.length) return;
+    let i = vis.findIndex((b) => b.id === s.selBlock);
+    i = i < 0 ? (e.key === 'ArrowUp' ? vis.length - 1 : 0) : Math.max(0, Math.min(vis.length - 1, i + (e.key === 'ArrowUp' ? -1 : 1)));
+    s.selBlock = vis[i].id; renderAll();
+    const el = document.querySelector(`[data-block="${s.selBlock}"]`); if (el) el.scrollIntoView({ block: 'nearest' });
+    return;
+  }
+  if (sel && !inp.value) {
+    if (e.metaKey && key === 'c' && !window.getSelection().toString()) { e.preventDefault(); toast('已复制'); return; }
+    if (e.metaKey && e.key === 'Enter') { e.preventDefault(); if (sel.lines.length) insertBlock(s, sel); return; }
+    if (e.metaKey && key === 'r') { e.preventDefault(); run(s, sel.cmd); return; }
+    if (e.metaKey && key === 'e' && sel.status === 'err') { e.preventDefault(); explain(s, sel); return; }
+  }
+  if (e.metaKey && e.key === 'Enter' && !inp.value && !r) {
+    // Insert the latest output without selecting it first.
+    const last = [...s.blocks].reverse().find((b) => b.lines.length && b.status !== 'run');
+    e.preventDefault(); if (last) insertBlock(s, last); return;
+  }
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    if (S.complete) { S.complete = null; renderAll(); return; }
+    if (s.selBlock) { s.selBlock = null; renderAll(); return; }
+    if (where === 'launcher') hideLauncher(); else { inp.blur(); }
+    return;
+  }
+  if (r && r.status === 'run') {
+    if (r.prompt && e.key === 'Enter') { e.preventDefault(); const v = inp.value; r.lines[r.lines.length - 1] += r.prompt.hidden ? '' : esc(v); inp.value = ''; r.answer(v); return; }
+    if (!r.prompt && e.key.length === 1 && !e.metaKey) { e.preventDefault(); }
+    return;
+  }
+  if (e.key === 'Tab') { e.preventDefault(); complete(where, inp); focusPrompt(where); return; }
+  if (e.key === 'ArrowRight' && inp.selectionStart === inp.value.length) { const g = ghostFor(inp.value); if (g) { e.preventDefault(); inp.value += g; s.draft = inp.value; updateGhost(where); } return; }
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (s.histIdx === -1) s.draft = inp.value;
+    s.histIdx = Math.max(-1, Math.min(S.hist.length - 1, s.histIdx + (e.key === 'ArrowUp' ? 1 : -1)));
+    inp.value = s.histIdx === -1 ? s.draft : S.hist[s.histIdx]; updateGhost(where); return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (s.ended) { s.ended = false; s.blocks = []; s.cwd = '~'; renderAll(); return; }
+    const v = inp.value; inp.value = ''; s.draft = ''; S.complete = null;
+    if (!v.trim()) return;
+    run(s, v);
+  }
+}
+
+// keys for full-screen programs (no input element)
+document.addEventListener('keydown', (e) => {
+  for (const where of ['launcher', 'window']) {
+    const s = curSess(where);
+    const visible = where === 'launcher' ? S.launcher.shown && S.launcher.mode === 'term' : S.win.shown;
+    if (!s || !s.tui || !visible || where !== activeSurface()) continue;
+    if (e.key === 'q' || (e.ctrlKey && e.key === 'c')) { e.preventDefault(); s.tui.b.answer && s.tui.b.answer(); return; }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'o') { e.preventDefault(); where === 'launcher' ? popOut() : popIn(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); if (where === 'launcher') hideLauncher(); return; }
+  }
+  if (!S.launcher.shown && e.altKey && e.code === 'Space') { e.preventDefault(); showLauncher(); }
+});
+setInterval(() => {
+  for (const where of ['launcher', 'window']) {
+    const s = curSess(where); if (!s) continue;
+    if (s.tui) { const el = document.getElementById('tui-' + where); if (el) el.innerHTML = tuiHTML(s); }
+    for (const b of s.blocks) if (b.status === 'run') { document.querySelectorAll(`[data-el="${b.id}"]`).forEach((x) => { x.textContent = fmt(Date.now() - b.t0); }); }
+  }
+  document.querySelectorAll('.launcher .badge.run').forEach(() => {});
+}, 200);
+
+$('#tfIcon').addEventListener('click', () => S.launcher.shown ? hideLauncher() : showLauncher(curSess('launcher') && S.scr !== 'bg' ? 'term' : 'home'));
+$('#desk').addEventListener('mousedown', (e) => {
+  if (S.launcher.shown && !e.target.closest('#launcher') && !e.target.closest('#tfIcon') && !e.target.closest('.notif') && !e.target.closest('#settings')) {
+    const cs = curSess('launcher');
+    if (!(cs && running(cs) && running(cs).status === 'confirm')) hideLauncher();
+  }
+});
+
+function notify(s, b) {
+  const n = $('#notif');
+  n.innerHTML = `<span class="ic">${I.term}</span><div style="min-width:0;flex:1"><div class="t">Typeflux 终端 <span class="ago">现在</span></div>
+    <div class="d">${b.status === 'ok' ? '✓' : `✗ ${b.code}`} <code>${esc(b.cmd)}</code> · ${fmt(b.t1 - b.t0)}</div></div>`;
+  n.classList.add('show');
+  n.onclick = () => { n.classList.remove('show'); if (s.where === 'window') { S.cur.window = s.id; S.win.shown = true; renderAll(); } else { S.cur.launcher = s.id; showLauncher('term'); } };
+  clearTimeout(n._t); n._t = setTimeout(() => n.classList.remove('show'), 7000);
+}
+
+// ======================================================================
+//  Settings
+// ======================================================================
+function renderSettings() {
+  const st = S.settings;
+  const seg = (k, opts) => `<span class="seg">${opts.map(([v, l]) => `<button class="${st[k] === v ? 'on' : ''}" data-set="${k}" data-v="${v}">${l}</button>`).join('')}</span>`;
+  const sw = (k) => `<span class="sw ${st[k] ? 'on' : ''}" data-tog="${k}"></span>`;
+  $('#settings').innerHTML = `<div class="titlebar"><div class="lights"><i data-x style="cursor:pointer"></i><i></i><i></i></div><span>设置 · 启动器 · 关键词</span></div>
+  <div class="sbody">
+    <h2><span class="chip"><span class="g">${I.term}</span>&gt;</span>终端命令</h2>
+    <div class="group"><div class="gt">运行</div>
+      <div class="srow"><div class="l"><div class="t">↩ 在哪里运行</div></div>${seg('where', [['launcher', '启动器内'], ['window', '独立窗口'], ['external', '外部终端']])}</div>
+      <div class="srow"><div class="l"><div class="t">新会话的起始目录</div></div>${seg('dir', [['last', '上次的目录'], ['finder', '跟随访达'], ['fixed', '固定目录']])}</div>
+      ${st.dir === 'fixed' || st.dir === 'finder' ? `<div class="srow"><div class="l"><div class="t">固定目录</div></div><span class="field">${I.folder} ~</span><button class="btn">选择…</button></div>` : ''}
+      <div class="srow"><div class="l"><div class="t">加载配置</div></div>${seg('profile', [['interactive', '登录 + 交互'], ['login', '仅登录']])}</div>
+    </div>
+    <div class="group"><div class="gt">会话</div>
+      <div class="srow"><div class="l"><div class="t">空闲会话保留</div></div>${seg('keep', [['30m', '30 分钟'], ['forever', '一直'], ['never', '不保留']])}</div>
+      <div class="srow"><div class="l"><div class="t">运行前确认高风险命令</div></div>${sw('danger')}</div>
+      <div class="srow"><div class="l"><div class="t">后台命令完成时通知</div></div>${sw('notify')}</div>
+      <div class="srow"><div class="l"><div class="t">插入的内容</div></div>${seg('insertFmt', [['output', '仅输出'], ['both', '命令 + 输出']])}</div>
+    </div>
+    <div class="group"><div class="gt">独立窗口</div>
+      <div class="srow"><div class="l"><div class="t">运行结束后</div></div>${seg('finish', [['auto', '智能'], ['keep', '保持打开'], ['close', '自动关闭']])}</div>
+      <div class="srow"><div class="l"><div class="t">外部终端</div></div>${seg('ext', [['terminal', 'Terminal'], ['iterm', 'iTerm2']])}</div>
+    </div>
+  </div>`;
+  if (!st.ext) st.ext = 'terminal';
+  $('#settings').querySelectorAll('[data-set]').forEach((el) => el.addEventListener('click', () => { st[el.dataset.set] = el.dataset.v; renderSettings(); }));
+  $('#settings').querySelectorAll('[data-tog]').forEach((el) => el.addEventListener('click', () => { st[el.dataset.tog] = !st[el.dataset.tog]; renderSettings(); }));
+  $('#settings [data-x]').addEventListener('click', () => $('#settings').classList.remove('show'));
+}
+
+// ======================================================================
+//  Screens
+// ======================================================================
+const CAPTIONS = {
+  hint: '<b>① 输入 &gt;。</b>等宽输入，灰字是历史建议（<code>→</code> / <code>⇥</code> 接受）。<b>↩ 在启动器里运行</b>，<code>⌘↩</code> 窗口，<code>⌥↩</code> Terminal。试试 <code>git st</code>、<code>make t</code>。',
+  inline: '<b>② 启动器内运行。</b>启动器原地展开：命令块在上，提示符常驻底部。没有底栏和提示文字，快捷键见 §4 和按钮的悬停提示。',
+  session: '<b>③ 多轮会话。</b>同一个 zsh：<code>cd</code> 后的命令都在新目录执行，顶部目录和分支跟着变。失败块 <code>✦</code> 让 AI 解释。<code>⌥↑↓</code> 选块，<code>⌘C</code> 复制，<code>⌘↩</code> 插入回备忘录。',
+  stdin: '<b>④ 交互输入。</b>程序读输入时提示符变蓝，左侧是程序名；读密码时变橙、带锁、不回显、不进历史（试试 <code>sudo ls</code>）。<code>python3</code> 也能多轮。',
+  tui: '<b>⑤ 全屏程序。</b><code>htop</code>、<code>vim</code>、<code>less</code> 接管画面，按键全部发给程序。头部的 ⧉ / <code>⌘O</code> 移到窗口，<code>q</code> 退出。',
+  danger: '<b>⑥ 高风险确认。</b>匹配到 <code>rm -rf</code>、<code>git push --force</code> 等时先不运行，一行说明影响；<code>⌘↩</code> 仍然运行，<code>esc</code> 取消。',
+  bg: '<b>⑦ 后台继续。</b>esc 隐藏启动器，命令继续跑并出现在状态菜单的“后台任务”里。首页顶部列出终端会话；长命令结束时发通知。',
+  window: '<b>⑧ 独立窗口。</b><code>⌘O</code> 把会话原样搬到窗口：同一个进程、同一份输出。标签页、置顶、收回到启动器。',
+  settings: '<b>⑨ 设置。</b>只有标题和选项，没有说明行。',
+};
+
+function reset() {
+  S.sessions = []; S.cur = { launcher: null, window: null }; seq = 0; S.complete = null;
+  S.launcher = { shown: false, mode: 'home', q: '', sel: 0 }; S.win = { shown: false, pinned: true };
+  $('#settings').classList.remove('show'); $('#notif').classList.remove('show');
+  document.querySelectorAll('#note pre').forEach((x) => x.remove());
+}
+async function seed(s, cmds) { S.fast = true; try { for (const c of cmds) await run(s, c); } finally { S.fast = false; } }
+function bump(s, ms) { // make seeded blocks look like they took real time
+  s.blocks.forEach((b, i) => { const d = ms[i] ?? 300; b.t0 = Date.now() - 60000 + i * 4000; b.t1 = b.t0 + d; });
+}
+
+async function screen(name) {
+  for (const s of S.sessions) { const r = running(s); if (r && r.interrupt) r.interrupt(); }
+  reset(); S.scr = name; S.noFocus = true;
+  document.querySelectorAll('.pill[data-s]').forEach((p) => p.classList.toggle('on', p.dataset.s === name));
+  $('#caption').innerHTML = CAPTIONS[name];
+  const url = new URL(location.href); url.searchParams.set('s', name); history.replaceState(null, '', url);
+  if (name === 'hint') { showLauncher('hint', 'git st'); }
+  else if (name === 'inline') {
+    const s = newSession('launcher', '~/Projects/typeflux');
+    await seed(s, ['git status -sb']); bump(s, [210]);
+    S.launcher.shown = true; S.launcher.mode = 'term'; run(s, 'make test');
+  } else if (name === 'session') {
+    const s = newSession('launcher', '~/Projects/typeflux');
+    await seed(s, ['git status -sb', 'cd ../typeflux-api', 'ls', 'git log --oneline -5', 'go test ./...']); bump(s, [180, 20, 40, 90, 1840]);
+    S.launcher.shown = true; S.launcher.mode = 'term';
+    const last = s.blocks[s.blocks.length - 1]; s.selBlock = last.id; S.fast = true; explain(s, last); S.fast = false;
+    s.draft = '';
+  } else if (name === 'stdin') {
+    const s = newSession('launcher', '~/Projects/typeflux-api');
+    await seed(s, ['ls']); bump(s, [30]);
+    S.launcher.shown = true; S.launcher.mode = 'term';
+    const p = run(s, 'npm init');
+    await new Promise((r) => setTimeout(r, 30));
+    const b = running(s); if (b && b.answer) { b.lines[b.lines.length - 1] += 'typeflux-tools'; b.answer('typeflux-tools'); }
+    void p;
+  } else if (name === 'tui') {
+    const s = newSession('launcher', '~/Projects/typeflux');
+    await seed(s, ['git status -sb']); bump(s, [200]);
+    S.launcher.shown = true; S.launcher.mode = 'term'; run(s, 'htop');
+  } else if (name === 'danger') {
+    const s = newSession('launcher', '~/Projects/typeflux');
+    await seed(s, ['git status -sb', 'ls']); bump(s, [200, 30]);
+    S.launcher.shown = true; S.launcher.mode = 'term'; run(s, 'rm -rf build .build');
+  } else if (name === 'bg') {
+    const a = newSession('launcher', '~/Projects/typeflux-api');
+    await seed(a, ['git pull']); bump(a, [1600]);
+    run(a, 'npm run dev'); running(a).t0 = Date.now() - 134000;
+    const b = newSession('launcher', '~/Projects/typeflux');
+    await seed(b, ['make test']); bump(b, [38200]);
+    S.cur.launcher = a.id;
+    showLauncher('home');
+    notify(b, b.blocks[0]);
+  } else if (name === 'window') {
+    const a = newSession('window', '~/Projects/typeflux-api');
+    await seed(a, ['git pull']); bump(a, [1600]);
+    S.win.shown = true; run(a, 'npm run dev'); running(a).t0 = Date.now() - 312000;
+    const b = newSession('window', '~/Projects/typeflux-api');
+    await seed(b, ['go test ./...']); bump(b, [1840]);
+    S.cur.window = a.id;
+    // Older HMR lines, added once the dev server has printed its banner.
+    setTimeout(() => { const r = running(a); if (!r || S.scr !== 'window') return; for (let i = 0; i < 4; i++) r.lines.push(span('c-dim', `23:3${6 + i}:1${i}`) + ' ' + span('c-cyan', '[vite]') + ' hmr update ' + span('c-dim', ['/src/App.vue', '/src/pages/Usage.vue', '/src/api/quota.ts', '/src/App.vue'][i])); paint(a, r); }, 900);
+  } else if (name === 'settings') {
+    renderSettings(); $('#settings').classList.add('show');
+  }
+  renderAll();
+  S.noFocus = false;
+  const a = activeSurface(); if (a) focusPrompt(a);
+}
+
+document.querySelectorAll('.pill[data-s]').forEach((p) => p.addEventListener('click', () => screen(p.dataset.s)));
+$('#lightBtn').addEventListener('click', () => { S.light = !S.light; document.body.classList.toggle('light', S.light); $('#lightBtn').classList.toggle('on', S.light); });
+$('#resetBtn').addEventListener('click', () => screen(S.scr));
+
+const P = new URLSearchParams(location.search);
+if (P.get('light') === '1') { S.light = true; document.body.classList.add('light'); $('#lightBtn').classList.add('on'); }
+if (P.get('solo') === '1') document.body.classList.add('solo');
+screen(CAPTIONS[P.get('s')] ? P.get('s') : 'hint');
+window.__S = S; window.__screen = screen;
+</script>
+</body>
+</html>

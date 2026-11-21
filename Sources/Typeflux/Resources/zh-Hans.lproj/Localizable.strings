@@ -6174,7 +6174,7 @@
 "terminal.command.unavailable" = "无法准备所选终端，请检查其设置后重试。";
 "terminal.command.uncertain" = "命令可能已交给终端。再次运行前请先检查终端；未自动重发。";
 "terminal.command.application" = "终端应用";
-"ask.settings.keywords.kind.terminal.hint" = "内置终端在 Typeflux 窗口中用你的登录 shell 及其配置运行命令；外部终端会新开 Terminal 或 iTerm2 窗口。⌘↩ 使用另一种方式。Typeflux 不保存命令历史。";
+"ask.settings.keywords.kind.terminal.hint" = "在启动器、独立窗口或外部终端中运行 Shell 命令。";
 "terminal.command.keywordConflict" = "终端命令触发词已被占用：%@。已保留原入口，可添加“终端命令”关键词另行指定。";
 "ask.plugin.hint.commandEnter" = "⌘↩ %@";
 "terminal.runner.runBuiltin" = "在内置终端运行";
@@ -6185,7 +6185,7 @@
 "terminal.runner.shell.login" = "仅登录";
 "terminal.runner.shell.interactive.hint" = "%@ 读取登录和交互配置（.zprofile、.zshrc），别名与函数可用。配置文件中可用 $TYPEFLUX_TERMINAL 判断运行环境。";
 "terminal.runner.shell.login.hint" = "%@ 只读取登录配置（.zprofile），启动更快，但 .zshrc 中的别名不可用。";
-"terminal.runner.settings.runner" = "运行方式";
+"terminal.runner.settings.runner" = "↩ 在哪里运行";
 "terminal.runner.settings.finish" = "运行结束后";
 "terminal.runner.settings.shell" = "加载配置";
 "terminal.runner.settings.directory" = "工作目录";
@@ -7627,6 +7627,28 @@
 "ask.image.cache.hint" = "已下载的原图可离线查看。清理本机缓存不会删除云端生成记录。";
 "ask.image.cache.clearFailed" = "图片缓存清理失败。";
 
+"terminal.launcher.label" = "终端";
+"terminal.launcher.destination" = "启动器内";
+"terminal.launcher.windowDestination" = "独立窗口";
+"terminal.launcher.window" = "在窗口中运行";
+"terminal.launcher.open" = "打开终端";
+"terminal.launcher.sessions" = "终端会话";
+"terminal.launcher.notification" = "Typeflux 终端";
+"terminal.launcher.new" = "新会话";
+"terminal.launcher.move" = "移到窗口";
+"terminal.launcher.interrupt" = "中断";
+"terminal.launcher.copy" = "复制输出";
+"terminal.launcher.insertInto" = "插入到 %@";
+"terminal.launcher.rerun" = "重新运行";
+"terminal.launcher.collapse" = "折叠";
+"terminal.launcher.expand" = "展开";
+"terminal.launcher.lines" = "⋯ %d 行";
+"terminal.launcher.password" = "密码";
+"terminal.launcher.ended" = "会话已结束 · ↩ 新会话";
+"terminal.launcher.background" = "%@ 继续运行";
+"terminal.launcher.startFailed" = "无法启动终端会话。";
+"terminal.launcher.waiting" = "等待输入";
+"terminal.launcher.recent" = "最近";
 "terminal.session.window.title" = "终端";
 
 "terminal.session.window.new" = "新会话 ⌘T";

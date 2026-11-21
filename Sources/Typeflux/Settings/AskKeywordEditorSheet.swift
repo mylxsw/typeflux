@@ -246,12 +246,12 @@ struct AskKeywordEditorSheet: View {
     @ViewBuilder private var terminalFields: some View {
         field(L("terminal.runner.settings.runner")) {
             Picker("", selection: $draft.runner) {
-                Text(L("terminal.runner.builtin")).tag(TerminalRunner.builtin)
+                Text(L("terminal.launcher.destination")).tag(TerminalRunner.launcher)
+                Text(L("terminal.launcher.windowDestination")).tag(TerminalRunner.window)
                 Text(L("terminal.runner.external")).tag(TerminalRunner.external)
             }
             .pickerStyle(.segmented).labelsHidden().fixedSize()
             .accessibilityIdentifier("terminal.runner.settings.runner")
-            hint(L("ask.settings.keywords.kind.terminal.hint"))
         }
         field(L("terminal.command.application")) {
             Picker("", selection: $draft.terminal) {

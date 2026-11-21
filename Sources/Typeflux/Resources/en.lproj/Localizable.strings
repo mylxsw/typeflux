@@ -6174,7 +6174,7 @@
 "terminal.command.unavailable" = "Could not prepare the selected terminal. Check its settings and try again.";
 "terminal.command.uncertain" = "The command may already have reached the terminal. Check it before running again; it was not replayed.";
 "terminal.command.application" = "Terminal Application";
-"ask.settings.keywords.kind.terminal.hint" = "Built-in runs the command in a Typeflux terminal window with your login shell and its startup files; External opens a new Terminal or iTerm2 window. ⌘↩ uses the other one. Commands are not saved in Typeflux history.";
+"ask.settings.keywords.kind.terminal.hint" = "Run shell commands in the launcher, a standalone window, or your external terminal.";
 "terminal.command.keywordConflict" = "Terminal command keywords already in use: %@. Existing entries are preserved; add a Terminal Command keyword to choose another.";
 "ask.plugin.hint.commandEnter" = "⌘↩ %@";
 "terminal.runner.runBuiltin" = "Run in Typeflux Terminal";
@@ -6185,7 +6185,7 @@
 "terminal.runner.shell.login" = "Login only";
 "terminal.runner.shell.interactive.hint" = "%@ reads its login and interactive startup files (.zprofile, .zshrc), so aliases and functions work. Startup files can check $TYPEFLUX_TERMINAL.";
 "terminal.runner.shell.login.hint" = "%@ reads only its login startup files (.zprofile). Faster, but aliases from .zshrc are unavailable.";
-"terminal.runner.settings.runner" = "Run in";
+"terminal.runner.settings.runner" = "↩ Runs In";
 "terminal.runner.settings.finish" = "When done";
 "terminal.runner.settings.shell" = "Shell setup";
 "terminal.runner.settings.directory" = "Directory";
@@ -7627,6 +7627,28 @@
 "ask.image.cache.hint" = "Downloaded originals are reused offline. Clearing this device’s cache does not delete cloud results.";
 "ask.image.cache.clearFailed" = "Could not clear the image cache.";
 
+"terminal.launcher.label" = "Terminal";
+"terminal.launcher.destination" = "Launcher";
+"terminal.launcher.windowDestination" = "Standalone Window";
+"terminal.launcher.window" = "Run in Window";
+"terminal.launcher.open" = "Open Terminal";
+"terminal.launcher.sessions" = "Terminal Sessions";
+"terminal.launcher.notification" = "Typeflux Terminal";
+"terminal.launcher.new" = "New Session";
+"terminal.launcher.move" = "Move to Window";
+"terminal.launcher.interrupt" = "Interrupt";
+"terminal.launcher.copy" = "Copy Output";
+"terminal.launcher.insertInto" = "Insert into %@";
+"terminal.launcher.rerun" = "Rerun";
+"terminal.launcher.collapse" = "Collapse";
+"terminal.launcher.expand" = "Expand";
+"terminal.launcher.lines" = "⋯ %d lines";
+"terminal.launcher.password" = "Password";
+"terminal.launcher.ended" = "Session ended · ↩ New Session";
+"terminal.launcher.background" = "%@ is still running";
+"terminal.launcher.startFailed" = "Could not start the terminal session.";
+"terminal.launcher.waiting" = "Waiting for Input";
+"terminal.launcher.recent" = "Recent";
 "terminal.session.window.title" = "Terminal";
 
 "terminal.session.window.new" = "New Session ⌘T";

@@ -56,7 +56,13 @@ final class AskConversationModel: ObservableObject {
     var systemCommandRunner = AskSystemCommandRunner()
     var terminalCommandDispatcher: any TerminalCommandDispatching = TerminalCommandDispatcher()
     /// Opens the built-in terminal windows; tests record the requests instead.
-    var terminalRunner: any TerminalRunnerPresenting = TerminalRunnerCenter.shared
+    var terminalRunnerOverride: (any TerminalRunnerPresenting)?
+    var terminalSessionCenter = TerminalSessionCenter.shared
+    @Published var launcherTerminal: TerminalLauncherModel?
+    var terminalPresentations: [UUID: TerminalLauncherModel] = [:]
+    var terminalSessionWindow = TerminalSessionWindowController.shared
+    var terminalPresentationObservation: AnyCancellable?
+    var terminalCloseInProgress = false
     @Published var terminalCommandSending = false
     var confirmSystemCommand: (AskSystemCommand) -> Bool = AskSystemCommandConfirmation.confirm
     var appIndex: any AskAppSearching = AskAppIndex.shared
@@ -791,6 +797,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        hideLauncherTerminal(showNotice: false)
         acceptedFeatureHandoffs.removeAll()
         externallyDrivenConversations.removeAll()
         tools.resetFolderSession()

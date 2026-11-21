@@ -67,7 +67,12 @@ enum AskKeywordMatcher {
             let word = candidate.word.lowercased()
             guard !word.isEmpty, lowered.hasPrefix(word) else { continue }
             let rest = text.dropFirst(word.count)
-            guard let first = rest.first else { return .hint(candidate.keyword) }
+            guard let first = rest.first else {
+                if word == ">", candidate.keyword.pluginID == AskTerminalCommandPlugin.id {
+                    return .active(candidate.keyword, argument: "")
+                }
+                return .hint(candidate.keyword)
+            }
             guard separators.contains(first) else { continue }
             let argument = rest.dropFirst()
             let preserved = [AskTerminalCommandPlugin.id, AskNoteCapturePlugin.id, AskAppleProductivityPlugin.notesID].contains(candidate.keyword.pluginID)

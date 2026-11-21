@@ -19,6 +19,7 @@ final class TerminalSessionCenter: TerminalRunnerPresenting, ObservableObject, B
     @Published private(set) var sessions: [TerminalSession] = []
     private let feed = BackgroundActivityFeed()
     let history: TerminalCommandHistory
+    private let readGitStatus: (String) async -> TerminalGitStatus?
     private let makeProcess: () -> any TerminalProcess
     private var expiry: Timer?
     private var hiddenSince: [UUID: Date] = [:]
@@ -28,10 +29,12 @@ final class TerminalSessionCenter: TerminalRunnerPresenting, ObservableObject, B
 
     init(
         history: TerminalCommandHistory? = nil,
-        makeProcess: @escaping () -> any TerminalProcess = { TerminalPTYProcess() }
+        makeProcess: @escaping () -> any TerminalProcess = { TerminalPTYProcess() },
+        readGitStatus: @escaping (String) async -> TerminalGitStatus? = TerminalGitStatus.read
     ) {
         self.history = history ?? TerminalCommandHistory()
         self.makeProcess = makeProcess
+        self.readGitStatus = readGitStatus
         termination = NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -75,8 +78,10 @@ final class TerminalSessionCenter: TerminalRunnerPresenting, ObservableObject, B
 extension TerminalSessionCenter {
     func create(host: TerminalSession.Host = .launcher,
                 settings: TerminalRunSettings = .init()) throws -> TerminalSession {
-        let session = try TerminalSession(host: host, settings: settings, process: makeProcess(), history: history)
+        let session = try TerminalSession(host: host, settings: settings, process: makeProcess(), history: history,
+                                          readGitStatus: readGitStatus)
         session.changed = { [weak self] in
+            self?.objectWillChange.send()
             self?.publish()
             self?.expireIdle()
         }

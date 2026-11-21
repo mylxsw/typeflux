@@ -15,6 +15,24 @@ struct TerminalSessionTests {
         esc + "]" + text + "\u{7}"
     }
 
+    @Test func `live height tracks rows without counting blank screen space`() throws {
+        let process = FakeTerminalProcess()
+        let center = TerminalSessionCenter(history: history(), makeProcess: { process })
+        let session = try center.create()
+        defer { center.terminateAll() }
+
+        #expect(session.submit("printf output"))
+        process.emit(osc("133;B") + osc("133;C"))
+        #expect(session.liveOutputRows == 1)
+        let lineHeight = session.liveOutputHeight
+        process.emit("first\r\n\r\nthird\r\n")
+        #expect(session.liveOutputRows == 3)
+        #expect(session.liveOutputHeight == 3 * lineHeight)
+        process.emit(osc("133;D;0") + osc("133;B"))
+        #expect(session.submit("read input"))
+        #expect(session.liveOutputRows == 1)
+    }
+
     @Test func `blocks preserve cwd exit and attributes across chunks`() throws {
         let process = FakeTerminalProcess()
         let center = TerminalSessionCenter(history: history(), makeProcess: { process })
