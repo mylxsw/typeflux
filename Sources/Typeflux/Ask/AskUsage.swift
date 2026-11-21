@@ -88,7 +88,10 @@ struct AskUsageTotals: Codable, Equatable, Sendable {
         if microcredits > 0 && microcredits < 10_000 * max(1, unitScale ?? 1) { return "<0.01" }
         let amount = Decimal(microcredits) / 1_000_000 / Decimal(max(1, unitScale ?? 1))
         let formatter = NumberFormatter()
-        formatter.locale = .current; formatter.numberStyle = .decimal; formatter.maximumFractionDigits = 2; formatter.minimumFractionDigits = 2
+        formatter.locale = .current
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
         return formatter.string(from: NSDecimalNumber(decimal: amount)) ?? "—"
     }
 

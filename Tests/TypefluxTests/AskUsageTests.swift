@@ -7,7 +7,7 @@ struct AskUsageTests {
     @Test func fourPlaceLedgerUnitsDisplayAsCredits() {
         #expect(AskUsageTotals(microcredits: 12_345_000_000, calls: 1, unitScale: 10000).creditsText == "1.23")
         #expect(AskUsageTotals(microcredits: 1_000_000, calls: 1, unitScale: 10000).creditsText == "<0.01")
-        #expect(AskUsageTotals(microcredits: 2_000_000, calls: 1).creditsText == "2.00")
+        #expect(AskUsageTotals(microcredits: 2_000_000, calls: 1).creditsText == "2")
     }
 
     @Test func terminalUsageWithoutChoicesIsRetained() throws {
@@ -88,14 +88,14 @@ struct AskUsageTests {
         #expect(AskUsageTotals(calls: 1, missing: 1).tokenText(0) == "—")
         #expect(AskUsageTotals(calls: 2, missing: 1).tokenText(12) == "≥12")
         #expect(AskUsageTotals(calls: 1, estimated: 1).tokenText(12) == "≈12")
-        #expect(AskUsageTotals(calls: 1, missing: 1, external: 1).creditsText == "0.00")
+        #expect(AskUsageTotals(calls: 1, missing: 1, external: 1).creditsText == "0")
         #expect(AskUsageTotals(calls: 1, missing: 1).creditsText == "—")
         #expect(AskUsageTotals(microcredits: 1, calls: 1).creditsText == "<0.01")
-        #expect(AskUsageTotals(calls: 1, external: 1).creditsText == "0.00")
+        #expect(AskUsageTotals(calls: 1, external: 1).creditsText == "0")
         #expect(AskUsageTotals(calls: 1, external: 1).statusKey == "ask.usage.external")
         #expect(AskUsageTotals(calls: 2, missing: 1).statusKey == "ask.usage.incomplete")
         #expect(AskUsageTotals(calls: 1, pending: 1).statusKey == "ask.usage.pending")
-        #expect(AskUsageTotals(microcredits: 1_000_000, calls: 1).creditsText == "1.00")
+        #expect(AskUsageTotals(microcredits: 1_000_000, calls: 1).creditsText == "1")
         #expect(AskUsageTotals(calls: 1).statusKey == "ask.usage.confirmed")
     }
 

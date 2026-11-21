@@ -69,7 +69,7 @@ struct AskLocalUsageTests {
         let restarted = makeEngine(directory: root)
         _ = try await restarted.usage(id: "images", runId: nil, cursor: nil, token: "")
         let totals = try await restarted.conversation(id: "images", token: "").usage?.total
-        #expect(totals?.creditsText == "10.00" && totals?.calls == 1)
+        #expect(totals?.creditsText == "10" && totals?.calls == 1)
         #expect(totals?.missing == 0 && totals?.missingTokens == nil)
         #expect(try await restarted.pendingBillingKeys(id: "images").isEmpty)
     }

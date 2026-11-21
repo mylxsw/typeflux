@@ -24,7 +24,7 @@ struct AskUsageDetailsTests {
         #expect(receipt.purpose == "image_generate" && receipt.tokens == nil)
         let totals = AskUsageTotals(microcredits: receipt.microcredits ?? 0, calls: 1,
                                     unitScale: receipt.unitScale)
-        #expect(totals.creditsText == "10.00")
+        #expect(totals.creditsText == "10")
     }
 
     @Test func noRecordsIsAnEmptyStateWithoutARequest() async {

@@ -61,7 +61,7 @@ enum AccountUsageDisplayFormatter {
     }
 
     static func creditAmount(_ value: Double) -> String {
-        value > 0 && value < 0.01 ? "<0.01" : fixedDecimal(value, maximumFractionDigits: 2)
+        value > 0 && value < 0.01 ? "<0.01" : flexibleDecimal(value, maximumFractionDigits: 2)
     }
 
     static func sidebarCreditAmount(_ value: Int) -> String { creditAmount(value) }

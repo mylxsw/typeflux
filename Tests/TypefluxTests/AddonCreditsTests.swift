@@ -199,7 +199,7 @@ final class AddonCreditsTests: XCTestCase {
         XCTAssertEqual(addon("2026-10-20T00:00:00Z", remaining: 0)?.expiresSoon, false)
         let warning = try XCTUnwrap(addon("2026-10-20T00:00:00Z"))
         XCTAssertEqual(AccountStatusText.addonExpiry(warning, locale: Locale(identifier: "en_US")),
-                       L("account.addon.expiringSoon", "50.00",
+                       L("account.addon.expiringSoon", "50",
                          AccountStatusText.shortDate(try XCTUnwrap(warning.expiresAt), locale: Locale(identifier: "en_US"))))
     }
 

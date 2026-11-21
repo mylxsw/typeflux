@@ -33,7 +33,7 @@ struct CloudModelPricing: Codable, Equatable, Sendable {
         let formatter = NumberFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
+        formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 16
         guard let formatted = formatter.string(from: NSNumber(value: value)) else { return nil }
         // Preserve very small nonzero rates instead of suggesting that they are free.
