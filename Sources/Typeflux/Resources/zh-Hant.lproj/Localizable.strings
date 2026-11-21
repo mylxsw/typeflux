@@ -2047,8 +2047,7 @@
 "account.page.refreshStatus" = "重新整理狀態";
 "account.page.refreshSubscription" = "付款後未生效";
 "account.page.refreshSubscriptionAction" = "重新整理訂閱狀態";
-"account.page.remaining" = "可用點數";
-"account.page.periodUsage" = "本期已用 %@ 點 · 方案剩餘 %@ 點";
+"account.page.remaining" = "剩餘額度";
 "account.page.saved" = "節省時間";
 "account.page.savedDetail" = "相比打字 · 本機累計";
 "account.page.sendEmail" = "傳送郵件";

@@ -2040,8 +2040,7 @@
 "account.page.refreshStatus" = "更新";
 "account.page.refreshSubscription" = "支払いが反映されない";
 "account.page.refreshSubscriptionAction" = "サブスクリプションを更新";
-"account.page.remaining" = "利用可能クレジット";
-"account.page.periodUsage" = "今期の使用分 %@ · プラン残高 %@";
+"account.page.remaining" = "残り";
 "account.page.saved" = "節約した時間";
 "account.page.savedDetail" = "タイピング比 · この Mac";
 "account.page.sendEmail" = "メールを送信";

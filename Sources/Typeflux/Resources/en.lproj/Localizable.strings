@@ -2050,8 +2050,7 @@
 "account.page.refreshStatus" = "Refresh";
 "account.page.refreshSubscription" = "Payment not reflected";
 "account.page.refreshSubscriptionAction" = "Refresh subscription";
-"account.page.remaining" = "Available credits";
-"account.page.periodUsage" = "Used this period: %@ · Plan balance: %@";
+"account.page.remaining" = "remaining";
 "account.page.saved" = "Time saved";
 "account.page.savedDetail" = "vs. typing · this Mac";
 "account.page.sendEmail" = "Send email";

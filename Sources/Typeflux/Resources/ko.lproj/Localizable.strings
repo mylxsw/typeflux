@@ -2040,8 +2040,7 @@
 "account.page.refreshStatus" = "새로고침";
 "account.page.refreshSubscription" = "결제가 반영되지 않음";
 "account.page.refreshSubscriptionAction" = "구독 상태 새로고침";
-"account.page.remaining" = "사용 가능한 크레딧";
-"account.page.periodUsage" = "이번 기간 사용량 %@ · 요금제 잔액 %@";
+"account.page.remaining" = "남음";
 "account.page.saved" = "절약한 시간";
 "account.page.savedDetail" = "타이핑 대비 · 이 Mac";
 "account.page.sendEmail" = "이메일 보내기";
