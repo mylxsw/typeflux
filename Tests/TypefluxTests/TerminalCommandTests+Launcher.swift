@@ -401,9 +401,9 @@ extension TerminalCommandTests {
     }
 
     @Test(arguments: [true, false]) func `capture launcher terminal states`(dark: Bool) async throws {
-        guard let path = ProcessInfo.processInfo.environment["TYPEFLUX_TERMINAL_SNAPSHOTS"] else { return }
-        let folder = URL(fileURLWithPath: path)
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let folder = ProcessInfo.processInfo.environment["TYPEFLUX_TERMINAL_SNAPSHOTS"]
+            .map { URL(fileURLWithPath: $0) }
+        if let folder { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
         let process = FakeTerminalProcess()
         let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
         history.record("git status --short")
@@ -420,6 +420,9 @@ extension TerminalCommandTests {
         defer { tabbedWindow.moveBack(); launcher.close(); center.terminateAll() }
         let model = launcher.fixture.model
         let window = launcher.window
+        let enhancedAccessibility = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        NSApp.accessibilitySetValue(true, forAttribute: enhancedAccessibility)
+        defer { NSApp.accessibilitySetValue(false, forAttribute: enhancedAccessibility) }
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let theme = dark ? "dark" : "light"
 
@@ -432,12 +435,33 @@ extension TerminalCommandTests {
             }
             let view = try #require(panel == nil ? host.contentView : host.contentView?.superview)
             view.layoutSubtreeIfNeeded()
+            guard let folder else { return }
             let image = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
             view.cacheDisplay(in: view.bounds, to: image)
             let png = try #require(image.representation(using: .png, properties: [:]))
             try png.write(to: folder.appendingPathComponent("\(name)-\(theme).png"))
         }
         func osc(_ text: String) -> String { "\u{1b}]" + text + "\u{7}" }
+        func accessibilityFrame(_ identifier: String) throws -> NSRect {
+            var visited = Set<ObjectIdentifier>()
+            func find(_ element: NSObject) -> NSRect? {
+                guard visited.insert(ObjectIdentifier(element)).inserted else { return nil }
+                if element.responds(to: NSSelectorFromString("accessibilityIdentifier")),
+                   element.value(forKey: "accessibilityIdentifier") as? String == identifier,
+                   element.responds(to: NSSelectorFromString("accessibilityFrame")) {
+                    return (element.value(forKey: "accessibilityFrame") as? NSValue)?.rectValue
+                }
+                guard element.responds(to: NSSelectorFromString("accessibilityChildren")),
+                      let children = element.value(forKey: "accessibilityChildren") as? [NSObject] else { return nil }
+                for child in children {
+                    if let frame = find(child) { return frame }
+                }
+                return nil
+            }
+            let frame = try #require(find(window), "Missing accessibility element \(identifier)")
+            try #require(!frame.isEmpty)
+            return frame
+        }
 
         try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
         for _ in 0 ..< 3 { try await launcher.press(125) }
@@ -458,9 +482,19 @@ extension TerminalCommandTests {
         process.emit(osc("133;C") + "Sources/Example.swift:12: trailing whitespace.\r\n" + osc("133;D;2") + osc("133;B"))
         presentation.select(-1)
         try await capture("session")
+        let lastBlock = try #require(session.blocks.last)
+        let blockIdentifier = "terminal.block.\(lastBlock.id)"
+        let originalHeight = try accessibilityFrame(blockIdentifier).height
         presentation.fill("rm -rf build .build")
         #expect(!presentation.submit() && presentation.pendingRisk == .delete)
         try await capture("risk")
+        let block = try accessibilityFrame(blockIdentifier)
+        let card = try accessibilityFrame("terminal.risk.card")
+        let viewport = try accessibilityFrame("terminal.blockList")
+        #expect(!block.intersects(card) && block.minY >= card.maxY)
+        #expect(viewport.insetBy(dx: -1, dy: -1).contains(block))
+        #expect(block.height >= originalHeight - 1)
+        guard folder != nil else { return }
         let writesBeforeCancel = process.writes.count
         try await terminalKey(53, [], in: window)
         #expect(presentation.pendingRisk == nil && session.blocks.last?.state == .cancelled)

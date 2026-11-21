@@ -19,9 +19,10 @@ struct TerminalRiskCard: View {
         }
         .font(.system(size: 12))
         .padding(8)
-        .background(Color.red.opacity(0.09), in: RoundedRectangle(cornerRadius: 7))
+        .background(AskTheme.dangerSoft, in: RoundedRectangle(cornerRadius: 7))
         .padding(.horizontal, 14)
         .padding(.vertical, 5)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("terminal.risk.card")
     }
 }

@@ -117,6 +117,8 @@ struct TerminalSessionContent: View {
             blockList
             if let risk = model.pendingRisk {
                 TerminalRiskCard(risk: risk, cancel: { model.cancelRisk() }, confirm: { model.confirmRisk() })
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
             }
             if !model.completionCandidates.isEmpty {
                 completionList
@@ -148,6 +150,14 @@ struct TerminalSessionContent: View {
                     .padding(.vertical, 10)
                     .padding(.horizontal, TerminalRunnerHost.inset.left)
                 }
+                .accessibilityIdentifier("terminal.blockList")
+                .task(id: model.pendingRisk == nil ? nil : viewport.size.height) {
+                    guard model.pendingRisk != nil else { return }
+                    // Re-anchor after layout gives the confirmation row its own space.
+                    await Task.yield()
+                    guard !Task.isCancelled else { return }
+                    scroll.scrollTo("terminal-tail", anchor: .bottom)
+                }
                 .onChange(of: session.blocks.last?.id) { _ in
                     if atTail { scroll.scrollTo("terminal-tail", anchor: .bottom) }
                 }
@@ -165,6 +175,7 @@ struct TerminalSessionContent: View {
             .frame(height: viewport.size.height)
         }
         .background(Color(nsColor: palette.background))
+        .clipped()
     }
 
     private var palette: TerminalRunnerPalette {
@@ -212,6 +223,8 @@ struct TerminalSessionContent: View {
             }
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("terminal.block.\(block.id)")
         .onHover { inside in hovered = inside ? block.id : (hovered == block.id ? nil : hovered) }
     }
 
