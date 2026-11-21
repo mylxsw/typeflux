@@ -98,7 +98,8 @@ struct AskQuickResultsVisualTests {
         let cases: [(name: String, text: String, height: CGFloat)] = [
             ("number-conversions", "255", 630), ("number-fraction", "1001.005", 530), ("number-search", "2024", 630),
             ("calculator", "1234567.89*2", 360), ("error", "100/0", 270), ("radix", "0xff+1", 360),
-            ("app", "jsq", 250), ("app-question", "ji?", 330), ("safari", "safa", 250)
+            // Keep single-result snapshots compact while showing the full row and footer.
+            ("app", "jsq", 220), ("app-question", "ji?", 330), ("safari", "safa", 220)
         ]
         // Real system applications, so the rows show their icons.
         func system(_ file: String, _ name: String, _ english: String) -> AskAppEntry {

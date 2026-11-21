@@ -108,8 +108,9 @@ struct SystemMonitorVisualTests {
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: light ? .aqua : .darkAqua)
         let hosting = NSHostingView(rootView: AskLauncherView(model: model, onDismiss: {}, onHeightChange: { _ in })
-            .frame(width: size.width, height: size.height, alignment: .top)
-            .background(AskTheme.surface))
+            // Bitmap capture cannot reproduce the window server's translucent backdrop.
+            .environment(\.askGlassMaterialOverride, .opaque)
+            .frame(width: size.width, height: size.height, alignment: .top))
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
         window.orderFront(nil)
