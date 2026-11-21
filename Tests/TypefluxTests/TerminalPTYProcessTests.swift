@@ -103,6 +103,19 @@ struct TerminalPTYProcessTests {
         #expect(!TerminalProcessError.spawnFailed(EAGAIN).localizedDescription.isEmpty)
     }
 
+    @Test func `force interrupt falls back to hangup for a foreground shell builtin`() async throws {
+        let process = TerminalPTYProcess(callbackQueue: callbacks)
+        let recorder = TerminalPTYRecorder()
+        recorder.attach(to: process)
+        try process.start(launch("trap '' INT; printf ready; read answer"), size: .standard)
+        defer { process.terminate() }
+        try await wait(seconds: 5) { recorder.text.contains("ready") }
+        process.interruptForeground(force: false)
+        process.interruptForeground(force: true)
+        try await wait(seconds: 5) { recorder.exitCode != nil }
+        #expect(recorder.exitCode == 128 + SIGHUP)
+    }
+
     @Test func `typed input reaches the command`() async throws {
         let result = try await run("read line; printf 'got:%s' \"$line\"") { process in
             try await Task.sleep(for: .milliseconds(200))

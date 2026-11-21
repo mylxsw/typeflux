@@ -73,11 +73,60 @@ struct TerminalSessionTests {
         try center.perform(.stop, on: #require(activities.first?.id))
         #expect(process.writes.last == [3])
         session.interrupt()
-        #expect(process.terminations == 1)
-        process.exit(130)
+        #expect(process.forcedInterrupts == 1 && process.terminations == 0)
+        process.emit(osc("133;D;137") + osc("133;A"))
         #expect(session.blocks.last?.state == .interrupted && activities.isEmpty)
         center.expireIdle(now: .distantFuture)
         #expect(center.sessions.isEmpty)
+    }
+
+    @Test func `idle timer closes only the hidden idle session`() async throws {
+        let idle = FakeTerminalProcess()
+        let visible = FakeTerminalProcess()
+        var processes = [idle, visible]
+        let center = TerminalSessionCenter(history: history(), makeProcess: { processes.removeFirst() })
+        defer { center.terminateAll() }
+        let hidden = try center.create()
+        let other = try center.create()
+        center.idleTimeout = 0.05
+        center.setVisible(false, session: hidden)
+        try await wait { center.sessions.count == 1 }
+        #expect(center.sessions.first === other && idle.terminations == 1 && visible.terminations == 0)
+        center.close(other)
+        #expect(center.sessions.isEmpty && visible.terminations == 1)
+    }
+
+    @Test func `second interrupt kills an interrupt ignoring job and preserves shell state`() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let center = TerminalSessionCenter(history: history())
+        let session = try center.create(settings: .init(shell: .login, directory: "/"))
+        defer { center.close(session) }
+        let cwd = folder.resolvingSymlinksInPath().path
+        try #require(session.submit("cd '\(cwd)' && export TF_INTERRUPT_PROBE=$$"))
+        try await wait { session.runningBlock == nil && session.cwd == cwd }
+        try #require(session.submit("/bin/sh -c 'trap \"\" INT; touch ready; exec /bin/sleep 100'"))
+        try await wait { FileManager.default.fileExists(atPath: folder.appendingPathComponent("ready").path) }
+        session.interrupt()
+        session.interrupt()
+        try await wait { session.runningBlock == nil }
+        #expect(session.blocks.last?.state == .interrupted && session.blocks.last?.exitCode == 137)
+        try #require(!session.exited)
+        try #require(session.submit("test \"$TF_INTERRUPT_PROBE\" = \"$$\" && test . -ef '\(cwd)' && test -f ready"))
+        try await wait { session.runningBlock == nil }
+        #expect(session.blocks.last?.exitCode == 0 && session.cwd == cwd)
+    }
+
+    @Test func `leading space commands stay out of persisted history`() throws {
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        let key = "terminal.session.commandHistory"
+        defaults.set([" previous private command", "pwd"], forKey: key)
+        let history = TerminalCommandHistory(defaults: defaults)
+        #expect(history.commands == ["pwd"] && defaults.stringArray(forKey: key) == ["pwd"])
+        history.record(" new private command")
+        history.record("echo public")
+        #expect(TerminalCommandHistory(defaults: defaults).commands == ["echo public", "pwd"])
     }
 
     @Test func `fallback keeps one block and history is bounded`() async throws {
@@ -111,6 +160,8 @@ struct TerminalSessionTests {
         var parser = TerminalMarkerStream()
         #expect(parser.read(Array((esc + "]7;file://localhost/a%20b" + esc).utf8)).isEmpty)
         #expect(parser.read([92]) == [.directory("/a b")])
+        let oversized = Array((esc + "]2;" + String(repeating: "x", count: 9000) + "\u{7}").utf8)
+        #expect(parser.read(oversized + Array(osc("133;B").utf8)) == [.bytes(oversized), .input])
         let unknown = Array(osc("2;window title").utf8)
         #expect(parser.read(unknown) == [.bytes(unknown)])
     }

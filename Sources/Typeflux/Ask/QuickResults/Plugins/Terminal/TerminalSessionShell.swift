@@ -50,6 +50,7 @@ final class TerminalSessionShell {
     private static let integration = #"""
     ZDOTDIR="$_typeflux_user_dir"
     unset _typeflux_user_dir _typeflux_shim
+    setopt hist_ignore_space
     unsetopt prompt_sp
     _typeflux_precmd() {
       local result=$?
