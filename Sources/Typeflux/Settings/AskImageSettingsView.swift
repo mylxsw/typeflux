@@ -55,7 +55,6 @@ struct AskImageSettingsView: View {
                             }
                         }.disabled(clearingCache)
                     }
-                    TFFootnote(text: L("ask.image.cache.hint"))
                     if let cacheError { Text(cacheError).foregroundStyle(.red) }
                 }
                 .padding(.horizontal, 14).padding(.vertical, 12)
@@ -127,7 +126,6 @@ struct AskImageSettingsView: View {
                         .textFieldStyle(TFTextFieldStyle())
                 }
             }
-            TFFootnote(text: L("imagegen.options.help")).padding(.horizontal, 14).padding(.bottom, 12)
         }
     }
 

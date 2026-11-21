@@ -32,7 +32,10 @@ struct AccountPlanHeroCard: View {
             HStack(alignment: .center, spacing: StudioTheme.Spacing.xxLarge) {
                 VStack(alignment: .leading, spacing: 0) {
                     planLine(status)
-                    if let note = status.periodNote {
+                    switch status.periodNote {
+                    case .ends, nil:
+                        EmptyView()
+                    case let note?:
                         Text(AccountStatusText.period(note, locale: localization.locale))
                             .font(.studioBody(StudioTheme.Typography.bodySmall))
                             .foregroundStyle(note == .paymentFailed ? StudioTheme.danger : StudioTheme.textSecondary)

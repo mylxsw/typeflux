@@ -120,8 +120,6 @@ struct AskLauncherPluginSettingsView: View {
                     .accessibilityIdentifier("terminal.command.keywordConflict")
             }
             listCard
-            Text(L("ask.settings.keywords.listFootnote"))
-                .font(.system(size: 12)).foregroundStyle(TFColors.textTertiary).padding(.horizontal, 4)
             TFButton(title: L("ask.settings.keywords.restore"), kind: .link, destructive: true) { confirmingRestore = true }
                 .accessibilityIdentifier("ask.settings.keywords.restore")
         }

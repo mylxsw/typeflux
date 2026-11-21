@@ -102,8 +102,7 @@ struct LauncherSearchSettingsView: View {
                     .accessibilityIdentifier("launcher.search.apps.enabled")
             }
         }
-        TFFormSection(title: L("launcher.search.apps.roots"), count: search.appRoots.count,
-                      footnote: L("launcher.search.apps.footnote")) {
+        TFFormSection(title: L("launcher.search.apps.roots"), count: search.appRoots.count) {
             ForEach(search.appRoots, id: \.self) { root in
                 pathRow(root, icon: root.hasSuffix(".app") ? "app" : "folder") {
                     update { $0.appRoots.removeAll { $0 == root } }
@@ -250,7 +249,7 @@ struct LauncherSearchSettingsView: View {
                 update { $0.excludedFolderNames = values }
             }
         }
-        TFFormSection(title: L("launcher.search.exclude.more"), footnote: L("launcher.search.exclude.footnote")) {
+        TFFormSection(title: L("launcher.search.exclude.more")) {
             TFFormRow(title: L("launcher.search.hidden"), detail: L("launcher.search.hidden.subtitle"), icon: "eye.slash") {
                 TFSwitch(title: L("launcher.search.hidden"), isOn: binding(\.includeHidden))
             }

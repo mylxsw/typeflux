@@ -154,7 +154,6 @@ struct AskKeywordEditorSheet: View {
                     (label: L("ask.settings.keywords.sheet.action.wordBook"), value: true)
                 ], selection: $draft.opensWordBook, size: .compact)
                     .accessibilityIdentifier("ask.settings.keywords.sheet.action")
-                if draft.opensWordBook { hint(L("ask.settings.keywords.sheet.action.wordBookHint")) }
             }
             if !draft.opensWordBook {
                 translateTargetField

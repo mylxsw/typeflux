@@ -6,7 +6,7 @@ struct ShortcutLatencySettingsView: View {
     @AppStorage(ShortcutLatency.enabledKey) private var enabled = true
 
     var body: some View {
-        TFFormSection(title: L("shortcutDiagnostics.title"), footnote: L("shortcutDiagnostics.privacy")) {
+        TFFormSection(title: L("shortcutDiagnostics.title")) {
             TFFormRow(title: L("shortcutDiagnostics.record"), detail: L("shortcutDiagnostics.scope")) {
                 TFSwitch(title: L("shortcutDiagnostics.record"), isOn: $enabled)
             }

@@ -39,9 +39,7 @@ struct PermissionsSettingsView: View {
 
     private func permissionSection(required: Bool) -> some View {
         let permissions = SettingsPermission.allCases.filter { $0.isRequired == required }
-        return TFFormSection(title: L(required ? "settings.permissions.required" : "settings.permissions.optional"),
-                             footnote: L(required ? "settings.permissions.requiredHint" :
-                                 "settings.permissions.optionalHint")) {
+        return TFFormSection(title: L(required ? "settings.permissions.required" : "settings.permissions.optional")) {
             ForEach(Array(permissions.enumerated()), id: \.element.id) { index, permission in
                 if index > 0 {
                     TFDivider.form

@@ -82,7 +82,7 @@ struct LauncherSettingsView: View {
                     .accessibilityIdentifier("launcher.settings.numberConversions")
             }
         }
-        TFFormSection(footnote: L("ask.inputHistory.privacy")) {
+        TFFormSection {
             TFFormRow(title: L("ask.inputHistory.remember"), icon: "clock.arrow.circlepath") {
                 TFSwitch(title: L("ask.inputHistory.remember"),
                          isOn: Binding(get: { inputHistoryEnabled }, set: setInputHistoryEnabled))

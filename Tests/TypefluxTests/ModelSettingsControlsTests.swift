@@ -309,6 +309,30 @@ struct ModelSettingsControlsTests {
         }
     }
 
+    @Test func cloudSpeechAccountRow() async throws {
+        try await withModel { _, model in
+            model.setAppLanguage(.simplifiedChinese)
+            model.selectModelPageTab(.speech)
+            model.focusModelProvider(.typefluxOfficial)
+            let auth = AuthState.shared
+            let previousProfile = auth.userProfile
+            defer { auth.userProfile = previousProfile }
+            auth.isLoggedIn = true
+            auth.userProfile = UserProfile(id: "fixture", email: "demo@example.com", name: "Demo",
+                                           status: 1, provider: "google", createdAt: "", updatedAt: "")
+            let panel = StudioView(viewModel: model).focusedProviderConfigurationPanel
+                .padding(20).background(Color(nsColor: .windowBackgroundColor))
+                .environment(\.interfaceStyle, .classic).environment(\.colorScheme, .dark)
+            try await UI.withWindow(panel, width: 820, height: 260) { _, host in
+                let name = try #require(UI.elements(in: host).first { $0.text == "Demo" })
+                let button = try UI.button(L("ask.models.test"), in: host)
+                #expect(name.frame.maxX < button.frame.minX)
+                #expect((button.frame.minY...button.frame.maxY).contains(name.frame.midY))
+                try UI.snapshot(host, name: "cloud-speech-account")
+            }
+        }
+    }
+
     @Test func `speech connection footer saves drafts and preserves test feedback`() async throws {
         try await withModel { store, model in
             model.selectModelPageTab(.speech)

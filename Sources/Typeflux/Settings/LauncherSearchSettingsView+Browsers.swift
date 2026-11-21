@@ -6,7 +6,7 @@ extension LauncherSearchSettingsView {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             browserSection(kind: .tab)
             browserSection(kind: .bookmark)
-            TFFormSection(title: L("ask.browser.permissions"), footnote: L("ask.browser.permissionHint")) {
+            TFFormSection(title: L("ask.browser.permissions")) {
                 TFActionRow(systemImage: "lock.shield", title: L("ask.browser.automationSettings")) {
                     NSWorkspace.shared
                         .open(
@@ -25,8 +25,7 @@ extension LauncherSearchSettingsView {
     private func browserSection(kind: AskBrowserSearchEntry.Kind) -> some View {
         let tabs = kind == .tab
         let enabled = tabs ? browserPreferences.tabsEnabled : browserPreferences.bookmarksEnabled
-        return TFFormSection(title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"),
-                             footnote: L(tabs ? "ask.browser.tabsHint" : "ask.browser.bookmarksHint")) {
+        return TFFormSection(title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks")) {
             TFFormRow(title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"), valueText: tabs ? "tab" : "bmk",
                       icon: tabs ? "rectangle.on.rectangle" : "bookmark") {
                 TFSwitch(title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"),

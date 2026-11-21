@@ -1034,6 +1034,7 @@
 "settings.models.routing.typefluxCloud" = "Typeflux Cloud handles rewrite and edit requests through our built-in LLM service.";
 "settings.models.typefluxOfficial.description" = "Typeflux Official is our built-in speech recognition service. No API keys or endpoint configuration is needed — just sign in with your Typeflux account and start dictating.";
 "settings.models.typefluxCloud.loginRequired" = "Please sign in with your Typeflux account to use this service.";
+"settings.models.account.signedIn" = "Signed in";
 "settings.models.typefluxOfficial.loginRequired" = "Please sign in with your Typeflux account to use this service.";
 "settings.models.typefluxOfficial.signIn" = "Sign In";
 "settings.models.routing.fallback" = "Fallback";

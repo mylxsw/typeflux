@@ -1033,6 +1033,7 @@
 "settings.models.routing.typefluxOfficial" = "Typeflux 官方通过内置语音识别服务处理听写。";
 "settings.models.routing.typefluxCloud" = "Typeflux Cloud 通过内置大语言模型服务处理改写和编辑请求。";
 "settings.models.typefluxOfficial.description" = "Typeflux 官方是我们内置的语音识别服务。无需 API 密钥或端点配置——只需登录您的 Typeflux 账号即可开始听写。";
+"settings.models.account.signedIn" = "已登录";
 "settings.models.typefluxOfficial.loginRequired" = "请登录您的 Typeflux 账号以使用此服务。";
 "settings.models.typefluxCloud.loginRequired" = "请登录您的 Typeflux 账号以使用此服务。";
 "settings.models.typefluxOfficial.signIn" = "登录";

@@ -48,24 +48,14 @@ struct AskAccountCard: View {
     }
 
     private func header(_ presentation: AccountStatusPresentation) -> some View {
-        // The badge rides on the name line so the email keeps the full width.
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 8) {
-                Text(auth.userProfile?.resolvedDisplayName ?? L("sidebar.appName"))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                Spacer(minLength: 4)
-                if let badge = presentation.badge {
-                    AskAccountBadge(text: AccountStatusText.badge(badge), tone: presentation.badgeTone)
-                }
-            }
-            if let profile = auth.userProfile {
-                Text(verbatim: "\(profile.email) · \(AccountStatusText.provider(profile.provider))")
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+        HStack(spacing: 8) {
+            Text(auth.userProfile?.resolvedDisplayName ?? L("sidebar.appName"))
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            if let badge = presentation.badge {
+                AskAccountBadge(text: AccountStatusText.badge(badge), tone: presentation.badgeTone)
             }
         }
         .padding(.horizontal, 10)

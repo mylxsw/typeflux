@@ -1029,6 +1029,7 @@
 "settings.models.routing.typefluxOfficial" = "Typeflux 官方透過內建語音辨識服務處理聽寫。";
 "settings.models.routing.typefluxCloud" = "Typeflux Cloud 透過內建大型語言模型服務處理改寫和編輯請求。";
 "settings.models.typefluxOfficial.description" = "Typeflux 官方是我們內建的語音辨識服務。無需 API 金鑰或端點設定——只需登入您的 Typeflux 帳號即可開始聽寫。";
+"settings.models.account.signedIn" = "已登入";
 "settings.models.typefluxOfficial.loginRequired" = "請登入您的 Typeflux 帳號以使用此服務。";
 "settings.models.typefluxCloud.loginRequired" = "請登入您的 Typeflux 帳號以使用此服務。";
 "settings.models.typefluxOfficial.signIn" = "登入";

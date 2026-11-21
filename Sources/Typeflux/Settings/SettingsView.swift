@@ -1606,7 +1606,7 @@ struct StudioView: View {
         }
     }
 
-    private var focusedProviderConfigurationPanel: some View {
+    var focusedProviderConfigurationPanel: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             ModelDetailHeader(
                 title: focusedProviderTitle,
@@ -1641,30 +1641,30 @@ struct StudioView: View {
     private var focusedProviderActions: some View {
         // Language providers use ProviderModelsView; this footer belongs to speech connections.
         let supportsConnection = [StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                       .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial]
+                       .doubaoRealtime, .googleCloud, .groqSTT, .soniox]
             .contains(viewModel.focusedModelProvider)
-        let canTest = supportsConnection
-            && (!viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn)
-        if canTest || (supportsConnection && viewModel.focusedModelProvider.showsManualSaveButton) {
+        if supportsConnection {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: TFMetrics.toolbarSpacing) {
                     Spacer(minLength: 8)
-                    if canTest {
-                        TFButton(title: L("ask.models.test"), isLoading: viewModel.sttConnectionTestState == .testing) {
-                            viewModel.testSTTConnection()
-                        }
-                        .disabled(viewModel.sttConnectionTestState == .testing)
-                    }
+                    speechConnectionTestButton
                     if viewModel.focusedModelProvider.showsManualSaveButton {
                         TFButton(title: L("ask.models.save"), kind: .primary) {
                             viewModel.applyModelConfiguration()
                         }
                     }
                 }
-                if canTest { connectionTestResultView(viewModel.sttConnectionTestState) }
+                connectionTestResultView(viewModel.sttConnectionTestState)
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
         }
+    }
+
+    private var speechConnectionTestButton: some View {
+        TFButton(title: L("ask.models.test"), isLoading: viewModel.sttConnectionTestState == .testing) {
+            viewModel.testSTTConnection()
+        }
+        .disabled(viewModel.sttConnectionTestState == .testing)
     }
 
     private var localSTTStorageRow: some View {
@@ -2033,8 +2033,24 @@ struct StudioView: View {
         }
     }
 
+    @ViewBuilder
     private var typefluxOfficialProviderForm: some View {
-        typefluxLoginRequiredForm(message: L("settings.models.typefluxOfficial.loginRequired"))
+        if authState.isLoggedIn {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: TFMetrics.toolbarSpacing) {
+                    Text(verbatim: AskPresentation.accountName(name: authState.userProfile?.name,
+                                                               email: authState.userProfile?.email)
+                        ?? L("settings.models.account.signedIn"))
+                        .font(.system(size: 13))
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
+                    speechConnectionTestButton
+                }
+                connectionTestResultView(viewModel.sttConnectionTestState)
+            }
+        } else {
+            typefluxLoginRequiredForm(message: L("settings.models.typefluxOfficial.loginRequired"))
+        }
     }
 
     private var typefluxCloudLLMProviderForm: some View {
