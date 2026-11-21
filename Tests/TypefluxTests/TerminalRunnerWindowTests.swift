@@ -162,13 +162,14 @@ struct TerminalRunnerWindowTests {
 
     @Test func `a full-screen program enlarges the window until it exits`() async throws {
         let center = center(), recorder = TerminalRunnerServiceRecorder()
-        let controller = try present("printf '\\033[?1049h'; sleep 0.5; printf '\\033[?1049l'; echo back",
+        let controller = try present("printf '\\033[?1049h'; IFS= read -r line; printf '\\033[?1049l'; echo back",
                                      in: center, recorder: recorder)
         let original = controller.window.frame
         try await wait { controller.model.alternateScreen }
         try await wait {
             controller.window.frame.width >= TerminalRunnerWindowController.fullScreenSize.width - 1
         }
+        controller.model.send([13])
         try await wait { !controller.model.isRunning }
         try await wait { controller.window.frame.size == original.size }
         #expect(controller.model.visibleText() == "back")
