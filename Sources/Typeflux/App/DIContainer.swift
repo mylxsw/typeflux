@@ -160,6 +160,7 @@ final class DIContainer {
     lazy var backgroundActivityCenter: BackgroundActivityCenter = {
         let center = BackgroundActivityCenter(settings: settingsStore, notifications: notificationService)
         center.register(SpeechModelDownloadActivitySource())
+        center.register(TerminalSessionCenter.shared)
         center.register(ollamaPullActivity)
         center.register(FileIndexActivitySource())
         center.register(ContentIndexActivitySource(service: SemanticFileSearchService.shared))

@@ -9,14 +9,25 @@ final class TerminalRunnerTerminalView: TerminalView, TerminalViewDelegate {
 
     private weak var model: TerminalRunModel?
 
-    init(model: TerminalRunModel) {
-        self.model = model
+    private weak var session: TerminalSession?
+
+    private init(runModel: TerminalRunModel?, session: TerminalSession?) {
+        model = runModel
+        self.session = session
         super.init(frame: NSRect(x: 0, y: 0, width: 600, height: 260),
                    font: .monospacedSystemFont(ofSize: Self.fontSize, weight: .regular))
         terminalDelegate = self
         getTerminal().changeHistorySize(Self.scrollback)
         optionAsMetaKey = false
         applyPalette()
+    }
+
+    convenience init(session: TerminalSession) {
+        self.init(runModel: nil, session: session)
+    }
+
+    convenience init(model: TerminalRunModel) {
+        self.init(runModel: model, session: nil)
         model.output = { [weak self] bytes in self?.feed(byteArray: bytes[...]) }
         model.visibleText = { [weak self] in self?.normalScreenText() ?? "" }
         model.clearScreen = { [weak self] in
@@ -41,8 +52,12 @@ final class TerminalRunnerTerminalView: TerminalView, TerminalViewDelegate {
         var lines = text.components(separatedBy: "\n").map { line in
             String(line.reversed().drop(while: { $0 == " " }).reversed())
         }
-        while lines.last?.isEmpty == true { lines.removeLast() }
-        while lines.first?.isEmpty == true { lines.removeFirst() }
+        while lines.last?.isEmpty == true {
+            lines.removeLast()
+        }
+        while lines.first?.isEmpty == true {
+            lines.removeFirst()
+        }
         return lines.joined(separator: "\n")
     }
 
@@ -79,11 +94,14 @@ final class TerminalRunnerTerminalView: TerminalView, TerminalViewDelegate {
     // MARK: - TerminalViewDelegate
 
     func sizeChanged(source _: TerminalView, newCols: Int, newRows: Int) {
-        model?.resize(TerminalSize(columns: newCols, rows: newRows))
+        let size = TerminalSize(columns: newCols, rows: newRows)
+        model?.resize(size)
+        session?.resize(size)
     }
 
     func send(source _: TerminalView, data: ArraySlice<UInt8>) {
         model?.send(Array(data))
+        session?.write(Array(data))
     }
 
     /// OSC 52: programs such as tmux or vim copying to the clipboard, as terminal apps allow.

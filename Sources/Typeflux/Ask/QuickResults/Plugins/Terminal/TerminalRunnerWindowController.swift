@@ -19,52 +19,7 @@ protocol TerminalRunnerPresenting: AnyObject {
     func present(_ request: TerminalCommandRequest, services: TerminalRunnerServices)
 }
 
-/// Keeps every built-in terminal window alive while it is open, and ends their commands
-/// when the app quits.
-@MainActor
-final class TerminalRunnerCenter: TerminalRunnerPresenting {
-    static let shared = TerminalRunnerCenter()
-    static let cascadeOffset: CGFloat = 26
-
-    private(set) var windows: [TerminalRunnerWindowController] = []
-    private var termination: NSObjectProtocol?
-    /// Builds how a command starts; tests use a shell without startup files.
-    var makeLaunch: (TerminalCommandRequest, TerminalRunSettings) -> TerminalShellLaunch = { request, settings in
-        TerminalShellLaunch(command: request.command, settings: settings, shell: TerminalShellLaunch.accountShell(),
-                            base: ProcessInfo.processInfo.environment, home: NSHomeDirectory())
-    }
-
-    init() {
-        termination = NotificationCenter.default.addObserver(
-            forName: NSApplication.willTerminateNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.terminateAll() }
-        }
-    }
-
-    /// Hangs up every running command; the app is quitting.
-    func terminateAll() {
-        windows.forEach { $0.model.terminate() }
-    }
-
-    func present(_ request: TerminalCommandRequest, services: TerminalRunnerServices) {
-        guard let settings = request.builtin else { return }
-        let launch = makeLaunch(request, settings)
-        // The launcher never activates Typeflux, so the frontmost app is the one it came from.
-        let target = NSWorkspace.shared.frontmostApplication
-        let model = TerminalRunModel(request: request, settings: settings, launch: launch,
-                                     targetAppName: target?.bundleIdentifier == Bundle.main.bundleIdentifier
-                                         ? nil : target?.localizedName)
-        let controller = TerminalRunnerWindowController(model: model, services: services)
-        controller.onClose = { [weak self, weak controller] in
-            self?.windows.removeAll { $0 === controller }
-        }
-        let open = windows.filter { $0.window.isVisible }.count
-        windows.append(controller)
-        controller.show(cascade: CGFloat(open) * Self.cascadeOffset)
-        model.start()
-    }
-}
+typealias TerminalRunnerCenter = TerminalSessionCenter
 
 /// One floating terminal window. It takes keyboard focus without activating Typeflux,
 /// so Insert can type into the app that is still frontmost.

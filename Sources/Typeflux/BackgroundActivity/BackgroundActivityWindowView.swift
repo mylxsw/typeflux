@@ -124,6 +124,7 @@ struct BackgroundActivityWindowView: View {
         switch kind {
         case .agent: L("activity.group.agent")
         case .download: L("activity.group.download")
+        case .terminal: L("terminal.command.title")
         case .index: L("activity.group.index")
         }
     }
@@ -228,6 +229,7 @@ struct BackgroundActivityWindowRowView: View {
             switch activity.kind {
             case .agent: "sparkles"
             case .download: "arrow.down"
+            case .terminal: "terminal"
             case .index: "doc.text.magnifyingglass"
             }
         }
