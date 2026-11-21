@@ -68,26 +68,20 @@ struct AskAccountCard: View {
         let credits = AccountUsageCreditPresentation(credits: auth.usageCredits)
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
-                Text(L("auth.account.usageQuotaCurrentPeriod"))
+                Text(L("account.page.remaining"))
                     .font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textSecondary)
                 Spacer(minLength: 8)
-                quotaAmount(credits.balance)
+                quotaAmount(credits)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
                     .monospacedDigit()
             }
-            if let progress = credits.progress {
-                AskAccountProgressBar(progress: progress, color: AskAccountTone.bar(presentation.level))
-                    .padding(.top, 8)
-                    .padding(.bottom, 6)
-            } else {
-                Spacer().frame(height: 6)
-            }
             HStack {
-                if let fraction = credits.remainingFraction {
-                    Text(L("auth.account.usageQuotaRemainingPercentage", AccountStatusText.percent(fraction)))
-                        .monospacedDigit()
+                if let summary = credits.credits, case let .limited(remaining, limit) = credits.balance {
+                    Text(L("account.page.periodUsage", AccountUsageDisplayFormatter.creditAmount(summary.used),
+                           AccountStatusText.quotaPair(remaining: remaining, limit: limit, compact: true)))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
                 if let note = presentation.periodNote {
@@ -110,10 +104,12 @@ struct AskAccountCard: View {
     }
 
     @ViewBuilder
-    private func quotaAmount(_ balance: AccountUsageCreditPresentation.Balance) -> some View {
-        switch balance {
-        case let .limited(remaining, limit):
-            Text(AccountStatusText.quotaPair(remaining: remaining, limit: limit, compact: true))
+    private func quotaAmount(_ credits: AccountUsageCreditPresentation) -> some View {
+        switch credits.balance {
+        case .limited:
+            if let summary = credits.credits {
+                Text(AccountUsageDisplayFormatter.creditAmount(summary.spendableRemaining))
+            }
         case .unlimited:
             Text(L("auth.account.usageQuotaUnlimited"))
         case .unavailable:

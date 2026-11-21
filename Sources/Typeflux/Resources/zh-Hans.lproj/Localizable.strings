@@ -2050,7 +2050,8 @@
 "account.page.refreshStatus" = "刷新状态";
 "account.page.refreshSubscription" = "支付后未生效";
 "account.page.refreshSubscriptionAction" = "刷新订阅状态";
-"account.page.remaining" = "剩余额度";
+"account.page.remaining" = "可用积分";
+"account.page.periodUsage" = "本期已用 %@ 点 · 套餐剩余 %@ 点";
 "account.page.saved" = "节省时间";
 "account.page.savedDetail" = "相比打字 · 本机累计";
 "account.page.sendEmail" = "发送邮件";
@@ -7468,7 +7469,6 @@
 "ask.notes.agent.access" = "AI 访问";
 "ask.notes.submittedInput" = "提交给 AI 的内容";
 
-"account.page.pendingCredits" = "待结算任务预留了 %@ Credits";
 
 /* Apple Notes and Reminders launcher integration */
 "apple.notes.title" = "Apple 备忘录";

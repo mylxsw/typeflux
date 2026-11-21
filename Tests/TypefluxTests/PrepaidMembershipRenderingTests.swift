@@ -7,6 +7,9 @@ import Testing
 @Suite("Prepaid membership rendering", .serialized, .exclusiveUIState)
 struct PrepaidMembershipRenderingTests {
     @Test func prepaidAccountCardRendersRenewalAndExpiry() async throws {
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let fixture = AccountViewRenderingTests.Fixture()
         fixture.subscription = BillingSubscriptionSnapshot(
             planCode: "pro", status: "active", currentPeriodStart: "2026-10-18T00:00:00Z",
@@ -14,7 +17,8 @@ struct PrepaidMembershipRenderingTests {
             entitled: true, active: true, paid: true, periodSource: "aidea", billingEnabled: true,
             billingMode: "prepaid", autoRenew: false
         )
-        fixture.credits = AccountViewRenderingTests.credits(18000, 60000)
+        fixture.credits = CloudCreditSummary(limit: 400, used: 83.88, remaining: 316.12, unlimited: false,
+                                            addon: CloudAddonCredits(balance: 190, usedThisPeriod: 0, remaining: 190))
         let helper = AccountViewRenderingTests()
         let auth = helper.makeAuth(fixture)
         await auth.refreshSubscription()

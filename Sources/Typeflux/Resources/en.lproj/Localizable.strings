@@ -2050,7 +2050,8 @@
 "account.page.refreshStatus" = "Refresh";
 "account.page.refreshSubscription" = "Payment not reflected";
 "account.page.refreshSubscriptionAction" = "Refresh subscription";
-"account.page.remaining" = "remaining";
+"account.page.remaining" = "Available credits";
+"account.page.periodUsage" = "Used this period: %@ · Plan balance: %@";
 "account.page.saved" = "Time saved";
 "account.page.savedDetail" = "vs. typing · this Mac";
 "account.page.sendEmail" = "Send email";
@@ -7468,7 +7469,6 @@
 "ask.notes.agent.access" = "AI Access";
 "ask.notes.submittedInput" = "Content sent to AI";
 
-"account.page.pendingCredits" = "%@ Credits reserved for tasks awaiting settlement";
 
 /* Apple Notes and Reminders launcher integration */
 "apple.notes.title" = "Apple Notes";
