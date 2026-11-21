@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum TerminalApplication: String, CaseIterable, Sendable {
     case terminal, iterm
@@ -92,6 +93,8 @@ struct AskTerminalCommandPlugin: AskLauncherPlugin {
     var symbol: String {
         "terminal"
     }
+
+    var keywordColor: Color { .green }
 
     var defaultKeywords: [AskKeyword] {
         Self.keywords

@@ -1856,7 +1856,7 @@ struct AskComposer: View {
         if terminalPaneHeight > 0 { return terminalPaneHeight + AskMetrics.launcherGutter * 2 }
         if launcherCollapsed { return AskLauncherWindowMode.simpleHeight }
         if terminalHintKeyword != nil, !active {
-            return max(AskLauncherWindowMode.expandedHeight, launcherChromeHeight + terminalHintHeight)
+            return launcherChromeHeight + terminalHintHeight
         }
         if model.isNoteCaptureMode { return launcherChromeHeight + model.noteCapture.panelHeight }
         let content = launcherResultsFillViewport ? 0 : launcherNaturalResultsHeight

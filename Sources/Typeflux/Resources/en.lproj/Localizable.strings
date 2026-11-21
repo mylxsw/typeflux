@@ -7648,3 +7648,4 @@
 "terminal.launcher.background" = "%@ is still running";
 "terminal.launcher.startFailed" = "Could not start the terminal session.";
 "terminal.launcher.waiting" = "Waiting for Input";
+"terminal.launcher.recent" = "Recent";

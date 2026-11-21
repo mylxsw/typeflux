@@ -20,7 +20,7 @@ struct TerminalLauncherHint: View {
                         row(2, L("terminal.command.runIn", app.title), "arrow.up.forward.app", shortcut: "⌥↩")
                     }
                     if !recent.isEmpty {
-                        heading("ask.home.section.recent")
+                        heading("terminal.launcher.recent")
                         ForEach(Array(recent.enumerated()), id: \.offset) { index, command in
                             row(offset + index, command, "clock", match: text)
                         }

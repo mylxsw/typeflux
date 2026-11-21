@@ -268,6 +268,91 @@ extension TerminalCommandTests {
         #expect(session.blocks.last?.output.string == "output")
     }
 
+    @Test func `terminal hint fills a recent command without running it`() async throws {
+        let process = FakeTerminalProcess()
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        history.record("git status")
+        let center = TerminalSessionCenter(history: history, makeProcess: { process })
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "> gi", prepare: {
+            $0.terminalSessionCenter = center
+        })
+        defer { launcher.close(); center.terminateAll() }
+        let model = launcher.fixture.model
+        try await AskQuickSearchSessionTests.wait { model.isTerminalCommandMode }
+        for _ in 0 ..< 3 { try await launcher.press(125) }
+        try await launcher.press(48)
+        #expect(model.launcherDraft.text == "git status" && center.sessions.isEmpty)
+        try await launcher.press(36)
+        #expect(model.launcherTerminal?.session.runningBlock?.command == "git status")
+    }
+
+    @Test func `launcher terminal handles block and session shortcuts`() async throws {
+        let processes = [FakeTerminalProcess(), FakeTerminalProcess()]
+        var nextProcess = 0
+        let center = TerminalSessionCenter(
+            history: TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!),
+            makeProcess: {
+                defer { nextProcess += 1 }
+                return processes[nextProcess]
+            }
+        )
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "> printf first", prepare: {
+            $0.terminalSessionCenter = center
+            $0.passiveNotice = { _ in }
+        })
+        let previousPasteboard = AskQuickResults.pasteboard
+        let pasteboard = NSPasteboard(name: .init("terminal-keys." + UUID().uuidString))
+        AskQuickResults.pasteboard = pasteboard
+        defer {
+            AskQuickResults.pasteboard = previousPasteboard
+            launcher.close()
+            center.terminateAll()
+        }
+        let model = launcher.fixture.model
+        try await AskQuickSearchSessionTests.wait { model.isTerminalCommandMode }
+        try await launcher.press(36)
+        let presentation = try #require(model.launcherTerminal)
+        let session = presentation.session
+        let process = processes[0]
+        func osc(_ text: String) -> String { "\u{1b}]" + text + "\u{7}" }
+        process.emit(osc("133;B") + osc("133;C") + "first\r\n")
+
+        try await terminalKey(2, .control, in: launcher.window)
+        #expect(process.writes.last == [4])
+        try await terminalKey(8, .control, in: launcher.window)
+        #expect(process.writes.last == [3])
+        process.emit(osc("133;D;130") + osc("133;B"))
+        try await terminalKey(126, .option, in: launcher.window)
+        #expect(presentation.actionBlock?.state == .interrupted)
+        try await terminalKey(8, .command, in: launcher.window)
+        #expect(pasteboard.string(forType: .string) == "first")
+        try await terminalKey(15, .command, in: launcher.window)
+        #expect(session.runningBlock?.command == "printf first")
+        try await terminalKey(40, .command, in: launcher.window)
+        #expect(session.blocks.count == 1)
+        try await terminalKey(17, .command, in: launcher.window)
+        let second = try #require(model.launcherTerminal?.session)
+        #expect(second !== session && center.sessions.count == 2)
+        try await terminalKey(18, .command, characters: "1", in: launcher.window)
+        #expect(model.launcherTerminal?.session === session)
+        try await terminalKey(19, .command, characters: "2", in: launcher.window)
+        #expect(model.launcherTerminal?.session === second)
+        try await terminalKey(13, .command, in: launcher.window)
+        #expect(model.launcherTerminal?.session === session && center.sessions.count == 1)
+        try await terminalKey(53, [], in: launcher.window)
+        #expect(launcher.dismissed == 1)
+    }
+
+    private func terminalKey(_ code: UInt16, _ modifiers: NSEvent.ModifierFlags,
+                             characters: String = "", in window: NSWindow) async throws {
+        let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
+                                                 timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                                 characters: characters, charactersIgnoringModifiers: characters,
+                                                 isARepeat: false, keyCode: code))
+        NSApplication.shared.sendEvent(event)
+        try await Task.sleep(for: .milliseconds(55))
+    }
+
     @Test(arguments: [true, false]) func `capture launcher terminal states`(dark: Bool) async throws {
         guard let path = ProcessInfo.processInfo.environment["TYPEFLUX_TERMINAL_SNAPSHOTS"] else { return }
         let folder = URL(fileURLWithPath: path)

@@ -7648,3 +7648,4 @@
 "terminal.launcher.background" = "%@ 继续运行";
 "terminal.launcher.startFailed" = "无法启动终端会话。";
 "terminal.launcher.waiting" = "等待输入";
+"terminal.launcher.recent" = "最近";
