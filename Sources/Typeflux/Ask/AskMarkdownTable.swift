@@ -5,15 +5,36 @@ import Markdown
 /// The table draws as on the design board: one rounded hairline frame, a tinted
 /// header row and horizontal rules between rows, with no vertical rules.
 struct AskMarkdownTable {
-    static let corner: CGFloat = 12
+    static let corner: CGFloat = 8
     static let horizontalPadding: CGFloat = 14
-    static let verticalPadding: CGFloat = 9
+    static let verticalPadding: CGFloat = 7
+    static let toolbarSpace: CGFloat = 24
 
     private let table: AskTextTable
 
-    init(columnCount: Int, rowCount: Int) {
+    private let sizeColumns: Set<Int>
+
+    init(rows: [any Markup], columnCount: Int) {
+        var preferred = Array(repeating: CGFloat(64), count: columnCount)
+        var sizes = Set<Int>()
+        for (rowIndex, row) in rows.enumerated() {
+            for (column, node) in row.children.enumerated() where column < columnCount {
+                guard let cell = node as? Markdown.Table.Cell else { continue }
+                let text = cell.plainText
+                let font = column == 0 ? NSFont.monospacedSystemFont(ofSize: 12.5, weight: .regular)
+                                      : NSFont.systemFont(ofSize: 13.5)
+                let width = (String(text.prefix(100)) as NSString).size(withAttributes: [.font: font]).width
+                preferred[column] = max(preferred[column], min(560, width + 2 * Self.horizontalPadding))
+                if rowIndex == 0, ["大小", "文件大小", "檔案大小", "size", "file size", "サイズ", "크기"].contains(text.lowercased()) {
+                    sizes.insert(column)
+                }
+            }
+        }
+        sizeColumns = sizes
         table = AskTextTable()
-        table.rowCount = rowCount
+        table.rowCount = rows.count
+        let total = preferred.reduce(0, +)
+        table.automaticWidths = preferred.map { 100 * $0 / total }
         table.numberOfColumns = columnCount
         table.layoutAlgorithm = .fixedLayoutAlgorithm
         table.collapsesBorders = true
@@ -23,29 +44,10 @@ struct AskMarkdownTable {
         table.setWidth(12, type: .absoluteValueType, for: .margin, edge: .maxY)
     }
 
-    /// Column widths in percent: a two-column table gives the key column a
-    /// third, as on the design board; otherwise the columns share equally.
-    static func columnWidth(column: Int, count: Int) -> CGFloat {
-        guard count > 0 else { return 100 }
-        if count == 2 { return column == 0 ? 34 : 66 }
-        return 100 / CGFloat(count)
-    }
-
     func attributes(
         row: Int, column: Int, alignment: Table.ColumnAlignment?, inherited: [NSAttributedString.Key: Any]
     ) -> [NSAttributedString.Key: Any] {
-        let block = AskTableCellBlock(
-            table: table, startingRow: row, rowSpan: 1, startingColumn: column, columnSpan: 1
-        )
-        block.setContentWidth(Self.columnWidth(column: column, count: table.numberOfColumns),
-                              type: .percentageValueType)
-        block.setWidth(Self.horizontalPadding, type: .absoluteValueType, for: .padding, edge: .minX)
-        block.setWidth(Self.horizontalPadding, type: .absoluteValueType, for: .padding, edge: .maxX)
-        block.setWidth(Self.verticalPadding, type: .absoluteValueType, for: .padding, edge: .minY)
-        block.setWidth(Self.verticalPadding, type: .absoluteValueType, for: .padding, edge: .maxY)
-        if row == 0 {
-            block.backgroundColor = AskTableCellBlock.headerFill
-        }
+        let block = Self.cell(table: table, row: row, column: column, width: table.automaticWidths[column])
         let style = (inherited[.paragraphStyle] as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle
             ?? NSMutableParagraphStyle()
         style.textBlocks = [block]
@@ -58,6 +60,7 @@ struct AskMarkdownTable {
         switch alignment {
         case .center: style.alignment = .center
         case .right: style.alignment = .right
+        case nil where sizeColumns.contains(column): style.alignment = .right
         default: style.alignment = .left
         }
         var attributes = inherited
@@ -72,11 +75,31 @@ struct AskMarkdownTable {
         }
         return attributes
     }
+
+    static func cell(table: NSTextTable, row: Int, column: Int, width: CGFloat) -> AskTableCellBlock {
+        let block = AskTableCellBlock(
+            table: table, startingRow: row, rowSpan: 1, startingColumn: column, columnSpan: 1
+        )
+        block.setContentWidth(width,
+                              type: .percentageValueType)
+        block.setWidth(AskMarkdownTable.horizontalPadding, type: .absoluteValueType, for: .padding, edge: .minX)
+        block.setWidth(AskMarkdownTable.horizontalPadding, type: .absoluteValueType, for: .padding, edge: .maxX)
+        // A large top margin on NSTextTable also subtracts from its available width.
+        // Reserve the action strip in header padding and paint below it.
+        block.setWidth(verticalPadding + (row == 0 ? toolbarSpace : 0),
+                       type: .absoluteValueType, for: .padding, edge: .minY)
+        block.setWidth(AskMarkdownTable.verticalPadding, type: .absoluteValueType, for: .padding, edge: .maxY)
+        if row == 0 {
+            block.backgroundColor = AskTableCellBlock.headerFill
+        }
+        return block
+    }
 }
 
 /// A table that knows its row count, so each cell can tell whether it closes the frame.
 final class AskTextTable: NSTextTable {
     var rowCount = 1
+    var automaticWidths: [CGFloat] = []
 }
 
 /// One cell of `AskMarkdownTable`. It draws its share of the table's frame:
@@ -186,10 +209,15 @@ final class AskTableCellBlock: NSTextTableBlock {
         return path
     }
 
+    func visibleFrame(_ rect: NSRect) -> NSRect {
+        guard startingRow == 0 else { return rect }
+        return rect.divided(atDistance: AskMarkdownTable.toolbarSpace, from: .minYEdge).remainder
+    }
+
     override func drawBackground(withFrame frameRect: NSRect, in controlView: NSView?,
                                  characterRange charRange: NSRange, layoutManager: NSLayoutManager) {
         // Half a point in, so hairlines on the edges stay crisp and inside the frame.
-        let rect = frameRect.insetBy(dx: 0.25, dy: 0.25)
+        let rect = visibleFrame(frameRect).insetBy(dx: 0.25, dy: 0.25)
         let edges = edges
         if startingRow == 0 {
             Self.headerFill.setFill()

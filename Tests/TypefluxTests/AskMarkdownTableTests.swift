@@ -442,6 +442,164 @@ import Testing
         #expect(probe.clicks == 1, "The same background control works again after dismissal")
     }
 
+    @Test func columnDragInNativeWindowAndPreview() async throws {
+        _ = NSApplication.shared
+        let language = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(language) }
+        let editor = AskTranscriptText.makeEditor()
+        let host = NSView(frame: NSRect(x: 0, y: 0, width: 740, height: 340))
+        let window = NSWindow(contentRect: host.frame, styleMask: [.titled, .resizable],
+                              backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: .darkAqua)
+        window.contentView = host
+        host.wantsLayer = true
+        host.layer?.backgroundColor = NSColor(white: 0.10, alpha: 1).cgColor
+        host.addSubview(editor)
+        window.makeKeyAndOrderFront(nil)
+        defer { editor.tableInteraction.dismiss(); window.close() }
+
+        let source = """
+        ### Typeflux 相关（3 个）
+
+        | 文件名 | 大小 |
+        | --- | --- |
+        | Typeflux-1.0.0-hotfix-38d120af-apple-silicon.dmg | 约 97 MB |
+        | Typeflux-1.0.0-test-107b7553-apple-silicon.dmg | 约 97 MB |
+        | Typeflux-1.0.0-test-1d62cd7b-apple-silicon.dmg | 约 97 MB |
+        """
+        editor.setContent(source, markdown: true, dark: true)
+        let size = try #require(editor.measuredSize(width: 700))
+        editor.frame = NSRect(origin: NSPoint(x: 20, y: host.bounds.height - size.height - 20), size: size)
+        let interaction = editor.tableInteraction
+        interaction.layout()
+        let table = try #require(interaction.tables.first)
+        let first = try #require(table.headerIndices.first)
+        let original = table.cellFrame(first, in: editor)
+        #expect(original.width > 500)
+        let storage = try #require(editor.textStorage)
+        let sizeRange = (editor.string as NSString).range(of: "约 97 MB")
+        let style = try #require(storage.attribute(.paragraphStyle, at: sizeRange.location, effectiveRange: nil) as? NSParagraphStyle)
+        #expect(style.alignment == .right)
+        let fileRange = (editor.string as NSString).range(of: "Typeflux-1.0.0-hotfix-38d120af-apple-silicon.dmg")
+        let layout = try #require(editor.layoutManager)
+        let glyphs = layout.glyphRange(forCharacterRange: fileRange, actualCharacterRange: nil)
+        var lines = 0
+        layout.enumerateLineFragments(forGlyphRange: glyphs) { _, _, _, _, _ in lines += 1 }
+        #expect(lines == 1)
+        editor.setSelectedRange(fileRange)
+        interaction.updateHover(at: NSPoint(x: original.midX, y: original.midY))
+        let toolbar = try #require(editor.subviews.compactMap { $0 as? NSStackView }.first)
+        #expect(!toolbar.isHidden && toolbar.frame.maxY <= original.minY)
+        interaction.updateHover(at: NSPoint(x: toolbar.frame.midX, y: toolbar.frame.midY))
+        #expect(interaction.hoveredIndex == 0)
+        func snapshot(_ view: NSView, _ name: String) throws {
+            guard let root = ProcessInfo.processInfo.environment["TYPEFLUX_TABLE_SNAPSHOTS"] else { return }
+            let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+            view.cacheDisplay(in: view.bounds, to: bitmap)
+            try #require(bitmap.representation(using: .png, properties: [:])).write(
+                to: URL(fileURLWithPath: root).appendingPathComponent(name + ".png"))
+        }
+        editor.setSelectedRange(NSRange(location: 0, length: 0))
+        // Pump the window first; ordering it front can deliver a real mouse-exit event.
+        try await Task.sleep(for: .milliseconds(180))
+        interaction.updateHover(at: NSPoint(x: original.midX, y: original.midY))
+        try await Task.sleep(for: .milliseconds(180))
+        #expect(!toolbar.isHidden && toolbar.alphaValue > 0.9)
+        #expect(toolbar.frame.width > 60 && toolbar.frame.height > 12)
+        try snapshot(host, "filename-hover")
+        editor.setSelectedRange(fileRange)
+
+        func handle(in view: NSTextView) throws -> AskTableColumnControls.Handle {
+            let h = try #require(view.subviews.compactMap { $0 as? AskTableColumnControls.Handle }.first)
+            let hit = view.hitTest(h.convert(NSPoint(x: h.bounds.midX, y: h.bounds.midY), to: view.superview))
+            #expect(hit === h)
+            return h
+        }
+        func event(_ type: NSEvent.EventType, _ h: NSView, delta: CGFloat = 0, clicks: Int = 1) throws -> NSEvent {
+            var point = h.convert(.init(x: h.bounds.midX, y: h.bounds.midY), to: nil)
+            point.x += delta
+            return try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: h.window!.windowNumber,
+                context: nil, eventNumber: 1, clickCount: clicks, pressure: 1))
+        }
+        let h = try handle(in: editor)
+        h.mouseDown(with: try event(.leftMouseDown, h))
+        #expect(toolbar.isHidden)
+        h.mouseDragged(with: try event(.leftMouseDragged, h, delta: -135))
+        let resized = table.cellFrame(first, in: editor)
+        #expect(abs(original.width - resized.width - 135) <= 2)
+        editor.setSelectedRange(NSRange(location: 0, length: 0))
+        try snapshot(host, "filename-drag")
+        editor.setSelectedRange(fileRange)
+        h.mouseUp(with: try event(.leftMouseUp, h))
+        let cached = try #require(editor.renderCache.value(text: source, markdown: true, dark: true))
+        #expect(try block(cached, at: "文件名").contentWidth > table.cells[first].block.contentWidth)
+        let pasteboard = NSPasteboard.withUniqueName()
+        defer { pasteboard.releaseGlobally() }
+        AskTranscriptTableInteraction.copy(table, in: storage, to: pasteboard)
+        #expect(pasteboard.string(forType: .string)?.hasPrefix("文件名\t大小\nTypeflux-1.0.0-hotfix-38d120af-apple-silicon.dmg\t约 97 MB") == true)
+
+        window.setContentSize(NSSize(width: 980, height: 620))
+        (toolbar.arrangedSubviews.last as? NSButton)?.performClick(nil)
+        let preview = try #require(interaction.preview)
+        preview.layoutSubtreeIfNeeded()
+        let controls = try #require(preview.columnControls)
+        #expect(controls.manualWidths?.first == table.cells[first].block.contentWidth)
+        let ph = try handle(in: preview.textView)
+        ph.mouseDown(with: try event(.leftMouseDown, ph))
+        ph.mouseDragged(with: try event(.leftMouseDragged, ph, delta: -40))
+        ph.mouseUp(with: try event(.leftMouseUp, ph))
+        let adjusted = try #require(controls.manualWidths)
+        preview.setZoom(1.4)
+        preview.layoutSubtreeIfNeeded()
+        #expect(preview.columnControls?.manualWidths == adjusted)
+        try snapshot(preview, "filename-preview")
+        preview.textView.cancelOperation(nil)
+        #expect(table.cells[first].block.contentWidth == adjusted[0])
+        #expect(editor.selectedRange() == fileRange)
+        editor.setContent(source + "\n\n更多", markdown: true, dark: true)
+        let refreshed = try #require(interaction.tables.first)
+        #expect(refreshed.cells[first].block.contentWidth == adjusted[0])
+        interaction.layout()
+        let reset = try handle(in: editor)
+        reset.mouseDown(with: try event(.leftMouseDown, reset, clicks: 2))
+        #expect(abs(refreshed.cellFrame(first, in: editor).width - original.width) < 1)
+    }
+
+    @Test func narrowTableCanResizeItsMiddleColumnsIndependently() throws {
+        let editor = AskTranscriptText.makeEditor()
+        editor.setContent("| A | B | C | D |\n| --- | --- | --- | --- |\n| 1 | 2 | 3 | 4 |",
+                          markdown: true, dark: false)
+        editor.frame = NSRect(origin: .zero, size: try #require(editor.measuredSize(width: 320)))
+        editor.tableInteraction.layout()
+        let table = try #require(editor.tableInteraction.tables.first)
+        let handles = editor.subviews.compactMap { $0 as? AskTableColumnControls.Handle }
+        let middle = try #require(handles.first { $0.column == 1 })
+        func boundaries() -> [CGFloat] {
+            table.headerIndices.map { table.cellFrame($0, in: editor).maxX }
+        }
+        func event(_ type: NSEvent.EventType, x: CGFloat) throws -> NSEvent {
+            try #require(NSEvent.mouseEvent(with: type, location: NSPoint(x: x, y: middle.frame.midY),
+                modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, eventNumber: 0,
+                clickCount: 1, pressure: 1))
+        }
+        let percentages = table.headerIndices.map { table.cells[$0].block.contentWidth }
+        let before = boundaries()
+        let destination = before[1] + 16
+        middle.mouseDown(with: try event(.leftMouseDown, x: before[1]))
+        middle.mouseDragged(with: try event(.leftMouseDragged, x: destination))
+        middle.mouseUp(with: try event(.leftMouseUp, x: destination))
+        let after = boundaries()
+        #expect(abs(after[1] - destination) <= 2)
+        let resized = table.headerIndices.map { table.cells[$0].block.contentWidth }
+        #expect(resized[0] == percentages[0] && resized[3] == percentages[3])
+        #expect(abs(resized[1] + resized[2] - percentages[1] - percentages[2]) < 0.0001)
+        // TextKit rounds percentage widths per cell; the trailing edge can differ by two points.
+        for i in [0, 2, 3] { #expect(abs(after[i] - before[i]) <= 2) }
+    }
+
     private struct ProbeView: NSViewRepresentable {
         let probe: BackgroundProbe
         func makeNSView(context: Context) -> BackgroundProbe { probe }

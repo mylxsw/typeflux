@@ -60,11 +60,13 @@ struct AskDesignFidelityTests {
         #expect(twoStyle.paragraphSpacing == AskMarkdownText.paragraphSpacing)
     }
 
-    @Test func twoColumnTablesGiveTheKeyColumnAThird() {
-        #expect(AskMarkdownTable.columnWidth(column: 0, count: 2) == 34)
-        #expect(AskMarkdownTable.columnWidth(column: 1, count: 2) == 66)
-        #expect(AskMarkdownTable.columnWidth(column: 2, count: 4) == 25)
-        #expect(AskMarkdownTable.columnWidth(column: 0, count: 0) == 100)
+    @MainActor @Test func tableWidthsFollowTheContentOfEachColumn() throws {
+        let value = AskMarkdownText.render("| ID | Filename | Size |\n| --- | --- | --- |\n| 1 | Typeflux-1.0.0-apple-silicon.dmg | 97 MB |")
+        let table = try #require(AskTranscriptTableInteraction.findTables(in: value).first)
+        let widths = table.headerIndices.map { table.cells[$0].block.contentWidth }
+        #expect(widths.count == 3)
+        #expect(widths[1] > widths[0] && widths[1] > widths[2])
+        #expect(abs(widths.reduce(0, +) - 100) < 0.01)
     }
 
     @Test func tableCellsOnlyRoundTheTablesOuterCorners() {

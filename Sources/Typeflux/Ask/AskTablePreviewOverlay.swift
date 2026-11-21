@@ -3,6 +3,7 @@ import AppKit
 /// A transparent native sheet keeps SwiftUI hit testing and shortcuts out of the background.
 @MainActor final class AskTablePreviewOverlay: NSView {
     private let content: NSAttributedString
+    private(set) var columnControls: AskTableColumnControls?
     private let columns: Int
     private let card = NSView()
     let scrollView = NSScrollView()
@@ -22,7 +23,7 @@ import AppKit
     override var acceptsFirstResponder: Bool { true }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
-    init(content: NSAttributedString, columns: Int, onOpenLink: ((URL, Bool) -> Void)?) {
+    init(content: NSAttributedString, columns: Int, widths: [CGFloat]? = nil, onOpenLink: ((URL, Bool) -> Void)?) {
         self.content = content
         self.columns = columns
         closeButton = NSButton()
@@ -44,7 +45,7 @@ import AppKit
         textView.isSelectable = true
         textView.isRichText = true
         textView.drawsBackground = false
-        textView.textContainerInset = NSSize(width: 24, height: 24)
+        textView.textContainerInset = NSSize(width: 24, height: 0)
         textView.textContainer?.lineFragmentPadding = 0
         textView.textContainer?.widthTracksTextView = false
         textView.textContainer?.replaceLayoutManager(AskRoundedBackgroundLayoutManager())
@@ -54,6 +55,8 @@ import AppKit
         card.addSubview(scrollView)
         controls.orientation = .horizontal
         controls.spacing = 8
+        controls.addArrangedSubview(AskTranscriptTableInteraction.actionButton(
+            "doc.on.doc", title: L("common.copy"), target: self, action: #selector(copyTable)))
         controls.addArrangedSubview(AskTranscriptTableInteraction.button(
             "minus.magnifyingglass", title: L("screenshot.pin.zoomOut"), target: self, action: #selector(zoomOut)))
         zoomLabel.alignment = .center
@@ -70,7 +73,7 @@ import AppKit
         closeButton.toolTip = L("ask.artifact.close") + " (Esc)"
         closeButton.setAccessibilityLabel(L("ask.artifact.close"))
         addSubview(closeButton)
-        applyZoom()
+        applyZoom(widths: widths)
     }
 
     required init?(coder: NSCoder) { nil }
@@ -101,7 +104,7 @@ import AppKit
         // The key-view loop belongs to the sheet, so Tab cannot focus the composer or sidebar.
         let buttons = controls.arrangedSubviews.compactMap { $0 as? NSButton }
         closeButton.nextKeyView = buttons.first
-        buttons.first?.nextKeyView = buttons.last
+        for (first, next) in zip(buttons, buttons.dropFirst()) { first.nextKeyView = next }
         buttons.last?.nextKeyView = textView
         textView.nextKeyView = closeButton
         panel.makeFirstResponder(textView)
@@ -133,35 +136,52 @@ import AppKit
         }
         let width = max(100, min(bounds.width - 80, max(760, CGFloat(columns) * 200)))
         let availableHeight = max(80, bounds.height - 120)
-        let textWidth = max(width - 48, CGFloat(columns) * 160 * zoom)
+        let viewport = NSScrollView.contentSize(forFrameSize: NSSize(width: width, height: availableHeight),
+            horizontalScrollerClass: NSScroller.self, verticalScrollerClass: NSScroller.self,
+            borderType: .noBorder, controlSize: .regular, scrollerStyle: scrollView.scrollerStyle)
+        let textWidth = max(viewport.width - 48, CGFloat(columns) * 160 * zoom)
         textView.textContainer?.containerSize = NSSize(width: textWidth, height: .greatestFiniteMagnitude)
         if let container = textView.textContainer { textView.layoutManager?.ensureLayout(for: container) }
-        let textHeight = ceil(textView.layoutManager?.usedRect(for: textView.textContainer!).height ?? 0) + 48
+        let textHeight = ceil(textView.layoutManager?.usedRect(for: textView.textContainer!).height ?? 0) + 12
         let height = min(availableHeight, textHeight + 46)
         card.frame = NSRect(x: (bounds.width - width) / 2, y: (bounds.height - height) / 2,
                             width: width, height: height)
         // The card is unflipped: controls occupy its top edge.
-        controls.frame = NSRect(x: width - 154, y: height - 40, width: 138, height: 30)
+        let controlsWidth = controls.fittingSize.width
+        controls.frame = NSRect(x: width - controlsWidth - 16, y: height - 40, width: controlsWidth, height: 30)
         scrollView.frame = NSRect(x: 0, y: 0, width: width, height: max(30, height - 46))
         textView.frame = NSRect(x: 0, y: 0, width: textWidth + 48,
                                 height: max(textHeight, scrollView.contentSize.height))
+        columnControls?.layout()
         closeButton.frame = NSRect(x: bounds.width - 54, y: 14, width: 36, height: 36)
     }
 
     func setZoom(_ value: CGFloat) {
         zoom = min(2, max(0.8, value))
-        applyZoom()
+        applyZoom(widths: columnControls?.manualWidths)
     }
 
-    private func applyZoom() {
+    private func applyZoom(widths: [CGFloat]?) {
+        columnControls?.remove()
         let value = NSMutableAttributedString(attributedString: content)
         content.enumerateAttribute(.font, in: NSRange(location: 0, length: content.length)) { font, range, _ in
             guard let font = font as? NSFont else { return }
             value.addAttribute(.font, value: NSFontManager.shared.convert(font, toSize: font.pointSize * zoom), range: range)
         }
         textView.textStorage?.setAttributedString(value)
+        if let table = AskTranscriptTableInteraction.findTables(in: value).first {
+            let controls = AskTableColumnControls(table: table, in: textView)
+            columnControls = controls
+            if let widths { controls.apply(widths) }
+            controls.onChange = { [weak self] in self?.needsLayout = true }
+        }
         zoomLabel.stringValue = "\(Int((zoom * 100).rounded()))%"
         needsLayout = true
+    }
+
+    @objc private func copyTable() {
+        guard let table = columnControls?.table else { return }
+        AskTranscriptTableInteraction.copy(table, in: content, to: .general)
     }
 
     @objc private func zoomIn() { setZoom(zoom + 0.2) }

@@ -89,7 +89,7 @@ struct AskTranscriptText: NSViewRepresentable {
 
         override func layout() {
             super.layout()
-            tableInteraction.updateToolbar()
+            tableInteraction.layout()
         }
 
         var preparation: any LatestBackgroundWorking = LatestBackgroundWork(
@@ -113,6 +113,15 @@ struct AskTranscriptText: NSViewRepresentable {
         private var dark = false
         private var usesMarkdown = true
         private var dragging = false
+        private var interacting: Bool { dragging || tableInteraction.isResizing }
+
+        func resumePendingContent() {
+            if !interacting, let pending {
+                self.pending = nil
+                requestContent(pending.0, markdown: pending.1, dark: pending.2)
+            }
+        }
+
         private var pending: (String, Bool, Bool)?
         var onAsk: ((String, String) -> Void)? {
             didSet { if onAsk == nil { askPopover.close() } }
@@ -205,9 +214,7 @@ struct AskTranscriptText: NSViewRepresentable {
             dragging = true
             defer {
                 dragging = false
-                if let pending {
-                    self.pending = nil; requestContent(pending.0, markdown: pending.1, dark: pending.2)
-                }
+                resumePendingContent()
                 showSelectionAction()
             }
             super.mouseDown(with: event)
@@ -222,7 +229,7 @@ struct AskTranscriptText: NSViewRepresentable {
         /// running parse and newest replacement, including during fast streams.
         func requestContent(_ text: String, markdown: Bool, dark: Bool) {
             if let requested, requested.text == text, requested.markdown == markdown, requested.dark == dark { return }
-            if dragging { pending = (text, markdown, dark); return }
+            if interacting { pending = (text, markdown, dark); return }
             requested = (text, markdown, dark)
             let generation = UUID(); contentGeneration = generation
             guard source != text || self.dark != dark || usesMarkdown != markdown else {
@@ -243,10 +250,10 @@ struct AskTranscriptText: NSViewRepresentable {
                 guard let self, contentGeneration == generation else { return }
                 guard case .success = result, let document else {
                     requested = nil
-                    if !dragging { applyContent(text, markdown: false, dark: dark, document: nil) }
+                    if !interacting { applyContent(text, markdown: false, dark: dark, document: nil) }
                     return
                 }
-                if dragging { pending = (text, markdown, dark); requested = nil; return }
+                if interacting { pending = (text, markdown, dark); requested = nil; return }
                 applyContent(text, markdown: true, dark: dark, document: document)
             })
         }
@@ -260,7 +267,7 @@ struct AskTranscriptText: NSViewRepresentable {
         private func applyContent(_ text: String, markdown: Bool, dark: Bool, document: Markdown.Document?,
                                   rendered: NSAttributedString? = nil) {
             guard source != text || self.dark != dark || usesMarkdown != markdown else { return }
-            if dragging {
+            if interacting {
                 pending = (text, markdown, dark); return
             }
             let oldSelection = selectedRange()
@@ -392,7 +399,7 @@ enum AskMarkdownText {
             }
             if let table = node as? Markdown.Table {
                 let rows: [any Markup] = [table.head] + table.body.children.map { $0 }
-                let layout = AskMarkdownTable(columnCount: table.head.childCount, rowCount: rows.count)
+                let layout = AskMarkdownTable(rows: rows, columnCount: table.head.childCount)
                 for (rowIndex, row) in rows.enumerated() {
                     for (columnIndex, cell) in row.children.enumerated() {
                         let cellAttributes = layout.attributes(
