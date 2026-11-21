@@ -118,36 +118,108 @@ struct AskFileOpenMenuItems: View {
     var onReference: (() -> Void)?
     var onError: (String) -> Void = { _ in }
 
-    var body: some View {
+    /// Both the row context menu and the toolbar use these commands and their order.
+    private enum Entry {
+        case action(String, shortcut: Bool = false, () -> Void)
+        case applications(String, [AskFileExternalActions.Application])
+        case divider
+    }
+
+    private var entries: [Entry] {
+        var entries: [Entry] = []
         if let onReference {
-            Button(L("ask.sidePanel.reference"), action: onReference)
-            Divider()
+            entries += [.action(L("ask.sidePanel.reference"), onReference), .divider]
         }
-        let defaultApp = actions.defaultApplication(for: file)
-        Button(defaultApp.map { L("ask.sidePanel.open.withApp", $0.name) } ?? L("ask.sidePanel.open.default")) {
-            actions.openWithDefaultApplication(file)
-        }
+        let app = actions.defaultApplication(for: file)
+        let openTitle = app.map { L("ask.sidePanel.open.withApp", $0.name) } ?? L("ask.sidePanel.open.default")
+        entries.append(.action(openTitle) { actions.openWithDefaultApplication(file) })
         if AskFileExternalActions.isHTML(file) {
-            Button(L("ask.sidePanel.open.browser")) { actions.openInBrowser(file) }
+            entries.append(.action(L("ask.sidePanel.open.browser")) { actions.openInBrowser(file) })
         }
-        Menu(L("ask.sidePanel.open.with")) {
-            let applications = actions.applications(for: file)
-            if applications.isEmpty {
-                Text(L("ask.sidePanel.open.noApps"))
+        entries += [
+            .applications(L("ask.sidePanel.open.with"), actions.applications(for: file)), .divider,
+            .action(L("ask.sidePanel.revealInFinder"), shortcut: showsShortcuts) { actions.revealInFinder(file) },
+            .action(L("ask.sidePanel.copyFile")) { actions.copyFile(file) },
+            .action(L("ask.sidePanel.copyPath")) { actions.copyPath(file) }, .divider,
+            .action(L("ask.sidePanel.saveAs")) {
+                do { try actions.saveAs(file) } catch { onError(error.localizedDescription) }
             }
-            ForEach(applications) { application in
-                Button(application.name) { actions.open(file, with: application.url) }
+        ]
+        return entries
+    }
+
+    var body: some View {
+        ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
+            switch entry {
+            case let .action(title, shortcut, perform):
+                Button(title, action: perform)
+                    .keyboardShortcut(shortcut ? KeyboardShortcut("r", modifiers: [.command, .shift]) : nil)
+            case let .applications(title, apps):
+                Menu(title) {
+                    if apps.isEmpty { Text(L("ask.sidePanel.open.noApps")) }
+                    ForEach(apps) { app in
+                        Button(app.name) { actions.open(file, with: app.url) }
+                    }
+                }
+            case .divider: Divider()
             }
         }
-        Divider()
-        Button(L("ask.sidePanel.revealInFinder")) { actions.revealInFinder(file) }
-            .keyboardShortcut(showsShortcuts ? KeyboardShortcut("r", modifiers: [.command, .shift]) : nil)
-        Button(L("ask.sidePanel.copyFile")) { actions.copyFile(file) }
-        Button(L("ask.sidePanel.copyPath")) { actions.copyPath(file) }
-        Divider()
-        Button(L("ask.sidePanel.saveAs")) {
-            do { try actions.saveAs(file) } catch { onError(error.localizedDescription) }
+    }
+
+    /// Present only the menu. The toolbar's ordinary icon button owns all drawing and hit testing.
+    func popUp(below anchor: NSView) {
+        let menu = NSMenu()
+        for entry in entries {
+            switch entry {
+            case let .action(title, shortcut, perform):
+                let item = CommandItem(title: title, perform: perform)
+                if shortcut {
+                    item.keyEquivalent = "r"
+                    item.keyEquivalentModifierMask = [.command, .shift]
+                }
+                menu.addItem(item)
+            case let .applications(title, apps):
+                let submenu = NSMenu(title: title)
+                if apps.isEmpty { submenu.addItem(withTitle: L("ask.sidePanel.open.noApps"), action: nil, keyEquivalent: "") }
+                for app in apps {
+                    submenu.addItem(CommandItem(title: app.name) { actions.open(file, with: app.url) })
+                }
+                menu.addItem(withTitle: title, action: nil, keyEquivalent: "").submenu = submenu
+            case .divider: menu.addItem(.separator())
+            }
         }
+        let bottom = anchor.isFlipped ? anchor.bounds.maxY : anchor.bounds.minY
+        menu.popUp(positioning: nil, at: NSPoint(x: anchor.bounds.minX, y: bottom), in: anchor)
+    }
+
+    private final class CommandItem: NSMenuItem {
+        let perform: () -> Void
+
+        init(title: String, perform: @escaping () -> Void) {
+            self.perform = perform
+            super.init(title: title, action: #selector(choose), keyEquivalent: "")
+            target = self
+        }
+
+        @available(*, unavailable)
+        required init(coder _: NSCoder) { fatalError() }
+
+        @objc private func choose() { perform() }
+    }
+}
+
+/// One neutral trigger for file commands in list rows, change summaries and the preview toolbar.
+struct AskFileMoreButton: View {
+    let items: AskFileOpenMenuItems
+    var size: TFControlSize = .small
+    @State private var anchor = AskHoverAnchor.Holder()
+
+    var body: some View {
+        TFButton(title: L("ask.sidePanel.open.menu"), systemImage: "ellipsis", kind: .plain,
+                 size: size, iconOnly: true) {
+            if let view = anchor.view { items.popUp(below: view) }
+        }
+        .background(AskHoverAnchor(holder: anchor))
     }
 }
 

@@ -162,11 +162,18 @@ private struct AskFileChangeRow: View {
     var body: some View {
         let url = actions.fileURL(change.path)
         HStack(spacing: 10) {
-            Text(change.path)
-                .font(.system(size: 11.5))
-                .lineLimit(1).truncationMode(.middle)
-                .foregroundStyle(StudioTheme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            Button { actions.openFile(change.path) } label: {
+                Text(change.path)
+                    .font(.system(size: 11.5))
+                    .lineLimit(1).truncationMode(.middle)
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: 30)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityReferenceAction(url.flatMap(reference))
+            .onDrag { AskWorkspaceFileDrag.provider(url) }
             if hovering, let url {
                 if let onReference = reference(url) {
                     AskFileReferenceButton(action: onReference, size: 26)
@@ -180,34 +187,24 @@ private struct AskFileChangeRow: View {
                 .foregroundStyle(StudioTheme.textSecondary)
                 .help(L("ask.sidePanel.open.default"))
                 .accessibilityLabel(L("ask.sidePanel.open.default"))
-                Menu {
-                    AskFileOpenMenuItems(file: url, showsShortcuts: false, onReference: reference(url))
-                } label: {
-                    Image(systemName: "ellipsis").font(.system(size: 12)).frame(width: 26, height: 26)
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .accessibilityLabel(L("ask.sidePanel.open.menu"))
+                AskFileMoreButton(items: AskFileOpenMenuItems(file: url, showsShortcuts: false,
+                                                              onReference: reference(url)))
+                    .accessibilityIdentifier("ask.fileChanges.more")
             } else {
                 AskFileChangeTag(added: change.kind == .added)
+                    .onTapGesture { actions.openFile(change.path) }
             }
         }
         .padding(.horizontal, 10).frame(height: 30)
         .background(hovering ? StudioTheme.textPrimary.opacity(0.05) : .clear)
         .contentShape(Rectangle())
-        .onTapGesture { actions.openFile(change.path) }
         .onHover { hovering = $0 }
         .contextMenu {
             Button(L("ask.sidePanel.open.inPanel")) { actions.openFile(change.path) }
             if let url { AskFileOpenMenuItems(file: url, showsShortcuts: false, onReference: reference(url)) }
         }
-        .onDrag { AskWorkspaceFileDrag.provider(url) }
         .help(change.path)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAction(named: L("ask.sidePanel.open.inPanel")) { actions.openFile(change.path) }
-        .accessibilityReferenceAction(url.flatMap(reference))
+        .accessibilityElement(children: .contain)
     }
 }
 

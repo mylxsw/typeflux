@@ -11,7 +11,8 @@ struct AskSidePanelRenderTests {
     /// Renders `root`, keeps a PNG when asked, and returns the accessibility text it shows.
     @discardableResult
     private func render(_ root: some View, name: String, size: NSSize = NSSize(width: 520, height: 640),
-                        dark: Bool = false, settle: Duration = .milliseconds(300)) async throws -> [String] {
+                        dark: Bool = false, settle: Duration = .milliseconds(300),
+                        interact: ((NSWindow) async throws -> Void)? = nil) async throws -> [String] {
         _ = NSApplication.shared
         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
         let previous = NSApp.accessibilityAttributeValue(attribute)
@@ -29,6 +30,7 @@ struct AskSidePanelRenderTests {
         hosting.layoutSubtreeIfNeeded()
         try await Task.sleep(for: settle)
         hosting.layoutSubtreeIfNeeded()
+        try await interact?(window)
         let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         let data = try #require(bitmap.representation(using: .png, properties: [:]))
@@ -149,6 +151,59 @@ struct AskSidePanelRenderTests {
         panel.fileQuery.search = "nothing matches"
         try await render(AskSidePanelView(panel: panel, context: context(root), close: {}),
                              name: "side-panel-files-no-match")
+    }
+
+    @Test func fileListActionsRenderAndLocateTheirMessage() async throws {
+        let oldLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(oldLanguage) }
+        let root = try workspace()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let panel = AskSidePanel(browser: nil)
+        let file = AskWorkspaceFile(relativePath: "outputs/clone-typeflux.sh", size: 1024,
+                                    modifiedAt: Date(), origin: .generated, messageId: "m1")
+        await panel.refreshFiles(conversationId: "c1") { (root, [file]) }
+        var context = context(root)
+        context.messageTitle = { _ in "Shell 脚本" }
+        context.referenceFile = { _ in }
+        var located: String?
+        context.locateMessage = { located = $0 }
+        let suite = "files-list-actions-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let view = AskFilesTabView(panel: panel, context: context, open: { _ in Issue.record("Unexpected file open") })
+            .defaultAppStorage(defaults)
+            .background(AskTheme.surface)
+        // An exported hover snapshot needs a WindowServer mouse transition for SwiftUI's onHover.
+        let capturesHover = ProcessInfo.processInfo.environment["TYPEFLUX_BROWSER_SNAPSHOTS"] != nil
+        let previousPointer = capturesHover ? CGEvent(source: nil)?.location : nil
+        defer { if let previousPointer { CGWarpMouseCursorPosition(previousPointer) } }
+        try await render(view, name: "files-list-row-actions", size: NSSize(width: 560, height: 220), dark: true) { window in
+            let locate = try AskWorkspaceTestAccessibility.center(identifier: "ask.sidePanel.files.locate", in: window)
+            func send(_ type: NSEvent.EventType, to point: NSPoint) throws {
+                let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                    timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                    context: nil, eventNumber: 1, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
+                NSApp.sendEvent(event)
+            }
+            try send(.leftMouseDown, to: locate)
+            try send(.leftMouseUp, to: locate)
+            #expect(located == "m1")
+            if capturesHover, let screen = NSScreen.screens.first {
+                NSApp.activate(ignoringOtherApps: true)
+                window.center()
+                window.orderFrontRegardless()
+                window.acceptsMouseMovedEvents = true
+                for point in [locate, NSPoint(x: 160, y: locate.y - 36)] {
+                    let p = window.convertPoint(toScreen: point)
+                    CGEvent(mouseEventSource: nil, mouseType: .mouseMoved,
+                            mouseCursorPosition: CGPoint(x: p.x, y: screen.frame.maxY - p.y),
+                            mouseButton: .left)?.post(tap: .cghidEventTap)
+                    try await Task.sleep(for: .milliseconds(160))
+                }
+            }
+            window.contentView?.layoutSubtreeIfNeeded()
+        }
     }
 
     @Test func filesTabEmptyStates() async throws {

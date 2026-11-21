@@ -416,17 +416,50 @@ extension AskSidePanelFilePreviewTests {
         try command("a", code: 0)
         try command("c", code: 8)
         XCTAssertTrue(board.string(forType: .string) == script)
+        func checkToolbar(_ name: String) throws {
+            let reload = try AskWorkspaceTestAccessibility.frame(identifier: "ask.sidePanel.file.reload", in: window)
+            let more = try AskWorkspaceTestAccessibility.frame(identifier: "ask.sidePanel.file.more", in: window)
+            XCTAssertEqual(more.size, reload.size)
+            let rect = host.convert(reload.union(more).insetBy(dx: -3, dy: -3), from: nil).integral
+            let image = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: rect))
+            host.cacheDisplay(in: rect, to: image)
+            // Sample the surface around the two glyphs. A native menu bezel visibly changes these pixels.
+            func color(in button: NSRect, dx: CGFloat, dy: CGFloat) throws -> NSColor {
+                let p = host.convert(NSPoint(x: button.midX + dx, y: button.midY + dy), from: nil)
+                let x = Int((p.x - rect.minX) * CGFloat(image.pixelsWide) / rect.width)
+                let y = Int((host.isFlipped ? p.y - rect.minY : rect.maxY - p.y) * CGFloat(image.pixelsHigh) / rect.height)
+                return try XCTUnwrap(image.colorAt(x: x, y: y)?.usingColorSpace(.sRGB))
+            }
+            for dx: CGFloat in [-9, 9] {
+                for dy: CGFloat in [-5, 5] {
+                    let left = try color(in: reload, dx: dx, dy: dy)
+                    let right = try color(in: more, dx: dx, dy: dy)
+                    XCTAssertEqual(left.redComponent, right.redComponent, accuracy: 0.025, name)
+                    XCTAssertEqual(left.greenComponent, right.greenComponent, accuracy: 0.025, name)
+                    XCTAssertEqual(left.blueComponent, right.blueComponent, accuracy: 0.025, name)
+                }
+            }
+            if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_PREVIEW_SNAPSHOTS"] {
+                let data = try XCTUnwrap(image.representation(using: .png, properties: [:]))
+                try data.write(to: URL(fileURLWithPath: directory).appendingPathComponent(name + ".png"))
+            }
+        }
+        try checkToolbar("toolbar-before-open")
         let menuOpened = expectation(description: "File menu starts tracking")
         let observation = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification,
                                                                   object: nil, queue: nil) { note in
             guard let menu = note.object as? NSMenu else { return }
+            XCTAssertNotNil(menu.items.first { $0.submenu != nil })
+            XCTAssertTrue(menu.items.contains { $0.keyEquivalent == "r" })
             menuOpened.fulfill()
             RunLoop.main.perform(inModes: [.eventTracking, .default]) { menu.cancelTracking() }
         }
         defer { NotificationCenter.default.removeObserver(observation) }
         let center = try AskWorkspaceTestAccessibility.center(identifier: "ask.sidePanel.file.more", in: window)
-        NSApp.postEvent(try mouse(.leftMouseUp, center), atStart: true)
-        window.sendEvent(try mouse(.leftMouseDown, center))
+        NSApp.sendEvent(try mouse(.leftMouseDown, center))
+        NSApp.sendEvent(try mouse(.leftMouseUp, center))
         await fulfillment(of: [menuOpened], timeout: 2)
+        try await Task.sleep(for: .milliseconds(200))
+        try checkToolbar("toolbar-after-dismiss")
     }
 }

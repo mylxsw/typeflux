@@ -175,11 +175,9 @@ struct AskFilesTabView: View {
             Text(title).lineLimit(1)
             Spacer(minLength: 4)
             if let locatable {
-                Button { context.locateMessage(locatable) } label: {
-                    Text(L("ask.sidePanel.locateMessage")).font(.system(size: 11))
-                        .foregroundStyle(AskTheme.accentText)
+                TFButton(title: L("ask.sidePanel.locateMessage"), kind: .plain, size: .small) {
+                    context.locateMessage(locatable)
                 }
-                .buttonStyle(.plain)
                 .accessibilityIdentifier("ask.sidePanel.files.locate")
             }
             Text("\(group.files.count)").monospacedDigit()
@@ -257,48 +255,46 @@ private struct AskWorkspaceFileRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            AskWorkspaceFileIconView(file: file, size: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(file.name).font(.system(size: 12.5)).lineLimit(1).truncationMode(.middle)
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text(AskWorkspaceFileFormat.detail(file)).font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+            Button(action: open) {
+                HStack(spacing: 10) {
+                    AskWorkspaceFileIconView(file: file, size: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(file.name).font(.system(size: 12.5)).lineLimit(1).truncationMode(.middle)
+                            .foregroundStyle(StudioTheme.textPrimary)
+                        Text(AskWorkspaceFileFormat.detail(file)).font(.system(size: 11))
+                            .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("ask.sidePanel.files.open")
+            .accessibilityReferenceAction(onReference)
+            .onDrag { AskWorkspaceFileDrag.provider(url) }
             if let onReference {
                 AskFileReferenceButton(action: onReference)
                     .opacity(hovering ? 1 : 0)
                     .accessibilityIdentifier("ask.sidePanel.files.reference")
             }
             if let url {
-                Menu {
-                    AskFileOpenMenuItems(file: url, showsShortcuts: false, onReference: onReference, onError: onError)
-                } label: {
-                    Image(systemName: "ellipsis").font(.system(size: 12))
-                        .frame(width: 24, height: 24)
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .opacity(hovering ? 1 : 0)
-                .accessibilityLabel(L("ask.sidePanel.open.menu"))
+                AskFileMoreButton(items: AskFileOpenMenuItems(file: url, showsShortcuts: false,
+                                                              onReference: onReference, onError: onError))
+                    .opacity(hovering ? 1 : 0)
+                    .allowsHitTesting(hovering)
+                    .accessibilityIdentifier("ask.sidePanel.files.more")
             }
         }
         .padding(.horizontal, 6).padding(.vertical, 5)
         .background(hovering ? AskTheme.hoverFill : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .contentShape(Rectangle())
-        .onTapGesture(perform: open)
         .onHover { hovering = $0 }
         .contextMenu {
             Button(L("ask.sidePanel.open.inPanel"), action: open)
             if let url { AskFileOpenMenuItems(file: url, onReference: onReference, onError: onError) }
         }
-        .onDrag { AskWorkspaceFileDrag.provider(url) }
         .help(file.relativePath)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAction(named: L("ask.sidePanel.open.inPanel"), open)
-        .accessibilityReferenceAction(onReference)
+        .accessibilityElement(children: .contain)
     }
 }
 

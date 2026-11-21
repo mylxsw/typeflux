@@ -71,21 +71,11 @@ struct AskFileTabView: View {
                         .accessibilityIdentifier("ask.sidePanel.file.reference")
                 }
                 toolbarButton("ask.sidePanel.file.reload", symbol: "arrow.clockwise") { tab.reload() }
-                Menu {
-                    AskFileOpenMenuItems(file: tab.target.url, actions: actions, onReference: onReference,
-                                         onError: onError)
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: TFControlSize.regular.iconSize, weight: .semibold))
-                }
-                .menuStyle(.button)
-                .menuIndicator(.hidden)
-                .buttonStyle(TFButtonStyle(kind: .plain, size: .regular, iconOnly: true))
-                .fixedSize()
-                .frame(width: TFControlSize.regular.height, height: TFControlSize.regular.height)
-                .help(L("ask.sidePanel.open.menu"))
-                .accessibilityLabel(L("ask.sidePanel.open.menu"))
-                .accessibilityIdentifier("ask.sidePanel.file.more")
+                    .accessibilityIdentifier("ask.sidePanel.file.reload")
+                AskFileMoreButton(items: AskFileOpenMenuItems(file: tab.target.url, actions: actions,
+                                                              onReference: onReference, onError: onError),
+                                  size: .regular)
+                    .accessibilityIdentifier("ask.sidePanel.file.more")
             }
         }
         .padding(.horizontal, 12)
