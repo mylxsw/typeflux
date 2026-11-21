@@ -8,6 +8,7 @@ final class TerminalLauncherModel: ObservableObject {
         case idle, running, input, secure, ended
     }
 
+    let explanation: TerminalFailureExplanation
     let session: TerminalSession
     let settings: TerminalRunSettings
     let source: NSRunningApplication?
@@ -30,7 +31,8 @@ final class TerminalLauncherModel: ObservableObject {
 
     init(session: TerminalSession, settings: TerminalRunSettings, source: NSRunningApplication?,
          notify: @escaping @MainActor (String, String) async -> Bool,
-         visible: @escaping @MainActor () -> Bool) {
+         visible: @escaping @MainActor () -> Bool, explanation: TerminalFailureExplanation? = nil) {
+        self.explanation = explanation ?? TerminalFailureExplanation()
         self.session = session
         self.settings = settings
         self.source = source
@@ -116,6 +118,7 @@ final class TerminalLauncherModel: ObservableObject {
     }
 
     func complete() -> Bool {
+        if canTabToExplanation, fillExplanation() { return true }
         guard prompt == .idle, pendingRisk == nil,
               let completed = completion.advance(text, cwd: session.cwd, path: session.searchPath) else {
             resetCompletion()
@@ -180,7 +183,21 @@ final class TerminalLauncherModel: ObservableObject {
         if !text.isEmpty { deliver(text) }
     }
 
+    var canTabToExplanation: Bool {
+        text.isEmpty && (selected == nil || selected == explanation.blockID)
+    }
+
+    @discardableResult
+    func fillExplanation() -> Bool {
+        guard prompt == .idle, pendingRisk == nil, case let .ready(answer) = explanation.phase,
+              let id = explanation.blockID, session.blocks.contains(where: { $0.id == id && $0.canExplain })
+        else { return false }
+        fill(answer.command)
+        return true
+    }
+
     func clear() {
+        explanation.clear()
         selected = nil
         collapsed = []
         session.clearFinishedBlocks()

@@ -43,7 +43,8 @@ struct TerminalLauncherModelTests {
         #expect(model.submit() && model.secret.isEmpty)
         #expect(process.writes.last == Array("hidden test response\r".utf8))
         process.readsHiddenInput = false
-        process.emit(osc("133;D;0") + osc("133;B"))
+        process.emit(osc("133;D;1") + osc("133;B"))
+        #expect(session.blocks.last?.hadHiddenInput == true && session.blocks.last?.canExplain == false)
         #expect(model.prompt == .idle && history.commands == ["read input"])
 
         process.exit(0)

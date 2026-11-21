@@ -7687,3 +7687,9 @@
 "terminal.risk.cancelled" = "已取消";
 "terminal.risk.runAnyway" = "仍然运行";
 "terminal.settings.notify" = "后台命令完成时通知";
+"terminal.ai.explain" = "让 AI 解释";
+"terminal.ai.disclosure" = "将这条命令、退出码和最后最多 4 KB 的输出发送给已配置的 AI 模型？";
+"terminal.ai.loading" = "正在解释命令";
+"terminal.ai.offline" = "当前处于离线状态。";
+"terminal.ai.failed" = "未能解释这条命令。";
+"terminal.ai.continue" = "在 Ask 中继续";

@@ -7634,3 +7634,9 @@
 "terminal.risk.cancelled" = "취소됨";
 "terminal.risk.runAnyway" = "그래도 실행";
 "terminal.settings.notify" = "백그라운드 명령 완료 시 알림";
+"terminal.ai.explain" = "AI로 설명";
+"terminal.ai.disclosure" = "이 명령과 종료 코드, 마지막 출력 최대 4 KB를 설정된 AI 모델에 보낼까요?";
+"terminal.ai.loading" = "명령 설명 중";
+"terminal.ai.offline" = "오프라인 상태입니다.";
+"terminal.ai.failed" = "명령을 설명할 수 없습니다.";
+"terminal.ai.continue" = "Ask에서 계속";
