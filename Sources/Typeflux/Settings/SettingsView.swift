@@ -2090,7 +2090,7 @@ struct StudioView: View {
                 }
             }
         case let .notice(message):
-            TFNotice(text: message)
+            TFNotice(text: message).accessibilityLabel(Text(verbatim: message))
         case let .failure(message):
             TFNotice(text: message, tone: .danger)
         }

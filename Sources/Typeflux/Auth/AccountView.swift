@@ -248,12 +248,8 @@ struct AccountView: View {
             AccountHelpSection(
                 showsSubscriptionSync: AccountSubscriptionPresentation.make(from: authState.subscription)
                     .showsSubscriptionSyncAction,
-                showsInvoices: authState.subscription.billingEnabled
-                    && (authState.subscription.hasPaidSubscription
-                        || AccountStatusPresentation.isPaymentIssue(authState.subscription)),
                 isSyncing: authState.isSyncingSubscription,
-                onSync: syncBillingSubscription,
-                onOpenPortal: { openBillingFlow(.billingPortal) }
+                onSync: syncBillingSubscription
             )
         }
     }

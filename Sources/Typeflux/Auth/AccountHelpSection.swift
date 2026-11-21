@@ -1,16 +1,14 @@
 import AppKit
 import SwiftUI
 
-/// Privacy policy, the "paid but not active" refresh, invoices and contact.
+/// Privacy policy, the "paid but not active" refresh and contact.
 struct AccountHelpSection: View {
     static let privacyURL = URL(string: "https://typeflux.app/privacy")!
     static let contactAddress = "mylxsw@aicode.cc"
 
     let showsSubscriptionSync: Bool
-    let showsInvoices: Bool
     let isSyncing: Bool
     let onSync: () -> Void
-    let onOpenPortal: () -> Void
 
     var body: some View {
         StudioCard(padding: StudioTheme.Spacing.mediumLarge) {
@@ -22,11 +20,6 @@ struct AccountHelpSection: View {
                     Divider()
                     row(L("account.page.refreshSubscription"), action: L("account.page.refreshSubscriptionAction"),
                         external: false, loading: isSyncing, action: onSync)
-                }
-                if showsInvoices {
-                    Divider()
-                    row(L("account.page.invoices"), action: L("account.page.openPortal"), external: true,
-                        action: onOpenPortal)
                 }
                 Divider()
                 row(L("account.page.contact"), action: L("account.page.sendEmail"), external: true) {

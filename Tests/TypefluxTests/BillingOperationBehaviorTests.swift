@@ -238,9 +238,8 @@ final class BillingOperationFixture {
         var title: String {
             switch self {
             case .accountPlans: L("account.offer.upgradeTitle")
-            case .accountPortal: L("account.page.openPortal")
             case .cardPlans: L("account.card.plans")
-            case .cardPortal: L("account.card.manage")
+            case .accountPortal, .cardPortal: L("account.card.manage")
             case .credits: L("ask.credits.buy")
             case .upgrade: L("ask.credits.upgrade")
             }
