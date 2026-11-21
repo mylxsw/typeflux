@@ -9,6 +9,7 @@ final class FakeTerminalProcess: TerminalProcess {
     var started: [(TerminalShellLaunch, TerminalSize)] = []
     var writes: [[UInt8]] = []
     var sizes: [TerminalSize] = []
+    var forcedInterrupts = 0
     var terminations = 0
     var readsHiddenInput = false
     var startError: Error?
@@ -24,6 +25,10 @@ final class FakeTerminalProcess: TerminalProcess {
 
     func resize(_ size: TerminalSize) {
         sizes.append(size)
+    }
+
+    func interruptForeground(force: Bool) {
+        if force { forcedInterrupts += 1 } else { write([3]) }
     }
 
     func terminate() {

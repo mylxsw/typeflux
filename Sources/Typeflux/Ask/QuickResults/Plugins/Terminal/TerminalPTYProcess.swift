@@ -30,6 +30,8 @@ protocol TerminalProcess: AnyObject {
     func resize(_ size: TerminalSize)
     /// True while the command reads input with echo turned off, as for a password.
     var readsHiddenInput: Bool { get }
+    /// Interrupts the current job, escalating only the group targeted by the first press.
+    func interruptForeground(force: Bool)
     /// Hangs up the command and everything it started, escalating to SIGTERM and SIGKILL.
     func terminate()
 }
@@ -63,6 +65,7 @@ final class TerminalPTYProcess: TerminalProcess, @unchecked Sendable {
     private var exitStatus: Int32?
     private var reported = false
     private var terminating = false
+    private var interruptedGroup: pid_t = 0
     private var foregroundGroup: pid_t = 0
 
     init(callbackQueue: DispatchQueue = .main) {
@@ -134,6 +137,28 @@ final class TerminalPTYProcess: TerminalProcess, @unchecked Sendable {
             var attributes = termios()
             guard tcgetattr(master, &attributes) == 0 else { return false }
             return attributes.c_lflag & tcflag_t(ECHO) == 0 && attributes.c_lflag & tcflag_t(ICANON) != 0
+        }
+    }
+
+    func interruptForeground(force: Bool) {
+        queue.async { [self] in
+            guard master >= 0, !outputClosed, exitStatus == nil, !terminating else { return }
+            let group = tcgetpgrp(master)
+            if !force {
+                interruptedGroup = group
+                pendingWrite.append(3)
+                flushWrites()
+                return
+            }
+            // A short-lived job can exit before the main queue processes OSC D.
+            // Never escalate its interrupt to the shell that just regained the PTY.
+            guard group > 0, group == interruptedGroup else { return }
+            interruptedGroup = 0
+            if group == pid {
+                terminate()
+            } else {
+                kill(-group, SIGKILL)
+            }
         }
     }
 
