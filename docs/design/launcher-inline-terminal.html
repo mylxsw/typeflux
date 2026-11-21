@@ -96,8 +96,6 @@ body.light .menubar { background: rgba(255,255,255,.45); color: #1a1a1a; }
 .ghost { position: absolute; inset: 0; display: flex; align-items: center; pointer-events: none; white-space: pre; color: var(--text3); opacity: .75; overflow: hidden; }
 .ghost .typed { visibility: hidden; }
 .lbody { padding: 0 8px 6px; overflow: auto; }
-.lbar { display: flex; align-items: center; gap: 13px; padding: 7px 14px; border-top: 1px solid var(--border-soft); font-size: 11.5px; color: var(--text3); white-space: nowrap; flex: none; overflow: hidden; }
-.lbar .sp { flex: 1; }
 kbd, .kbd { font: 10.5px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; margin-right: 3px; color: var(--text2); }
 .sec { font-size: 11.5px; font-weight: 600; color: var(--text3); padding: 10px 8px 4px; display: flex; align-items: center; gap: 8px; }
 .sec .r { margin-left: auto; font-weight: 400; }
@@ -141,6 +139,7 @@ kbd, .kbd { font: 10.5px ui-monospace, Menlo, monospace; background: var(--tile)
 
 .tbody { position: relative; overflow-y: auto; overflow-x: hidden; background: var(--term); flex: 1 1 auto; min-height: 0; padding: 4px 0 2px; scroll-behavior: auto; }
 .launcher .tbody { max-height: 430px; }
+.tbody:empty { min-height: 96px; }
 .launcher.tall .tbody { max-height: none; height: 470px; }
 .block { position: relative; padding: 7px 12px 7px 14px; border-left: 2px solid transparent; }
 .block + .block { border-top: 1px solid var(--border-soft); }
@@ -175,22 +174,23 @@ kbd, .kbd { font: 10.5px ui-monospace, Menlo, monospace; background: var(--tile)
 .card { margin: 8px 0 4px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); padding: 10px 12px; font-size: 12.5px; }
 .card.danger { border-color: rgba(220,82,82,.45); background: var(--danger-soft); }
 .card .h { display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 4px; }
-.card.danger .h { color: var(--danger); }
+.card.danger .h { color: var(--danger); margin: 0; }
+.card .h .sp { flex: 1; }
+.card .h .btn { font-weight: 400; }
 .card .b { color: var(--text2); }
-.card .b code { font: 11.5px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; color: var(--text); }
+.card .h code, .card .b code { font: 11.5px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; color: var(--text); }
 .card .row { display: flex; gap: 8px; align-items: center; margin-top: 9px; }
 .card .row .sp { flex: 1; }
 .card.ai { border-color: rgba(176,124,255,.35); background: linear-gradient(180deg, rgba(176,124,255,.08), transparent); }
-.card.ai .h { color: var(--a-mag); }
+.card.ai .h { color: var(--a-mag); margin: 0; }
+.card .aic { display: inline-block; color: var(--a-mag); margin-right: 6px; vertical-align: -1px; }
+.card .aic svg { display: inline; }
 .suggest { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 6px; background: var(--tile); font: 11.5px ui-monospace, Menlo, monospace; color: var(--text); cursor: pointer; border: 1px solid var(--border-soft); }
 .suggest:hover { border-color: var(--accent); }
 .dots i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: currentColor; margin-right: 3px; animation: dot 1s infinite; }
 .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
 @keyframes dot { 50% { opacity: .2; } }
 
-/* empty / welcome */
-.welcome { padding: 18px 16px 14px; color: var(--text3); font-size: 12px; }
-.welcome b { color: var(--text2); }
 
 /* prompt line */
 .prompt { display: flex; align-items: center; gap: 8px; padding: 9px 12px 9px 14px; border-top: 1px solid var(--border-soft); flex: none; background: var(--term); }
@@ -198,7 +198,6 @@ kbd, .kbd { font: 10.5px ui-monospace, Menlo, monospace; background: var(--tile)
 .prompt .ghostwrap input, .prompt .ghost { font: 13.5px ui-monospace, "SF Mono", Menlo, monospace; }
 .prompt input { border: 0; outline: none; background: transparent; }
 .prompt input::placeholder { color: var(--text3); font-family: -apple-system, "PingFang SC", sans-serif; font-size: 12.5px; }
-.prompt .hint { font-size: 11px; color: var(--text3); white-space: nowrap; display: flex; gap: 6px; align-items: center; flex: none; }
 .prompt.stdin { background: var(--accent-soft); }
 .prompt.stdin .pg { color: var(--accent); }
 .prompt.secret { background: var(--warn-soft); }
@@ -217,9 +216,6 @@ kbd, .kbd { font: 10.5px ui-monospace, Menlo, monospace; background: var(--tile)
 .tui .hl { background: var(--a-cyan); color: #111; }
 .tui .hdr { background: var(--a-green); color: #111; }
 .tui .hl, .tui .hdr.row { display: inline-block; width: 100%; }
-.tuibanner { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--accent-soft); color: var(--accent); font-size: 11.5px; font-weight: 600; flex: none; }
-.tuibanner .sp { flex: 1; }
-.tuibanner .ibtn { color: var(--accent); height: 22px; }
 
 /* ---------- Standalone window ---------- */
 .win { position: absolute; left: 250px; top: 120px; width: 820px; height: 560px; border-radius: 12px; background: var(--glass); border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,.5); backdrop-filter: blur(28px) saturate(1.4); z-index: 55; display: none; flex-direction: column; overflow: hidden; }
@@ -229,8 +225,6 @@ kbd, .kbd { font: 10.5px ui-monospace, Menlo, monospace; background: var(--tile)
 .win .titlebar .lights { margin-right: 10px; }
 .win .titlebar .sp { flex: 1; min-width: 8px; }
 .win .tbody { flex: 1; }
-.win .status { height: 28px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-top: 1px solid var(--border-soft); font-size: 11px; color: var(--text3); flex: none; white-space: nowrap; overflow: hidden; }
-.win .status .sp { flex: 1; }
 
 /* ---------- Notification + toast ---------- */
 .notif { position: absolute; right: 14px; top: 36px; width: 330px; border-radius: 14px; background: var(--glass); border: 1px solid var(--border); box-shadow: 0 16px 40px rgba(0,0,0,.35); backdrop-filter: blur(24px); padding: 11px 13px; z-index: 90; display: none; gap: 10px; cursor: pointer; }
@@ -249,15 +243,13 @@ kbd, .kbd { font: 10.5px ui-monospace, Menlo, monospace; background: var(--tile)
 .settings.show { display: flex; }
 .settings .titlebar { height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border-bottom: 1px solid var(--border-soft); flex: none; color: var(--text2); font-weight: 600; }
 .settings .sbody { padding: 18px 26px; overflow: auto; }
-.settings h2 { margin: 0 0 4px; font-size: 18px; display: flex; align-items: center; gap: 10px; }
-.settings .sub { color: var(--text3); font-size: 12px; margin-bottom: 14px; }
+.settings h2 { margin: 0 0 14px; font-size: 18px; display: flex; align-items: center; gap: 10px; }
 .group { border: 1px solid var(--border-soft); background: var(--card); border-radius: 12px; margin-bottom: 14px; }
 .group .gt { font-size: 11.5px; font-weight: 600; color: var(--text3); padding: 10px 14px 0; }
 .srow { display: flex; align-items: center; gap: 14px; padding: 11px 14px; }
 .srow + .srow { border-top: 1px solid var(--border-soft); }
 .srow .l { flex: 1; min-width: 0; }
 .srow .l .t { font-weight: 600; font-size: 12.5px; }
-.srow .l .d { color: var(--text3); font-size: 11.5px; margin-top: 1px; }
 .seg { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--tile); gap: 2px; flex: none; }
 .seg button { border: 0; background: transparent; padding: 3px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; color: var(--text2); white-space: nowrap; }
 .seg button.on { background: var(--pop); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.25); }
@@ -266,7 +258,6 @@ kbd, .kbd { font: 10.5px ui-monospace, Menlo, monospace; background: var(--tile)
 .sw.on { background: var(--ok); border-color: var(--ok); }
 .sw.on::after { left: 15px; }
 .field { height: 26px; border-radius: 7px; border: 1px solid var(--border); background: var(--pop); padding: 0 9px; display: inline-flex; align-items: center; gap: 6px; font: 12px ui-monospace, Menlo, monospace; color: var(--text); min-width: 150px; }
-.new { font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
 </style>
 </head>
 <body>
@@ -441,6 +432,7 @@ function newSession(where, cwd = '~') {
 const sess = (id) => S.sessions.find((s) => s.id === id);
 const curSess = (where) => sess(S.cur[where]);
 const running = (s) => s.blocks.find((b) => b.status === 'run' || b.status === 'confirm');
+const progName = (cmd) => cmd.split(' ')[0];
 const sessName = (s) => {
   const r = running(s);
   const dir = s.cwd === '~' ? '~' : s.cwd.split('/').pop();
@@ -478,13 +470,13 @@ const DANGER = [
   [/\brm\s+(-[a-zA-Z]*[rf][a-zA-Z]*\s+)+/, (c, s) => {
     const t = c.replace(/^sudo\s+/, '').split(/\s+/).filter((x) => !x.startsWith('-')).slice(1);
     const n = t.map((x) => resolve(s.cwd, x)).map((p) => isDir(p) ? (p.endsWith('build') ? 1284 : 312) : 1).reduce((a, b) => a + b, 0);
-    return `会递归、强制删除 <code>${esc(t.join(' ') || '…')}</code>（约 ${n.toLocaleString()} 个文件），不会进废纸篓，无法撤销。`;
+    return `永久删除 <code>${esc(t.join(' ') || '…')}</code>（约 ${n.toLocaleString()} 个文件），不进废纸篓`;
   }],
-  [/\bgit\s+push\b.*(\s-f\b|--force)/, () => '会强制覆盖远端分支，其他人的提交可能丢失。'],
-  [/\bgit\s+reset\s+--hard\b/, (c, s) => `会丢弃工作区里 ${repoOf(s.cwd)?.dirty || 0} 个未提交的改动。`],
-  [/\bgit\s+clean\s+-[a-z]*f/, () => '会删除所有未被 Git 跟踪的文件。'],
-  [/\b(mkfs|dd\s+if=|diskutil\s+erase)/, () => '会直接写入或抹掉磁盘。'],
-  [/\bsudo\s+rm\b|\bchmod\s+-R\s+777\b|\bchown\s+-R\b/, () => '会以管理员权限批量修改或删除文件。'],
+  [/\bgit\s+push\b.*(\s-f\b|--force)/, () => '强制覆盖远端分支'],
+  [/\bgit\s+reset\s+--hard\b/, (c, s) => `丢弃 ${repoOf(s.cwd)?.dirty || 0} 个未提交的改动`],
+  [/\bgit\s+clean\s+-[a-z]*f/, () => '删除所有未跟踪的文件'],
+  [/\b(mkfs|dd\s+if=|diskutil\s+erase)/, () => '直接写入或抹掉磁盘'],
+  [/\bsudo\s+rm\b|\bchmod\s+-R\s+777\b|\bchown\s+-R\b/, () => '批量修改或删除文件'],
 ];
 const dangerOf = (cmd, s) => { for (const [re, why] of DANGER) if (re.test(cmd)) return why(cmd, s); return null; };
 
@@ -572,7 +564,7 @@ async function exec(c, cmd) {
     case 'date': c.out('2026年11月21日 星期六 23时40分12秒 CST'); return 0;
     case 'clear': s.blocks = s.blocks.filter((x) => x === c.b); c.b.hidden = true; return 0;
     case 'history': S.hist.slice(0, 12).reverse().forEach((h, i) => c.out(span('c-dim', String(i + 1).padStart(4) + '  ') + esc(h))); return 0;
-    case 'exit': c.out(span('c-dim', '会话已结束。↩ 开始新会话')); c.b.endSession = true; return 0;
+    case 'exit': c.b.endSession = true; return 0;
     case 'cat': {
       const f = resolve(s.cwd, a[0]);
       if (!FILES[f]) { c.out(`cat: ${esc(a[0] || '')}: No such file or directory`); return 1; }
@@ -709,12 +701,11 @@ function blockHTML(s, b, surface) {
   const sel = s.selBlock === b.id;
   const err = b.status === 'err';
   const meta = [];
-  if (b.status === 'run') meta.push(b.prompt ? `<span class="badge warn">${b.prompt.hidden ? I.lock + ' 等待密码' : '等待输入'}</span>` : '<span class="spin"></span>', `<span class="num" data-el="${b.id}">${fmt(Date.now() - b.t0)}</span>`);
+  if (b.status === 'run') meta.push(b.prompt ? '' : '<span class="spin"></span>', `<span class="num" data-el="${b.id}">${fmt(Date.now() - b.t0)}</span>`);
   else if (b.status === 'ok') meta.push(`<span class="num">${fmt(b.t1 - b.t0)}</span>`, `<span class="badge ok">${I.check}</span>`);
   else if (b.status === 'err') meta.push(`<span class="num">${fmt(b.t1 - b.t0)}</span>`, `<span class="badge err">${I.x} ${b.code}</span>`);
-  else if (b.status === 'int') meta.push(`<span class="num">${fmt(b.t1 - b.t0)}</span>`, '<span class="badge">已中断</span>');
+  else if (b.status === 'int') meta.push(`<span class="num">${fmt(b.t1 - b.t0)}</span>`, '<span class="badge">⌃C</span>');
   else if (b.status === 'cancel') meta.push('<span class="badge">已取消</span>');
-  else if (b.status === 'confirm') meta.push('<span class="badge warn">待确认</span>');
   const done = b.status !== 'run' && b.status !== 'confirm';
   const hasOut = b.lines.length > 0;
   const acts = done && b.status !== 'cancel' ? `<span class="acts">
@@ -726,20 +717,18 @@ function blockHTML(s, b, surface) {
     </span>` : (b.status === 'run' ? `<span class="acts" style="display:flex"><button class="ibtn" data-act="stop" data-b="${b.id}" title="中断 ⌃C">${I.stop}</button></span>` : '');
   const where = b.cwd !== s.cwd ? `<span class="where">${esc(b.cwd)}</span>` : '';
   let body = `<div class="out">${b.lines.join('\n')}${b.status === 'run' && !b.prompt && !(s.tui && s.tui.b === b) ? '' : ''}</div>`;
-  if (b.collapsed && hasOut) body = `<div class="more" data-act="fold" data-b="${b.id}">已折叠 ${b.lines.length} 行输出 · 点按展开</div>`;
+  if (b.collapsed && hasOut) body = `<div class="more" data-act="fold" data-b="${b.id}">⋯ ${b.lines.length} 行</div>`;
   let card = '';
   if (b.status === 'confirm') {
-    card = `<div class="card danger"><div class="h">${I.warn} 这条命令可能造成无法撤销的后果</div>
-      <div class="b">${b.why}</div>
-      <div class="row"><span style="font-size:11.5px;color:var(--text3)">在 <code>${esc(b.cwd)}</code> 运行 · 可在设置里关闭此确认</span><span class="sp"></span>
+    card = `<div class="card danger"><div class="h">${I.warn}<span>${b.why}</span><span class="sp"></span>
         <button class="btn" data-act="cancel" data-b="${b.id}">取消 <span class="s">esc</span></button>
         <button class="btn danger" data-act="confirm" data-b="${b.id}">仍然运行 <span class="s">⌘↩</span></button></div></div>`;
   }
   if (b.ai) {
     card += b.ai.loading
-      ? `<div class="card ai"><div class="h">${I.ai} Typeflux 正在分析输出 <span class="dots"><i></i><i></i><i></i></span></div></div>`
-      : `<div class="card ai"><div class="h">${I.ai} 为什么失败</div><div class="b">${b.ai.text}</div>
-         ${b.ai.fix ? `<div class="row"><span style="font-size:11.5px;color:var(--text3)">建议下一步</span><span class="suggest" data-act="usefix" data-b="${b.id}">${esc(b.ai.fix)} <kbd style="margin:0">⇥</kbd></span><span class="sp"></span><button class="btn" data-act="askmore" data-b="${b.id}">在 Ask 中继续 ${I.ai}</button></div>` : ''}</div>`;
+      ? `<div class="card ai"><div class="h">${I.ai}<span class="dots"><i></i><i></i><i></i></span></div></div>`
+      : `<div class="card ai"><div class="b"><span class="aic">${I.ai}</span>${b.ai.text}</div>
+         ${b.ai.fix ? `<div class="row"><span class="suggest" data-act="usefix" data-b="${b.id}">${esc(b.ai.fix)} <kbd style="margin:0">⇥</kbd></span><span class="sp"></span><button class="btn" data-act="askmore" data-b="${b.id}">在 Ask 中继续</button></div>` : ''}</div>`;
   }
   return `<div class="block ${sel ? 'sel' : ''} ${err ? 'err' : ''} ${b.collapsed ? 'collapsed' : ''}" data-block="${b.id}">
     <div class="bh"><span class="pr">❯</span><span class="cmd" title="${esc(b.cmd)}">${esc(b.cmd)}</span>${where}<span class="sp"></span>${acts}<span class="meta">${meta.join('')}</span></div>
@@ -762,9 +751,9 @@ function tuiHTML(s) {
   if (t.kind === 'vim') {
     const lines = (FILES['~/Projects/typeflux/Makefile']).split('\n');
     let h = lines.map((l) => esc(l.replace(/\t/g, '    '))).join('\n') + '\n' + '<span class="c-blue">~</span>\n'.repeat(14);
-    return h + '<span class="c-dim">"Makefile" 8L, 92B                                                    1,1    All</span>   ' + span('c-dim', '（按 q 退出）');
+    return h + '<span class="c-dim">"Makefile" 8L, 92B                                                    1,1    All</span>';
   }
-  return esc((FILES['~/Projects/typeflux/README.md'] || '')) + '\n\n' + span('c-dim', '(END) 按 q 退出');
+  return esc((FILES['~/Projects/typeflux/README.md'] || '')) + '\n\n' + span('c-dim', '(END)');
 }
 
 function surfaceHTML(where) {
@@ -776,21 +765,17 @@ function surfaceHTML(where) {
   const tabs = list.length > 1 || where === 'window'
     ? `<div class="tabs">${list.map((x, i) => `<span class="tab ${x.id === s.id ? 'on' : ''}" data-tab="${x.id}" title="⌘${i + 1}"><i class="st ${sessState(x)}"></i><span class="n">${esc(sessName(x))}</span><span class="x" data-close="${x.id}">×</span></span>`).join('')}<button class="ibtn" data-act="newtab" data-where="${where}" title="新会话 ⌘T">${I.plus}</button></div>` : '';
   const blocks = s.blocks.map((b) => blockHTML(s, b, where)).join('');
-  const empty = !s.blocks.some((b) => !b.hidden)
-    ? `<div class="welcome">${s.ended ? '会话已结束。' : ''}这是一个持续的 <b>zsh</b> 会话：<code class="mono">cd</code>、环境变量和别名会保留到下一条命令。<br>esc 隐藏启动器后命令继续运行，按 ⌘O 移到独立窗口。</div>` : '';
   const body = s.tui
-    ? `<div class="tuibanner">${I.term} 全屏程序 ${esc(s.tui.kind)} · 键盘直接发送给程序<span class="sp"></span>${where === 'launcher' ? `<button class="ibtn" data-act="popout">${I.popout} 移到窗口 <span class="s">⌘O</span></button>` : ''}<span style="font-weight:400">q 退出</span></div><div class="tbody" data-tbody="${where}"><div class="tui" id="tui-${where}">${tuiHTML(s)}</div></div>`
-    : `<div class="tbody" data-tbody="${where}">${blocks}${empty}</div>`;
+    ? `<div class="tbody" data-tbody="${where}"><div class="tui" id="tui-${where}">${tuiHTML(s)}</div></div>`
+    : `<div class="tbody" data-tbody="${where}">${blocks}</div>`;
   // prompt
-  let pcls = '', pg = '❯', to = '', ph = '输入命令，↩ 运行';
-  if (r && r.status === 'run' && r.prompt) { pcls = r.prompt.hidden ? 'secret' : 'stdin'; pg = r.prompt.hidden ? I.lock : '›'; to = r.prompt.hidden ? '输入密码' : `发送给 ${esc(r.cmd.split(' ')[0])}`; ph = r.prompt.hidden ? '输入不会显示，也不会进入历史记录' : r.prompt.label.trim(); }
-  else if (r && r.status === 'run') { pcls = 'locked'; ph = `${r.cmd.split(' ')[0]} 正在运行 · ⌃C 中断 · ⌘T 开新会话`; }
-  else if (r && r.status === 'confirm') { pcls = 'locked'; ph = '等待确认 · ⌘↩ 仍然运行 · esc 取消'; }
-  else if (s.ended) ph = '↩ 开始新会话';
-  const hint = pcls === 'stdin' || pcls === 'secret' ? '<span class="hint"><kbd>↩</kbd>发送 <kbd>⌃C</kbd>中断</span>' : (pcls ? '' : '<span class="hint"><kbd>→</kbd>接受建议 <kbd>⇥</kbd>补全 <kbd>↑</kbd>历史</span>');
+  let pcls = '', pg = '❯', to = '', ph = '';
+  if (r && r.status === 'run' && r.prompt) { pcls = r.prompt.hidden ? 'secret' : 'stdin'; pg = r.prompt.hidden ? I.lock : '›'; to = esc(progName(r.cmd)); }
+  else if (r) pcls = 'locked';
+  else if (s.ended) ph = '会话已结束 · ↩ 新会话';
   const comp = S.complete && S.complete.where === where ? `<div class="complete">${S.complete.items.map((x, i) => `<span class="${i === S.complete.idx ? 'on' : ''} ${x.endsWith('/') ? 'dir' : ''}" data-comp="${i}">${esc(x)}</span>`).join('')}</div>` : '';
   const prompt = s.tui ? '' : `${comp}<div class="prompt ${pcls}">${to ? `<span class="to">${to}</span>` : ''}<span class="pg">${pg}</span>
-      <span class="ghostwrap"><span class="ghost mono" id="ghost-${where}"></span><input id="pin-${where}" class="mono" ${pcls === 'secret' ? 'type="password"' : ''} autocomplete="off" spellcheck="false" placeholder="${esc(ph)}" ${pcls === 'locked' ? '' : ''}></span>${hint}</div>`;
+      <span class="ghostwrap"><span class="ghost mono" id="ghost-${where}"></span><input id="pin-${where}" class="mono" ${pcls === 'secret' ? 'type="password"' : ''} autocomplete="off" spellcheck="false" placeholder="${esc(ph)}"></span></div>`;
   return { s, cwd, tabs, body, prompt };
 }
 
@@ -805,8 +790,8 @@ function renderLauncher() {
     const r = running(s);
     L.innerHTML = `<div class="thead"><span class="chip sm"><span class="g">${I.term}</span>终端</span>${cwd}${tabs || '<span style="flex:1"></span>'}
         ${tabs ? '' : `<button class="ibtn" data-act="newtab" data-where="launcher" title="新会话 ⌘T">${I.plus}</button>`}
-        <button class="ibtn" data-act="popout" title="移到独立窗口，会话不中断">${I.popout} 窗口 <span class="s">⌘O</span></button></div>
-      ${body}${prompt}${footer(s)}`;
+        <button class="ibtn" data-act="popout" title="移到窗口 ⌘O">${I.popout}</button></div>
+      ${body}${prompt}`;
   } else {
     L.classList.remove('tall');
     L.innerHTML = homeHTML();
@@ -815,19 +800,6 @@ function renderLauncher() {
   restoreFocus('launcher', keep);
 }
 
-function footer(s) {
-  const r = running(s);
-  const sel = s.selBlock && s.blocks.find((b) => b.id === s.selBlock);
-  let k;
-  if (s.tui) k = '<span>键盘直接发送给程序</span><span><kbd>⌘O</kbd>移到窗口</span><span><kbd>q</kbd>退出程序</span>';
-  else if (r && r.status === 'confirm') k = '<span><kbd>⌘↩</kbd>仍然运行</span><span><kbd>esc</kbd>取消</span>';
-  else if (r && r.prompt) k = `<span><kbd>↩</kbd>发送输入</span><span><kbd>⌃C</kbd>中断</span><span><kbd>⌃D</kbd>EOF</span>${r.prompt.hidden ? '<span>输入不会显示、不进历史</span>' : ''}`;
-  else if (r) k = '<span><kbd>⌃C</kbd>中断</span><span><kbd>esc</kbd>隐藏，命令在后台继续</span><span><kbd>⌘T</kbd>新会话</span><span><kbd>⌘O</kbd>移到窗口</span>';
-  else if (sel) k = '<span><kbd>⌘C</kbd>复制输出</span><span><kbd>⌘↩</kbd>插入到 备忘录</span><span><kbd>⌘R</kbd>重新运行</span>' + (sel.status === 'err' ? '<span><kbd>⌘E</kbd>AI 解释</span>' : '') + '<span><kbd>⌥↑↓</kbd>上下切换</span><span><kbd>esc</kbd>取消选择</span>';
-  else k = '<span><kbd>↩</kbd>运行</span><span><kbd>⌥↑</kbd>选择输出</span><span><kbd>⌘K</kbd>清屏</span><span><kbd>⌘T</kbd>新会话</span><span><kbd>⌘O</kbd>移到窗口</span><span><kbd>esc</kbd>隐藏，会话保留</span>';
-  const st = r ? (r.status === 'confirm' ? '<span class="badge warn">待确认</span>' : r.prompt ? '<span class="badge warn">等待输入</span>' : '<span class="badge run">运行中</span>') : '<span class="c-dim">zsh · 登录 + 交互</span>';
-  return `<div class="lbar">${k}<span class="sp"></span>${st}</div>`;
-}
 
 function homeHTML() {
   const q = S.launcher.q;
@@ -836,17 +808,16 @@ function homeHTML() {
   let rows = [];
   if (isCmd) {
     const cs = curSess('launcher') && !curSess('launcher').ended ? curSess('launcher') : null;
-    const where = cs ? `${cs.cwd}${repoOf(cs.cwd) ? ' · ' + repoOf(cs.cwd).branch : ''}` : (S.settings.dir === 'last' ? '~/Projects/typeflux · 上次的目录' : '~');
+    const where = cs ? cs.cwd : (S.settings.dir === 'last' ? '~/Projects/typeflux' : '~');
     const qq = q.trim();
-    rows.push({ sec: '运行' });
-    rows.push({ id: 'run', ic: I.term, bg: 'var(--chip-g)', t: qq ? `<span class="mono">${esc(qq)}</span>` : '在启动器中打开终端', d: `${cs ? '继续当前会话' : '新会话'} · ${esc(where)} · zsh 登录 + 交互`, r: '<kbd>↩</kbd>' });
+    rows.push({ id: 'run', ic: I.term, bg: 'var(--chip-g)', t: qq ? `<span class="mono">${esc(qq)}</span>` : '打开终端', mono: !!qq, r: `<span class="mono">${esc(where)}</span><kbd>↩</kbd>` });
     if (qq) {
-      rows.push({ id: 'runwin', ic: I.popout, bg: '#5b6b86', t: '在独立窗口中运行', d: '适合长时间运行的服务、日志和全屏程序', r: '<kbd>⌘↩</kbd>' });
-      rows.push({ id: 'runext', ic: I.popout, bg: '#3a3a3f', t: '在 Terminal 中运行', d: '交给外部终端应用，新建窗口', r: '<kbd>⌥↩</kbd>' });
+      rows.push({ id: 'runwin', ic: I.popout, bg: '#5b6b86', t: '在窗口中运行', r: '<kbd>⌘↩</kbd>' });
+      rows.push({ id: 'runext', ic: I.popout, bg: '#3a3a3f', t: '在 Terminal 中运行', r: '<kbd>⌥↩</kbd>' });
     }
     const hits = S.hist.filter((h) => !qq || h.includes(qq)).slice(0, qq ? 4 : 5);
     if (hits.length) {
-      rows.push({ sec: '最近命令', r: '<kbd>⇥</kbd>填入' });
+      rows.push({ sec: '最近' });
       hits.forEach((h) => rows.push({ id: 'h:' + h, ic: I.rerun, bg: 'var(--tile)', fg: 'var(--text2)', t: `<span class="mono">${qq ? esc(h).replace(esc(qq), `<mark>${esc(qq)}</mark>`) : esc(h)}</span>`, mono: true, d: '' }));
     }
     if (live.length) {
@@ -855,11 +826,11 @@ function homeHTML() {
     }
   } else {
     if (live.length && !q) {
-      rows.push({ sec: '终端会话', r: '<kbd>&gt;</kbd>继续' });
+      rows.push({ sec: '终端会话' });
       live.forEach((s) => rows.push(sessRow(s)));
     }
     rows.push({ sec: q ? '应用' : '建议' });
-    rows.push({ id: 'kw', ic: I.term, bg: 'var(--chip-g)', t: '终端命令', d: '输入 &gt; 或 cmd 后接命令，在启动器中直接运行', r: '<span class="badge">&gt;</span>' });
+    rows.push({ id: 'kw', ic: I.term, bg: 'var(--chip-g)', t: '终端命令', r: '<span class="badge">&gt;</span>' });
     rows.push({ id: 'app:term', ic: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4 6l2 2-2 2"/></svg>', bg: '#222', t: '终端', d: '应用程序 · /System/Applications/Utilities', r: '' });
     rows.push({ id: 'app:notes', ic: '<svg width="16" height="16" viewBox="0 0 16 16" fill="#fff"><rect x="3" y="2" width="10" height="12" rx="2"/></svg>', bg: '#e8b423', t: '备忘录', d: '应用程序', r: '' });
   }
@@ -871,18 +842,15 @@ function homeHTML() {
     ? `<div class="sec">${r.sec}${r.r ? `<span class="r">${r.r}</span>` : ''}</div>`
     : `<div class="item ${r.id === selId ? 'on' : ''}" data-row="${esc(r.id)}"><span class="ic" style="background:${r.bg};color:${r.fg || '#fff'}">${r.ic}</span><span class="tx"><div class="t ${r.mono ? 'mono' : ''}">${r.t}</div>${r.d ? `<div class="d">${r.d}</div>` : ''}</span><span class="r">${r.r || ''}</span></div>`).join('');
   const head = isCmd
-    ? `<span class="chip"><span class="g">${I.term}</span>终端</span><span class="ghostwrap"><span class="ghost mono" id="ghost-home" style="font-size:16px"></span><input id="homeIn" class="mono" style="font-size:16px" placeholder="输入 Shell 命令，↩ 在这里运行" autocomplete="off" spellcheck="false" value="${esc(q)}"></span>`
-    : `<span style="color:var(--text3)">${I.search}</span><input id="homeIn" placeholder="搜索应用和功能，或输入 > 运行命令" autocomplete="off" spellcheck="false" value="${esc(q)}">`;
-  const bar = isCmd
-    ? '<span><kbd>↩</kbd>在这里运行</span><span><kbd>⌘↩</kbd>独立窗口</span><span><kbd>⌥↩</kbd>Terminal</span><span><kbd>⇥</kbd>补全</span><span><kbd>⌫</kbd>退出终端模式</span><span class="sp"></span><span class="c-dim">zsh · 登录 + 交互</span>'
-    : '<span><kbd>↑↓</kbd>选择</span><span><kbd>↩</kbd>打开</span><span class="sp"></span><span><kbd>esc</kbd>关闭</span>';
-  return `<div class="lin">${head}</div><div class="lbody">${list}</div><div class="lbar">${bar}</div>`;
+    ? `<span class="chip"><span class="g">${I.term}</span>终端</span><span class="ghostwrap"><span class="ghost mono" id="ghost-home" style="font-size:16px"></span><input id="homeIn" class="mono" style="font-size:16px" placeholder="输入 Shell 命令" autocomplete="off" spellcheck="false" value="${esc(q)}"></span>`
+    : `<span style="color:var(--text3)">${I.search}</span><input id="homeIn" placeholder="搜索应用、计算，或直接提问" autocomplete="off" spellcheck="false" value="${esc(q)}">`;
+  return `<div class="lin">${head}</div><div class="lbody">${list}</div>`;
 }
 function sessRow(s) {
   const r = running(s);
-  const st = r ? (r.prompt ? '<span class="badge warn">等待输入</span>' : `<span class="badge run">运行中 ${fmt(Date.now() - r.t0)}</span>`) : (sessState(s) === 'err' ? '<span class="badge err">上一条失败</span>' : '<span class="badge">空闲</span>');
   const last = r || s.blocks[s.blocks.length - 1];
-  return { id: 'sess:' + s.id, ic: I.term, bg: s.where === 'window' ? '#5b6b86' : 'var(--chip-g)', t: `<span class="mono">${esc(last ? last.cmd : 'zsh')}</span>`, mono: true, d: `${esc(s.cwd)} · ${s.where === 'window' ? '在独立窗口' : '启动器会话'} · ${s.blocks.length} 条命令`, r: st };
+  const st = r ? (r.prompt ? '<span class="badge warn">等待输入</span>' : `<span class="badge run"><span class="num">${fmt(Date.now() - r.t0)}</span></span>`) : (last && last.status === 'err' ? `<span class="badge err">${I.x} ${last.code}</span>` : '');
+  return { id: 'sess:' + s.id, ic: s.where === 'window' ? I.popout : I.term, bg: s.where === 'window' ? '#5b6b86' : 'var(--chip-g)', t: `<span class="mono">${esc(last ? last.cmd : 'zsh')}</span>`, mono: true, d: `<span class="mono">${esc(s.cwd)}</span>`, r: st };
 }
 
 function renderWindow() {
@@ -892,12 +860,10 @@ function renderWindow() {
   const keep = keepFocus('window');
   const { s, cwd, tabs, body, prompt } = surfaceHTML('window');
   const r = running(s);
-  W.innerHTML = `<div class="titlebar"><div class="lights"><i data-act="closewin" style="cursor:pointer"></i><i></i><i></i></div>${tabs}<span class="sp"></span>
-      <button class="ibtn ${S.win.pinned ? 'on' : ''}" data-act="pin" title="窗口置顶">${I.pin}</button>
-      <button class="ibtn" data-act="popin" title="收回到启动器">${I.popin} 收回到启动器</button></div>
-    <div class="thead" style="padding:7px 12px">${cwd}<span style="flex:1"></span><span style="font-size:11px;color:var(--text3)">${s.blocks.length} 条命令 · zsh 登录 + 交互</span></div>
-    ${body}${prompt}
-    <div class="status">${r ? (r.prompt ? '<span class="badge warn">等待输入</span>' : `<span class="badge run">运行中</span><span>${esc(r.cmd)}</span>`) : '<span>空闲</span>'}<span class="sp"></span><span><kbd>⌘T</kbd>新会话</span><span><kbd>⌘1…9</kbd>切换</span><span><kbd>⌘K</kbd>清屏</span><span><kbd>⌘F</kbd>查找</span><span><kbd>⌘W</kbd>关闭会话</span></div>`;
+  W.innerHTML = `<div class="titlebar"><div class="lights"><i data-act="closewin" style="cursor:pointer"></i><i></i><i></i></div>${tabs}<span class="sp"></span>${cwd}
+      <button class="ibtn ${S.win.pinned ? 'on' : ''}" data-act="pin" title="置顶">${I.pin}</button>
+      <button class="ibtn" data-act="popin" title="收回到启动器 ⌘O">${I.popin}</button></div>
+    ${body}${prompt}`;
   bindSurface(W, 'window');
   restoreFocus('window', keep);
 }
@@ -980,7 +946,7 @@ function complete(where, inp) {
     const onlyDirs = parts[0] === 'cd';
     items = (FS[dir] || []).filter((x) => x.startsWith(base) && (!onlyDirs || x.endsWith('/')) && (base.startsWith('.') || !x.startsWith('.'))).map((x) => dirPart + x);
   }
-  if (!items.length) { toast('没有可补全的内容'); return; }
+  if (!items.length) return;
   const prefix = parts.slice(0, -1).join(' ') + (parts.length > 1 ? ' ' : '');
   if (items.length === 1) { inp.value = prefix + items[0] + (items[0].endsWith('/') ? '' : ' '); S.complete = null; renderAll(); return; }
   // common prefix first, then a list to cycle with Tab
@@ -1022,7 +988,7 @@ function bindSurface(root, where) {
     const s = curSess(where); const id = +el.dataset.block; s.selBlock = s.selBlock === id ? null : id; renderAll(); focusPrompt(where);
   }));
   root.querySelectorAll('[data-act]').forEach((el) => el.addEventListener('click', (e) => { e.stopPropagation(); action(el.dataset.act, where, el); }));
-  root.querySelectorAll('.out a').forEach((el) => el.addEventListener('click', () => toast('在默认浏览器中打开 http://localhost:5173/')));
+  root.querySelectorAll('.out a').forEach((el) => el.addEventListener('click', () => toast('http://localhost:5173/')));
 }
 function focusPrompt(where) { const el = document.getElementById(where === 'launcher' && S.launcher.mode !== 'term' ? 'homeIn' : 'pin-' + where); if (el) el.focus(); }
 
@@ -1030,11 +996,11 @@ function action(act, where, el) {
   const s = curSess(where);
   const b = el.dataset.b ? s.blocks.find((x) => x.id === +el.dataset.b) : null;
   switch (act) {
-    case 'copy': toast(`已复制 ${b.lines.length} 行输出`); s.selBlock = b.id; break;
+    case 'copy': toast('已复制'); s.selBlock = b.id; break;
     case 'insert': insertBlock(s, b); return;
     case 'rerun': run(s, b.cmd); break;
     case 'ai': explain(s, b); return;
-    case 'askmore': toast('已把命令、输出和解释带到 Ask 新对话'); return;
+    case 'askmore': toast('Ask（示意）'); return;
     case 'usefix': { const inp = document.getElementById('pin-' + where); inp.value = b.ai.fix; s.draft = b.ai.fix; inp.focus(); updateGhost(where); return; }
     case 'fold': b.collapsed = !b.collapsed; break;
     case 'stop': interrupt(s); break;
@@ -1043,7 +1009,7 @@ function action(act, where, el) {
     case 'newtab': { const n = newSession(where, s ? s.cwd : '~'); S.cur[where] = n.id; break; }
     case 'popout': popOut(); return;
     case 'popin': popIn(); return;
-    case 'pin': S.win.pinned = !S.win.pinned; toast(S.win.pinned ? '窗口置顶' : '取消置顶'); break;
+    case 'pin': S.win.pinned = !S.win.pinned; break;
     case 'closewin': closeWindow(); return;
   }
   renderAll(); focusPrompt(where);
@@ -1056,7 +1022,6 @@ function insertBlock(s, b) {
   const pre = document.createElement('pre'); pre.className = 'fresh'; pre.textContent = text;
   $('#noteTail').before(pre);
   $('#note').scrollTop = 1e6;
-  toast(`已插入到 备忘录 · ${b.lines.length} 行`);
 }
 
 function closeSession(s) {
@@ -1080,7 +1045,6 @@ function popOut() {
     S.cur.launcher = rest.length ? rest[rest.length - 1].id : null;
     S.launcher.shown = false; S.launcher.mode = 'home'; S.launcher.q = '';
     S.win.shown = true; renderAll(); focusPrompt('window');
-    toast('会话已移到独立窗口，命令没有中断');
   }, S.fast ? 0 : 260);
 }
 function popIn() {
@@ -1108,14 +1072,14 @@ function showLauncher(mode = 'home', q = '') {
 function hideLauncher(silent) {
   S.launcher.shown = false; S.complete = null;
   const cs = curSess('launcher');
-  if (cs && running(cs) && !silent) toast(`${running(cs).cmd} 在后台继续运行 · ⌥Space 回来`);
+  if (cs && running(cs) && !silent) toast(`${running(cs).cmd} 继续运行`);
   renderAll();
 }
 
 function activateRow(id, how, mod = {}) {
   if (id === 'run' || id === 'runwin' || id === 'runext') {
     const cmd = $('#homeIn').value.trim();
-    if (id === 'runext' || mod.alt) { if (!cmd) return; hideLauncher(true); toast(`已交给 Terminal：${cmd}`); return; }
+    if (id === 'runext' || mod.alt) { if (!cmd) return; hideLauncher(true); toast(`Terminal：${cmd}`); return; }
     if (id === 'runwin' || mod.meta) {
       if (!cmd) return;
       const s = newSession('window', S.settings.dir === 'last' ? '~/Projects/typeflux' : '~');
@@ -1197,7 +1161,7 @@ function onKey(e, where, inp) {
     return;
   }
   if (sel && !inp.value) {
-    if (e.metaKey && key === 'c' && !window.getSelection().toString()) { e.preventDefault(); toast(`已复制 ${sel.lines.length} 行输出`); return; }
+    if (e.metaKey && key === 'c' && !window.getSelection().toString()) { e.preventDefault(); toast('已复制'); return; }
     if (e.metaKey && e.key === 'Enter') { e.preventDefault(); if (sel.lines.length) insertBlock(s, sel); return; }
     if (e.metaKey && key === 'r') { e.preventDefault(); run(s, sel.cmd); return; }
     if (e.metaKey && key === 'e' && sel.status === 'err') { e.preventDefault(); explain(s, sel); return; }
@@ -1268,8 +1232,7 @@ $('#desk').addEventListener('mousedown', (e) => {
 function notify(s, b) {
   const n = $('#notif');
   n.innerHTML = `<span class="ic">${I.term}</span><div style="min-width:0;flex:1"><div class="t">Typeflux 终端 <span class="ago">现在</span></div>
-    <div class="d">${b.status === 'ok' ? '✓' : '✗'} <code>${esc(b.cmd)}</code> ${b.status === 'ok' ? '已完成' : `失败（退出码 ${b.code}）`} · ${fmt(b.t1 - b.t0)}</div>
-    <div class="d" style="color:var(--text3);font-size:11px">${esc(s.cwd)} · 点按查看输出</div></div>`;
+    <div class="d">${b.status === 'ok' ? '✓' : `✗ ${b.code}`} <code>${esc(b.cmd)}</code> · ${fmt(b.t1 - b.t0)}</div></div>`;
   n.classList.add('show');
   n.onclick = () => { n.classList.remove('show'); if (s.where === 'window') { S.cur.window = s.id; S.win.shown = true; renderAll(); } else { S.cur.launcher = s.id; showLauncher('term'); } };
   clearTimeout(n._t); n._t = setTimeout(() => n.classList.remove('show'), 7000);
@@ -1284,23 +1247,22 @@ function renderSettings() {
   const sw = (k) => `<span class="sw ${st[k] ? 'on' : ''}" data-tog="${k}"></span>`;
   $('#settings').innerHTML = `<div class="titlebar"><div class="lights"><i data-x style="cursor:pointer"></i><i></i><i></i></div><span>设置 · 启动器 · 关键词</span></div>
   <div class="sbody">
-    <h2><span class="chip"><span class="g">${I.term}</span>终端</span>终端命令</h2>
-    <div class="sub">触发词 <code class="mono">&gt;</code> <code class="mono">cmd</code> · 输入触发词和命令后按 ↩ 运行</div>
+    <h2><span class="chip"><span class="g">${I.term}</span>&gt;</span>终端命令</h2>
     <div class="group"><div class="gt">运行</div>
-      <div class="srow"><div class="l"><div class="t">↩ 在哪里运行 <span class="new">新</span></div><div class="d">${st.where === 'launcher' ? '在启动器里直接运行，可多轮交互；⌘↩ 改用独立窗口。' : st.where === 'window' ? '每条命令打开独立的终端窗口（旧的方式）；⌘↩ 改在启动器中运行。' : '交给外部终端应用；⌘↩ 改在启动器中运行。'}</div></div>${seg('where', [['launcher', '启动器内'], ['window', '独立窗口'], ['external', '外部终端']])}</div>
-      <div class="srow"><div class="l"><div class="t">新会话的起始目录 <span class="new">新</span></div><div class="d">${st.dir === 'last' ? '从上一次会话结束时的目录开始。' : st.dir === 'finder' ? '访达在最前面时使用它当前打开的文件夹，否则用固定目录。' : '始终从固定目录开始。'}</div></div>${seg('dir', [['last', '上次的目录'], ['finder', '跟随访达'], ['fixed', '固定目录']])}</div>
+      <div class="srow"><div class="l"><div class="t">↩ 在哪里运行</div></div>${seg('where', [['launcher', '启动器内'], ['window', '独立窗口'], ['external', '外部终端']])}</div>
+      <div class="srow"><div class="l"><div class="t">新会话的起始目录</div></div>${seg('dir', [['last', '上次的目录'], ['finder', '跟随访达'], ['fixed', '固定目录']])}</div>
       ${st.dir === 'fixed' || st.dir === 'finder' ? `<div class="srow"><div class="l"><div class="t">固定目录</div></div><span class="field">${I.folder} ~</span><button class="btn">选择…</button></div>` : ''}
-      <div class="srow"><div class="l"><div class="t">加载配置</div><div class="d">${st.profile === 'interactive' ? 'zsh 读取 .zprofile 和 .zshrc，别名与函数可用。可用 $TYPEFLUX_TERMINAL 判断运行环境。' : '只读取 .zprofile，启动更快，但 .zshrc 中的别名不可用。'}</div></div>${seg('profile', [['interactive', '登录 + 交互'], ['login', '仅登录']])}</div>
+      <div class="srow"><div class="l"><div class="t">加载配置</div></div>${seg('profile', [['interactive', '登录 + 交互'], ['login', '仅登录']])}</div>
     </div>
     <div class="group"><div class="gt">会话</div>
-      <div class="srow"><div class="l"><div class="t">隐藏启动器后保留会话 <span class="new">新</span></div><div class="d">运行中的命令始终继续；这里只决定空闲的会话保留多久。</div></div>${seg('keep', [['30m', '空闲 30 分钟'], ['forever', '一直保留'], ['never', '立即结束']])}</div>
-      <div class="srow"><div class="l"><div class="t">运行前确认高风险命令 <span class="new">新</span></div><div class="d">rm -rf、git push --force、git reset --hard、sudo rm、dd 等，运行前要求 ⌘↩ 确认。</div></div>${sw('danger')}</div>
-      <div class="srow"><div class="l"><div class="t">后台命令完成时通知</div><div class="d">启动器隐藏或窗口不在前面时，运行超过 10 秒的命令结束后发送通知。</div></div>${sw('notify')}</div>
-      <div class="srow"><div class="l"><div class="t">插入的内容 <span class="new">新</span></div><div class="d">⌘↩ 把选中块的输出写回原来的应用。</div></div>${seg('insertFmt', [['output', '仅输出'], ['both', '命令 + 输出']])}</div>
+      <div class="srow"><div class="l"><div class="t">空闲会话保留</div></div>${seg('keep', [['30m', '30 分钟'], ['forever', '一直'], ['never', '不保留']])}</div>
+      <div class="srow"><div class="l"><div class="t">运行前确认高风险命令</div></div>${sw('danger')}</div>
+      <div class="srow"><div class="l"><div class="t">后台命令完成时通知</div></div>${sw('notify')}</div>
+      <div class="srow"><div class="l"><div class="t">插入的内容</div></div>${seg('insertFmt', [['output', '仅输出'], ['both', '命令 + 输出']])}</div>
     </div>
     <div class="group"><div class="gt">独立窗口</div>
-      <div class="srow"><div class="l"><div class="t">运行结束后</div><div class="d">只对“独立窗口”方式的单条命令生效：${st.finish === 'auto' ? '成功且无输出时自动关闭并提示；有输出或失败时保留窗口。' : st.finish === 'keep' ? '命令结束后窗口始终保留。' : '成功即关闭；失败时保留窗口。'}</div></div>${seg('finish', [['auto', '智能'], ['keep', '保持打开'], ['close', '自动关闭']])}</div>
-      <div class="srow"><div class="l"><div class="t">外部终端</div><div class="d">⌥↩ 使用的终端应用。</div></div>${seg('ext', [['terminal', 'Terminal'], ['iterm', 'iTerm2']])}</div>
+      <div class="srow"><div class="l"><div class="t">运行结束后</div></div>${seg('finish', [['auto', '智能'], ['keep', '保持打开'], ['close', '自动关闭']])}</div>
+      <div class="srow"><div class="l"><div class="t">外部终端</div></div>${seg('ext', [['terminal', 'Terminal'], ['iterm', 'iTerm2']])}</div>
     </div>
   </div>`;
   if (!st.ext) st.ext = 'terminal';
@@ -1313,15 +1275,15 @@ function renderSettings() {
 //  Screens
 // ======================================================================
 const CAPTIONS = {
-  hint: '<b>① 输入 &gt;。</b>输入 <code>&gt;</code> 或 <code>cmd </code> 进入终端模式：输入框变成等宽字体，灰色是历史命令的建议（<code>→</code> / <code>⇥</code> 接受）。<b>↩ 直接在启动器里运行</b>，<code>⌘↩</code> 独立窗口，<code>⌥↩</code> 外部终端。试试输入 <code>git st</code>、<code>make t</code>。',
-  inline: '<b>② 启动器内运行。</b>按下 ↩ 后启动器原地展开成终端：上面是一条条命令块（命令、目录、耗时、退出码），下面是常驻的提示符。<code>make test</code> 正在流式输出；运行中也可以 <code>esc</code> 隐藏启动器，命令继续跑。',
-  session: '<b>③ 多轮会话。</b>同一个 zsh 进程：<code>cd</code> 之后的命令都在新目录里执行，顶部目录和 Git 分支跟着变。失败的块带红色边，<code>✦</code> 让 AI 解释并给出下一条命令（<code>⇥</code> 填入）。<code>⌥↑↓</code> 选块，<code>⌘C</code> 复制输出，<code>⌘↩</code> 插入回备忘录。',
-  stdin: '<b>④ 交互输入。</b>命令读标准输入时，提示符变蓝并标明“发送给 npm”，↩ 把这一行交给进程。读密码时提示符变橙、输入不回显、不进历史（试试 <code>sudo ls</code>）。<code>python3</code> 这类 REPL 也能多轮交互。<code>⌃C</code> 中断。',
-  tui: '<b>⑤ 全屏程序。</b><code>htop</code>、<code>vim</code>、<code>less</code> 使用备用屏幕：启动器长高，命令块让位给程序画面，键盘直接发给程序。顶部提示可以 <code>⌘O</code> 把它移到独立窗口继续看，<code>q</code> 退出后回到命令块列表。',
-  danger: '<b>⑥ 高风险确认。</b>匹配到 <code>rm -rf</code>、<code>git push --force</code>、<code>git reset --hard</code>、<code>sudo rm</code>、<code>dd</code> 等时先不运行，说明影响范围；<code>⌘↩</code> 仍然运行，<code>esc</code> 取消。普通命令不打扰。可在设置里关闭。',
-  bg: '<b>⑦ 后台继续。</b>按 esc 隐藏启动器，<code>npm run dev</code> 继续跑，并出现在状态菜单的“后台任务”里（菜单栏图标保持不变）。再次打开启动器，首页顶部是“终端会话”，↩ 回到会话。长命令在后台结束时发系统通知，点按通知直接回到它的输出。',
-  window: '<b>⑧ 独立窗口。</b><code>⌘O</code> 把启动器里的会话“搬”到独立窗口——同一个进程、同一份输出，不重新运行。窗口有标签页（<code>⌘T</code> / <code>⌘1…9</code>）、置顶、“收回到启动器”。适合开发服务器、日志、全屏程序。',
-  settings: '<b>⑨ 设置。</b>关键词设置页新增：↩ 在哪里运行（默认启动器内）、新会话的起始目录、空闲会话保留时长、高风险确认、插入内容格式。原有“加载配置”“运行结束后”“外部终端”保留。',
+  hint: '<b>① 输入 &gt;。</b>等宽输入，灰字是历史建议（<code>→</code> / <code>⇥</code> 接受）。<b>↩ 在启动器里运行</b>，<code>⌘↩</code> 窗口，<code>⌥↩</code> Terminal。试试 <code>git st</code>、<code>make t</code>。',
+  inline: '<b>② 启动器内运行。</b>启动器原地展开：命令块在上，提示符常驻底部。没有底栏和提示文字，快捷键见 §4 和按钮的悬停提示。',
+  session: '<b>③ 多轮会话。</b>同一个 zsh：<code>cd</code> 后的命令都在新目录执行，顶部目录和分支跟着变。失败块 <code>✦</code> 让 AI 解释。<code>⌥↑↓</code> 选块，<code>⌘C</code> 复制，<code>⌘↩</code> 插入回备忘录。',
+  stdin: '<b>④ 交互输入。</b>程序读输入时提示符变蓝，左侧是程序名；读密码时变橙、带锁、不回显、不进历史（试试 <code>sudo ls</code>）。<code>python3</code> 也能多轮。',
+  tui: '<b>⑤ 全屏程序。</b><code>htop</code>、<code>vim</code>、<code>less</code> 接管画面，按键全部发给程序。头部的 ⧉ / <code>⌘O</code> 移到窗口，<code>q</code> 退出。',
+  danger: '<b>⑥ 高风险确认。</b>匹配到 <code>rm -rf</code>、<code>git push --force</code> 等时先不运行，一行说明影响；<code>⌘↩</code> 仍然运行，<code>esc</code> 取消。',
+  bg: '<b>⑦ 后台继续。</b>esc 隐藏启动器，命令继续跑并出现在状态菜单的“后台任务”里。首页顶部列出终端会话；长命令结束时发通知。',
+  window: '<b>⑧ 独立窗口。</b><code>⌘O</code> 把会话原样搬到窗口：同一个进程、同一份输出。标签页、置顶、收回到启动器。',
+  settings: '<b>⑨ 设置。</b>只有标题和选项，没有说明行。',
 };
 
 function reset() {
