@@ -143,17 +143,18 @@ struct TerminalRunnerWindowTests {
 
     @Test func `stop interrupts then the run can start again`() async throws {
         let center = center(), recorder = TerminalRunnerServiceRecorder()
-        let controller = try present("sleep 30", settings: .init(finish: .keep, pinned: false), in: center,
-                                     recorder: recorder)
+        let controller = try present("printf 'ready\\n'; exec sleep 30",
+                                     settings: .init(finish: .keep, pinned: false), in: center, recorder: recorder)
         #expect(controller.window.level == .normal && !controller.pinned)
         controller.setPinned(true)
         #expect(controller.window.level == .floating && controller.pinned)
-        try await Task.sleep(for: .milliseconds(200))
+        try await wait { controller.model.visibleText().contains("ready") }
         controller.model.stop()
         try await wait { !controller.model.isRunning }
         #expect(controller.model.phase == .finished(exitCode: 128 + SIGINT))
         controller.window.sendEvent(try key(15, "r", .command, in: controller.window))
         #expect(controller.model.isRunning)
+        try await wait { controller.model.visibleText().contains("ready") }
         controller.model.stop()
         try await wait { !controller.model.isRunning }
         controller.window.close()

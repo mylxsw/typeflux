@@ -7656,3 +7656,34 @@
 "terminal.session.window.pin" = "Keep on Top";
 
 "terminal.session.window.back" = "Back to Launcher ⌘O";
+
+/* Launcher terminal settings and confirmation */
+"terminal.settings.group.run" = "Run";
+"terminal.settings.group.sessions" = "Sessions";
+"terminal.settings.group.window" = "Standalone Window";
+"terminal.settings.runner" = "↩ Runs In";
+"terminal.settings.start" = "Start New Sessions In";
+"terminal.settings.start.last" = "Last Folder";
+"terminal.settings.start.finder" = "Finder Folder";
+"terminal.settings.start.fixed" = "Fixed Folder";
+"terminal.settings.idle" = "Keep Idle Sessions";
+"terminal.settings.idle.thirtyMinutes" = "30 Minutes";
+"terminal.settings.idle.always" = "Always";
+"terminal.settings.idle.never" = "Never";
+"terminal.settings.confirm" = "Confirm Risky Commands";
+"terminal.settings.insert" = "Insert";
+"terminal.settings.insert.output" = "Output Only";
+"terminal.settings.insert.commandAndOutput" = "Command + Output";
+"terminal.settings.finish" = "After Running";
+"terminal.settings.external" = "External Terminal";
+"terminal.launcher.runInLauncher" = "Run in Launcher";
+"terminal.risk.delete" = "Permanently deletes files, skipping the Trash";
+"terminal.risk.forcePush" = "Force-overwrites the remote branch";
+"terminal.risk.reset" = "Discards uncommitted changes";
+"terminal.risk.clean" = "Deletes untracked files";
+"terminal.risk.disk" = "Directly writes to or erases a disk";
+"terminal.risk.permissions" = "Changes file permissions or ownership recursively";
+"terminal.risk.cancel" = "Cancel";
+"terminal.risk.cancelled" = "Cancelled";
+"terminal.risk.runAnyway" = "Run Anyway";
+"terminal.settings.notify" = "Notify When Background Commands Finish";

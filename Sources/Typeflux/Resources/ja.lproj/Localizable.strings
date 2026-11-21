@@ -7603,3 +7603,34 @@
 "ask.image.cache.clear" = "キャッシュを削除";
 "ask.image.cache.hint" = "ダウンロード済みの原画像はオフラインでも表示できます。この端末のキャッシュを削除してもクラウドの結果は消えません。";
 "ask.image.cache.clearFailed" = "画像キャッシュを削除できませんでした。";
+
+/* Launcher terminal settings and confirmation */
+"terminal.settings.group.run" = "実行";
+"terminal.settings.group.sessions" = "セッション";
+"terminal.settings.group.window" = "独立ウインドウ";
+"terminal.settings.runner" = "↩ 実行先";
+"terminal.settings.start" = "新規セッションの開始フォルダ";
+"terminal.settings.start.last" = "前回のフォルダ";
+"terminal.settings.start.finder" = "Finder のフォルダ";
+"terminal.settings.start.fixed" = "指定フォルダ";
+"terminal.settings.idle" = "待機中のセッションを保持";
+"terminal.settings.idle.thirtyMinutes" = "30 分";
+"terminal.settings.idle.always" = "常に保持";
+"terminal.settings.idle.never" = "保持しない";
+"terminal.settings.confirm" = "危険なコマンドの実行前に確認";
+"terminal.settings.insert" = "挿入する内容";
+"terminal.settings.insert.output" = "出力のみ";
+"terminal.settings.insert.commandAndOutput" = "コマンドと出力";
+"terminal.settings.finish" = "実行後";
+"terminal.settings.external" = "外部ターミナル";
+"terminal.launcher.runInLauncher" = "ランチャーで実行";
+"terminal.risk.delete" = "ファイルをゴミ箱に移さず完全に削除します";
+"terminal.risk.forcePush" = "リモートブランチを強制的に上書きします";
+"terminal.risk.reset" = "コミットしていない変更を破棄します";
+"terminal.risk.clean" = "追跡されていないファイルを削除します";
+"terminal.risk.disk" = "ディスクに直接書き込むか、消去します";
+"terminal.risk.permissions" = "ファイルの権限または所有者を再帰的に変更します";
+"terminal.risk.cancel" = "キャンセル";
+"terminal.risk.cancelled" = "キャンセル済み";
+"terminal.risk.runAnyway" = "実行する";
+"terminal.settings.notify" = "バックグラウンドのコマンドが完了したら通知";

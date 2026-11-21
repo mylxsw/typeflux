@@ -2,7 +2,7 @@ import AppKit
 import SwiftTerm
 
 struct TerminalCommandBlock: Identifiable {
-    enum State { case running, waitingForInput, hiddenInput, alternateScreen, finished, interrupted }
+    enum State { case running, waitingForInput, hiddenInput, alternateScreen, finished, interrupted, cancelled }
     let id = UUID()
     let command: String
     let cwd: String
@@ -17,6 +17,8 @@ struct TerminalCommandBlock: Identifiable {
 final class TerminalSession: ObservableObject, Identifiable {
     enum Host: Equatable { case launcher, window(UUID) }
     let id = UUID()
+    let settings: TerminalRunSettings
+    private(set) var searchPath: String
     @Published private(set) var host: Host
     @Published private(set) var cwd: String
     @Published private(set) var blocks: [TerminalCommandBlock] = []
@@ -35,6 +37,7 @@ final class TerminalSession: ObservableObject, Identifiable {
     private(set) lazy var terminalView = TerminalRunnerTerminalView(session: self)
     private(set) var lastActivity: Date
     var changed: (() -> Void)?
+    var directoryChanged: ((String) -> Void)?
 
     private let readGitStatus: (String) async -> TerminalGitStatus?
     private let shell: TerminalSessionShell
@@ -51,14 +54,17 @@ final class TerminalSession: ObservableObject, Identifiable {
     private var poll: Timer?
 
     init(host: Host, settings: TerminalRunSettings, process: any TerminalProcess,
-         history: TerminalCommandHistory,
+         history: TerminalCommandHistory, startingPath: String? = nil,
          readGitStatus: @escaping (String) async -> TerminalGitStatus? = TerminalGitStatus.read) throws {
         self.host = host
+        self.settings = settings
         self.process = process
         self.history = history
         self.readGitStatus = readGitStatus
         shell = try TerminalSessionShell(settings: settings)
-        let launch = shell.launch(settings: settings)
+        var launch = shell.launch(settings: settings)
+        if let startingPath { launch.directory = startingPath }
+        searchPath = launch.environment["PATH"] ?? TerminalShellLaunch.fallbackPath
         cwd = launch.directory
         lastActivity = Date()
         process.onOutput = { [weak self] in self?.receive($0) }
@@ -113,6 +119,14 @@ final class TerminalSession: ObservableObject, Identifiable {
         }
         changed?()
         return true
+    }
+
+    func recordCancellation(_ command: String) {
+        let now = Date()
+        var block = TerminalCommandBlock(command: command, cwd: cwd, startedAt: now)
+        block.state = .cancelled
+        block.endedAt = now
+        blocks.append(block)
     }
 
     private func flushCommand() {
@@ -195,7 +209,10 @@ final class TerminalSession: ObservableObject, Identifiable {
                 if cwd != path {
                     cwd = path
                     git = nil
+                    directoryChanged?(path)
                 }
+            case let .path(path):
+                searchPath = path
             case .prompt:
                 integrated = true
                 refreshGit()

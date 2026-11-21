@@ -1575,6 +1575,9 @@ struct AskComposer: View {
             }
             .onChange(of: draft.wrappedValue.text) { _ in
                 terminalHintIndex = 0
+                if let pending = model.pendingTerminalRisk, pending.request.command != draft.wrappedValue.text {
+                    model.cancelTerminalRisk()
+                }
                 canvasHighlight = nil
                 if launcher, model.launcherHistoryMode { model.launcherHistoryIndex = 0 }
                 refreshQuickResults()
@@ -2040,6 +2043,10 @@ struct AskComposer: View {
 
     private var supplementalContent: some View {
         VStack(spacing: 0) {
+            if launcher, !active, let pending = model.pendingTerminalRisk {
+                TerminalRiskCard(risk: pending.risk, cancel: { model.cancelTerminalRisk() },
+                                 confirm: { model.confirmTerminalRisk(completed: onDismiss) })
+            }
             if showsScreenshotPermissionHint {
                 Button { screenshotAction?() } label: {
                     Label(L("ask.capture.optIn"), systemImage: "camera.viewfinder")
@@ -2256,6 +2263,7 @@ struct AskComposer: View {
 
     /// Leaves keyword mode, keeping the text typed after the keyword as plain launcher text.
     private func exitKeyword() {
+        model.cancelTerminalRisk()
         let answeredQuickAsk = plugins.keyword?.pluginID == AskQuickAskPlugin.id && model.quickAsk?.conversationId != nil
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
             model.stopQuickAsk()
@@ -2336,7 +2344,7 @@ struct AskComposer: View {
             return
         }
         let destination: TerminalRunner = switch shortcut {
-        case .commandEnter: .window
+        case .commandEnter: TerminalRunSettings.alternateRunner(in: keyword.options)
         case .optionEnter: .external
         default: TerminalRunSettings.runner(in: keyword.options)
         }
@@ -2370,13 +2378,31 @@ struct AskComposer: View {
     }
 
     private func terminalHint(_ keyword: AskKeyword) -> some View {
-        TerminalLauncherHint(keyword: keyword, text: draft.wrappedValue.text, recent: terminalRecent,
-                             sessions: model.terminalHomeRows, highlighted: $terminalHintIndex) {
+        let settings = TerminalRunSettings(options: keyword.options)
+        let showsDirectory = settings.startDirectory != .finder
+            && TerminalRunSettings.runner(in: keyword.options) != .external
+        let directory = showsDirectory
+            ? TerminalRunSettings.abbreviate(terminalCenter.startingPath(for: settings), home: NSHomeDirectory())
+            : nil
+        return TerminalLauncherHint(
+            keyword: keyword, text: draft.wrappedValue.text, directory: directory, recent: terminalRecent,
+            sessions: model.terminalHomeRows, highlighted: $terminalHintIndex
+        ) {
             activateTerminalHint(keyword)
         }
     }
 
     private func commandKey(_ key: AskCommandKey) -> Bool {
+        if launcher, model.pendingTerminalRisk != nil {
+            switch key {
+            case .commandEnter:
+                model.confirmTerminalRisk(completed: onDismiss)
+                return true
+            case .escape: return model.cancelTerminalRisk()
+            case .enter, .optionEnter: return true
+            default: break
+            }
+        }
         if launcher, !active, let keyword = terminalHintKeyword, terminalHintKey(key, keyword: keyword) {
             return true
         }

@@ -592,6 +592,7 @@ extension AskConversationModel {
 
     /// The result was used: the next launch starts empty, out of keyword mode.
     func finishPluginResult() {
+        cancelTerminalRisk()
         if plugins.keyword != nil { recordLauncherInput(destination: .keyword, label: plugins.plugin?.title ?? "") }
         releaseLauncherScreenshot()
         launcherClipboardPreview = nil
@@ -602,6 +603,7 @@ extension AskConversationModel {
 
     /// Closing folds the keyword into its text after input history has recorded it.
     func foldLauncherKeyword() {
+        cancelTerminalRisk()
         hideLauncherTerminal()
         let retainedCapture = retainNoteCaptureOnDismissal()
         if isTerminalCommandMode || isTerminalCommandInput(launcherDraft.text) {

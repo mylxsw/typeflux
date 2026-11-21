@@ -87,7 +87,7 @@ final class TerminalRunnerWindowController: NSObject, NSWindowDelegate {
         let actions = TerminalRunnerActions(
             copy: { [weak self] in self?.copyOutput() },
             insert: { [weak self] in self?.insertOutput() },
-            rerun: { [weak self] in self?.model.rerun() },
+            rerun: { [weak self] in self?.rerun() },
             openExternal: { [weak self] in self?.openExternally() },
             stop: { [weak self] in self?.model.stop() },
             close: { [weak self] in self?.window.performClose(nil) },
@@ -134,7 +134,7 @@ final class TerminalRunnerWindowController: NSObject, NSWindowDelegate {
     }
 
     func insertOutput() {
-        let text = model.visibleText()
+        let text = model.settings.insertion(command: model.command, output: model.visibleText())
         guard !text.isEmpty, !model.isRunning else { return }
         let services = services
         closeWindow()
@@ -155,9 +155,35 @@ final class TerminalRunnerWindowController: NSObject, NSWindowDelegate {
         }
     }
 
+    private func rerun() {
+        afterRiskConfirmation { $0.model.rerun() }
+    }
+
+    private func afterRiskConfirmation(_ action: @escaping (TerminalRunnerWindowController) -> Void) {
+        guard !model.isRunning, window.attachedSheet == nil else { return }
+        guard model.settings.confirmsRisky, let risk = TerminalCommandRisk.detect(model.command) else {
+            action(self)
+            return
+        }
+        let alert = NSAlert()
+        alert.alertStyle = .critical
+        alert.messageText = risk.impact
+        let run = alert.addButton(withTitle: L("terminal.risk.runAnyway") + " ⌘↩")
+        run.keyEquivalent = "\r"
+        run.keyEquivalentModifierMask = .command
+        run.hasDestructiveAction = true
+        alert.addButton(withTitle: L("terminal.risk.cancel")).keyEquivalent = "\u{1b}"
+        alert.beginSheetModal(for: window) { [weak self] response in
+            if response == .alertFirstButtonReturn, let self { action(self) }
+        }
+    }
+
     /// Runs the command again in the external terminal; the finished run is not moved there.
     func openExternally() {
-        guard !model.isRunning else { return }
+        afterRiskConfirmation { $0.dispatchExternally() }
+    }
+
+    private func dispatchExternally() {
         let request = TerminalCommandRequest(command: model.command, terminal: model.externalTerminal)
         let dispatcher = services.dispatcher
         Task { @MainActor [weak self] in
@@ -227,7 +253,7 @@ final class TerminalRunnerWindowController: NSObject, NSWindowDelegate {
         switch (modifiers, event.keyCode) {
         case ([], 53): window.performClose(nil) // Esc
         case (.command, 36), (.command, 76): insertOutput() // ⌘↩
-        case (.command, _) where key == "r": model.rerun()
+        case (.command, _) where key == "r": rerun()
         case ([.command, .shift], _) where key == "c": copyOutput()
         default: return false
         }

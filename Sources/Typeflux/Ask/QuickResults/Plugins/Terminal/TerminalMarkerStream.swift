@@ -3,7 +3,7 @@ import Foundation
 /// A PTY read may end anywhere, including between ESC and the string terminator.
 struct TerminalMarkerStream {
     enum Event: Equatable {
-        case bytes([UInt8]), prompt, input, output, complete(Int32), directory(String)
+        case bytes([UInt8]), prompt, input, output, complete(Int32), directory(String), path(String)
     }
 
     private var pending: [UInt8] = []
@@ -61,6 +61,10 @@ struct TerminalMarkerStream {
         default:
             if body.hasPrefix("133;D;"), let code = Int32(body.dropFirst(6)) {
                 return .complete(code)
+            }
+            let pathMarker = "133;P;TypefluxPath="
+            if body.hasPrefix(pathMarker), let path = body.dropFirst(pathMarker.count).removingPercentEncoding {
+                return .path(path)
             }
             if body.hasPrefix("7;file://"), let url = URL(string: String(body.dropFirst(2))),
                url.path.hasPrefix("/") {

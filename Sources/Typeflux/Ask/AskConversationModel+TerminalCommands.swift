@@ -1,5 +1,10 @@
 import AppKit
 
+struct TerminalRiskSubmission {
+    let request: TerminalCommandRequest
+    let risk: TerminalCommandRisk
+}
+
 extension AskConversationModel {
     var isTerminalCommandMode: Bool {
         plugins.keyword?.pluginID == AskTerminalCommandPlugin.id
@@ -13,6 +18,30 @@ extension AskConversationModel {
 
     /// Called only by the composer's explicit user action, never by plugin.run.
     func submitTerminalCommand(_ request: TerminalCommandRequest, completed: @escaping () -> Void) {
+        guard !terminalCommandSending, pendingTerminalRisk == nil, currentTerminalCommand(request),
+              let keyword = plugins.keyword else { return }
+        if TerminalRunSettings(options: keyword.options).confirmsRisky,
+           let risk = TerminalCommandRisk.detect(request.command) {
+            pendingTerminalRisk = TerminalRiskSubmission(request: request, risk: risk)
+            return
+        }
+        dispatchTerminalCommand(request, completed: completed)
+    }
+
+    @discardableResult
+    func cancelTerminalRisk() -> Bool {
+        guard pendingTerminalRisk != nil else { return false }
+        pendingTerminalRisk = nil
+        return true
+    }
+
+    func confirmTerminalRisk(completed: @escaping () -> Void) {
+        guard let pending = pendingTerminalRisk else { return }
+        pendingTerminalRisk = nil
+        dispatchTerminalCommand(pending.request, completed: completed)
+    }
+
+    private func dispatchTerminalCommand(_ request: TerminalCommandRequest, completed: @escaping () -> Void) {
         guard !terminalCommandSending, currentTerminalCommand(request) else { return }
         if let keyword = plugins.keyword {
             var properties = plugins.analyticsProperties(for: keyword)
@@ -20,17 +49,23 @@ extension AskConversationModel {
             featureAnalytics.event(.keyword, "executed", properties: properties)
         }
         if let settings = request.builtin {
-            if request.runner == .window, let terminalRunnerOverride {
+            let savedRunner = TerminalRunSettings.runner(in: plugins.keyword?.options ?? [:])
+            if request.runner == .window, savedRunner == .window || terminalRunnerOverride != nil {
+                let presenter: any TerminalRunnerPresenting = terminalRunnerOverride ?? terminalSessionCenter
                 let services = terminalRunnerServices
                 finishPluginResult()
                 completed()
-                terminalRunnerOverride.present(request, services: services)
+                presenter.present(request, services: services)
             } else {
                 launchTerminal(command: request.command, settings: settings,
                                window: request.runner == .window, dismiss: completed)
             }
             return
         }
+        sendToExternalTerminal(request, completed: completed)
+    }
+
+    private func sendToExternalTerminal(_ request: TerminalCommandRequest, completed: @escaping () -> Void) {
         terminalCommandSending = true
         let presentation = launcherPresentationID
         let generation = plugins.resultGeneration

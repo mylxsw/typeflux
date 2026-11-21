@@ -84,7 +84,7 @@ struct TerminalLauncherView: View {
                 guard let move else { return false }
                 move()
             case .escape:
-                if !model.deselect() { dismiss() }
+                if !model.cancelRisk(), !model.resetCompletion(), !model.deselect() { dismiss() }
             case let .number(number):
                 if sessions.indices.contains(number - 1) { select(sessions[number - 1].id) }
             default: return false
@@ -106,7 +106,6 @@ struct TerminalSessionContent: View {
     let new: () -> Void
     let insert: (String) -> Void
     let error: (String) -> Void
-    var complete: ((String, String) -> String?)?
 
     @State private var atTail = true
     @State private var hovered: UUID?
@@ -116,6 +115,12 @@ struct TerminalSessionContent: View {
     var body: some View {
         VStack(spacing: 0) {
             blockList
+            if let risk = model.pendingRisk {
+                TerminalRiskCard(risk: risk, cancel: { model.cancelRisk() }, confirm: { model.confirmRisk() })
+            }
+            if !model.completionCandidates.isEmpty {
+                completionList
+            }
             Divider()
             prompt
         }
@@ -247,11 +252,13 @@ struct TerminalSessionContent: View {
     private func blockActions(_ block: TerminalCommandBlock, collapsed: Bool) -> some View {
         if block.output.length > 0 {
             terminalButton("doc.on.doc", L("terminal.launcher.copy") + " ⌘C") { copy(block.output.string) }
-            terminalButton("arrow.down.to.line", insertTitle + " ⌘↩") { insert(block.output.string) }
             terminalButton(collapsed ? "chevron.down" : "chevron.up",
                            L(collapsed ? "terminal.launcher.expand" : "terminal.launcher.collapse")) {
                 model.toggleCollapsed(block.id)
             }
+        }
+        if block.state != .cancelled && (block.output.length > 0 || model.settings.insert == .commandAndOutput) {
+            terminalButton("arrow.down.to.line", insertTitle + " ⌘↩") { model.insert(block, using: insert) }
         }
         terminalButton("arrow.clockwise", L("terminal.launcher.rerun") + " ⌘R") { rerun(block) }
             .disabled(model.prompt != .idle)
@@ -260,6 +267,29 @@ struct TerminalSessionContent: View {
     private var insertTitle: String {
         if let name = model.source?.localizedName { return L("terminal.launcher.insertInto", name) }
         return L("terminal.runner.insert")
+    }
+
+    private var completionList: some View {
+        ScrollViewReader { scroll in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    ForEach(model.completionCandidates, id: \.self) { candidate in
+                        Text(candidate)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(model.completionSelection == candidate
+                                ? Color.accentColor.opacity(0.2) : .clear, in: Capsule())
+                            .id(candidate)
+                    }
+                }
+                .padding(.horizontal, 14)
+            }
+            .onChange(of: model.completionSelection) { candidate in
+                if let candidate { scroll.scrollTo(candidate) }
+            }
+        }
+        .font(.system(size: 11, design: .monospaced))
+        .foregroundStyle(.secondary)
+        .frame(height: 24)
     }
 
     private var prompt: some View {
@@ -280,7 +310,10 @@ struct TerminalSessionContent: View {
                     .focused($focused)
                     .onSubmit(submit)
             } else {
-                TextField(state == .ended ? L("terminal.launcher.ended") : "", text: $model.text)
+                TextField(state == .ended ? L("terminal.launcher.ended") : "", text: Binding(get: { model.text }, set: {
+                    model.resetCompletion()
+                    model.text = $0
+                }))
                     .accessibilityLabel(L("terminal.command.placeholder"))
                     .focused($focused)
                     .disabled(state == .running)
@@ -318,6 +351,28 @@ struct TerminalSessionContent: View {
         let editor = event.window?.firstResponder as? NSTextView
         guard editor?.hasMarkedText() != true else { return false }
         let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
+        if let key = AskCommandKey(event), model.pendingRisk != nil {
+            switch key {
+            case .commandEnter:
+                if !event.isARepeat { model.confirmRisk() }
+                return true
+            case .escape: return model.cancelRisk()
+            case .enter, .tab, .commandR: return true
+            default: break
+            }
+        }
+        if focused, model.prompt == .idle, AskCommandKey(event) == .tab {
+            let selection = editor?.selectedRange()
+            guard selection == nil || selection == NSRange(location: model.text.utf16.count, length: 0) else {
+                return false
+            }
+            if model.complete(), let editor {
+                // Keep the live field editor and the model in sync between consecutive Tab events.
+                editor.string = model.text
+                editor.setSelectedRange(NSRange(location: model.text.utf16.count, length: 0))
+            }
+            return true
+        }
         switch (modifiers, event.keyCode) {
         case (.control, 8):
             model.secret = ""
@@ -340,9 +395,7 @@ struct TerminalSessionContent: View {
         case .up, .down:
             guard focused, model.prompt == .idle else { return false }
             model.recall(key == .up ? 1 : -1, commands: commands())
-        case .tab:
-            guard focused, model.prompt == .idle, let value = complete?(model.text, session.cwd) else { return false }
-            model.fill(value)
+        case .escape: return model.resetCompletion()
         case .optionUp, .optionDown: model.select(key == .optionUp ? -1 : 1)
         case .commandEnter: model.insertSelected(using: insert)
         case .commandC:

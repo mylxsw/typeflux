@@ -41,6 +41,51 @@ struct TerminalRunSettingsTests {
         #expect(cleared == ["terminal": "iterm"])
     }
 
+    @Test func launcherSettingsMigrateAndRoundTrip() {
+        var options = ["runner": "builtin", "directory": "~/Legacy", "unrelated": "keep"]
+        var settings = TerminalRunSettings(options: options)
+        #expect(TerminalRunSettings.runner(in: options) == .launcher)
+        #expect(TerminalRunSettings.alternateRunner(in: options) == .window)
+        #expect(TerminalRunSettings.alternateRunner(in: ["runner": "window"]) == .launcher)
+        #expect(settings.startDirectory == .fixed && settings.idle == .thirtyMinutes)
+        #expect(settings.confirmsRisky && settings.insert == .output)
+        settings.startDirectory = .finder
+        settings.idle = .never
+        settings.confirmsRisky = false
+        settings.insert = .commandAndOutput
+        settings.write(into: &options)
+        #expect(TerminalRunSettings(options: options) == settings)
+        #expect(options["unrelated"] == "keep")
+        #expect(settings.insertion(command: "pwd", output: "/tmp") == "pwd\n/tmp")
+        #expect(settings.insertion(command: "true", output: "") == "true")
+        #expect(TerminalRunSettings().insertion(command: "pwd", output: "/tmp") == "/tmp")
+
+        settings.startDirectory = .last
+        settings.idle = .always
+        settings.write(into: &options)
+        #expect(TerminalRunSettings(options: options) == settings)
+        options["startDirectory"] = "invalid"
+        options["idle"] = "invalid"
+        options["insert"] = "invalid"
+        options["confirmRisky"] = "invalid"
+        let migrated = TerminalRunSettings(options: options)
+        #expect(migrated.startDirectory == .fixed && migrated.idle == .thirtyMinutes)
+        #expect(migrated.insert == .output && migrated.confirmsRisky)
+    }
+
+    @Test func startDirectoryUsesFinderOrLastAndKeepsExplicitPaths() {
+        let exists: (String) -> Bool = { ["/found", "/last"].contains($0) }
+        let last = TerminalRunSettings()
+        let finder = TerminalRunSettings(startDirectory: .finder)
+        let fixed = TerminalRunSettings(directory: "~/fixed")
+        #expect(last.startingPath(home: home, last: "/last", finder: { "/found" }, isDirectory: exists) == "/last")
+        #expect(last.startingPath(home: home, last: nil, finder: { "/found" }, isDirectory: exists) == home)
+        #expect(finder.startingPath(home: home, last: "/last", finder: { "/found" }, isDirectory: exists) == "/found")
+        #expect(finder.startingPath(home: home, last: "/last", finder: { "/gone" }, isDirectory: exists) == "/last")
+        #expect(finder.startingPath(home: home, last: "/gone", finder: { nil }, isDirectory: exists) == home)
+        #expect(fixed.startingPath(home: home, last: "/last", finder: { "/found" }, isDirectory: exists) == home + "/fixed")
+    }
+
     @Test(arguments: [
         (TerminalFinishPolicy.auto, Int32(0), false, true), (.auto, 0, true, false), (.auto, 1, false, false),
         (.keep, 0, false, false), (.keep, 2, true, false),

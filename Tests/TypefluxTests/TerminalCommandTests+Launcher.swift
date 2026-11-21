@@ -39,6 +39,50 @@ extension TerminalCommandTests {
         #expect(dispatcher.authorizations.isEmpty && dispatcher.requests.isEmpty)
     }
 
+    @Test func riskyInitialSubmissionRequiresExplicitConfirmationAndRejectsStaleInput() async throws {
+        let fixture = try AskTestFixture()
+        let model = fixture.model
+        defer { model.resetSession() }
+        let dispatcher = TestTerminalDispatcher()
+        model.terminalCommandDispatcher = dispatcher
+        let request = try await prepare(model, command: "git push --force")
+        var completed = 0
+        model.submitTerminalCommand(request) { completed += 1 }
+        #expect(model.pendingTerminalRisk?.risk == .forcePush && dispatcher.authorizations.isEmpty)
+        #expect(model.cancelTerminalRisk() && !model.cancelTerminalRisk())
+        model.confirmTerminalRisk { completed += 1 }
+        #expect(dispatcher.requests.isEmpty && completed == 0)
+        model.submitTerminalCommand(request) { completed += 1 }
+        model.launcherDraft.text = "git status"
+        model.confirmTerminalRisk { completed += 1 }
+        #expect(dispatcher.authorizations.isEmpty && completed == 0)
+        model.launcherDraft.text = request.command
+        model.submitTerminalCommand(request) { completed += 1 }
+        model.confirmTerminalRisk { completed += 1 }
+        model.confirmTerminalRisk { completed += 1 }
+        try await AskQuickSearchSessionTests.wait { completed == 1 }
+        #expect(dispatcher.requests == [request] && model.pendingTerminalRisk == nil)
+    }
+
+    @Test func riskyHintUsesEscapeAndCommandReturn() async throws {
+        let dispatcher = TestTerminalDispatcher()
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "cmd git push --force", prepare: {
+            $0.terminalCommandDispatcher = dispatcher
+        })
+        defer { launcher.close() }
+        let model = launcher.fixture.model
+        try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
+        try await launcher.press(36, .option)
+        try await AskQuickSearchSessionTests.wait { model.pendingTerminalRisk != nil }
+        #expect(dispatcher.requests.isEmpty)
+        try await launcher.press(53)
+        #expect(model.pendingTerminalRisk == nil && launcher.dismissed == 0)
+        try await launcher.press(36, .option)
+        try await launcher.press(36, .command)
+        try await AskQuickSearchSessionTests.wait { dispatcher.requests.count == 1 }
+        #expect(dispatcher.requests.first?.runner == .external)
+    }
+
     @Test func `dispatch uses the snapshot and prevents duplicates`() async throws {
         let fixture = try AskTestFixture()
         let model = fixture.model
@@ -414,6 +458,23 @@ extension TerminalCommandTests {
         process.emit(osc("133;C") + "Sources/Example.swift:12: trailing whitespace.\r\n" + osc("133;D;2") + osc("133;B"))
         presentation.select(-1)
         try await capture("session")
+        presentation.fill("rm -rf build .build")
+        #expect(!presentation.submit() && presentation.pendingRisk == .delete)
+        try await capture("risk")
+        let writesBeforeCancel = process.writes.count
+        try await terminalKey(53, [], in: window)
+        #expect(presentation.pendingRisk == nil && session.blocks.last?.state == .cancelled)
+        #expect(process.writes.count == writesBeforeCancel)
+        presentation.fill("git sta")
+        try await AskQuickSearchSessionTests.wait { (window.firstResponder as? NSTextView)?.string == "git sta" }
+        let editor = try #require(window.firstResponder as? NSTextView)
+        editor.setSelectedRange(NSRange(location: editor.string.utf16.count, length: 0))
+        try await terminalKey(48, [], in: window)
+        #expect(presentation.text == "git stash" && presentation.completionCandidates == ["stash", "status"])
+        try await capture("completion")
+        try await terminalKey(48, [], in: window)
+        #expect(presentation.text == "git status")
+
         presentation.fill("read response")
         #expect(presentation.submit())
         process.emit(osc("133;C") + "Continue? ")

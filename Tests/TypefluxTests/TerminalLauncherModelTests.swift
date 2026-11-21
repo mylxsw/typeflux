@@ -50,6 +50,62 @@ struct TerminalLauncherModelTests {
         #expect(model.prompt == .ended && !model.submit())
     }
 
+    @Test func riskyPromptStagesOnceAndCancellationLeavesNoHistory() throws {
+        let process = FakeTerminalProcess()
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        let center = TerminalSessionCenter(history: history, makeProcess: { process })
+        let settings = TerminalRunSettings(insert: .commandAndOutput)
+        let session = try center.create(settings: settings)
+        defer { center.terminateAll() }
+        let model = TerminalLauncherModel(session: session, settings: settings, source: nil,
+                                          notify: { _, _ in false }, visible: { true })
+        process.emit(osc("133;B"))
+        model.fill("rm -rf sample")
+        #expect(!model.submit() && !model.submit())
+        #expect(model.pendingRisk == .delete && process.writes.isEmpty && session.blocks.isEmpty)
+        #expect(model.cancelRisk() && !model.cancelRisk())
+        #expect(model.pendingRisk == nil && model.text.isEmpty)
+        let cancelled = try #require(session.blocks.last)
+        #expect(cancelled.state == .cancelled && !TerminalLauncherModel.mark(cancelled).isEmpty)
+        #expect(history.commands.isEmpty)
+        model.insert(cancelled) { _ in Issue.record("Cancelled command was inserted") }
+
+        model.fill("git push --force")
+        #expect(!model.submit() && model.pendingRisk == .forcePush)
+        model.text = "git status"
+        #expect(!model.confirmRisk() && model.pendingRisk == nil)
+        model.fill("git reset --hard")
+        #expect(!model.submit() && model.confirmRisk() && !model.confirmRisk())
+        #expect(process.writes.count == 1 && history.commands == ["git reset --hard"])
+        process.emit(osc("133;C") + "test output\r\n" + osc("133;D;0"))
+        model.insertSelected { #expect($0 == "git reset --hard\ntest output") }
+        model.fill("rm -r sample")
+        #expect(!model.submit() && model.pendingRisk == .delete)
+        process.exit(0)
+        model.synchronizePrompt()
+        #expect(model.pendingRisk == nil && !model.confirmRisk())
+    }
+
+    @Test func promptCompletionCyclesAndRiskConfirmationCanBeDisabled() throws {
+        let process = FakeTerminalProcess()
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        let center = TerminalSessionCenter(history: history, makeProcess: { process })
+        let settings = TerminalRunSettings(confirmsRisky: false)
+        let session = try center.create(settings: settings)
+        defer { center.terminateAll() }
+        let model = TerminalLauncherModel(session: session, settings: settings, source: nil,
+                                          notify: { _, _ in false }, visible: { true })
+        model.fill("git sta")
+        #expect(model.complete() && model.text == "git stash")
+        #expect(model.completionCandidates == ["stash", "status"])
+        #expect(model.complete() && model.text == "git status")
+        #expect(model.resetCompletion() && !model.resetCompletion())
+        model.fill("rm -rf sample")
+        process.emit(osc("133;B"))
+        #expect(model.submit() && model.pendingRisk == nil)
+        #expect(process.writes.count == 1 && model.completionCandidates.isEmpty && !model.complete())
+    }
+
     @Test func `background completion respects the ten second threshold`() {
         let start = Date()
         var block = TerminalCommandBlock(command: "git status", cwd: "/tmp", startedAt: start)

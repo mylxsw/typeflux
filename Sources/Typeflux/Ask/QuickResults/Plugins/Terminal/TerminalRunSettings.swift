@@ -39,8 +39,20 @@ struct TerminalRunSettings: Equatable, Sendable {
     static let directoryOption = "directory"
     static let pinnedOption = "pinned"
     static let notifyOption = "notify"
+    static let startDirectoryOption = "startDirectory"
+    static let idleOption = "idle"
+    static let riskOption = "confirmRisky"
+    static let insertOption = "insert"
     static let defaultDirectory = "~"
 
+    enum StartDirectory: String, CaseIterable, Sendable { case last, finder, fixed }
+    enum Idle: String, CaseIterable, Sendable { case thirtyMinutes, always, never }
+    enum Insert: String, CaseIterable, Sendable { case output, commandAndOutput }
+
+    var startDirectory: StartDirectory
+    var idle: Idle
+    var confirmsRisky: Bool
+    var insert: Insert
     var finish: TerminalFinishPolicy = .auto
     var shell: TerminalShellProfile = .interactive
     /// As typed in settings; `~` and `~/…` are expanded when the command starts.
@@ -51,7 +63,13 @@ struct TerminalRunSettings: Equatable, Sendable {
     var notifies = true
 
     init(finish: TerminalFinishPolicy = .auto, shell: TerminalShellProfile = .interactive,
-         directory: String = Self.defaultDirectory, pinned: Bool = true, notifies: Bool = true) {
+         directory: String = Self.defaultDirectory, pinned: Bool = true, notifies: Bool = true,
+         startDirectory: StartDirectory? = nil, idle: Idle = .thirtyMinutes,
+         confirmsRisky: Bool = true, insert: Insert = .output) {
+        self.startDirectory = startDirectory ?? Self.defaultStartDirectory(for: directory)
+        self.idle = idle
+        self.confirmsRisky = confirmsRisky
+        self.insert = insert
         self.finish = finish
         self.shell = shell
         self.directory = directory
@@ -65,6 +83,11 @@ struct TerminalRunSettings: Equatable, Sendable {
         shell = options[Self.shellOption].flatMap(TerminalShellProfile.init(rawValue:)) ?? .interactive
         let directory = options[Self.directoryOption]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         self.directory = directory.isEmpty ? Self.defaultDirectory : directory
+        startDirectory = options[Self.startDirectoryOption].flatMap(StartDirectory.init(rawValue:))
+            ?? Self.defaultStartDirectory(for: directory)
+        idle = options[Self.idleOption].flatMap(Idle.init(rawValue:)) ?? .thirtyMinutes
+        confirmsRisky = options[Self.riskOption] != "false"
+        insert = options[Self.insertOption].flatMap(Insert.init(rawValue:)) ?? .output
         pinned = options[Self.pinnedOption] != "false"
         notifies = options[Self.notifyOption] != "false"
     }
@@ -75,14 +98,48 @@ struct TerminalRunSettings: Equatable, Sendable {
         return saved.flatMap(TerminalRunner.init(rawValue:)) ?? .launcher
     }
 
+    static func alternateRunner(in options: [String: String]) -> TerminalRunner {
+        runner(in: options) == .window ? .launcher : .window
+    }
+
     /// Only values that differ from the defaults are stored.
     func write(into options: inout [String: String]) {
         options[Self.finishOption] = finish == .auto ? nil : finish.rawValue
         options[Self.shellOption] = shell == .interactive ? nil : shell.rawValue
         let directory = directory.trimmingCharacters(in: .whitespacesAndNewlines)
         options[Self.directoryOption] = directory.isEmpty || directory == Self.defaultDirectory ? nil : directory
+        options[Self.startDirectoryOption] = startDirectory == Self.defaultStartDirectory(for: directory)
+            ? nil : startDirectory.rawValue
+        options[Self.idleOption] = idle == .thirtyMinutes ? nil : idle.rawValue
+        options[Self.riskOption] = confirmsRisky ? nil : "false"
+        options[Self.insertOption] = insert == .output ? nil : insert.rawValue
         options[Self.pinnedOption] = pinned ? nil : "false"
         options[Self.notifyOption] = notifies ? nil : "false"
+    }
+
+    // A working directory saved before directory modes existed was always fixed.
+    private static func defaultStartDirectory(for directory: String) -> StartDirectory {
+        let trimmed = directory.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty || trimmed == defaultDirectory ? .last : .fixed
+    }
+
+    func startingPath(home: String, last: String?, finder: () -> String?,
+                      isDirectory: (String) -> Bool) -> String {
+        switch startDirectory {
+        case .fixed:
+            return Self.expand(directory, home: home)
+        case .finder:
+            if let path = finder(), isDirectory(path) { return path }
+        case .last:
+            break
+        }
+        if let last, isDirectory(last) { return last }
+        return home
+    }
+
+    func insertion(command: String, output: String) -> String {
+        guard insert == .commandAndOutput else { return output }
+        return output.isEmpty ? command : command + "\n" + output
     }
 
     /// `~`, `~/path` and absolute paths; anything else is taken relative to the home directory.

@@ -193,7 +193,7 @@ struct TerminalRunnerView: View {
                     .accessibilityIdentifier("terminal.runner.external")
                 TFButton(title: insertTitle + "  ⌘↩", systemImage: "arrow.down.to.line", kind: .primary,
                          action: actions.insert)
-                    .disabled(!model.hasOutput)
+                    .disabled(!model.hasOutput && model.settings.insert == .output)
                     .accessibilityIdentifier("terminal.runner.insert")
             case .failedToStart:
                 TFButton(title: L("terminal.runner.rerun"), systemImage: "arrow.clockwise", action: actions.rerun)

@@ -21,6 +21,9 @@ final class TerminalSessionCenter: TerminalRunnerPresenting, ObservableObject, B
     let history: TerminalCommandHistory
     private let readGitStatus: (String) async -> TerminalGitStatus?
     private let makeProcess: () -> any TerminalProcess
+    private var defaults: UserDefaults { history.defaults }
+    private let finderDirectory: @MainActor () -> String?
+    static let lastDirectoryKey = "terminal.lastSessionDirectory"
     private var expiry: Timer?
     private var hiddenSince: [UUID: Date] = [:]
     var idleTimeout: TimeInterval? = 30 * 60 {
@@ -30,11 +33,13 @@ final class TerminalSessionCenter: TerminalRunnerPresenting, ObservableObject, B
     init(
         history: TerminalCommandHistory? = nil,
         makeProcess: @escaping () -> any TerminalProcess = { TerminalPTYProcess() },
-        readGitStatus: @escaping (String) async -> TerminalGitStatus? = TerminalGitStatus.read
+        readGitStatus: @escaping (String) async -> TerminalGitStatus? = TerminalGitStatus.read,
+        finderDirectory: (@MainActor () -> String?)? = nil
     ) {
         self.history = history ?? TerminalCommandHistory()
         self.makeProcess = makeProcess
         self.readGitStatus = readGitStatus
+        self.finderDirectory = finderDirectory ?? Self.frontFinderDirectory
         termination = NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -43,6 +48,7 @@ final class TerminalSessionCenter: TerminalRunnerPresenting, ObservableObject, B
     }
 
     deinit {
+        expiry?.invalidate()
         if let termination {
             NotificationCenter.default.removeObserver(termination)
         }
@@ -58,7 +64,8 @@ final class TerminalSessionCenter: TerminalRunnerPresenting, ObservableObject, B
 
     func present(_ request: TerminalCommandRequest, services: TerminalRunnerServices) {
         guard let settings = request.builtin else { return }
-        let launch = makeLaunch(request, settings)
+        var launch = makeLaunch(request, settings)
+        launch.directory = startingPath(for: settings)
         // The launcher never activates Typeflux, so the frontmost app is the one it came from.
         let target = NSWorkspace.shared.frontmostApplication
         let model = TerminalRunModel(request: request, settings: settings, launch: launch,
@@ -76,17 +83,50 @@ final class TerminalSessionCenter: TerminalRunnerPresenting, ObservableObject, B
 }
 
 extension TerminalSessionCenter {
+    func startingPath(for settings: TerminalRunSettings) -> String {
+        settings.startingPath(
+            home: NSHomeDirectory(), last: defaults.string(forKey: Self.lastDirectoryKey),
+            finder: { finderDirectory() },
+            isDirectory: { path in
+                var directory: ObjCBool = false
+                return path.hasPrefix("/") && FileManager.default.fileExists(atPath: path, isDirectory: &directory)
+                    && directory.boolValue
+            }
+        )
+    }
+
+    private static func frontFinderDirectory() -> String? {
+        guard !NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").isEmpty else {
+            return nil
+        }
+        let script = NSAppleScript(source: """
+        tell application id "com.apple.finder"
+            if (count of Finder windows) is 0 then return POSIX path of (desktop as alias)
+            return POSIX path of (target of front Finder window as alias)
+        end tell
+        """)
+        var error: NSDictionary?
+        return script?.executeAndReturnError(&error).stringValue
+    }
+
     func create(host: TerminalSession.Host = .launcher,
                 settings: TerminalRunSettings = .init()) throws -> TerminalSession {
         let session = try TerminalSession(host: host, settings: settings, process: makeProcess(), history: history,
-                                          readGitStatus: readGitStatus)
+                                          startingPath: startingPath(for: settings), readGitStatus: readGitStatus)
+        rememberDirectory(session.cwd)
+        session.directoryChanged = { [weak self] in self?.rememberDirectory($0) }
         session.changed = { [weak self] in
-            self?.objectWillChange.send()
-            self?.publish()
-            self?.expireIdle()
+            guard let self else { return }
+            objectWillChange.send()
+            publish()
+            expireIdle()
         }
         sessions.append(session)
         return session
+    }
+
+    private func rememberDirectory(_ path: String) {
+        if path != defaults.string(forKey: Self.lastDirectoryKey) { defaults.set(path, forKey: Self.lastDirectoryKey) }
     }
 
     func move(_ session: TerminalSession, to host: TerminalSession.Host) {
@@ -96,8 +136,10 @@ extension TerminalSessionCenter {
     }
 
     func setVisible(_ visible: Bool, session: TerminalSession) {
+        guard sessions.contains(where: { $0 === session }) else { return }
         if visible {
             hiddenSince.removeValue(forKey: session.id)
+            rememberDirectory(session.cwd)
         } else if hiddenSince[session.id] == nil {
             hiddenSince[session.id] = Date()
         }
@@ -106,6 +148,7 @@ extension TerminalSessionCenter {
 
     func close(_ session: TerminalSession) {
         session.changed = nil
+        session.directoryChanged = nil
         session.terminate()
         sessions.removeAll { $0 === session }
         hiddenSince.removeValue(forKey: session.id)
@@ -113,20 +156,12 @@ extension TerminalSessionCenter {
     }
 
     func expireIdle(now: Date = Date()) {
-        if let idleTimeout {
-            for session in sessions where session.runningBlock == nil {
-                guard let hidden = hiddenSince[session.id],
-                      now.timeIntervalSince(max(hidden, session.lastActivity)) >= idleTimeout else { continue }
-                close(session)
-            }
+        for session in sessions where idleDeadline(for: session).map({ $0 <= now }) == true {
+            close(session)
         }
         expiry?.invalidate()
         expiry = nil
-        guard let idleTimeout else { return }
-        let deadline = sessions.compactMap { session -> Date? in
-            guard session.runningBlock == nil, let hidden = hiddenSince[session.id] else { return nil }
-            return max(hidden, session.lastActivity).addingTimeInterval(idleTimeout)
-        }.min()
+        let deadline = sessions.compactMap { idleDeadline(for: $0) }.min()
         if let deadline {
             let timer = Timer(fire: deadline, interval: 0, repeats: false) { [weak self] _ in
                 MainActor.assumeIsolated { self?.expireIdle() }
@@ -134,6 +169,16 @@ extension TerminalSessionCenter {
             RunLoop.main.add(timer, forMode: .common)
             expiry = timer
         }
+    }
+
+    private func idleDeadline(for session: TerminalSession) -> Date? {
+        guard session.runningBlock == nil, let hidden = hiddenSince[session.id] else { return nil }
+        let timeout: TimeInterval? = switch session.settings.idle {
+        case .thirtyMinutes: idleTimeout
+        case .always: nil
+        case .never: 0
+        }
+        return timeout.map { max(hidden, session.lastActivity).addingTimeInterval($0) }
     }
 
     var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> {

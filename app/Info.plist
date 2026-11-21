@@ -51,7 +51,7 @@
     <key>NSMicrophoneUsageDescription</key>
     <string>Typeflux needs microphone access to record your speech.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Typeflux uses automation to search, read, open, and create notes and reminders in Apple Notes and Reminders when you request them, run commands you submit in Terminal or iTerm2, search and switch browser tabs, insert text, and perform browser actions you approve in Ask conversations.</string>
+    <string>Typeflux uses automation to search, read, open, and create notes and reminders in Apple Notes and Reminders when you request them, run commands you submit in Terminal or iTerm2, read the current Finder folder for new terminal sessions, search and switch browser tabs, insert text, and perform browser actions you approve in Ask conversations.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>Typeflux uses speech recognition to transcribe audio when Apple Speech fallback is enabled.</string>
 
