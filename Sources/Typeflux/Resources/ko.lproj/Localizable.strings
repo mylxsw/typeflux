@@ -5912,6 +5912,11 @@
 "ask.approval.fact.account" = "내 Mac 계정으로 실행";
 "ask.approval.fact.screenshot" = "현재 화면 캡처";
 "ask.approval.fact.irreversible" = "되돌리지 못할 수 있음";
+"ask.approval.command.details" = "세부 정보";
+"ask.approval.command.account" = "실행 계정";
+"ask.approval.command.localAccount" = "현재 Mac 계정";
+"ask.approval.command.directory" = "시작 디렉터리";
+"ask.approval.command.arguments" = "원본 인수";
 "ask.approval.preview.command" = "명령 보기";
 "ask.approval.preview.code" = "코드";
 "ask.approval.preview.diff" = "변경 사항 보기";

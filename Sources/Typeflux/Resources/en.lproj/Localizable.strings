@@ -6030,6 +6030,11 @@
 "ask.approval.fact.account" = "Runs as your Mac account";
 "ask.approval.fact.screenshot" = "Captures the current screen";
 "ask.approval.fact.irreversible" = "May not be undoable";
+"ask.approval.command.details" = "Details";
+"ask.approval.command.account" = "Run as";
+"ask.approval.command.localAccount" = "Current Mac account";
+"ask.approval.command.directory" = "Starting directory";
+"ask.approval.command.arguments" = "Raw arguments";
 "ask.approval.preview.command" = "View command";
 "ask.approval.preview.code" = "Code";
 "ask.approval.preview.diff" = "View changes";

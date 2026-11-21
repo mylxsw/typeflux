@@ -168,6 +168,30 @@ struct AskApprovalCard: View {
 
     var body: some View {
         let decision = AskApprovalCopy.decision(call, boundPath: boundPath)
+        Group {
+            if call.function.name == "run_command", case let .content(command) = previewValue {
+                AskCommandApprovalContent(call: call, command: command, workingDirectory: workingDirectory,
+                                          tint: tint, irreversible: irreversible, detailsOpen: detailsOpen,
+                                          toggleDetails: { showsTechnical = !detailsOpen }) {
+                    actions(decision)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 12)
+            } else {
+                standardContent(decision).padding(16)
+            }
+        }
+        .background(embedded ? Color.clear : AskTheme.raisedSurface)
+        .clipShape(RoundedRectangle(cornerRadius: embedded ? 10 : 12, style: .continuous))
+        .overlay {
+            if !embedded {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(irreversible ? tint.opacity(0.45) : AskTheme.border)
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func standardContent(_ decision: AskApprovalCopy.Decision?) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             header(decision)
             let facts = AskApprovalCopy.facts(call, risk: risk, targetSummary: targetSummary,
@@ -201,16 +225,6 @@ struct AskApprovalCard: View {
             }
             .padding(.top, 4)
         }
-        .padding(16)
-        .background(embedded ? Color.clear : AskTheme.raisedSurface)
-        .clipShape(RoundedRectangle(cornerRadius: embedded ? 10 : 12, style: .continuous))
-        .overlay {
-            if !embedded {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(irreversible ? tint.opacity(0.45) : AskTheme.border)
-            }
-        }
-        .accessibilityElement(children: .contain)
     }
 
     private func header(_ decision: AskApprovalCopy.Decision?) -> some View {

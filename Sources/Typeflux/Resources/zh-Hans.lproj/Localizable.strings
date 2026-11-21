@@ -6030,6 +6030,11 @@
 "ask.approval.fact.account" = "以你的 Mac 账户运行";
 "ask.approval.fact.screenshot" = "截取当前屏幕";
 "ask.approval.fact.irreversible" = "可能无法撤销";
+"ask.approval.command.details" = "详情";
+"ask.approval.command.account" = "运行账户";
+"ask.approval.command.localAccount" = "当前 Mac 账户";
+"ask.approval.command.directory" = "起始目录";
+"ask.approval.command.arguments" = "原始参数";
 "ask.approval.preview.command" = "查看命令";
 "ask.approval.preview.code" = "代码";
 "ask.approval.preview.diff" = "查看改动";

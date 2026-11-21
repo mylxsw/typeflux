@@ -5953,6 +5953,11 @@
 "ask.approval.fact.account" = "以你的 Mac 帳號執行";
 "ask.approval.fact.screenshot" = "擷取目前螢幕";
 "ask.approval.fact.irreversible" = "可能無法復原";
+"ask.approval.command.details" = "詳細資料";
+"ask.approval.command.account" = "執行帳號";
+"ask.approval.command.localAccount" = "目前的 Mac 帳號";
+"ask.approval.command.directory" = "起始目錄";
+"ask.approval.command.arguments" = "原始參數";
 "ask.approval.preview.command" = "查看指令";
 "ask.approval.preview.code" = "程式碼";
 "ask.approval.preview.diff" = "查看變更";

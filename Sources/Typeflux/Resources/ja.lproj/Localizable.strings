@@ -5912,6 +5912,11 @@
 "ask.approval.fact.account" = "あなたの Mac アカウントで実行";
 "ask.approval.fact.screenshot" = "現在の画面をキャプチャ";
 "ask.approval.fact.irreversible" = "元に戻せない可能性があります";
+"ask.approval.command.details" = "詳細";
+"ask.approval.command.account" = "実行ユーザ";
+"ask.approval.command.localAccount" = "現在の Mac アカウント";
+"ask.approval.command.directory" = "開始ディレクトリ";
+"ask.approval.command.arguments" = "元の引数";
 "ask.approval.preview.command" = "コマンドを表示";
 "ask.approval.preview.code" = "コード";
 "ask.approval.preview.diff" = "変更を表示";

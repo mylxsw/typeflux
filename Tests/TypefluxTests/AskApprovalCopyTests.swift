@@ -235,31 +235,39 @@ struct AskApprovalCopyTests {
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previous) }
-        let command = "git remote get-url origin"
+        let command = "cd /Users/mylxsw/Downloads && ls -la *.dmg *.ips"
+        let path = "~/.typeflux/workspaces/4afd9883d299e189/20261122-37cfa1d7-3314-49e9-8852-46497b40e97d"
+        let invocation = call("run_command", ["command": command])
+        let pasteboard = NSPasteboard.withUniqueName()
+        let previousPasteboard = AskQuickResults.pasteboard
+        AskQuickResults.pasteboard = pasteboard
+        defer {
+            AskQuickResults.pasteboard = previousPasteboard
+            pasteboard.releaseGlobally()
+        }
         let script = (1...39).map { "# line " + String($0) }.joined(separator: "\n")
         var denied = false, allowed = false
-        let run = AskApprovalCard(call: call("run_command", ["command": command]), risk: .destructive,
-                                  workingDirectory: "~/Workspace/codes/typeflux", reason: "读取仓库远程地址",
+        let run = AskApprovalCard(call: invocation, risk: .destructive,
+                                  workingDirectory: path, reason: "读取仓库远程地址",
                                   onDeny: { denied = true }, onAllow: {})
         let file = AskApprovalCard(call: call("files", ["action": "write", "path": "outputs/clone-typeflux.sh",
                                                        "content": script]), risk: .write,
                                    onDeny: {}, onAllow: { allowed = true })
         let cards = VStack(spacing: 16) { run; file }.padding(18).background(AskTheme.surface)
         try await UI.withWindow(cards.environment(\.colorScheme, .dark), width: 640,
-                                height: fits(cards, width: 640)) { window, host in
+                                height: 640) { window, host in
             window.appearance = NSAppearance(named: .darkAqua)
             host.displayIfNeeded()
-            let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-                .appendingPathComponent(".build/approval-validation")
-            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-            host.cacheDisplay(in: host.bounds, to: bitmap)
-            try #require(bitmap.representation(using: .png, properties: [:])).write(to: root.appendingPathComponent("compact.png"))
-            #expect(!UI.contains(command, in: host))
-            try UI.button(L("ask.approval.preview.command"), in: host).press()
-            try await UI.wait { UI.contains(command, in: host) }
-            try UI.button(L("ask.approval.preview.command"), in: host).press()
-            try await UI.wait { !UI.contains(command, in: host) }
+            #expect(UI.contains(command, in: host))
+            #expect(!UI.contains(path, in: host))
+            try UI.button(L("ask.approval.command.details"), in: host).press()
+            try await UI.wait { UI.contains(path, in: host) }
+            #expect(UI.contains(L("ask.approval.command.localAccount"), in: host))
+            try UI.button(L("ask.copy"), in: host).press()
+            try await UI.wait { pasteboard.string(forType: .string) == invocation.function.arguments }
+            try UI.button(L("ask.approval.command.details"), in: host).press()
+            try await UI.wait { !UI.contains(path, in: host) }
+            #expect(UI.contains(command, in: host))
             try UI.button(L("ask.approval.preview.file"), in: host).press()
             try await UI.wait { UI.contains(script, in: host) }
             try UI.button(L("ask.deny"), in: host).press()
@@ -282,6 +290,34 @@ struct AskApprovalCopyTests {
         #expect(AskApprovalCopy.facts(call("image_generate", ["layout": "portrait"]), risk: .write).first?.text == L("imagegen.layout.portrait"))
         #expect(AskApprovalCopy.facts(call("image_generate"), risk: .write, targetSummary: "image_generate").isEmpty)
         #expect(AskApprovalCopy.imagePrompt(call("image_generate")) == nil)
+    }
+
+    @Test func commandApprovalRendersAtTranscriptAndNarrowWidths() throws {
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let command = call("run_command", ["command": "cd /Users/mylxsw/Downloads && ls -la *.dmg *.ips"])
+        let card = AskApprovalCard(call: command, risk: .destructive,
+                                   workingDirectory: "~/.typeflux/workspaces/4afd9883d299e189/20261122-37cfa1d7-3314-49e9-8852-46497b40e97d",
+                                   onDeny: {}, onAllow: {})
+        var open = card
+        open.initiallyShowsDetails = true
+        for width: CGFloat in [360, 718] {
+            #expect(fits(card, width: width) < 155)
+            #expect(fits(open, width: width) > fits(card, width: width) + 80)
+            #expect(fits(open, width: width) < 375)
+            for dark in [true, false] {
+                for expanded in [true, false] {
+                    let name = "command-\(Int(width))-\(dark ? "dark" : "light")-\(expanded ? "expanded" : "collapsed")"
+                    let view = (expanded ? open : card).padding(18).frame(width: width)
+                        .background(AskTheme.surface).environment(\.colorScheme, dark ? .dark : .light)
+                    let host = NSHostingView(rootView: view)
+                    host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+                    host.frame.size = host.fittingSize
+                    try SettingsBehaviorTestSupport.snapshot(host, name: name)
+                }
+            }
+        }
     }
 
     @Test func imageApprovalDetailsStayBoundedWithActionsBelowAndRenderInBothThemes() throws {
