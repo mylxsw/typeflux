@@ -7626,3 +7626,11 @@
 "ask.image.cache.clear" = "清理缓存";
 "ask.image.cache.hint" = "已下载的原图可离线查看。清理本机缓存不会删除云端生成记录。";
 "ask.image.cache.clearFailed" = "图片缓存清理失败。";
+
+"terminal.session.window.title" = "终端";
+
+"terminal.session.window.new" = "新会话 ⌘T";
+
+"terminal.session.window.pin" = "置顶";
+
+"terminal.session.window.back" = "收回到启动器 ⌘O";

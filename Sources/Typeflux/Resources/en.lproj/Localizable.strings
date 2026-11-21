@@ -7626,3 +7626,11 @@
 "ask.image.cache.clear" = "Clear cache";
 "ask.image.cache.hint" = "Downloaded originals are reused offline. Clearing this device’s cache does not delete cloud results.";
 "ask.image.cache.clearFailed" = "Could not clear the image cache.";
+
+"terminal.session.window.title" = "Terminal";
+
+"terminal.session.window.new" = "New Session ⌘T";
+
+"terminal.session.window.pin" = "Keep on Top";
+
+"terminal.session.window.back" = "Back to Launcher ⌘O";
