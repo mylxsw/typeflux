@@ -7659,3 +7659,9 @@
 "terminal.risk.cancelled" = "已取消";
 "terminal.risk.runAnyway" = "仍要執行";
 "terminal.settings.notify" = "背景指令完成時通知";
+"terminal.ai.explain" = "讓 AI 解釋";
+"terminal.ai.disclosure" = "將這條命令、結束代碼和最後最多 4 KB 的輸出傳送給已設定的 AI 模型？";
+"terminal.ai.loading" = "正在解釋命令";
+"terminal.ai.offline" = "目前處於離線狀態。";
+"terminal.ai.failed" = "無法解釋這條命令。";
+"terminal.ai.continue" = "在 Ask 中繼續";

@@ -86,6 +86,12 @@ extension AskConversationModel {
                 return self.terminalSessionWindow.selected === session && self.terminalSessionWindow.panel.isKeyWindow
             }
         )
+        presentation.explanation.generator = promptAI as? any AskStructuredTextGenerating
+        presentation.explanation.openAsk = { [weak self] text in
+            Task { [weak self] in
+                _ = await self?.openChatFromLauncher(incomingDraft: AskDraft(text: text, includeScreenshot: false))
+            }
+        }
         terminalPresentations[session.id] = presentation
         return presentation
     }

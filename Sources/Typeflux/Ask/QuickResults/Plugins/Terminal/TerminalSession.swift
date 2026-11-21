@@ -7,6 +7,7 @@ struct TerminalCommandBlock: Identifiable {
     let command: String
     let cwd: String
     let startedAt: Date
+    var hadHiddenInput = false
     var endedAt: Date?
     var exitCode: Int32?
     var state = State.running
@@ -249,8 +250,10 @@ final class TerminalSession: ObservableObject, Identifiable {
 
     func refreshInput() {
         guard let block = runningBlock else { return }
+        let hidden = process.readsHiddenInput
+        if hidden && !block.hadHiddenInput { blocks[blocks.count - 1].hadHiddenInput = true }
         let state: TerminalCommandBlock.State = alternateScreen ? .alternateScreen :
-            process.readsHiddenInput ? .hiddenInput : inputPrompt ? .waitingForInput : .running
+            hidden ? .hiddenInput : inputPrompt ? .waitingForInput : .running
         if state != block.state {
             blocks[blocks.count - 1].state = state
             changed?()

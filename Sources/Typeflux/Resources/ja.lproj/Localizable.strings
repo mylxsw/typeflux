@@ -7634,3 +7634,9 @@
 "terminal.risk.cancelled" = "キャンセル済み";
 "terminal.risk.runAnyway" = "実行する";
 "terminal.settings.notify" = "バックグラウンドのコマンドが完了したら通知";
+"terminal.ai.explain" = "AI で説明";
+"terminal.ai.disclosure" = "このコマンドと終了コード、出力の末尾（最大 4 KB）を設定済みの AI モデルに送信しますか？";
+"terminal.ai.loading" = "コマンドを説明中";
+"terminal.ai.offline" = "オフラインです。";
+"terminal.ai.failed" = "コマンドを説明できませんでした。";
+"terminal.ai.continue" = "Ask で続ける";

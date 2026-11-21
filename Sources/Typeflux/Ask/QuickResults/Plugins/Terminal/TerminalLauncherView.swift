@@ -197,6 +197,11 @@ struct TerminalSessionContent: View {
                 Text(output).textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if block.canExplain {
+                TerminalExplanationCard(explanation: model.explanation, block: block, canFill: model.prompt == .idle && model.pendingRisk == nil) {
+                    if model.fillExplanation() { focused = true }
+                }
+            }
         }
         .font(.system(size: 12, design: .monospaced))
         .padding(9)
@@ -250,6 +255,9 @@ struct TerminalSessionContent: View {
 
     @ViewBuilder
     private func blockActions(_ block: TerminalCommandBlock, collapsed: Bool) -> some View {
+        if block.canExplain {
+            terminalButton("sparkles", L("terminal.ai.explain") + " ⌘E") { model.explanation.explain(block) }
+        }
         if block.output.length > 0 {
             terminalButton("doc.on.doc", L("terminal.launcher.copy") + " ⌘C") { copy(block.output.string) }
             terminalButton(collapsed ? "chevron.down" : "chevron.up",
@@ -334,20 +342,22 @@ struct TerminalSessionContent: View {
             error(problem)
         }
     }
+}
 
-    private func copy(_ text: String) {
+private extension TerminalSessionContent {
+    func copy(_ text: String) {
         guard !text.isEmpty else { return }
         AskQuickResults.copy(text)
         error(L("terminal.runner.copied"))
     }
 
-    private func rerun(_ block: TerminalCommandBlock?) {
+    func rerun(_ block: TerminalCommandBlock?) {
         guard let block, model.prompt == .idle else { return }
         model.fill(block.command)
         submit()
     }
 
-    private func handle(_ event: NSEvent) -> Bool {
+    func handle(_ event: NSEvent) -> Bool {
         let editor = event.window?.firstResponder as? NSTextView
         guard editor?.hasMarkedText() != true else { return false }
         let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
@@ -383,6 +393,10 @@ struct TerminalSessionContent: View {
             model.secret = ""
             session.eof()
             return true
+        case (.command, 14):
+            guard model.selected != nil, let block = model.actionBlock, block.canExplain else { return false }
+            if !event.isARepeat { model.explanation.explain(block) }
+            return true
         case (.command, 40): model.clear(); return true
         default:
             guard let key = AskCommandKey(event) else { return false }
@@ -390,7 +404,7 @@ struct TerminalSessionContent: View {
         }
     }
 
-    private func handle(_ key: AskCommandKey, hasSelection: Bool) -> Bool {
+    func handle(_ key: AskCommandKey, hasSelection: Bool) -> Bool {
         switch key {
         case .up, .down:
             guard focused, model.prompt == .idle else { return false }
