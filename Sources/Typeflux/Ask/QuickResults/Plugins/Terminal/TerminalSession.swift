@@ -149,7 +149,7 @@ final class TerminalSession: ObservableObject, Identifiable {
     func interrupt() {
         guard runningBlock != nil else { return }
         if interruptSent {
-            terminate()
+            process.interruptForeground(force: true)
             return
         }
         interruptSent = true
@@ -157,7 +157,7 @@ final class TerminalSession: ObservableObject, Identifiable {
             pending = nil
             finish(130, captureOutput: false)
         } else {
-            write([3])
+            process.interruptForeground(force: false)
         }
     }
 

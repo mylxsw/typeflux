@@ -57,10 +57,11 @@ extension AskConversationModel {
     }
 
     func openTerminalHomeSession(_ id: UUID, dismiss: () -> Void) {
-        if let panel = terminalPopouts[id]?.panel {
+        if let index = terminalSessionWindow.tabs.firstIndex(where: { $0.id == id }) {
             finishPluginResult()
             dismiss()
-            panel.makeKeyAndOrderFront(nil)
+            terminalSessionWindow.select(index)
+            terminalSessionWindow.panel.makeKeyAndOrderFront(nil)
         } else {
             resumeLauncherTerminal(id)
         }
@@ -82,7 +83,7 @@ extension AskConversationModel {
             visible: { [weak self, weak session] in
                 guard let self, let session else { return false }
                 if self.launcherTerminal?.session === session { return true }
-                return self.terminalPopouts[session.id]?.panel.isKeyWindow == true
+                return self.terminalSessionWindow.selected === session && self.terminalSessionWindow.panel.isKeyWindow
             }
         )
         terminalPresentations[session.id] = presentation
@@ -153,42 +154,37 @@ extension AskConversationModel {
         dismiss()
     }
 
-    /// The launcher handoff borrows the shared content and moves the existing PTY.
+    /// The window hosts the same PTY and block/prompt view as the launcher.
     private func presentTerminalWindow(_ presentation: TerminalLauncherModel) {
-        let session = presentation.session
-        let popout = TerminalLauncherPopout { [weak self] in
-            self?.confirmTerminalClose(session) ?? true
-        }
-        let window = popout.panel
-        window.level = presentation.settings.pinned ? .floating : .normal
-        let root = TerminalSessionContent(
+        let settings = presentation.settings
+        terminalSessionWindow.present(presentation.session, center: terminalSessionCenter, settings: settings,
+                                      content: { [weak self] session in
+            guard let self else { return AnyView(EmptyView()) }
+            return self.terminalWindowContent(for: session, settings: settings)
+        }, returnToLauncher: { [weak self] session in
+            guard let self else { return }
+            if let show = self.onShowLauncher {
+                show { [weak self] in self?.resumeLauncherTerminal(session.id) }
+            } else {
+                self.resumeLauncherTerminal(session.id)
+            }
+        })
+    }
+
+    private func terminalWindowContent(for session: TerminalSession, settings: TerminalRunSettings) -> AnyView {
+        let presentation = terminalPresentation(for: session, settings: settings)
+        return AnyView(TerminalSessionContent(
             model: presentation, session: session,
             commands: { [weak self] in self?.terminalSessionCenter.history.commands ?? [] },
-            new: { [weak self, weak window] in
-                self?.launchTerminal(settings: presentation.settings, window: true)
-                window?.close()
-            },
-            insert: { [weak self, weak window] text in
-                self?.insertTerminalOutput(text, from: presentation) {
-                    if session.runningBlock == nil {
-                        window?.close()
-                    } else {
-                        window?.resignKey()
-                    }
+            new: { [weak self] in self?.terminalSessionWindow.addTab() },
+            insert: { [weak self] text in
+                guard let self else { return }
+                self.insertTerminalOutput(text, from: presentation) {
+                    self.terminalSessionWindow.panel.resignKey()
                 }
             },
             error: { [weak self] text in self?.passiveNotice(text) }
-        )
-        popout.onClose = { [weak self] in
-            guard let self else { return }
-            self.terminalSessionCenter.close(session)
-            self.terminalPopouts.removeValue(forKey: session.id)
-        }
-        terminalPopouts[session.id] = popout
-        terminalSessionCenter.move(session, to: .window(popout.id))
-        window.contentView = NSHostingView(rootView: root)
-        window.center()
-        window.makeKeyAndOrderFront(nil)
+        ))
     }
 
     private func confirmTerminalClose(_ session: TerminalSession) -> Bool {
@@ -201,41 +197,5 @@ extension AskConversationModel {
         alert.addButton(withTitle: L("terminal.runner.close.end")).hasDestructiveAction = true
         alert.addButton(withTitle: L("terminal.runner.close.keep"))
         return alert.runModal() == .alertFirstButtonReturn
-    }
-}
-
-/// Hosts a launcher session in a standalone panel for the launcher handoff.
-@MainActor
-final class TerminalLauncherPopout: NSObject, NSWindowDelegate {
-    let id = UUID()
-    let panel: TerminalRunnerPanel
-    var onClose: (() -> Void)?
-    private let confirmClose: () -> Bool
-
-    init(confirmClose: @escaping () -> Bool) {
-        self.confirmClose = confirmClose
-        panel = TerminalRunnerPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 680, height: 460),
-            styleMask: [.titled, .closable, .resizable, .nonactivatingPanel],
-            backing: .buffered, defer: false
-        )
-        super.init()
-        panel.title = L("terminal.launcher.label")
-        panel.isReleasedWhenClosed = false
-        panel.hidesOnDeactivate = false
-        panel.minSize = TerminalRunnerWindowController.minimumSize
-        panel.delegate = self
-        panel.keyHandler = { [weak panel] event in
-            guard event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command,
-                  event.keyCode == 13 else { return false }
-            if !event.isARepeat { panel?.performClose(nil) }
-            return true
-        }
-    }
-
-    func windowShouldClose(_ sender: NSWindow) -> Bool { confirmClose() }
-
-    func windowWillClose(_ notification: Notification) {
-        withExtendedLifetime(self) { onClose?() }
     }
 }

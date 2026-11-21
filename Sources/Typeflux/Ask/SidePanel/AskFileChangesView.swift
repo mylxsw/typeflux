@@ -60,25 +60,15 @@ struct AskFileChangesView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             if isExpanded {
-                Rectangle().fill(AskTheme.border).frame(height: 1)
+                Divider()
                 ForEach(Array(files.prefix(5))) { change in
                     AskFileChangeRow(change: change, actions: actions)
                 }
                 ForEach(Array(list.artifacts.prefix(max(0, 5 - files.count)))) { artifact in
                     AskArtifactChangeRow(artifact: artifact, actions: actions)
                 }
-                if files.count + list.artifacts.count > 5 {
-                    Button(L("ask.fileChanges.showAll"), action: actions.showFiles)
-                        .font(.system(size: 11.5))
-                        .buttonStyle(.plain)
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                }
             }
         }
-        .background(StudioTheme.rowSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(AskTheme.border))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.fileChanges")
     }
@@ -95,24 +85,18 @@ struct AskFileChangesView: View {
                 inspectTranscript()
                 isExpanded.toggle()
             } label: {
-                HStack(spacing: 9) {
-                    Image(systemName: "doc.text")
-                        .font(.system(size: 13))
-                        .frame(width: 28, height: 28)
-                        .background(AskTheme.surface, in: RoundedRectangle(cornerRadius: 6))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(L("ask.fileChanges.count", files.count + list.artifacts.count))
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                        Text(Self.countText(added: list.added, modified: list.modified))
-                            .font(.system(size: 10.5))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                    }
+                HStack(spacing: 7) {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .medium))
+                        .font(.system(size: 10, weight: .semibold))
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    Text(L("ask.fileChanges.title"))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text(verbatim: (files.count + list.artifacts.count).formatted())
+                        .monospacedDigit()
                     Spacer(minLength: 0)
                 }
+                .frame(minHeight: 30)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -120,33 +104,60 @@ struct AskFileChangesView: View {
             .accessibilityValue(isExpanded ? L("ask.fileChanges.expanded") : L("ask.fileChanges.collapsed"))
             .accessibilityIdentifier("ask.fileChanges.toggle")
             Button(action: actions.showFiles) {
-                Text(L("ask.fileChanges.showAll"))
-                    .font(.system(size: 10.5, weight: .medium))
-                    .padding(.horizontal, 9).padding(.vertical, 5)
-                    .background(StudioTheme.textPrimary.opacity(0.04), in: RoundedRectangle(cornerRadius: 6))
-                    .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(AskTheme.border))
+                HStack(spacing: 4) {
+                    Text(L("ask.fileChanges.showAll"))
+                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
+                }
+                .font(.system(size: 11.5))
+                .frame(minHeight: 28)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("ask.fileChanges.showAll")
         }
         .foregroundStyle(StudioTheme.textSecondary)
-        .padding(.horizontal, 10).padding(.vertical, 9)
-        .background(StudioTheme.textPrimary.opacity(0.025))
+        .font(.system(size: 12.5))
+        .lineLimit(1)
+        .frame(minHeight: 30)
     }
 }
 
-/// The added/modified tag; hidden under the pointer, where the actions take its place.
-private struct AskFileChangeTag: View {
+private struct AskFileChangeLabel: View {
     let added: Bool
+    let name: String
+    var directory = ""
 
     var body: some View {
-        Text(L(added ? "ask.fileChanges.tag.added" : "ask.fileChanges.tag.modified"))
-            .font(.system(size: 10.5, weight: .semibold))
-            .foregroundStyle(added ? StudioTheme.success : AskTheme.accentText)
-            .padding(.horizontal, 6)
-            .frame(height: 17)
-            .background((added ? StudioTheme.success : AskTheme.accentText).opacity(0.13),
-                        in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+        HStack(spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: added ? "plus" : "pencil")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(added ? StudioTheme.success : AskTheme.accentText)
+                    .frame(width: 14)
+                    .accessibilityHidden(true)
+                ZStack(alignment: .leading) {
+                    // Reserve the same localized status column for every filename.
+                    Text(L(added ? "ask.fileChanges.tag.modified" : "ask.fileChanges.tag.added")).hidden()
+                    Text(L(added ? "ask.fileChanges.tag.added" : "ask.fileChanges.tag.modified"))
+                }
+                .font(.system(size: 11.5))
+            }
+            .fixedSize()
+            Text(verbatim: name)
+                .fontWeight(.medium)
+                .layoutPriority(1)
+            if !directory.isEmpty {
+                Text(verbatim: directory)
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.system(size: 12))
+        .foregroundStyle(StudioTheme.textPrimary)
+        .lineLimit(1)
+        .truncationMode(.middle)
+        .frame(minHeight: 32)
+        .contentShape(Rectangle())
     }
 }
 
@@ -161,41 +172,36 @@ private struct AskFileChangeRow: View {
 
     var body: some View {
         let url = actions.fileURL(change.path)
-        HStack(spacing: 10) {
+        let name = AskWorkspaceFile.displayName(change.path)
+        let directory = change.path.lastIndex(of: "/").map { String(change.path[...$0]) } ?? ""
+        HStack(spacing: 4) {
             Button { actions.openFile(change.path) } label: {
-                Text(change.path)
-                    .font(.system(size: 11.5))
-                    .lineLimit(1).truncationMode(.middle)
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(height: 30)
-                    .contentShape(Rectangle())
+                AskFileChangeLabel(added: change.kind == .added, name: name, directory: directory)
             }
             .buttonStyle(.plain)
             .accessibilityReferenceAction(url.flatMap(reference))
             .onDrag { AskWorkspaceFileDrag.provider(url) }
-            if hovering, let url {
-                if let onReference = reference(url) {
-                    AskFileReferenceButton(action: onReference, size: 26)
-                        .accessibilityIdentifier("ask.fileChanges.reference")
+            if let url {
+                if hovering {
+                    if let onReference = reference(url) {
+                        AskFileReferenceButton(action: onReference, size: 26)
+                            .accessibilityIdentifier("ask.fileChanges.reference")
+                    }
+                    Button { AskFileExternalActions().openWithDefaultApplication(url) } label: {
+                        Image(systemName: "arrow.up.forward.app").font(.system(size: 12))
+                            .frame(width: 26, height: 26).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .help(L("ask.sidePanel.open.default"))
+                    .accessibilityLabel(L("ask.sidePanel.open.default"))
                 }
-                Button { AskFileExternalActions().openWithDefaultApplication(url) } label: {
-                    Image(systemName: "arrow.up.forward.app").font(.system(size: 12))
-                        .frame(width: 26, height: 26).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
-                .help(L("ask.sidePanel.open.default"))
-                .accessibilityLabel(L("ask.sidePanel.open.default"))
                 AskFileMoreButton(items: AskFileOpenMenuItems(file: url, showsShortcuts: false,
                                                               onReference: reference(url)))
                     .accessibilityIdentifier("ask.fileChanges.more")
-            } else {
-                AskFileChangeTag(added: change.kind == .added)
-                    .onTapGesture { actions.openFile(change.path) }
             }
         }
-        .padding(.horizontal, 10).frame(height: 30)
+        .padding(.leading, 12).padding(.trailing, 2)
         .background(hovering ? StudioTheme.textPrimary.opacity(0.05) : .clear)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
@@ -214,16 +220,12 @@ private struct AskArtifactChangeRow: View {
     @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 10) {
-            Text(artifact.name).font(.system(size: 11.5)).lineLimit(1).truncationMode(.middle)
-                .foregroundStyle(StudioTheme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            AskFileChangeTag(added: true)
+        Button(action: open) {
+            AskFileChangeLabel(added: true, name: artifact.name)
         }
-        .padding(.horizontal, 10).frame(height: 30)
+        .buttonStyle(.plain)
+        .padding(.leading, 12).padding(.trailing, 2)
         .background(hovering ? StudioTheme.textPrimary.opacity(0.05) : .clear)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: open)
         .onHover { hovering = $0 }
         .help(artifact.name)
         .accessibilityElement(children: .combine)

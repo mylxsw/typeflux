@@ -257,6 +257,10 @@ extension AskSidePanelConversationTests {
 
 extension AskSidePanelConversationTests {
     @Test func anAnswerListsItsFilesAndOpensTheFilesTab() async throws {
+        // The model menu also consults the shared account when the conversation window opens.
+        let previousStore = KeychainTokenStore.useInMemoryStoreForTesting
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        defer { KeychainTokenStore.useInMemoryStoreForTesting = previousStore }
         let (fixture, store, base) = try await fixture()
         defer { try? FileManager.default.removeItem(at: base); fixture.model.resetSession() }
         let owner = try #require(fixture.model.credentials(for: "files-chat")).account
@@ -276,7 +280,8 @@ extension AskSidePanelConversationTests {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model)
+        let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil }, loadStoredUserProfile: { nil })
+        let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model, auth: auth)
             .defaultAppStorage(defaults)
             .environment(\.askGlassMaterialOverride, .opaque))
         hosting.frame = NSRect(origin: .zero, size: size)
@@ -290,13 +295,8 @@ extension AskSidePanelConversationTests {
             return find("ask.fileChanges.toggle", in: window) != nil
         }
         #expect(find("ask.sidePanel", in: window) == nil)
-        #expect(!shows("chart.html", in: window))
+        #expect(shows("chart.html", in: window))
         let toggle = try #require(find("ask.fileChanges.toggle", in: window))
-        _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
-        try await SettingsBehaviorTestSupport.wait {
-            hosting.layoutSubtreeIfNeeded()
-            return shows("chart.html", in: window)
-        }
         _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
         try await SettingsBehaviorTestSupport.wait {
             hosting.layoutSubtreeIfNeeded()
@@ -305,7 +305,7 @@ extension AskSidePanelConversationTests {
         _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
         try await SettingsBehaviorTestSupport.wait {
             hosting.layoutSubtreeIfNeeded()
-            return find("ask.fileChanges.showAll", in: window) != nil
+            return shows("chart.html", in: window)
         }
         let showAll = try #require(find("ask.fileChanges.showAll", in: window))
         _ = showAll.perform(NSSelectorFromString("accessibilityPerformPress"))

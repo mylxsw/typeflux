@@ -7649,3 +7649,10 @@
 "terminal.launcher.startFailed" = "Could not start the terminal session.";
 "terminal.launcher.waiting" = "Waiting for Input";
 "terminal.launcher.recent" = "Recent";
+"terminal.session.window.title" = "Terminal";
+
+"terminal.session.window.new" = "New Session ⌘T";
+
+"terminal.session.window.pin" = "Keep on Top";
+
+"terminal.session.window.back" = "Back to Launcher ⌘O";

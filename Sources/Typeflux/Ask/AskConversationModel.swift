@@ -60,7 +60,7 @@ final class AskConversationModel: ObservableObject {
     var terminalSessionCenter = TerminalSessionCenter.shared
     @Published var launcherTerminal: TerminalLauncherModel?
     var terminalPresentations: [UUID: TerminalLauncherModel] = [:]
-    var terminalPopouts: [UUID: TerminalLauncherPopout] = [:]
+    var terminalSessionWindow = TerminalSessionWindowController.shared
     var terminalPresentationObservation: AnyCancellable?
     var terminalCloseInProgress = false
     @Published var terminalCommandSending = false

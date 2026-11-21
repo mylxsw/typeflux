@@ -1838,6 +1838,7 @@ struct AskComposer: View {
     /// a keyword view designed taller than the card makes it grow.
     private var terminalPaneHeight: CGFloat {
         guard launcher, !active, let terminal = model.launcherTerminal else { return 0 }
+        if terminal.session.alternateScreen { return 520 }
         var height: CGFloat = 106
         for block in terminal.session.blocks {
             height += 38

@@ -61,13 +61,18 @@ struct TerminalLauncherView: View {
             .padding(.horizontal, 14)
             .frame(height: 44)
             Divider()
-            TerminalSessionContent(model: model, session: session, commands: commands, new: new,
-                                   insert: insert, error: error)
+            if session.alternateScreen {
+                TerminalAlternateScreenView(session: session)
+            } else {
+                TerminalSessionContent(model: model, session: session, commands: commands, new: new,
+                                       insert: insert, error: error)
+            }
         }
         .background(TerminalKeyCapture { event in
             let editor = event.window?.firstResponder as? NSTextView
             guard editor?.hasMarkedText() != true else { return false }
             let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
+            if session.alternateScreen, modifiers != .command || event.keyCode != 31 { return false }
             if modifiers == .command, event.keyCode == 13 {
                 if !event.isARepeat { close() }
                 return true

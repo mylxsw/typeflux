@@ -248,9 +248,10 @@ extension TerminalCommandTests {
             makeProcess: { process }
         )
         model.terminalSessionCenter = center
+        let window = TerminalSessionWindowController()
+        model.terminalSessionWindow = window
         defer {
-            let windows = Array(model.terminalPopouts.values)
-            windows.forEach { $0.panel.close() }
+            window.moveBack()
             center.terminateAll()
             model.resetSession()
         }
@@ -261,11 +262,13 @@ extension TerminalCommandTests {
         var dismissed = false
         model.moveLauncherTerminal { dismissed = true }
         #expect(dismissed && model.launcherTerminal == nil && model.terminalHomeRows.first?.symbol == "macwindow")
-        let popout = try #require(model.terminalPopouts[session.id])
-        #expect(session.host == .window(popout.id) && center.sessions.first === session)
+        #expect(window.selected === session && session.host == .window(window.windowID))
+        #expect(center.sessions.first === session)
         #expect(session.runningBlock?.id == block && process.started.count == 1 && process.terminations == 0)
         process.emit("\r\n\u{1b}]133;D;0\u{7}")
         #expect(session.blocks.last?.output.string == "output")
+        window.moveBack()
+        #expect(model.launcherTerminal?.session === session && session.host == .launcher)
     }
 
     @Test func `terminal hint fills a recent command without running it`() async throws {
