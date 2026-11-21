@@ -222,6 +222,28 @@ struct AskSidePanelRenderTests {
         #expect(AskArtifactTab.defaultName(zip) == L("ask.sidePanel.artifact") + " abcdef12")
     }
 
+    @Test func singleChangeShowsNameDirectoryAndMenuAtRest() async throws {
+        let language = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(language) }
+        let root = try workspace()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let list = AskFileChangeList(changes: [.init(path: "outputs/clone-typeflux.sh", kind: .added)])
+        let actions = AskSidePanelActions(fileURL: { root.appendingPathComponent($0) })
+        let scene = VStack(alignment: .leading, spacing: 9) {
+            Text("脚本文件在 outputs/clone-typeflux.sh，可以直接拷贝到 Server 使用。")
+                .font(.system(size: 14))
+            AskFileChangesView(list: list, actions: actions)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AskTheme.surface)
+        let labels = try await render(scene, name: "file-change-single", size: NSSize(width: 728, height: 132),
+                                      dark: true)
+        #expect(labels.contains { $0.contains("新增") && $0.contains("clone-typeflux.sh") && $0.contains("outputs/") })
+        #expect(labels.contains { $0.contains(L("ask.sidePanel.open.menu")) }, "Rendered controls: \(labels)")
+    }
+
     @Test func theChangesBlockCollapsesAndShowsWorkFilesWithOutputs() async throws {
         let ref = AskArtifactRef(id: "artifact-1", ownerId: "o", conversationId: "c1", runId: "r", version: "v",
                                  mediaType: "text/html", sizeBytes: 2048, sha256: "s", cleanup: "device_30_days")
@@ -236,7 +258,8 @@ struct AskSidePanelRenderTests {
         for dark in [false, true] {
             for expanded in [false, true] {
                 let labels = try await render(
-                    AskFileChangesView(list: list, actions: actions, isExpanded: expanded).padding().frame(width: 560),
+                    AskFileChangesView(list: list, actions: actions, isExpanded: expanded)
+                        .padding().frame(maxWidth: .infinity, maxHeight: .infinity).background(AskTheme.surface),
                     name: "file-changes-\(dark)-\(expanded)",
                     size: NSSize(width: 600, height: 400), dark: dark)
                 #expect(labels.contains { $0.contains(L("ask.fileChanges.title")) })
