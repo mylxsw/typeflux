@@ -58,13 +58,18 @@ struct TerminalSessionWindowTests {
         process.emit("\u{1b}]133;B\u{7}\u{1b}]133;C\u{7}\u{1b}[?1049h")
         #expect(session.alternateScreen)
         if let path = ProcessInfo.processInfo.environment["TYPEFLUX_SESSION_WINDOW_CAPTURE"] {
-            process.emit("Processes: 124 total, 3 running, 121 sleeping\r\n\r\n  PID  COMMAND       CPU       TIME\r\n  412  zsh           0.0   00:01.12\r\n  570  top           1.2   00:02.45")
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.3))
+            process.emit("\u{1b}[2J\u{1b}[HProcesses: 124 total, 3 running, 121 sleeping\r\n\r\n  PID  COMMAND       CPU       TIME\r\n  412  zsh           0.0   00:01.12\r\n  570  top           1.2   00:02.45")
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.25))
             let view = try #require(controller.panel.contentView?.superview)
-            view.displayIfNeeded()
-            let rep = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
-            view.cacheDisplay(in: view.bounds, to: rep)
-            try rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: path))
+            for (appearance, filename) in [(NSAppearance.Name.darkAqua, "session-window.png"), (.aqua, "session-window-light.png")] {
+                controller.panel.appearance = NSAppearance(named: appearance)
+                view.displayIfNeeded()
+                let rep = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+                view.cacheDisplay(in: view.bounds, to: rep)
+                let url = URL(fileURLWithPath: path).deletingLastPathComponent().appendingPathComponent(filename)
+                try rep.representation(using: .png, properties: [:])?.write(to: url)
+            }
         }
         let close = try shortcut("w")
         #expect(!controller.handleKey(close))
