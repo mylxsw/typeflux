@@ -113,9 +113,9 @@ struct AskEmojiPlugin: AskLauncherPlugin {
             AskPluginItem(id: result.id, title: result.sequence + " " + result.name, subtitle: result.reason,
                           actions: [
                               .init(
-                                  kind: .copy(result.sequence),
-                                  title: L("ask.plugin.action.copy"),
-                                  symbol: "doc.on.doc",
+                                  kind: .writeBack(result.sequence),
+                                  title: L("emoji.insert"),
+                                  symbol: "arrow.up.forward",
                                   shortcut: .enter
                               ),
                               .init(
@@ -125,9 +125,9 @@ struct AskEmojiPlugin: AskLauncherPlugin {
                                   shortcut: .commandC
                               ),
                               .init(
-                                  kind: .writeBack(result.sequence),
-                                  title: L("emoji.insert"),
-                                  symbol: "arrow.up.forward",
+                                  kind: .copy(result.sequence),
+                                  title: L("ask.plugin.action.copy"),
+                                  symbol: "doc.on.doc",
                                   shortcut: .optionEnter
                               )
                           ])

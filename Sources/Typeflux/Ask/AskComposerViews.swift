@@ -2892,11 +2892,11 @@ struct AskComposer: View {
             }
             Spacer(minLength: 0)
             if !active, plugins.isPlanCurrent, let output = plugins.output, output.emoji != nil,
-               let insert = output.action(for: .optionEnter) {
+               let insert = output.action(for: .enter) {
                 Button { performPluginAction(insert) } label: {
                     HStack(spacing: 6) {
                         Text(insert.title)
-                        Text("⌥↩").foregroundStyle(AskTheme.launcherMetaText)
+                        Text("↩").foregroundStyle(AskTheme.launcherMetaText)
                     }
                     .font(.system(size: 11, weight: .medium))
                 }

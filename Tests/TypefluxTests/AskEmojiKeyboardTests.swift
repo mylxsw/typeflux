@@ -66,7 +66,7 @@ struct AskEmojiKeyboardTests {
     }
 
     @Test(arguments: [false, true])
-    func `insert button and option return deliver the highlighted emoji after dismissal`(click: Bool) async throws {
+    func `insert button and return deliver the highlighted emoji after dismissal`(click: Bool) async throws {
         let accessibility = AskWorkspaceTestAccessibility()
         defer { accessibility.restore() }
         let launcher = try await launcher(query: "grid")
@@ -93,10 +93,26 @@ struct AskEmojiKeyboardTests {
                 NSApp.sendEvent(event)
             }
         } else {
-            try await launcher.press(36, [.option, .capsLock])
+            try await launcher.press(36, .capsLock)
         }
         try await launcher.fixture.wait { !delivered.isEmpty }
         #expect(delivered == ["😃"])
+        #expect(model.emojiUsage.value.recent.first?.sequence == "😃")
+    }
+
+    @Test func `option return copies the highlighted emoji and closes the launcher`() async throws {
+        let launcher = try await launcher(query: "grid")
+        defer { launcher.close() }
+        let board = NSPasteboard(name: .init("emoji-shortcut-" + UUID().uuidString))
+        let previous = AskQuickResults.pasteboard
+        AskQuickResults.pasteboard = board
+        defer { AskQuickResults.pasteboard = previous; board.releaseGlobally() }
+        let model = launcher.fixture.model
+        model.deliverText = { _ in Issue.record("Copy must not deliver text to the focused input") }
+        try await launcher.press(124)
+        try await launcher.press(36, [.option, .capsLock])
+        #expect(board.string(forType: .string) == "😃")
+        #expect(launcher.dismissed == 1)
         #expect(model.emojiUsage.value.recent.first?.sequence == "😃")
     }
 

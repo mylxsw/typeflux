@@ -16,10 +16,10 @@ struct EmojiGridKeyboard: NSViewRepresentable {
             }
             if code == 36 || code == 76 {
                 if flags.isEmpty {
-                    return .copy
+                    return .insert
                 }
                 if flags == .option {
-                    return .insert
+                    return .copy
                 }
             }
             guard flags.isEmpty else { return nil }

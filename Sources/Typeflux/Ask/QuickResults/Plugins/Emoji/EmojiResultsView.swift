@@ -160,8 +160,8 @@ struct EmojiResultsView: View {
                 if onSelect(id) {
                     focusedID = id
                 }
-            case .copy: onMain()
-            case .insert:
+            case .insert: onMain()
+            case .copy:
                 if let action = output.action(for: .optionEnter) {
                     onAction(action)
                 }
