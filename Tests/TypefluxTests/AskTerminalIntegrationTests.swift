@@ -49,6 +49,9 @@ import XCTest
     }
 
     func testGateApprovalFullRequestInputEOFAndActualExit() async throws {
+        let previousStore = KeychainTokenStore.useInMemoryStoreForTesting
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        defer { KeychainTokenStore.useInMemoryStoreForTesting = previousStore }
         let fixture = try Fixture(); defer { fixture.close() }
         let disabled = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: fixture.settings.defaults)),
                                      settings: fixture.settings, projects: fixture.runtime.projects,

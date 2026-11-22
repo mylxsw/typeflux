@@ -186,22 +186,16 @@ struct AskApprovalCopyTests {
         #expect(AskApprovalCard.panelTint(.none) == AskTheme.accent)
     }
 
-    @Test func commandAndFilePreviewsStartFoldedWhileDiffsStayOpen() {
-        let command = call("run_command", ["command": "ls"])
-        #expect(!AskApprovalCard.previewStartsExpanded(.content("ls"), call: command))
-        #expect(AskApprovalCard.previewStartsExpanded(.diff(removed: "a", added: "b"), call: call("files")))
-        #expect(!AskApprovalCard.previewStartsExpanded(.content("<html>"), call: call("files", ["action": "write"])))
-        #expect(!AskApprovalCard.previewStartsExpanded(.none, call: command))
-        #expect(AskApprovalCard.previewTitle(command) == L("ask.approval.preview.command"))
-        #expect(AskApprovalCard.previewTitle(call("run_code")) == L("ask.approval.preview.code"))
-        #expect(AskApprovalCard.previewTitle(call("files", ["action": "edit", "old_text": "a", "new_text": "b"]))
-            == L("ask.approval.preview.diff"))
-        #expect(AskApprovalCard.previewTitle(call("files", ["action": "write", "content": "a"]))
-            == L("ask.approval.preview.file"))
-        #expect(AskApprovalCard.previewTitle(call("computer", ["action": "type", "text": "hi"]))
-            == L("ask.approval.preview.content"))
-        #expect(AskApprovalPresentation.Preview.diff(removed: "", added: "").isDiff)
-        #expect(!AskApprovalPresentation.Preview.content("").isDiff)
+    @Test func fileReviewKeepsFullContentsAndUsesTheStagedVersion() {
+        let content = (1...137).map { "<p>row " + String($0) + "</p>" }.joined(separator: "\n")
+        for tool in ["files", "project_files"] {
+            let write = call(tool, ["action": "write", "path": "outputs/tetris/index.html", "content": content])
+            #expect(AskApprovalPresentation.preview(write) == .content(content))
+        }
+        for (version, decision) in [("missing", AskApprovalCopy.Decision.create), ("staged-revision", .overwrite)] {
+            let write = call("project_files", ["action": "write", "path": "index.html", "expected_version": version])
+            #expect(AskApprovalCopy.decision(write, fileExists: { _ in false }) == decision)
+        }
     }
 
     @Test func runCommandWarningMovedIntoAFact() {
@@ -268,11 +262,50 @@ struct AskApprovalCopyTests {
             try UI.button(L("ask.approval.command.details"), in: host).press()
             try await UI.wait { !UI.contains(path, in: host) }
             #expect(UI.contains(command, in: host))
-            try UI.button(L("ask.approval.preview.file"), in: host).press()
-            try await UI.wait { UI.contains(script, in: host) }
+            #expect(UI.contains(script, in: host))
             try UI.button(L("ask.deny"), in: host).press()
             try UI.button(L("ask.approval.allow.create"), in: host).press()
             try await UI.wait { denied && allowed }
+        }
+    }
+
+    @Test func pendingFileDecisionSurvivesFoldingTheConversation() async throws {
+        typealias UI = SettingsBehaviorTestSupport
+        try await UI.withFixture { _ in
+            let fixture = try AskTestFixture(approvalReuseEnabled: true)
+            defer { fixture.model.resetSession() }
+            let lines = (1...137).map { "<p>" + String($0) + "</p>" }.joined(separator: "\n")
+            await fixture.api.setTool(call("browser", ["action": "read"], id: "first"))
+            await fixture.api.queueFollowUpTools([
+                call("browser", ["action": "read"], id: "second"),
+                call("files", ["action": "write", "path": "outputs/tetris/index.html", "content": lines], id: "create"),
+            ])
+            fixture.model.draft.text = "Build a game"
+            fixture.model.submitDraft()
+            try await fixture.wait { fixture.model.pendingApprovals.values.first?.id == "create" }
+            let permission = L("ask.approval.allow.create")
+            let id = try #require(fixture.model.selectedId)
+            let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil }, loadStoredUserProfile: { nil })
+            try await UI.withWindow(AskConversationView(model: fixture.model, auth: auth), width: 1020, height: 770) { _, host in
+                try await UI.wait { UI.contains(permission, in: host) }
+                let toggle = try #require(UI.elements(in: host).first {
+                    $0.value("accessibilityIdentifier") as? String == "ask.turn.process"
+                })
+                try toggle.press()
+                try await UI.wait {
+                    UI.elements(in: host).contains {
+                        $0.value("accessibilityIdentifier") as? String == "ask.turn.process"
+                            && $0.text == L("ask.activity.collapsed")
+                    }
+                }
+                let buttons = UI.elements(in: host).filter { $0.role == NSAccessibility.Role.button.rawValue }
+                #expect(buttons.filter { $0.label == permission }.count == 1)
+                #expect(buttons.filter { $0.label == L("ask.deny") }.count == 1)
+                #expect(fixture.model.pendingApprovals[id]?.id == "create")
+                try UI.button(permission, in: host).press()
+                try await fixture.wait { fixture.model.pendingApprovals[id] == nil && fixture.model.busyIds.isEmpty }
+                #expect(fixture.tools.executions == 3)
+            }
         }
     }
 

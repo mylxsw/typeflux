@@ -177,15 +177,6 @@ struct AskDesignFidelityTests {
         #expect(AskApprovalCard.panelTint(.read) == AskTheme.accent)
     }
 
-    @Test @MainActor func approvalSitsInTheToolCardThatHoldsItsCall() {
-        let call = AskToolCall(id: "click", type: "function", function: .init(name: "browser", arguments: "{}"))
-        let message = AskMessage(id: "a", role: "assistant", text: "", toolCalls: [call], createdAt: Date())
-        let items = [AskTranscriptItem(kind: .activity(AskActivityGroup(id: "a", messages: [message])))]
-        #expect(AskConversationView.groupContains(items, callId: "click"))
-        #expect(!AskConversationView.groupContains(items, callId: "other"))
-        #expect(!AskConversationView.groupContains([], callId: "click"))
-    }
-
     // MARK: - Launcher
 
     @Test func slashPromptSuggestionsRemainAvailable() {

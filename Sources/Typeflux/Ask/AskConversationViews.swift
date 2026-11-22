@@ -1319,6 +1319,9 @@ struct AskConversationView: View {
 
     private var composerArea: some View {
         VStack(spacing: 8) {
+            if let id = model.selectedId, let call = model.pendingApprovals[id] {
+                approval(call, id: id)
+            }
             // Stop lives in the send button's place while the run works.
             // The context budget used to occupy a whole row of its own below the
             // composer; it now rides in the footer next to the send button.
@@ -1337,7 +1340,8 @@ struct AskConversationView: View {
             } else {
                 VStack(spacing: 0) {
                     AskComposer(model: model, compact: layout.isShort, availableWidth: layout.composerWidth,
-                                availableHeight: layout.composerAvailableHeight,
+                                availableHeight: model.selectedId.flatMap { model.pendingApprovals[$0] } == nil
+                                    ? layout.composerAvailableHeight : layout.composerAvailableHeight * 0.5,
                                 launcher: false, onToggleUsage: { toggleUsage() })
                         .disabled(model.isLoadingSelection)
                     if model.selectedId == nil, !layout.isVeryShort {
@@ -1353,13 +1357,8 @@ struct AskConversationView: View {
         .padding(.bottom, layout.composerBottomInset)
     }
 
-    /// The decision sits at the end of the conversation it belongs to.
+    /// Keep the pending decision outside transcript folds and history pagination.
     private func approval(_ call: AskToolCall, id: String) -> some View {
-        approvalCard(call, id: id, embedded: false).id(call.id)
-            .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
-    }
-
-    private func approvalCard(_ call: AskToolCall, id: String, embedded: Bool) -> AskApprovalCard {
         let approvalID = model.approvalID(id)
         return AskApprovalCard(
             call: call, risk: model.approvalRisk(id) ?? .destructive,
@@ -1369,10 +1368,12 @@ struct AskConversationView: View {
             workingDirectory: model.workspaces?.url(owner: model.owner, conversationId: id).path ?? NSHomeDirectory(),
             reason: Self.approvalReason(call, messages: model.selected?.messages ?? []),
             canAllowForConversation: model.canAllowForConversation(id),
-            embedded: embedded,
+            reviewHeight: min(360, max(48, layout.composerAvailableHeight * 0.42 - 40)),
             onDeny: { model.approve(conversationId: id, allowed: false, expectedApprovalID: approvalID) },
             onAllowForConversation: { model.approveForConversation(id, expectedApprovalID: approvalID) },
             onAllow: { model.approve(conversationId: id, allowed: true, expectedApprovalID: approvalID) })
+            .id(approvalID)
+            .frame(maxWidth: AskMetrics.transcriptMaxWidth)
     }
 
     /// The narration the model wrote with the call awaiting approval: why it wants the step.
@@ -1389,14 +1390,6 @@ struct AskConversationView: View {
         case let .message(message): return message.createdAt
         case let .activity(group): return group.messages.first?.createdAt
         case .outcome: return nil
-        }
-    }
-
-    /// Whether a tool card in the transcript holds the call awaiting approval.
-    static func groupContains(_ items: [AskTranscriptItem], callId: String) -> Bool {
-        items.contains { item in
-            if case let .activity(group) = item.kind { return group.calls.contains { $0.id == callId } }
-            return false
         }
     }
 
@@ -1461,11 +1454,6 @@ struct AskConversationView: View {
                             AskResponseWaitingView()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .id("response-waiting")
-                        }
-                        // A decision for a step in a tool card sits inside that card.
-                        if let id = model.selected?.id, let call = model.pendingApprovals[id],
-                           !Self.groupContains(items, callId: call.id) {
-                            approval(call, id: id).id("approval-" + call.id)
                         }
                         // Jumped messages wait after everything the run still has to finish.
                         ForEach(steeredMessages) { message in
@@ -1667,9 +1655,6 @@ struct AskConversationView: View {
             let live = phase?.isWorking == true && carriesRun
             let status = AskActivity.status(group, results: results, streamingId: streamingId,
                                             approvalToolId: approvalToolId, live: live, halted: halted)
-            let pending = model.selectedId.flatMap { id in
-                model.pendingApprovals[id].map { (id: id, call: $0) }
-            }
             AskActivityBlock(group: group, results: results,
                              plan: AskActivity.plan(for: group, run: run, isLatest: isLatest),
                              status: status, resolution: AskActivity.resolution(for: group, run: run, isLatest: isLatest, answers: Array((model.selected?.messages ?? []).suffix(12))), streamingId: streamingId, approvalToolId: approvalToolId,
@@ -1680,10 +1665,7 @@ struct AskConversationView: View {
                              runStep: live || halted ? phase?.step : nil,
                              outputs: item.outputs,
                              fileChanges: [],
-                             approval: pending.flatMap { pending in
-                                 group.calls.contains { $0.id == pending.call.id }
-                                     ? AnyView(approvalCard(pending.call, id: pending.id, embedded: true).id(pending.call.id)) : nil
-                             }, exportProjectPatch: model.exportProjectPatch, actionIdentity: ObjectIdentifier(model))
+                             exportProjectPatch: model.exportProjectPatch, actionIdentity: ObjectIdentifier(model))
                 .equatable()
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
         }

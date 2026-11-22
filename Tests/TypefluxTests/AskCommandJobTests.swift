@@ -604,7 +604,6 @@ extension AskCommandJobTests {
             preview,
             .content("printf ok\n\n" + L("ask.commandJob.deadline", 10) + "\n" + L("ask.commandJob.lifetime"))
         )
-        XCTAssertTrue(AskApprovalCard.previewStartsExpanded(preview, call: invocation))
         XCTAssertEqual(AskApprovalCopy.title(invocation, decision: AskApprovalCopy.decision(invocation)), L("ask.approval.q.command"))
         for action in ["status", "logs", "stop"] {
             let request = try call(["action": action, "job_id": UUID().uuidString.lowercased()])

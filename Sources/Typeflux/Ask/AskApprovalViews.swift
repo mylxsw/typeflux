@@ -9,8 +9,6 @@ enum AskApprovalPresentation {
         /// New content: a written file or code to run.
         case content(String)
         case none
-
-        var isDiff: Bool { if case .diff = self { true } else { false } }
     }
 
     static func preview(_ call: AskToolCall) -> Preview {
@@ -24,13 +22,15 @@ enum AskApprovalPresentation {
                 return .content(text)
             }
             return .content(call.function.arguments)
+        case ("project_terminal", "input"): return (args["text"] as? String).map { .content($0) } ?? .content(call.function.arguments)
         case ("project_terminal", _): return .content(call.function.arguments)
+        case ("generate_image", _): return (args["prompt"] as? String).map { .content($0) } ?? .none
         case ("files", "edit"), ("project_files", "edit"):
             return .diff(removed: args["old_text"] as? String ?? "", added: args["new_text"] as? String ?? "")
         case ("files", "write"), ("project_files", "write"):
-            return (args["content"] as? String).map { .content(clip($0)) } ?? .none
+            return (args["content"] as? String).map { .content($0) } ?? .none
         case ("run_code", _):
-            return (args["code"] as? String).map { .content(clip($0)) } ?? .none
+            return (args["code"] as? String).map { .content($0) } ?? .none
         case ("command_job", "start"):
             guard let request = try? AskCommandJobRequest.validated(args) else { return .none }
             return .content(request.command + "\n\n" + L("ask.commandJob.deadline", request.timeout) + "\n" + L("ask.commandJob.lifetime"))
@@ -90,10 +90,7 @@ enum AskApprovalPresentation {
     }
 }
 
-/// An approval is a message in the conversation, not a sheet over it: the
-/// transcript above stays readable while the user decides. It asks one
-/// question, gives the model's reason and a few facts, and keeps the content,
-/// tool name and raw arguments one click away.
+/// Shows the proposed action and keeps both decision buttons outside the scrollable review.
 struct AskApprovalCard: View {
     let call: AskToolCall
     let risk: AskToolRisk
@@ -106,6 +103,7 @@ struct AskApprovalCard: View {
     var canAllowForConversation = false
     /// Inside its tool card rather than on its own after the transcript.
     var embedded = false
+    var reviewHeight: CGFloat = 360
     var onDeny: () -> Void
     var onAllowForConversation: () -> Void = {}
     var onAllow: () -> Void
@@ -113,7 +111,6 @@ struct AskApprovalCard: View {
     @State private var showsTechnical: Bool?
     private var detailsOpen: Bool { showsTechnical ?? initiallyShowsDetails }
     private var isImage: Bool { AskImageCardState.isImageTool(call.function.name) }
-    @State private var showsPreview: Bool?
     @State private var scopeChoice: Bool?
     @State private var choosingScope = false
 
@@ -133,53 +130,43 @@ struct AskApprovalCard: View {
         canAllowForConversation && risk != .destructive
     }
 
-    /// Keep file changes visible and ordinary command previews one click away.
-    static func previewStartsExpanded(_ preview: AskApprovalPresentation.Preview, call: AskToolCall) -> Bool {
-        switch preview {
-        case .diff: true
-        case .content: ["project_terminal", "command_job"].contains(call.function.name)
-        case .none: false
-        }
-    }
-
-    static func previewTitle(_ call: AskToolCall) -> String {
-        switch call.function.name {
-        case "run_command", "command_job", "project_terminal": L("ask.approval.preview.command")
-        case "run_code": L("ask.approval.preview.code")
-        case "files", "project_files":
-            AskApprovalPresentation.preview(call).isDiff ? L("ask.approval.preview.diff") : L("ask.approval.preview.file")
-        case AskNotebookTool.name:
-            AskApprovalPresentation.preview(call).isDiff ? L("ask.approval.preview.diff") : L("ask.approval.preview.content")
-        default: L("ask.approval.preview.content")
-        }
-    }
-
     private var tone: AskToolRisk { AskApprovalCopy.tone(call, risk: risk) }
     private var tint: Color { Self.panelTint(tone) }
     private var irreversible: Bool { tone == .destructive }
-    private var previewValue: AskApprovalPresentation.Preview { AskApprovalPresentation.preview(call) }
-    private var previewOpen: Bool { showsPreview ?? (irreversible || Self.previewStartsExpanded(previewValue, call: call)) }
     private var conversationScope: Bool {
         canAllowForConversation && (scopeChoice ?? Self.primaryIsConversation(risk: risk,
                                                                              canAllowForConversation: canAllowForConversation))
     }
 
-    private static let inset: CGFloat = 36
-
     var body: some View {
         let decision = AskApprovalCopy.decision(call, boundPath: boundPath)
-        Group {
-            if call.function.name == "run_command", case let .content(command) = previewValue {
-                AskCommandApprovalContent(call: call, command: command, workingDirectory: workingDirectory,
-                                          tint: tint, irreversible: irreversible, detailsOpen: detailsOpen,
-                                          toggleDetails: { showsTechnical = !detailsOpen }) {
-                    actions(decision)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: decision == .run ? "terminal" : AskPresentation.toolSymbol(call))
+                    .foregroundStyle(tint).accessibilityHidden(true)
+                Text(AskApprovalCopy.title(call, decision: decision, mcpServer: mcpServer))
+                    .font(.system(size: 14, weight: .semibold)).lineLimit(2)
+                Spacer(minLength: 4)
+                Button { showsTechnical = !detailsOpen } label: {
+                    HStack(spacing: 4) {
+                        Text(L("ask.approval.command.details"))
+                        Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
+                            .rotationEffect(.degrees(detailsOpen ? 90 : 0))
+                    }
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12)
-            } else {
-                standardContent(decision).padding(16)
+                .fixedSize().buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                .accessibilityLabel(L("ask.approval.command.details"))
+                .accessibilityValue(L(detailsOpen ? "ask.activity.expanded" : "ask.activity.collapsed"))
+                .accessibilityIdentifier("ask.approval.details.toggle")
             }
+            ViewThatFits(in: .vertical) {
+                review(decision).fixedSize(horizontal: false, vertical: true)
+                ScrollView { review(decision) }
+            }
+            .frame(maxHeight: reviewHeight).fixedSize(horizontal: false, vertical: true)
+            actions(decision).frame(maxWidth: .infinity, alignment: .trailing)
         }
+        .padding(.horizontal, 14).padding(.vertical, 12)
         .background(embedded ? Color.clear : AskTheme.raisedSurface)
         .clipShape(RoundedRectangle(cornerRadius: embedded ? 10 : 12, style: .continuous))
         .overlay {
@@ -191,96 +178,38 @@ struct AskApprovalCard: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func standardContent(_ decision: AskApprovalCopy.Decision?) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            header(decision)
-            let facts = AskApprovalCopy.facts(call, risk: risk, targetSummary: targetSummary,
-                                              boundPath: boundPath, workingDirectory: workingDirectory)
-            if !facts.isEmpty {
-                AskFlowLayout(spacing: 8) {
-                    ForEach(facts, id: \.self) { AskApprovalFactLabel(fact: $0) }
+    private func review(_ decision: AskApprovalCopy.Decision?) -> some View {
+        let facts = AskApprovalCopy.facts(call, risk: risk, targetSummary: targetSummary,
+                                          boundPath: boundPath, workingDirectory: workingDirectory)
+        return VStack(alignment: .leading, spacing: 8) {
+            if let explanation = AskApprovalCopy.reason(reason), decision != .run || detailsOpen {
+                Text(explanation).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+            }
+            let visibleFacts = facts.filter { decision != .run || $0.warning }
+            if !visibleFacts.isEmpty {
+                let labels = ForEach(visibleFacts, id: \.self) { AskApprovalFactLabel(fact: $0) }
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) { labels }.fixedSize(horizontal: true, vertical: false)
+                    VStack(alignment: .leading, spacing: 4) { labels }
                 }
-                .padding(.leading, Self.inset)
             }
             if let disclosure = AskApprovalPresentation.disclosure(call) {
                 Text(disclosure).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
-                    .padding(.leading, Self.inset)
             }
             if irreversible {
-                Text(L("ask.approval.everyTime")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-                    .padding(.leading, Self.inset)
+                Text(L("ask.approval.everyTime")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
             }
-            if previewOpen { preview }
-            if detailsOpen { technicalContent }
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 16) {
-                    disclosures.fixedSize()
-                    Spacer(minLength: 0)
-                    actions(decision).fixedSize()
-                }
-                VStack(alignment: .leading, spacing: 10) {
-                    disclosures
-                    actions(decision).frame(maxWidth: .infinity, alignment: .trailing)
-                }
+            preview
+            if detailsOpen {
+                Divider()
+                technicalContent(decision)
             }
-            .padding(.top, 4)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func header(_ decision: AskApprovalCopy.Decision?) -> some View {
-        let explanation = AskApprovalCopy.reason(reason) ?? AskApprovalCopy.reason(AskApprovalCopy.imagePrompt(call))
-        let commandTitle = decision == .run ? explanation.flatMap { $0.count <= 32 ? $0 : nil } : nil
-        let title = commandTitle ?? AskApprovalCopy.title(call, decision: decision, mcpServer: mcpServer)
-        let symbol = switch decision {
-        case .run: "terminal"
-        case .create, .overwrite, .edit: "doc"
-        case nil: AskPresentation.toolSymbol(call)
-        }
-        return HStack(alignment: .top, spacing: 10) {
-            Image(systemName: symbol)
-                .font(.system(size: 19, weight: .medium))
-                .foregroundStyle(tint)
-                .frame(width: 26, height: 20)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(2)
-                    .truncationMode(.middle)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let explanation, commandTitle == nil {
-                    Text(explanation).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                        .lineLimit(3)
-                        .lineSpacing(1.5)
-                        .textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else if explanation == nil, decision == .run, !previewOpen,
-                          case let .content(command) = previewValue {
-                    Text(command)
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .lineLimit(1)
-                }
-            }
-            Spacer(minLength: 0)
-        }
-    }
-
-    private var disclosures: some View {
-        HStack(spacing: 14) {
-            if previewValue != .none {
-                AskApprovalDisclosure(title: Self.previewTitle(call), open: previewOpen) {
-                    showsPreview = !previewOpen
-                }
-            }
-            AskApprovalDisclosure(title: L(isImage ? "ask.approval.image.details" : "ask.approval.arguments"),
-                                  open: detailsOpen) { showsTechnical = !detailsOpen }
-                .accessibilityIdentifier("ask.approval.details.toggle")
-        }
-    }
-
-    @ViewBuilder private var technicalContent: some View {
+    @ViewBuilder private func technicalContent(_ decision: AskApprovalCopy.Decision?) -> some View {
         if isImage {
             ScrollView {
                 Text(AskApprovalCopy.imagePrompt(call) ?? L("ask.approval.image.noPrompt"))
@@ -300,7 +229,7 @@ struct AskApprovalCard: View {
             .buttonStyle(.plain).font(.system(size: 11.5))
             .foregroundStyle(StudioTheme.textSecondary)
         } else {
-            AskMonoBlock(title: AskToolPolicy.action(call), text: call.function.arguments)
+            AskApprovalDetails(call: call, hostAccount: decision == .run, workingDirectory: workingDirectory)
         }
     }
 
@@ -375,29 +304,49 @@ struct AskApprovalCard: View {
     }
 
     @ViewBuilder private var preview: some View {
-        switch AskApprovalPresentation.preview(call) {
+        if call.function.name == "project_terminal",
+           let args = try? AskLocalTools.jsonArguments(call.function.arguments),
+           args["action"] as? String == "start", let request = try? AskLocalTools.launchRequest(args) {
+            let arguments = request.arguments.map { String(reflecting: $0) }
+            source(([String(reflecting: request.script)] + arguments).joined(separator: " "), language: .plain)
+            if detailsOpen, case let .content(configuration) = AskApprovalPresentation.preview(call) {
+                source(configuration, language: .json)
+            }
+        } else {
+            preview(AskApprovalPresentation.preview(call))
+        }
+    }
+
+    @ViewBuilder private func preview(_ value: AskApprovalPresentation.Preview) -> some View {
+        switch value {
         case let .diff(removed, added):
-            VStack(alignment: .leading, spacing: 0) {
+            let diff = VStack(alignment: .leading, spacing: 0) {
                 diffLines(removed, prefix: "-", color: StudioTheme.danger)
                 diffLines(added, prefix: "+", color: StudioTheme.success)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AskTheme.separator))
+            ViewThatFits(in: .vertical) {
+                diff.fixedSize(horizontal: false, vertical: true)
+                ScrollView { diff }
+            }
+            .frame(maxHeight: 130).fixedSize(horizontal: false, vertical: true)
+            .clipShape(RoundedRectangle(cornerRadius: 7))
         case let .content(text):
-            Text(text)
-                .font(.system(size: 11.5, design: .monospaced))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 10).padding(.vertical, 8)
-                .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            if !detailsOpen || text != call.function.arguments {
+                source(text, language: call.function.name == "run_command" ? .shell : .plain)
+            }
         case .none:
             EmptyView()
         }
     }
 
+    private func source(_ text: String, language: AskWorkflowSyntaxHighlighter.Language) -> some View {
+        AskApprovalSource(source: text, language: language, height: detailsOpen ? 72 : 110)
+            .padding(.horizontal, 11).padding(.vertical, 8)
+            .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 7))
+    }
+
     private func diffLines(_ text: String, prefix: String, color: Color) -> some View {
-        Text(AskApprovalPresentation.clip(text).split(separator: "\n", omittingEmptySubsequences: false)
+        Text(text.split(separator: "\n", omittingEmptySubsequences: false)
             .map { prefix + " " + $0 }.joined(separator: "\n"))
             .font(.system(size: 11.5, design: .monospaced))
             .foregroundStyle(color)
@@ -405,29 +354,6 @@ struct AskApprovalCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 10).padding(.vertical, 5)
             .background(color.opacity(0.08))
-    }
-}
-
-/// A chevron and a label that fold a section of the approval.
-private struct AskApprovalDisclosure: View {
-    let title: String
-    let open: Bool
-    var quiet = false
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
-                    .rotationEffect(.degrees(open ? 90 : 0))
-                Text(title).font(.system(size: quiet ? 11.5 : 12))
-            }
-            .foregroundStyle(quiet ? StudioTheme.textTertiary : StudioTheme.textSecondary)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityValue(L(open ? "ask.activity.expanded" : "ask.activity.collapsed"))
     }
 }
 
@@ -440,7 +366,7 @@ struct AskApprovalFactLabel: View {
             Image(systemName: fact.symbol).font(.system(size: 10))
                 .foregroundStyle(fact.warning ? StudioTheme.danger : StudioTheme.textTertiary)
             Text(fact.text).font(.system(size: 12, design: fact.symbol == "folder" ? .monospaced : .default))
-                .lineLimit(1).truncationMode(.middle)
+                .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
         }
         .font(.system(size: 11.5))
         .foregroundStyle(fact.warning ? StudioTheme.danger : StudioTheme.textSecondary)

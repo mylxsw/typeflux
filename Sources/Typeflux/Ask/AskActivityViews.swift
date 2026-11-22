@@ -74,7 +74,14 @@ struct AskActivityBlock: View, Equatable {
                     status: status, active: imageRunActive,
                     startedAt: imageStartedAt[call.id])
             }
-            if status == .attention { card } else { trace }
+            if status == .attention && (approval != nil || approvalToolId == nil) {
+                card
+            } else {
+                trace
+                if status == .attention, let plan, !plan.isEmpty {
+                    AskPlanList(items: plan, active: false)
+                }
+            }
             if let resolution, !resolution.reason.isEmpty {
                 Text(resolution.reason).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).textSelection(.enabled)
             }

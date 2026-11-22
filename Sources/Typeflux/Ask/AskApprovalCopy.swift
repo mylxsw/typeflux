@@ -28,6 +28,9 @@ enum AskApprovalCopy {
         case ("run_command", _), ("command_job", "start"): return .run
         case ("files", "write"), ("project_files", "write"):
             guard let path = path(args) else { return nil }
+            if call.function.name == "project_files", let version = args["expected_version"] as? String {
+                return version == "missing" ? .create : .overwrite
+            }
             return fileExists(boundPath ?? expanded(path)) ? .overwrite : .create
         case ("files", "edit"), ("project_files", "edit"): return path(args) == nil ? nil : .edit
         default: return nil
@@ -41,7 +44,9 @@ enum AskApprovalCopy {
             if let path = path(args) { return L("ask.approval.q." + decision.rawValue, filename(path)) }
         }
         switch (call.function.name, args["action"] as? String ?? "") {
-        case ("image_generate", _): return L("ask.approval.q.imageGenerate")
+        case ("project_terminal", _):
+            return L("ask.terminal.title") + " · " + AskToolAuthorization.entry(for: call).title
+        case ("generate_image", _), ("image_generate", _): return L("ask.approval.q.imageGenerate")
         case ("image_edit", _): return L("ask.approval.q.imageEdit")
         case ("run_code", _):
             if let language = args["language"] as? String, !language.isEmpty {
