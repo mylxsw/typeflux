@@ -288,6 +288,7 @@ extension AskConversationModel {
 }
 
 struct AskRemoteImageView: View {
+    private static let thumbnailLimit: CGFloat = 400
     let asset: AskGeneratedImage
     var enabled = true
     @Environment(\.askRemoteImageAccess) private var access
@@ -308,10 +309,9 @@ struct AskRemoteImageView: View {
                 if let image = model.displayed(asset, access: access) {
                     Button { preview = true } label: {
                         Image(nsImage: image).resizable().scaledToFit()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .aspectRatio(1, contentMode: .fit)
                             .background(StudioTheme.textPrimary.opacity(0.035))
                             .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .frame(maxWidth: Self.thumbnailLimit * min(1, image.size.width / image.size.height))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(L("ask.preview"))
@@ -346,7 +346,7 @@ struct AskRemoteImageView: View {
                 if let saveError { Text(saveError).font(.system(size: 12)).foregroundStyle(.red) }
             }
         }
-        .frame(maxWidth: 400, alignment: .leading)
+        .frame(maxWidth: Self.thumbnailLimit, alignment: .leading)
         // Keep presentation attached to the stable container, not the conditional image branch.
         .popover(isPresented: $preview) {
             if let displayed = model.displayed(asset, access: access) {

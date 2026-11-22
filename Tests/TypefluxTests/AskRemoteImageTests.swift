@@ -371,6 +371,35 @@ private actor RemoteGate {
         XCTAssertNil(model.image)
     }
 
+    func testReadyThumbnailFitsTheDecodedAspectRatio() async throws {
+        for (width, height) in [(32, 18), (18, 32), (24, 24)] {
+            let decoded = AskFilePreviewPDF.Result(images: [AskAttachmentFixture.image(width: width, height: height)],
+                                                  numbers: [], pages: 1)
+            let scope = AskRemoteImageScope()
+            let model = AskRemoteImageModel(loader: loader(decoded))
+            await model.load(asset, access: access(scope))
+            let host = NSHostingView(rootView: AskRemoteImageView(asset: asset, model: model)
+                .environment(\.askRemoteImageAccess, access(scope))
+                .frame(width: 400).fixedSize(horizontal: false, vertical: true).background(Color.white))
+            host.frame.size = host.fittingSize
+            host.layoutSubtreeIfNeeded()
+            let scale = 400 / CGFloat(max(width, height))
+            let imageHeight = CGFloat(height) * scale
+            // Only the action row and its spacing should follow the actual image pixels.
+            XCTAssertTrue((12...60).contains(host.bounds.height - imageHeight), "Card height: \(host.bounds.height)")
+            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            let density = CGFloat(bitmap.pixelsWide) / host.bounds.width
+            let middle = bitmap.pixelsHigh - Int(imageHeight * density / 2)
+            let bluePixels = (0..<bitmap.pixelsWide).filter { x in
+                guard let color = bitmap.colorAt(x: x, y: middle)?.usingColorSpace(.deviceRGB) else { return false }
+                return color.blueComponent > 0.6 && color.redComponent < 0.5
+            }
+            XCTAssertEqual(CGFloat(bluePixels.count) / density, CGFloat(width) * scale, accuracy: 2)
+            scope.invalidate()
+        }
+    }
+
     func testClickingAndClosingPreviewKeepsPixelsAndDoesNotLoadAgain() async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
