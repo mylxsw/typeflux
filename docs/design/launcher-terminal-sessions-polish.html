@@ -85,7 +85,7 @@ body.solo .stagebar, body.solo .caption { display: none; }
 .srow .d { font-size: 11.5px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .srow .r { font-size: 11.5px; color: var(--text3); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px; }
 .srow .x { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; opacity: 0; color: var(--text3); }
-.srow:hover .x { opacity: 1; }
+.srow:hover .x, .srow.on .x { opacity: 1; }
 .srow .x:hover { background: var(--hover); color: var(--text); }
 .err { color: var(--danger); }
 
@@ -164,6 +164,8 @@ body.nonotes .note { display: none; }
   <span class="pill" data-s="a-pop">② 展开会话列表</span>
   <span class="pill" data-s="a-simple">③ 简洁模式</span>
   <span class="pill" data-s="term-back">⑧ 启动器终端：返回</span>
+  <span class="pill" data-s="one">⑨ 只有一个会话</span>
+  <span class="pill" data-s="end">⑩ 结束会话</span>
   <span class="pill" data-s="b">④ 备选：快捷入口格</span>
   <span class="pill" data-s="tabs">⑤ 窗口标签：关闭</span>
   <span class="pill" data-s="tabs-confirm">⑥ 关闭运行中的标签</span>
@@ -184,6 +186,7 @@ body.nonotes .note { display: none; }
       <button class="hbtn" title="提问"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M13.5 3v5a2 2 0 0 1-2 2H3M6 7l-3 3 3 3"/></svg></button>
     </div>
     <div class="popover" id="pop"></div>
+    <div class="sheet" id="lsheet" style="top:70px"></div>
     <div class="lsep"></div>
     <div class="lbody" id="lbody"></div>
     <div class="lterm" id="lterm"></div>
@@ -268,7 +271,7 @@ function renderHome(mode) {
   if (showAcc) {
     const st = summaryState();
     acc.innerHTML = `${ICON.termSm}<i class="dot ${st === 'run' ? 'live' : ''}" style="background:${color(st)}"></i>${ss.length > 1 ? `<span class="n">${ss.length}</span>` : ''}`;
-    acc.title = ss.length === 1 ? `${ss[0].cmd} · ${ss[0].cwd}` : `终端会话 ⌘J`;
+    acc.title = '终端会话 ⌘J';
   }
   let body = '';
   if (mode === 'before') {
@@ -308,15 +311,35 @@ function openSession(s) {
   S.open = s;
   $('#lterm').innerHTML = `<div class="th"><button class="back" id="backBtn" title="返回 esc"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg></button><span class="chip">${ICON.termSm} 终端</span><span class="path">${esc(s.cwd)}</span><span class="sp"></span>
       <button class="hbtn" title="新会话 ⌘T"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
-      <button class="hbtn" title="移到窗口 ⌘O">${ICON.win}</button></div>
+      <button class="hbtn" title="移到窗口 ⌘O">${ICON.win}</button>
+      <button class="hbtn" id="endBtn2" title="结束会话 ⌘W">${ICON.x}</button></div>
     <div class="tb"><b>❯ ${esc(s.cmd)}</b>\n${s.cmd.startsWith('npm') ? '\n  VITE v7.2.1  ready in 412 ms\n\n  ➜  Local:   http://localhost:5173/\n<span style="opacity:.7">23:41:02 [vite] hmr update /src/App.vue</span>' : 'Continue?'}</div>
     <div class="prompt">${s.state === 'wait' ? '<span style="color:var(--text2)">read ›</span>' : '❯'} <input id="tin" autocomplete="off" spellcheck="false"></div>`;
   $('#backBtn').onclick = goHome;
+  $('#endBtn2').onclick = () => requestEnd(s);
   const tin = $('#tin'); tin.focus();
   tin.onkeydown = (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'w') { e.preventDefault(); requestEnd(s); return; }
+    if (e.ctrlKey && e.key.toLowerCase() === 'd' && !tin.value && s.state === 'idle') { e.preventDefault(); endSession(s); return; }
+    if (e.key === 'Enter' && tin.value.trim() === 'exit') { e.preventDefault(); endSession(s); return; }
     if (e.key === 'Escape' && !tin.value) { e.preventDefault(); goHome(); }
     else if (e.key === 'Escape') { e.preventDefault(); tin.value = ''; }
   };
+}
+// Ending a session: idle ones end at once; a running command asks first.
+function requestEnd(s) {
+  if (s.state === 'idle' || s.state === 'err') { endSession(s); return; }
+  const sh = $('#lsheet');
+  sh.innerHTML = `<div class="ic">${ICON.term}</div><h4>“${esc(s.cmd)}” 仍在运行</h4><p>结束会话会挂断该命令及其启动的所有进程。</p>
+    <div class="btns"><button class="danger" id="lEnd">结束会话</button><button id="lKeep">取消</button></div>`;
+  sh.classList.add('show');
+  $('#lEnd').onclick = () => { sh.classList.remove('show'); endSession(s); };
+  $('#lKeep').onclick = () => { sh.classList.remove('show'); $('#tin').focus(); };
+}
+function endSession(s) {
+  s.state = 'gone'; S.open = null;
+  $('#launcher').classList.remove('term');
+  renderHome('a'); $('#q').focus();
 }
 // Back to the launcher home; the session keeps running and shows in the status button.
 function goHome() {
@@ -397,7 +420,7 @@ document.addEventListener('keydown', (e) => {
   if ($('#launcher').classList.contains('show') && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') { e.preventDefault(); renderPopover(!$('#pop').classList.contains('show')); }
   if (e.key === 'Escape') { renderPopover(false); $('#menu').classList.remove('show'); $('#sheet').classList.remove('show'); }
 });
-$('#acc').onclick = () => { const ss = liveSessions(); if (ss.length === 1) openSession(ss[0]); else renderPopover(!$('#pop').classList.contains('show')); };
+$('#acc').onclick = () => renderPopover(!$('#pop').classList.contains('show'));
 $('#newTab').onclick = () => { S.tabs.push({ id: Date.now(), cwd: S.tabs[S.cur]?.cwd || '~', cmd: '', state: 'idle' }); S.cur = S.tabs.length - 1; renderWindow(); };
 
 // ---------------- Notes & screens ----------------
@@ -408,6 +431,8 @@ const CAP = {
   'a-pop': '<b>② 多个会话时点按（或 <code>⌘J</code>）展开列表。</b>每行：状态点、命令、目录；运行中显示时长，等待输入用橙字，在窗口中的会话带窗口图标。点按进入，悬停出现 × 结束会话。列表按「等待输入 → 运行中 → 失败 → 空闲」排序。',
   'a-simple': '<b>③ 简洁模式。</b>状态按钮在单行输入框里同样出现，启动器保持单行，不再因为有后台会话而展开。',
   'term-back': '<b>⑧ 从启动器里的终端返回首页。</b>头部最左侧是返回按钮 ‹（与命令面板、二级菜单的返回一致）；在空的提示符上按 <code>esc</code> 也返回首页（与日历、系统监控的「esc 返回」一致；提示符里有文字时 esc 先清空）。不用 ⌫ 返回，避免输入密码时连按删除误退出。返回后会话继续运行，在输入框右侧的状态按钮里。再按一次 <code>esc</code> 才隐藏启动器。搜索框在终端里不再显示，头部只有返回、终端标签、目录、新会话和移到窗口。',
+  one: '<b>⑨ 只有一个会话时也先展开列表。</b>状态按钮永远打开同一个列表（<code>⌘J</code>），列表是查看、进入和结束会话的唯一入口；只有一行时 <code>↩</code> 直接进入。悬停该行出现 ×，空闲会话直接结束。',
+  end: '<b>⑩ 在会话里结束它。</b>头部最右侧的 × 结束会话，快捷键 <code>⌘W</code>（与窗口标签一致）；也可以像普通终端一样输入 <code>exit</code> 或在空提示符按 <code>⌃D</code>。空闲会话直接结束并回到首页，有命令在运行时先确认。shell 自己退出的会话自动消失，空闲会话 30 分钟后自动回收。',
   b: '<b>④ 备选：放进快捷入口网格。</b>终端作为网格第一格，图标右上角是状态点或数量，名称是最近会话的目录。和网格风格一致，但会把用户自定义的第 7 个快捷入口挤到下一行，且只能代表一个会话。不推荐，作为对比。',
   tabs: '<b>⑤ 窗口标签：悬停出现关闭按钮。</b>标签前端的状态点在悬停时变成 ×（与 Safari / Finder 标签一致），也可以中键点按、<code>⌘W</code> 关闭当前标签。同名目录的标签在名称后用灰色等宽字附上命令，以便区分；运行中的标签总是附命令。标签可拖动排序。关闭最后一个标签时窗口一起关闭。',
   'tabs-confirm': '<b>⑥ 关闭运行中的标签。</b>沿用现有确认文案：「“npm run dev” 仍在运行」，结束并关闭 / 取消。空闲或已结束的会话直接关闭，不弹确认。',
@@ -415,7 +440,8 @@ const CAP = {
 };
 function screen(name) {
   S.scr = name;
-  S.sessions.forEach((s) => { if (s.state === 'gone') s.state = s.id === 1 ? 'run' : s.id === 2 ? 'idle' : 'wait'; });
+  S.sessions.forEach((s) => { s.state = s.id === 1 ? 'run' : s.id === 2 ? 'idle' : 'wait'; s.host = s.id === 2 ? 'window' : 'launcher'; });
+  $('#lsheet').classList.remove('show');
   document.querySelectorAll('.pill[data-s]').forEach((p) => p.classList.toggle('on', p.dataset.s === name));
   $('#caption').innerHTML = CAP[name];
   $('#win').classList.remove('show'); $('#sheet').classList.remove('show'); $('#menu').classList.remove('show'); renderPopover(false); notes([]);
@@ -425,6 +451,8 @@ function screen(name) {
   if (name === 'a-pop') { renderHome('a'); renderPopover(true); }
   if (name === 'a-simple') { renderHome('simple'); notes([[742, 112, '简洁模式不再被后台会话撑开']]); }
   if (name === 'b') { renderHome('b'); }
+  if (name === 'one') { S.sessions.forEach((x) => { x.state = x.id === 2 ? 'idle' : 'gone'; }); S.sessions.find((x) => x.id === 2).host = 'launcher'; renderHome('a'); renderPopover(true); document.querySelector('#pop .srow').classList.add('on'); notes([[740, 150, '悬停出现 ×']]); }
+  if (name === 'end') { S.sessions.find((x) => x.id === 2).host = 'launcher'; renderHome('a'); openSession(S.sessions.find((x) => x.id === 1)); requestEnd(S.sessions.find((x) => x.id === 1)); notes([[760, 22, '结束会话 · ⌘W · exit · ⌃D']]); }
   if (name === 'term-back') { renderHome('a'); openSession(S.sessions.find((x) => x.id === 3)); notes([[200, 22, '返回 · 空提示符上 esc']]); }
   if (name.startsWith('tabs')) {
     $('#launcher').classList.remove('show'); resetTabs(); renderWindow(); $('#win').classList.add('show');
