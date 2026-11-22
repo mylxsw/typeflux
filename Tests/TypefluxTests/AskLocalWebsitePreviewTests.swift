@@ -151,13 +151,12 @@ import XCTest
         let workspace = AskBrowserWorkspace(dataStore: .nonPersistent())
         let tool = AskEmbeddedBrowserTool(workspace: workspace)
         let presentation = workspace.presentationRequest
-        do {
-            _ = try await tool.execute(["action": "open_file", "path": root.appendingPathComponent("site/home.html").path],
-                                      conversationId: "test", authorize: {})
-            XCTFail("Missing resources must fail the tool instead of returning an opened receipt")
-        } catch {
-            XCTAssertTrue(error.localizedDescription.contains("assets/missing.js"), error.localizedDescription)
-        }
+        let failure = try await tool.execute(
+            ["action": "open_file", "path": root.appendingPathComponent("site/home.html").path], conversationId: "test")
+        XCTAssertTrue(failure.isError)
+        XCTAssertEqual(failure.outcome?.safeStatus, .failed)
+        XCTAssertTrue(failure.content.contains("assets/missing.js"), failure.content)
+        XCTAssertTrue(failure.content.contains("Check the listed resource paths."), failure.content)
         XCTAssertTrue(workspace.tabs.isEmpty)
         XCTAssertEqual(workspace.presentationRequest, presentation)
     }
@@ -170,12 +169,9 @@ import XCTest
         defer { workspace.tabs.forEach { workspace.close($0) } }
         let tool = AskEmbeddedBrowserTool(workspace: workspace)
         let args: [String: Any] = ["action": "open_file", "path": root.appendingPathComponent("work/preview.html").path]
-        do {
-            _ = try await tool.execute(args, conversationId: "test")
-            XCTFail("Sibling directories are outside the preview root")
-        } catch {
-            XCTAssertTrue(error.localizedDescription.contains("outputs/cat.svg"))
-        }
+        let failure = try await tool.execute(args, conversationId: "test")
+        XCTAssertTrue(failure.isError, "Sibling directories are outside the preview root")
+        XCTAssertTrue(failure.content.contains("outputs/cat.svg"), failure.content)
         XCTAssertTrue(workspace.tabs.isEmpty)
         XCTAssertEqual(workspace.presentationRequest, 0)
         try write("work/preview.html", "<img src='./cat.svg'>")
@@ -186,12 +182,10 @@ import XCTest
         XCTAssertEqual(width, 12)
         try write("work/cat.svg", svg.replacingOccurrences(of: "12", with: "24"))
         for action in ["read", "snapshot", "screenshot"] {
-            do {
-                _ = try await tool.execute(["action": action], conversationId: "test")
-                XCTFail("Changed assets require reopening before inspection")
-            } catch {
-                XCTAssertTrue(error.localizedDescription.contains("stale"), error.localizedDescription)
-            }
+            let stale = try await tool.execute(["action": action], conversationId: "test")
+            XCTAssertTrue(stale.isError, "Changed assets require reopening before inspection")
+            XCTAssertEqual(stale.outcome?.safeStatus, .failed)
+            XCTAssertTrue(stale.content.contains("stale"), stale.content)
         }
         _ = try await tool.execute(args, conversationId: "test")
         XCTAssertEqual(workspace.selectedTab?.id, tab.id)
@@ -220,4 +214,48 @@ import XCTest
         }
     }
 
+    func testGeneratedWebsiteWithStorageRunsOnFirstOpenFromBothEntrances() async throws {
+        try write("site/index.html", #"<button id="score">Start</button><script src="game.js"></script>"#)
+        try write("site/game.js", """
+        const button = document.querySelector('#score');
+        let count = Number(localStorage.getItem('score') || 0);
+        button.textContent = String(count);
+        button.onclick = () => {
+          count += 1;
+          localStorage.setItem('score', count);
+          button.textContent = localStorage.getItem('score');
+        };
+        """)
+
+        func checkStartupAndInteraction(_ view: WKWebView) async throws {
+            let initialScore = try await view.evaluateJavaScript("document.querySelector('#score').textContent") as? String
+            XCTAssertEqual(initialScore, "0")
+            let nextScore = try await view.evaluateJavaScript("""
+            document.querySelector('#score').click(); document.querySelector('#score').textContent;
+            """) as? String
+            XCTAssertEqual(nextScore, "1")
+        }
+
+        guard case let .html(bundle, _) = AskSidePanelFileLoader.load(
+            try target("site/index.html"), kind: .html, roots: [root.path]
+        ) else { return XCTFail("The file panel could not load the generated website") }
+        let filePanel = AskPreviewHost()
+        defer { filePanel.close() }
+        let filePanelView = try await filePanel.open(.artifact(bundle.manifest.ref), enabled: true) { _ in bundle }
+        try await filePanel.validateLoadedPage()
+        try await checkStartupAndInteraction(filePanelView)
+
+        let browser = AskBrowserWorkspace(dataStore: .nonPersistent())
+        defer { browser.tabs.forEach { browser.close($0) } }
+        let tool = AskEmbeddedBrowserTool(workspace: browser)
+        let arguments = ["action": "open_file", "path": root.appendingPathComponent("site/index.html").path]
+        let opened = try await tool.execute(arguments, conversationId: "test")
+        XCTAssertFalse(opened.isError, opened.content)
+        let tab = try XCTUnwrap(browser.selectedTab)
+        try await checkStartupAndInteraction(tab.webView)
+
+        let reopened = try await tool.execute(arguments, conversationId: "test")
+        XCTAssertFalse(reopened.isError, reopened.content)
+        try await checkStartupAndInteraction(tab.webView)
+    }
 }

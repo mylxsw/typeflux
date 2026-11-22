@@ -1,6 +1,39 @@
 import Foundation
 import WebKit
 
+enum AskLocalPreviewFailure: LocalizedError {
+    case timedOut
+    case validation([String])
+    case stale
+
+    var errorDescription: String? {
+        switch self {
+        case .timedOut: "The local preview did not finish loading."
+        case .validation(let errors): "Local preview validation failed:\n" + errors.joined(separator: "\n")
+        case .stale: "The local preview is stale because its files changed."
+        }
+    }
+
+    var repairInstruction: String {
+        switch self {
+        case .stale:
+            return "Reopen the file with open_file before inspecting or reporting it as ready."
+        case .timedOut:
+            return "Check the page's loading code and dependencies, then reopen it with open_file."
+        case .validation(let errors):
+            var lines: [String] = []
+            if errors.contains(where: { $0.contains("Script error.") }) {
+                lines.append("WebKit hid the underlying script exception. Inspect local scripts, especially the code that runs when the page first opens.")
+            }
+            if errors.contains(where: { $0.contains("Resource failed:") || $0.hasPrefix("Image not loaded:") }) {
+                lines.append("Check the listed resource paths. Package dependencies inside the HTML directory.")
+            }
+            lines.append("Fix the page, reopen it with open_file, and verify its main interaction before reporting it as ready.")
+            return lines.joined(separator: "\n")
+        }
+    }
+}
+
 /// A URL/DTO alone never grants access: services also need a live host capability.
 enum AskPreviewSource {
     case artifact(AskArtifactRef)
@@ -129,7 +162,7 @@ struct AskPreviewPolicy {
         // Rule compilation suspends: revalidate owner, expiry and grants before loading.
         try validate()
         guard let rules else { throw AskArtifactError.unavailable }
-        let configuration = try configuration(rules: rules)
+        let configuration = try configuration(rules: rules, usesTemporaryStorage: bundle != nil)
         install(bundle: bundle, development: development, policy: policy, validate: validate)
         let view = WKWebView(frame: .zero, configuration: configuration)
         view.navigationDelegate = self
@@ -161,7 +194,7 @@ struct AskPreviewPolicy {
         self.timer = timer
     }
 
-    private func configuration(rules: WKContentRuleList) throws -> WKWebViewConfiguration {
+    private func configuration(rules: WKContentRuleList, usesTemporaryStorage: Bool) throws -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration()
         try AskPreviewEnginePolicy.apply(to: configuration.preferences)
         configuration.websiteDataStore = .nonPersistent()
@@ -169,6 +202,11 @@ struct AskPreviewPolicy {
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         configuration.mediaTypesRequiringUserActionForPlayback = .all
         configuration.userContentController.add(rules)
+        if usesTemporaryStorage {
+            configuration.userContentController.addUserScript(WKUserScript(
+                source: AskPreviewStorage.script, injectionTime: .atDocumentStart, forMainFrameOnly: true, in: .page
+            ))
+        }
         configuration.userContentController.addUserScript(WKUserScript(
             source: Self.errorCollector, injectionTime: .atDocumentStart, forMainFrameOnly: true,
             in: .defaultClient
@@ -180,23 +218,34 @@ struct AskPreviewPolicy {
         return configuration
     }
 
-    private static let errorCollector = """
+    private static let errorFormatting = """
+    function typefluxPreviewErrorMessage(e) {
+      if (e.message === 'Script error.') return e.message;
+      if (e.message) {
+        const location = e.filename ? ' (' + e.filename + ':' + e.lineno + ':' + e.colno + ')' : '';
+        return 'Script exception: ' + e.message + location;
+      }
+      return 'Resource failed: ' + (e.target?.src || e.target?.href || 'unknown');
+    }
+    """
+
+    private static let errorCollector = errorFormatting + "\n" + """
     globalThis.typefluxPreviewErrors = [];
     function record(e) {
       if (typefluxPreviewErrors.length < 8) typefluxPreviewErrors.push(String(e).slice(0, 500));
     }
-    addEventListener('error', e => record(e.message || ('Resource failed: ' + (e.target?.src || e.target?.href || 'unknown'))), true);
+    addEventListener('error', e => record(typefluxPreviewErrorMessage(e)), true);
     addEventListener('unhandledrejection', e => record(e.reason || 'Unhandled page rejection'));
     addEventListener('securitypolicyviolation', e => record('Preview blocked: ' + e.blockedURI + ' (' + e.violatedDirective + ')'));
     """
 
-    private static let consoleCollector = """
+    private static let consoleCollector = errorFormatting + "\n" + """
     globalThis.typefluxPreviewConsole = [];
     globalThis.typefluxPreviewPageErrors = [];
     function recordPageError(message) {
       if (typefluxPreviewPageErrors.length < 8) typefluxPreviewPageErrors.push(String(message).slice(0,500));
     }
-    addEventListener('error', e => recordPageError(e.message || ('Resource failed: ' + (e.target?.src || e.target?.href || 'unknown'))), true);
+    addEventListener('error', e => recordPageError(typefluxPreviewErrorMessage(e)), true);
     addEventListener('unhandledrejection', e => recordPageError(e.reason || 'Unhandled page rejection'));
     for (const level of ['log', 'info', 'warn', 'error']) {
       const original = console[level].bind(console);
@@ -251,7 +300,7 @@ struct AskPreviewPolicy {
                 break
             }
             guard ContinuousClock.now < deadline else {
-                throw AskLocalError.message("Local preview timed out. Fix the page and reopen it with open_file.")
+                throw AskLocalPreviewFailure.timedOut
             }
             try await Task.sleep(for: .milliseconds(50))
         }
@@ -262,9 +311,7 @@ struct AskPreviewPolicy {
         """) as? [String] ?? []
         let errors = result.errors + broken.map { "Image not loaded: " + $0 }
         guard errors.isEmpty else {
-            throw AskLocalError.message("Local preview validation failed:\n" + errors.joined(separator: "\n")
-                + "\nKeep referenced assets inside the HTML directory, fix loading errors, then call open_file again. "
-                + "Do not report this preview as ready.")
+            throw AskLocalPreviewFailure.validation(errors)
         }
     }
 

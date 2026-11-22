@@ -137,7 +137,7 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
         let target = try AskSidePanelFileAccess.resolve(file.path, workspaceRoot: file.deletingLastPathComponent())
         let current = try AskFileHTMLPreview.bundle(target, roots: [target.root])
         guard current.manifest.ref.version == localPreviewVersion else {
-            throw AskLocalError.message("Local preview is stale because its files changed. Call open_file again before inspecting or reporting it as ready.")
+            throw AskLocalPreviewFailure.stale
         }
         try await host.validateLoadedPage()
     }

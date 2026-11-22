@@ -26,6 +26,10 @@ resource handler. CORS responses contain no credentials and expose only snapshot
 bytes. Development-server previews retain their existing explicit runtime lease;
 a static preview never silently starts a server or installs dependencies.
 
+Local HTML gets separate in-memory `localStorage` and `sessionStorage` objects
+before its scripts run. Each document starts with empty storage. Reloading or
+opening another preview cannot read or write the previous document's values.
+
 ## Verification contract
 
 An opened HTML document or a screenshot alone is not successful website

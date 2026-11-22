@@ -69,7 +69,8 @@ final class AskEmbeddedBrowserTool {
         Use Typeflux's built-in browser, shown beside this conversation, to open and visually check web pages, \
         especially pages you just built. Prefer it over a shell open command or the user's Safari/Chrome unless \
         the user specifically asks for an external browser. One action per call. tabs lists tabs; new_tab opens one (optionally at url); \
-        open_file opens a local HTML website using its absolute path, reusing that file's tab on later calls. Local CSS, scripts, images and fonts under its directory use the same isolated loader as user file previews; external networking is blocked. Loading errors fail open_file; repair the files and reopen before declaring success. File edits invalidate read, snapshot and screenshot until open_file is called again. \
+        open_file opens a local HTML website using its absolute path, reusing that file's tab on later calls. Build for this environment from the start: CSS, scripts, images and fonts must be packaged alongside the HTML or in subdirectories. External requests are blocked. localStorage and sessionStorage work in memory and reset when the preview is reopened or refreshed. \
+        Before delivering a runnable HTML page you generated or changed, open the final version and verify its main interaction when it has one. If loading or interaction fails, inspect and repair the files, reopen them, and verify again before declaring success. File edits invalidate read, snapshot and screenshot until open_file is called again. \
         Sibling files are not available; if host commands are disabled, the file must be in a folder granted to Chat. \
         open navigates a tab to an http(s) url; read returns the page URL, title and visible text; snapshot lists \
         interactive elements with refs and returns an observation_id; screenshot returns an image of the page. \
@@ -153,6 +154,19 @@ final class AskEmbeddedBrowserTool {
 
     func execute(_ args: [String: Any], conversationId: String,
                  authorize: () throws -> Void = {}) async throws -> AskLocalToolOutput {
+        do {
+            return try await executeAction(args, conversationId: conversationId, authorize: authorize)
+        } catch let failure as AskLocalPreviewFailure {
+            try Task.checkCancellation()
+            return .init(content: failure.localizedDescription + "\n" + failure.repairInstruction,
+                         isError: true,
+                         outcome: .init(status: AskExecutionStatus.failed.rawValue, eventDispatched: false,
+                                        effectVerified: false))
+        }
+    }
+
+    private func executeAction(_ args: [String: Any], conversationId: String,
+                               authorize: () throws -> Void) async throws -> AskLocalToolOutput {
         let action = action(args)
         guard Self.actions.contains(action) else { throw AskLocalError.message(L("ask.tool.invalid")) }
         let expected = try binding(args)

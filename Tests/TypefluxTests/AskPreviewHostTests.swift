@@ -99,11 +99,44 @@ import XCTest
         try await Task.sleep(for: .milliseconds(100))
         let fileAccess = try await evaluate(view, "fileResult") as? String
         XCTAssertEqual(fileAccess, "blocked")
-        let storage = try await evaluate(
-            view,
-            "(() => { try { localStorage.setItem('x','x'); return 'stored'; } catch(e) { return 'blocked'; } })()"
-        ) as? String
-        XCTAssertEqual(storage, "blocked")
+        let origin = try await evaluate(view, "window.origin") as? String
+        XCTAssertEqual(origin, "null")
+    }
+
+    func testWebStorageWorksAtStartupAndIsIsolatedBetweenPreviewDocuments() async throws {
+        let data = bundle(html: """
+        <script>
+          localStorage.setItem('boot', 'ready');
+          sessionStorage.setItem('boot', 'session');
+        </script>
+        """)
+        let first = AskPreviewHost()
+        let second = AskPreviewHost()
+        defer { first.close(); second.close() }
+        let view = try await first.open(.artifact(data.manifest.ref), enabled: true) { _ in data }
+        try await first.validateLoadedPage()
+        let values = try await evaluate(view, """
+        (() => {
+          const saved = [localStorage.getItem('boot'), sessionStorage.getItem('boot')];
+          localStorage.score = 42;
+          const keys = [localStorage.length, localStorage.key(1), localStorage.key(2),
+                        localStorage.getItem('score'), localStorage.score, Object.keys(localStorage).join(',')];
+          sessionStorage.clear();
+          localStorage.removeItem('boot');
+          localStorage.extra = 'value';
+          delete localStorage.extra;
+          return [...saved, ...keys, sessionStorage.length, localStorage.getItem('boot'),
+                  'extra' in localStorage, localStorage.getItem('score')].join('|');
+        })()
+        """) as? String
+        XCTAssertEqual(values, "ready|session|2|score||42|42|boot,score|0||false|42")
+
+        let other = try await second.open(.artifact(data.manifest.ref), enabled: true) { _ in data }
+        try await second.validateLoadedPage()
+        let independent = try await evaluate(other, """
+        [localStorage.getItem('score'), sessionStorage.length, localStorage.length].join('|')
+        """) as? String
+        XCTAssertEqual(independent, "|1|1")
     }
 
     func testRealWebKitBlocksOutboundRequestsAndCrossArtifactResources() async throws {
