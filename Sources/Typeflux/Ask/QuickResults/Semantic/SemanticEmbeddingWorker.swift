@@ -173,7 +173,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         projector: URL? = nil,
         timeout: TimeInterval = 3,
         startupTimeout: TimeInterval = 15,
-        idleTimeout: TimeInterval = 60,
+        idleTimeout: TimeInterval = AskFileReader.backgroundIdleTimeout,
         ownership: SemanticEmbeddingOwnership = SemanticEmbeddingOwnership(),
         authorization: SemanticEmbeddingOwnership.Authorization? = nil,
         lifecycle: AskSearchCancellation = AskSearchCancellation(),
@@ -194,7 +194,8 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
             // Background process QoS also throttles dyld/GGUF disk reads. The work budget
             // already time-slices indexing CPU and interrupts for voice, pressure and heat.
             qualityOfService: indexing ? .utility : .userInitiated,
-            ownership: ownership.native, reaper: reaper
+            ownership: ownership.native, reaper: reaper,
+            idleTimeout: indexing && projector == nil ? idleTimeout : nil
         )
         if indexing {
             SemanticWorkBudget.current?.register(self)
@@ -226,6 +227,8 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         }
         return vectors
     }
+
+    var hasRunningHelper: Bool { reader.isRunning }
 
     func release() {
         reader.stop()

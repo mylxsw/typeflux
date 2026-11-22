@@ -63,7 +63,7 @@ extension SemanticFileIndexer {
                         try store.setStage(.encoding)
                         try store.record(.encodingRequests)
                         do {
-                            vector = try media.embed(input, cancelled: cancelled)
+                            vector = try media.embed(input, cancelled: cancelled, beforeInference: encoder.release)
                         } catch is SemanticWorkBudget.Interrupted {
                             throw SemanticWorkBudget.Interrupted()
                         } catch let error as SemanticMediaInputError {

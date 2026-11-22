@@ -4,28 +4,82 @@ import Testing
 
 private final class InterleavingEncoder: SemanticEmbedding {
     var before: (([String]) throws -> Void)?
+    private(set) var isWarm = false
     func embed(_ texts: [String], cancelled: () -> Bool) throws -> [[Float]] {
         if cancelled() {
             throw CancellationError()
         }
         try before?(texts)
+        isWarm = true
         return texts.map { _ in semanticVector() }
     }
+    func release() { isWarm = false }
 }
 
 @Suite("Live document fairness on the durable queue", .serialized)
 struct SemanticIndexFairnessTests {
+    @Test(arguments: [false, true])
+    func documentHelperSurvivesBatchRotationWithNoMediaInference(cachedImages: Bool) throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let scope = semanticScope(root.path), reader = SemanticMediaFixtureReader(root: root.path)
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        let media = SemanticFixtureMediaEncoder()
+        let images = cachedImages ? (0 ..< 3).map { "image-\($0).png" } : []
+        if cachedImages {
+            _ = try SemanticFileIndexer.reconcile(paths: images.map { root.appendingPathComponent($0).path },
+                                                   scope: scope, store: store,
+                                                   reader: reader, encoder: SemanticFixtureEncoder(), media: media,
+                                                   cancelled: { false }, progress: { _ in })
+            media.release()
+        }
+        reader.names = (0 ..< 12).map { "note-\($0).txt" } + images
+        let launches = root.appendingPathComponent("launches")
+        func quoted(_ value: String) -> String { "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+        let marker = "printf '%s\\n' \"$$\" >> \(quoted(launches.path))\n"
+        let worker: SemanticEmbeddingWorker
+        if let path = ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_TEST_MODEL"] {
+            let shim = root.appendingPathComponent("record-helper")
+            try ("#!/bin/sh\n" + marker + "exec \(quoted(SemanticModel.helperURL.path)) \"$@\"\n")
+                .write(to: shim, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: shim.path)
+            worker = SemanticEmbeddingWorker(helper: shim, model: URL(fileURLWithPath: path), indexing: true)
+        } else {
+            let vector = try #require(String(bytes: JSONEncoder().encode([semanticVector()]), encoding: .utf8))
+            let script = try SemanticEmbeddingWorkerTests().script(marker + """
+            while IFS= read -r line; do printf '%s\\n' '{"entries":[],"embeddings":\(vector)}'; done
+            """, in: root)
+            worker = SemanticEmbeddingWorker(helper: URL(fileURLWithPath: "/bin/sh"), model: script, indexing: true)
+        }
+        let budget = SemanticWorkBudget(enabled: true, state: { .init() })
+        let started = ProcessInfo.processInfo.systemUptime
+        let result = try budget.perform(cancelled: { false }, operation: {
+            try SemanticFileIndexer.run(scope: scope, store: store, reader: reader, encoder: worker, media: media,
+                                        idle: { Issue.record("Cached media must not wait for idle"); return true },
+                                        cancelled: { false }, progress: { _ in })
+        })
+        let starts = try String(contentsOf: launches, encoding: .utf8).split(separator: "\n").count
+        let counts = try store.counts()
+        #expect(starts == 1)
+        #expect(counts.documents == 12 && counts.images == (cachedImages ? 3 : 0))
+        #expect(media.calls == counts.images && result.processed == 12 + counts.images)
+        print("SEMANTIC_TEXT_REUSE cached_images=\(counts.images) documents=\(counts.documents) " +
+            "helper_starts=\(starts) seconds=\(ProcessInfo.processInfo.systemUptime - started)")
+    }
+
     @Test func enabledBudgetDoesNotDrainTheEntireDocumentBacklogBeforeAnotherMediaSegment() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
-        let reader = SemanticMediaFixtureReader(root: root.path), media = SemanticFixtureMediaEncoder()
+        let reader = SemanticMediaFixtureReader(root: root.path), mediaEncoder = SemanticFixtureMediaEncoder()
+        let media = SemanticMediaWorker(helper: root, model: root, projector: root,
+            models: SemanticMediaFixtureModels(source: root), makeEncoder: { _, _, _ in mediaEncoder })
         reader.names = ["video.mov"]; reader.pieces = 2
         let long = root.appendingPathComponent("long.txt"), gate = SemanticIndexPauseGate(),
             encoder = InterleavingEncoder()
         var calls = 0, observed = false
         encoder.before = { _ in calls += 1; gate.enqueueDocuments([long.path]) }
-        media.before = { _ in
-            if media.calls == 1 {
+        mediaEncoder.before = { _ in
+            #expect(!encoder.isWarm, "The text helper must be released before real media inference")
+            if mediaEncoder.calls == 1 {
                 try String(repeating: "project body ", count: 20000).write(to: long, atomically: true, encoding: .utf8)
                 gate.enqueueDocuments([long.path])
             } else {
@@ -36,12 +90,12 @@ struct SemanticIndexFairnessTests {
         }
         var policy = SemanticWorkBudget.Policy(); policy.quantum = 1000; policy.documentBatches = 2
         let budget = SemanticWorkBudget(policy: policy, enabled: true, state: { .init() })
-        _ = try budget.perform(cancelled: { false }) {
+        _ = try budget.perform(cancelled: { false }, operation: {
             try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
                                         encoder: encoder, media: media, documents: { gate.takeDocuments() },
                                         priorityReader: AskFileReader(),
                                         cancelled: { false }, progress: { _ in })
-        }
+        })
         #expect(observed && calls > 2)
         #expect(try store.job(long.path)?.state == .done)
         #expect(try store.lock.withLock { try store.count("work_queue") } == 0)

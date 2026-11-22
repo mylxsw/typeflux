@@ -90,6 +90,7 @@ enum SemanticFileIndexer {
                                   priorityReader: AskFileReading?, cancelled: () -> Bool,
                                   summary: inout Summary, progress: (Summary) -> Void,
                                   current: (String?) -> Void) throws {
+        defer { encoder.release() }
         // Prefer bounded document bursts at each segment boundary. A continuing document stream
         // must not indefinitely postpone every image, audio or video checkpoint.
         while true {
@@ -97,8 +98,7 @@ enum SemanticFileIndexer {
             progress(summary)
             try drainDocuments(scope: scope, store: store, reader: reader, encoder: encoder,
                                paused: paused, documents: documents, cancelled: cancelled,
-                               updates: false, summary: &summary, progress: progress, current: current)
-            encoder.release()
+                               updates: false, media: media, summary: &summary, progress: progress, current: current)
             if SemanticWorkBudget.current?.enabled == true, try store.nextWork(.document) != nil {
                 // Priority updates are tracked separately, so the initial fixed denominator no
                 // longer describes interleaved work accurately.
@@ -127,6 +127,7 @@ enum SemanticFileIndexer {
                                                  store: store,
                                                  reader: priorityReader ?? reader,
                                                  encoder: encoder,
+                                                 media: media,
                                                  idle: idle,
                                                  paused: paused,
                                                  documents: documents,

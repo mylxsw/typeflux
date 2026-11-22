@@ -4,7 +4,8 @@ extension SemanticFileIndexer {
     // A separate reader allows document work while the media reader is suspended inside a stream callback.
     // swiftlint:disable:next function_parameter_count
     static func waitForMedia(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
-                             encoder: SemanticEmbedding, idle: () -> Bool, paused: () -> Bool,
+                             encoder: SemanticEmbedding, media: (any SemanticMediaEmbedding)?,
+                             idle: () -> Bool, paused: () -> Bool,
                              documents: () throws -> SemanticIndexPauseGate.DocumentWork, cancelled: () -> Bool,
                              summary: inout Summary, progress: (Summary) -> Void,
                              current: (String?) -> Void) throws {
@@ -12,7 +13,7 @@ extension SemanticFileIndexer {
             try waitWhilePaused(paused, cancelled: cancelled)
             try drainDocuments(scope: scope, store: store, reader: reader, encoder: encoder,
                                paused: paused, documents: documents, cancelled: cancelled,
-                               updates: true, summary: &summary, progress: progress, current: current)
+                               updates: true, media: media, summary: &summary, progress: progress, current: current)
             if idle() {
                 if summary.waitingForIdle {
                     summary.waitingForIdle = false; progress(summary)
@@ -34,13 +35,16 @@ extension SemanticFileIndexer {
     static func drainDocuments(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                                encoder: SemanticEmbedding, paused: () -> Bool,
                                documents: () throws -> SemanticIndexPauseGate.DocumentWork, cancelled: () -> Bool,
-                               updates: Bool, summary: inout Summary, progress: (Summary) -> Void,
+                               updates: Bool, media: (any SemanticMediaEmbedding)?,
+                               summary: inout Summary, progress: (Summary) -> Void,
                                current: (String?) -> Void) throws {
         var processedWork = false
         var batches = 0
         let limit = SemanticWorkBudget.current?.documentBatchLimit
         defer {
-            if updates, processedWork {
+            // An inactive media lane only checks for work. Once its helper is running, preserve the
+            // existing handoff after document bursts, including those inside a media callback.
+            if media?.hasRunningHelper == true, !updates || processedWork {
                 encoder.release()
             }
         }

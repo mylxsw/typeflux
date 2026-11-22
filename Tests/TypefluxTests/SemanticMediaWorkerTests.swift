@@ -38,12 +38,22 @@ struct SemanticMediaWorkerTests {
         let worker = SemanticMediaWorker(helper: source, model: source, projector: target, models: models,
                                          makeEncoder: { _, _, _ in encoder })
         #expect(models.fetches == 0)
+        #expect(!worker.hasRunningHelper)
         models.status = 206
         let input = SemanticMediaInput(kind: .image, path: "/fixture.jpg")
-        #expect(try worker.embed(input, cancelled: { false }) == semanticVector())
+        var handoffs = 0
+        let handoff = {
+            #expect(FileManager.default.fileExists(atPath: target.path))
+            #expect(encoder.calls == handoffs)
+            handoffs += 1
+        }
+        #expect(try worker.embed(input, cancelled: { false }, beforeInference: handoff) == semanticVector())
+        #expect(worker.hasRunningHelper && handoffs == 1)
         #expect(try worker.embed(input, cancelled: { false }) == semanticVector())
         #expect(models.fetches == 1 && encoder.calls == 2)
         #expect(try Data(contentsOf: target) == Data(contentsOf: source))
+        encoder.release()
+        #expect(!worker.hasRunningHelper)
         let cached = SemanticMediaWorker(helper: source, model: source, projector: target, models: models,
                                          makeEncoder: { _, _, _ in encoder })
         _ = try cached.embed(input, cancelled: { false })
@@ -64,7 +74,9 @@ struct SemanticMediaWorkerTests {
         models.cancel = nil; models.status = 503
         let failing = SemanticMediaWorker(helper: source, model: source, projector: target, models: models)
         #expect(throws: URLError.self) {
-            try failing.embed(.init(kind: .audio, path: "/fixture.wav"), cancelled: { false })
+            try failing.embed(.init(kind: .audio, path: "/fixture.wav"), cancelled: { false }, beforeInference: {
+                Issue.record("A failed projector download must not evict the text encoder")
+            })
         }
         #expect(!FileManager.default.fileExists(atPath: target.path))
         #expect(throws: CancellationError.self) {
@@ -135,7 +147,8 @@ struct SemanticMediaWorkerTests {
         let media = SemanticMediaWorker(helper: helper, model: modelURL,
             projector: URL(fileURLWithPath: projector))
         defer { encoder.release() }
-        let reader = AskFileReader()
+        // Give the unoptimized file worker time to complete native PNG OCR.
+        let reader = AskFileReader(timeout: 60)
         let result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store,
             reader: reader, encoder: encoder, media: media, idle: { true },
             cancelled: { false }, progress: { _ in })

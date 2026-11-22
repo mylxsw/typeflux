@@ -71,11 +71,19 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
         self.authorization = authorization
         self.makeEncoder = makeEncoder ?? { helper, model, projector in
             SemanticEmbeddingWorker(helper: helper, model: model, indexing: true, projector: projector,
-                                    timeout: 90, startupTimeout: 180, ownership: embeddingOwners.media, authorization: authorization)
+                                    timeout: 90, startupTimeout: 180, ownership: embeddingOwners.media,
+                                    authorization: authorization)
         }
     }
 
-    func embed(_ input: SemanticMediaInput, cancelled originalCancelled: () -> Bool) throws -> [Float] {
+    var hasRunningHelper: Bool { encoder?.hasRunningHelper == true }
+
+    func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float] {
+        try embed(input, cancelled: cancelled, beforeInference: {})
+    }
+
+    func embed(_ input: SemanticMediaInput, cancelled originalCancelled: () -> Bool,
+               beforeInference: () -> Void) throws -> [Float] {
         guard embeddingOwners.media.permits(authorization) else { throw AskFileReadError.unavailable }
         @Sendable func cancelled() -> Bool { originalCancelled() || !embeddingOwners.media.permits(authorization) }
         // Check at this boundary even when a custom model/encoder ignores its
@@ -94,6 +102,8 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
             encoder = makeEncoder(helper, model, projector)
         }
         if cancelled() { throw CancellationError() }
+        // Projector preparation can take time or fail without starting media inference.
+        beforeInference()
         let result = try encoder!.embed(input, cancelled: cancelled)
         if cancelled() { throw CancellationError() }
         return result

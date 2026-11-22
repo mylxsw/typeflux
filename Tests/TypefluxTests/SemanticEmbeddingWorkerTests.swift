@@ -74,6 +74,30 @@ struct SemanticEmbeddingWorkerTests {
         #expect(!owner.native.isOccupied)
     }
 
+    @Test func indexingTextRetiresAfterIdleAndCompletesSlowRequests() async throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let owner = SemanticEmbeddingOwnership(), starts = root.appendingPathComponent("starts")
+        let vector = try #require(String(bytes: JSONEncoder().encode([semanticVector()]), encoding: .utf8))
+        let source = try script("""
+        printf x >> '\(starts.path)'
+        while IFS= read -r line; do
+          /bin/sleep 0.15
+          printf '%s\\n' '{"entries":[],"embeddings":\(vector)}'
+        done
+        """, in: root)
+        let worker = SemanticEmbeddingWorker(helper: URL(fileURLWithPath: "/bin/sh"), model: source,
+                                             indexing: true, idleTimeout: 0.08, ownership: owner)
+        defer { worker.release() }
+        #expect(try worker.embed(["first"], cancelled: { false }) == [semanticVector()])
+        let deadline = ContinuousClock.now + .seconds(3)
+        while owner.native.isOccupied, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(!owner.native.isOccupied)
+        #expect(try worker.embed(["second"], cancelled: { false }) == [semanticVector()])
+        #expect(try Data(contentsOf: starts).count == 2)
+    }
+
     @Test func idleReleaseRewarmsTheHelperWhileRetainingQueryVectors() async throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let starts = root.appendingPathComponent("starts"), calls = root.appendingPathComponent("calls")

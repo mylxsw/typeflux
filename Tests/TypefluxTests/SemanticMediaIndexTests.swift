@@ -63,13 +63,16 @@ final class SemanticMediaFixtureReader: AskFileReading, @unchecked Sendable {
 final class SemanticFixtureMediaEncoder: SemanticMediaEmbedding, @unchecked Sendable {
     var before: ((SemanticMediaInput) throws -> Void)?
     var calls = 0
+    private(set) var hasRunningHelper = false
     func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float] {
         if cancelled() {
             throw CancellationError()
         }
+        hasRunningHelper = true
         calls += 1; try before?(input)
         return semanticVector()
     }
+    func release() { hasRunningHelper = false }
 }
 
 @Suite("Document-first idle media indexing", .serialized)
@@ -98,8 +101,10 @@ struct SemanticMediaIndexTests {
         try samples.withUnsafeBytes { try SemanticMediaExtractor.wave(Data($0), to: audio) }
         try await semanticTestMovie(movie)
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        // Give the unoptimized file worker time to complete native PNG OCR.
+        let reader = AskFileReader(timeout: 60)
         let result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store,
-                                                 reader: AskFileReader(), encoder: SemanticFixtureEncoder(),
+                                                 reader: reader, encoder: SemanticFixtureEncoder(),
                                                  media: SemanticFixtureMediaEncoder(),
                                                  cancelled: { false }, progress: { _ in })
         let counts = try store.counts()

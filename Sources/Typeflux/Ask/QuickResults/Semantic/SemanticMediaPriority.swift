@@ -34,11 +34,23 @@ struct SemanticMediaInput: Codable, Equatable, Sendable {
 enum SemanticMediaInputError: Error { case unreadable }
 
 protocol SemanticMediaEmbedding: AnyObject {
+    var hasRunningHelper: Bool { get }
     func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float]
+    func embed(_ input: SemanticMediaInput, cancelled: () -> Bool, beforeInference: () -> Void) throws -> [Float]
     func release()
 }
 
-extension SemanticMediaEmbedding { func release() {} }
+extension SemanticMediaEmbedding {
+    var hasRunningHelper: Bool { false }
+
+    func embed(_ input: SemanticMediaInput, cancelled: () -> Bool, beforeInference: () -> Void) throws -> [Float] {
+        guard !cancelled() else { throw CancellationError() }
+        beforeInference()
+        return try embed(input, cancelled: cancelled)
+    }
+
+    func release() {}
+}
 
 /// Resume only a contiguous committed prefix of a verified media job. Video frames precede audio.
 struct SemanticMediaCursor: Codable, Equatable {
