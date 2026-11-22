@@ -7652,6 +7652,7 @@
 "terminal.launcher.waiting" = "等待输入";
 "terminal.launcher.recent" = "最近";
 "terminal.session.end" = "结束会话";
+"terminal.session.end.message" = "结束会话会挂断该命令及其启动的所有进程。";
 "terminal.session.close.short" = "关闭";
 "terminal.session.close" = "关闭会话";
 "terminal.session.close.others" = "关闭其他会话";

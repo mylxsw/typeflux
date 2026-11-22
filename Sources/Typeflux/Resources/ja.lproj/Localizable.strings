@@ -7646,6 +7646,7 @@
 "terminal.launcher.sessions" = "ターミナルセッション";
 "terminal.launcher.waiting" = "入力待ち";
 "terminal.session.end" = "セッションを終了";
+"terminal.session.end.message" = "セッションを終了すると、コマンドとそれが起動したすべてのプロセスを終了します。";
 "terminal.session.close.short" = "閉じる";
 "terminal.session.close" = "セッションを閉じる";
 "terminal.session.close.others" = "ほかのセッションを閉じる";

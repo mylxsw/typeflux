@@ -7652,6 +7652,7 @@
 "terminal.launcher.waiting" = "Waiting for Input";
 "terminal.launcher.recent" = "Recent";
 "terminal.session.end" = "End Session";
+"terminal.session.end.message" = "Ending the session hangs up the command and everything it started.";
 "terminal.session.close.short" = "Close";
 "terminal.session.close" = "Close Session";
 "terminal.session.close.others" = "Close Other Sessions";

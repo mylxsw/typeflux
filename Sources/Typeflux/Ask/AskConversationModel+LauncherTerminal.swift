@@ -187,7 +187,7 @@ extension AskConversationModel {
         defer { terminalCloseInProgress = false }
         let alert = NSAlert()
         alert.messageText = L("terminal.runner.close.title", TerminalRunModel.truncated(block.command, limit: 40))
-        alert.informativeText = L("terminal.runner.close.message")
+        alert.informativeText = L("terminal.session.end.message")
         alert.addButton(withTitle: L("terminal.session.end")).hasDestructiveAction = true
         alert.addButton(withTitle: L("common.cancel")).keyEquivalent = "\u{1b}"
         let observation = terminalSessionCenter.$sessions.dropFirst().sink { sessions in
