@@ -251,12 +251,18 @@ extension TerminalCommandTests {
             history: TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!),
             makeProcess: { process }
         )
-        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: word + " pwd", prepare: {
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "", prepare: {
             $0.terminalCommandDispatcher = dispatcher
             $0.terminalSessionCenter = center
         })
         defer { launcher.close(); center.terminateAll() }
         let model = launcher.fixture.model
+        launcher.window.makeKeyAndOrderFront(nil)
+        func enterQuery() {
+            let editor = launcher.editor
+            editor.insertText(word + " pwd", replacementRange: NSRange(location: 0, length: editor.string.utf16.count))
+        }
+        enterQuery()
         try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
         #expect(model.isTerminalCommandMode && launcher.editor.font?.isFixedPitch == true)
         #expect(dispatcher.requests.isEmpty && center.sessions.isEmpty)
@@ -266,7 +272,7 @@ extension TerminalCommandTests {
         try await launcher.press(53)
         #expect(model.launcherDraft.text.isEmpty && !model.plugins.isActive)
         #expect(model.launcherInputHistory.history.entries.isEmpty)
-        model.launcherDraft.text = word + " pwd"
+        enterQuery()
         try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
         try await launcher.press(36)
         let terminal = try #require(model.launcherTerminal)
@@ -359,6 +365,12 @@ extension TerminalCommandTests {
         try await AskQuickSearchSessionTests.wait { model.isTerminalCommandMode }
         try await launcher.press(36)
         let presentation = try #require(model.launcherTerminal)
+        func waitForPrompt() async throws {
+            try await AskQuickSearchSessionTests.wait {
+                let editor = launcher.window.firstResponder as? NSTextView
+                return (editor?.delegate as? TerminalPromptField.Field)?.model === presentation
+            }
+        }
         let session = presentation.session
         let process = processes[0]
         func osc(_ text: String) -> String { "\u{1b}]" + text + "\u{7}" }
@@ -370,7 +382,7 @@ extension TerminalCommandTests {
         try await terminalKey(8, .control, characters: "c", in: launcher.window)
         #expect(process.writes.last == [3])
         process.emit(osc("133;D;130") + osc("133;B"))
-        try await AskQuickSearchSessionTests.wait { launcher.window.firstResponder is NSTextView }
+        try await waitForPrompt()
         try await terminalKey(126, .option, in: launcher.window)
         #expect(presentation.actionBlock?.exitCode == 130)
         try await terminalKey(8, .command, in: launcher.window)
@@ -378,7 +390,7 @@ extension TerminalCommandTests {
         try await terminalKey(15, .command, in: launcher.window)
         #expect(session.runningBlock?.command == "printf first")
         process.emit(osc("133;C") + osc("133;D;0") + osc("133;B"))
-        try await AskQuickSearchSessionTests.wait { launcher.window.firstResponder is NSTextView }
+        try await waitForPrompt()
         try await terminalKey(40, .command, in: launcher.window)
         #expect(session.blocks.isEmpty)
         try await terminalKey(17, .command, in: launcher.window)
@@ -390,10 +402,12 @@ extension TerminalCommandTests {
         #expect(model.launcherTerminal?.session === second)
         try await terminalKey(13, .command, in: launcher.window)
         #expect(model.launcherTerminal == nil && center.sessions.first === session && center.sessions.count == 1)
+        try await AskQuickSearchSessionTests.wait { launcher.window.firstResponder is AskComposerTextView.Editor }
         model.resumeLauncherTerminal(session.id)
+        try await waitForPrompt()
         try await terminalKey(51, [], characters: "\u{7f}", in: launcher.window)
         #expect(model.launcherTerminal === presentation && launcher.dismissed == 0)
-        try await terminalKey(53, [], in: launcher.window)
+        try await terminalKey(53, [], characters: "\u{1b}", in: launcher.window)
         #expect(model.launcherTerminal == nil && launcher.dismissed == 0)
         #expect(center.sessions.first === session && process.terminations == 0)
         try await AskQuickSearchSessionTests.wait { launcher.window.firstResponder is AskComposerTextView.Editor }
