@@ -1,12 +1,15 @@
 import AppKit
+import Combine
 import SwiftUI
 
 /// Both hosts mount the screen owned by the session so the emulator and PTY survive moves.
 struct TerminalAlternateScreenView: NSViewRepresentable {
     let session: TerminalSession
+    var allowsLauncherClose = false
 
     func makeNSView(context: Context) -> NSView {
         let container = AlternateScreenContainer()
+        container.allowsLauncherClose = allowsLauncherClose
         let terminal = session.terminalView
         terminal.removeFromSuperview()
         terminal.inlineBackground = nil
@@ -26,6 +29,7 @@ struct TerminalAlternateScreenView: NSViewRepresentable {
 
 /// Route key-down events before menus and host shortcuts can consume them.
 private final class AlternateScreenContainer: NSView {
+    var allowsLauncherClose = false
     private var monitor: Any?
 
     override func viewDidMoveToWindow() {
@@ -37,6 +41,7 @@ private final class AlternateScreenContainer: NSView {
             guard let self, let window, event.window === window, window.isKeyWindow,
                   window.attachedSheet == nil, let terminal = subviews.first as? TerminalRunnerTerminalView,
                   !Self.isMoveShortcut(event) else { return event }
+            if allowsLauncherClose, TerminalLauncherView.isCloseShortcut(event) { return event }
             terminal.keyDown(with: event)
             return nil
         }
@@ -65,6 +70,7 @@ final class TerminalSessionWindowController: NSObject, ObservableObject, NSWindo
         backing: .buffered, defer: false
     )
     private var center: TerminalSessionCenter?
+    private var sessionObservation: AnyCancellable?
     private struct Presentation {
         let settings: TerminalRunSettings
         let content: (TerminalSession) -> AnyView
@@ -84,6 +90,11 @@ final class TerminalSessionWindowController: NSObject, ObservableObject, NSWindo
         presentations[session.id] = Presentation(settings: settings, content: content,
                                                   returnToLauncher: returnToLauncher)
         if tabs.isEmpty {
+            sessionObservation = center.$sessions.sink { [weak self] sessions in
+                guard let self else { return }
+                let live = Set(sessions.map(\.id))
+                for tab in tabs where !live.contains(tab.id) { remove(tab) }
+            }
             pinned = settings.pinned
             panel.level = pinned ? .floating : .normal
             panel.title = L("terminal.session.window.title")
@@ -156,8 +167,10 @@ final class TerminalSessionWindowController: NSObject, ObservableObject, NSWindo
         tabs.remove(at: index)
         if selected === session { selected = tabs.isEmpty ? nil : tabs[min(index, tabs.count - 1)] }
         if tabs.isEmpty {
+            if let sheet = panel.attachedSheet { panel.endSheet(sheet, returnCode: .abort) }
             panel.close()
             panel.contentView = nil
+            sessionObservation = nil
             center = nil
         }
     }
@@ -194,7 +207,6 @@ final class TerminalSessionWindowController: NSObject, ObservableObject, NSWindo
     func endTab(_ session: TerminalSession) {
         guard tabs.contains(where: { $0 === session }) else { return }
         center?.close(session)
-        remove(session)
     }
 
     private func confirm(_ sessions: [TerminalSession], completion: @escaping (Bool) -> Void) {

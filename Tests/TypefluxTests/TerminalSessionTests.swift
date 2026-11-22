@@ -166,6 +166,22 @@ struct TerminalSessionTests {
         #expect(session.blocks.last?.exitCode == 0 && session.cwd == cwd)
     }
 
+    @Test(arguments: [false, true])
+    func shellExitRemovesSession(useEOF: Bool) async throws {
+        let center = TerminalSessionCenter(history: history(), readGitStatus: { _ in nil })
+        let session = try center.create(settings: .init(shell: .login, directory: "/"))
+        defer { center.terminateAll() }
+        try #require(session.submit("true"))
+        try await wait { session.runningBlock == nil }
+        if useEOF {
+            session.eof()
+        } else {
+            try #require(session.submit("exit 7"))
+        }
+        try await wait { center.sessions.isEmpty }
+        #expect(session.exited && session.blocks.last?.exitCode == (useEOF ? 0 : 7))
+    }
+
     @Test func `leading space commands stay out of persisted history`() throws {
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
         let key = "terminal.session.commandHistory"

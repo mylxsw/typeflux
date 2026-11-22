@@ -7,6 +7,7 @@ struct TerminalSessionStatusButton: View {
     let end: (UUID) -> Void
     @State private var showingSessions = false
     @State private var hovering = false
+    @State private var selection: UUID?
 
     var body: some View {
         let ordered = TerminalSessionStatus.ordered(sessions)
@@ -14,7 +15,7 @@ struct TerminalSessionStatusButton: View {
             let count = TerminalSessionStatus.countBadge(ordered.count)
             let title = L("terminal.launcher.sessions")
             Button {
-                if count != nil { showingSessions.toggle() } else { open(first.id) }
+                toggleList(first.id)
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "terminal").font(.system(size: 15, weight: .medium))
@@ -34,52 +35,80 @@ struct TerminalSessionStatusButton: View {
             .buttonStyle(.plain)
             .onHover { hovering = $0 }
             .foregroundStyle(StudioTheme.textSecondary)
-            .help(count != nil ? title + " ⌘J" : title)
+            .help(title + " ⌘J")
             .accessibilityLabel(title)
             .accessibilityValue(count.map { $0.formatted() } ?? "")
             .accessibilityIdentifier("terminal.sessions.status")
-            .background {
-                if count != nil { TerminalKeyCapture(handler: toggleShortcut) }
-            }
+            .background(TerminalKeyCapture { handle($0, sessions: ordered) })
             .popover(isPresented: $showingSessions, arrowEdge: .bottom) {
-                ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(ordered) { session in
-                            TerminalSessionStatusRow(session: session, open: {
-                                showingSessions = false
-                                open(session.id)
-                            }, end: { end(session.id) })
+                ScrollViewReader { scroll in
+                    ScrollView {
+                        VStack(spacing: 2) {
+                            ForEach(ordered) { session in
+                                TerminalSessionStatusRow(session: session, selected: session.id == selection, open: {
+                                    openSession(session.id)
+                                }, end: { end(session.id) })
+                                .id(session.id)
+                            }
                         }
+                        .padding(6)
                     }
-                    .padding(6)
+                    .onChange(of: selection) { id in
+                        if let id { scroll.scrollTo(id) }
+                    }
                 }
                 .frame(width: 360, height: CGFloat(min(ordered.count, 8) * 46 + 12))
                 .background {
                     Color(nsColor: .windowBackgroundColor).ignoresSafeArea()
                 }
                 .accessibilityIdentifier("terminal.sessions.list")
-                .background(TerminalKeyCapture(handler: toggleShortcut))
+                .background(TerminalKeyCapture { handle($0, sessions: ordered) })
             }
-            .onChange(of: count) { if $0 == nil { showingSessions = false } }
+            .onChange(of: ordered.map(\.id)) { ids in
+                if showingSessions, !ids.contains(where: { $0 == selection }) { selection = ids.first }
+            }
             .onDisappear { showingSessions = false }
         }
     }
 
-    private func toggleShortcut(_ event: NSEvent) -> Bool {
-        guard event.modifierFlags.intersection([.command, .shift, .control, .option]) == .command,
-              event.charactersIgnoringModifiers?.lowercased() == "j" else { return false }
-        if !event.isARepeat { showingSessions.toggle() }
+    private func toggleList(_ first: UUID) {
+        if !showingSessions { selection = first }
+        showingSessions.toggle()
+    }
+
+    private func openSession(_ id: UUID) {
+        showingSessions = false
+        open(id)
+    }
+
+    private func handle(_ event: NSEvent, sessions: [TerminalSession]) -> Bool {
+        let modifiers = event.modifierFlags.intersection([.command, .shift, .control, .option])
+        if modifiers == .command, event.charactersIgnoringModifiers?.lowercased() == "j" {
+            if !event.isARepeat, let first = sessions.first { toggleList(first.id) }
+            return true
+        }
+        guard showingSessions, let key = AskCommandKey(event),
+              let index = sessions.firstIndex(where: { $0.id == selection }) else { return false }
+        switch key {
+        case .up: selection = sessions[max(0, index - 1)].id
+        case .down: selection = sessions[min(sessions.count - 1, index + 1)].id
+        case .enter:
+            if !event.isARepeat { openSession(sessions[index].id) }
+        default: return false
+        }
         return true
     }
 }
 
 private struct TerminalSessionStatusRow: View {
     @ObservedObject var session: TerminalSession
+    let selected: Bool
     let open: () -> Void
     let end: () -> Void
     @State private var hovered = false
 
     var body: some View {
+        let highlighted = hovered || selected
         HStack(spacing: 4) {
             Button(action: open) {
                 HStack(spacing: 8) {
@@ -123,12 +152,13 @@ private struct TerminalSessionStatusRow: View {
             .help(L("terminal.session.end"))
             .accessibilityLabel(L("terminal.session.end"))
             .accessibilityIdentifier("terminal.session.end.\(session.id)")
-            .opacity(hovered ? 1 : 0)
-            .allowsHitTesting(hovered)
+            .opacity(highlighted ? 1 : 0)
+            .allowsHitTesting(highlighted)
+            .accessibilityHidden(!highlighted)
         }
         .buttonStyle(.plain)
         .padding(.leading, 8)
-        .background(hovered ? Color.primary.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 6))
+        .background(highlighted ? Color.primary.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 6))
         .onHover { hovered = $0 }
     }
 }

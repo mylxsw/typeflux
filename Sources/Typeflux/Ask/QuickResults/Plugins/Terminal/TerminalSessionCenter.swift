@@ -115,10 +115,14 @@ extension TerminalSessionCenter {
                                           startingPath: startingPath(for: settings), readGitStatus: readGitStatus)
         rememberDirectory(session.cwd)
         session.directoryChanged = { [weak self] in self?.rememberDirectory($0) }
-        session.changed = { [weak self] in
-            guard let self else { return }
-            objectWillChange.send()
-            publish()
+        session.changed = { [weak self, weak session] in
+            guard let self, let session else { return }
+            if session.exited {
+                close(session)
+            } else {
+                objectWillChange.send()
+                publish()
+            }
             expireIdle()
         }
         sessions.append(session)
@@ -147,10 +151,11 @@ extension TerminalSessionCenter {
     }
 
     func close(_ session: TerminalSession) {
+        guard let index = sessions.firstIndex(where: { $0 === session }) else { return }
         session.changed = nil
         session.directoryChanged = nil
         session.terminate()
-        sessions.removeAll { $0 === session }
+        sessions.remove(at: index)
         hiddenSince.removeValue(forKey: session.id)
         publish()
     }
