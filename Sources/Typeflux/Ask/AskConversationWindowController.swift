@@ -173,7 +173,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         if services == nil { model.startNetworkMonitor() }
         maintenanceTasks.append(Task.detached(priority: .utility) { sandbox.pruneWorkspaces() })
         // Keyword plugins: translation falls back to the text-processing model, and
-        // ⌥Return types results into the app the launcher came from.
+        // ⌥Return types results into the currently focused input.
         model.translationEngineFactory = translationEngines
         if let llmService {
             // Translation may have a model of its own; without one it uses the text-processing model.

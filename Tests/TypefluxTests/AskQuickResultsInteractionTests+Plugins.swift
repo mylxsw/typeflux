@@ -454,7 +454,8 @@ extension AskQuickResultsInteractionTests {
             try await type("uu go", into: launcher)
             try await settle { model.plugins.isPlanCurrent }
             try await launcher.press(Self.returnKey)
-            try await settle { launcher.dismissed == 1 && notices == ["after"] }
+            try await settle { launcher.dismissed == 1 && notices.last == "after" }
+            #expect(notices == [L("workflow.result.copied"), "after"])
             #expect(pasteboard.string(forType: .string) == "abc")
             try await settle { delivered == ["abc"] }
             #expect(launcher.dismissed == 1, "closed once, by writing back")

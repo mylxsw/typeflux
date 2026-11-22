@@ -78,9 +78,9 @@ struct AskEmojiPluginTests {
         #expect(plugin.nextOptions(after: plan, request: request(""), step: 1) == nil)
         let output = try await plugin.run(request("🙏🏽"), plan: plan)
         #expect(output.items.count == 1)
-        #expect(output.action(for: .enter)?.kind == .copy("🙏🏽"))
+        #expect(output.action(for: .enter)?.kind == .writeBack("🙏🏽"))
         #expect(output.action(for: .commandC)?.kind == .copy("🙏🏽"))
-        #expect(output.action(for: .optionEnter)?.kind == .writeBack("🙏🏽"))
+        #expect(output.action(for: .optionEnter)?.kind == .copy("🙏🏽"))
         #expect(output.emoji?.results.first?.sequence == "🙏🏽")
         let empty = try await plugin.run(request("zzzzzz"), plan: plan)
         #expect(empty.items.isEmpty && empty.action(for: .enter) == nil)
@@ -126,7 +126,7 @@ struct AskEmojiPluginTests {
         session.update(text: "smile", selection: "secret", language: .english)
         session.update(text: "red heart", selection: "secret", language: .english)
         try await settle(session)
-        #expect(session.output?.selected?.actions.first?.kind == .copy("❤️"))
+        #expect(session.output?.action(for: .enter)?.kind == .writeBack("❤️"))
         #expect(session.request?.selection == nil)
         session.update(text: "smile", selection: nil, language: .english)
         #expect(!session.isPlanCurrent)
@@ -165,15 +165,20 @@ struct AskEmojiPluginTests {
         model.performEmojiAction(.clearRecent)
         try await settle(model.plugins)
         #expect(model.emojiUsage.value.recent.isEmpty)
-        let action = try #require(model.plugins.output?.action(for: .enter))
+        let action = try #require(model.plugins.output?.action(for: .optionEnter))
+        board.clearContents()
         #expect(model.performPluginAction(action) == .close)
+        #expect(board.string(forType: .string) == "🙏🏽")
         #expect(model.emojiUsage.value.recent.first?.sequence == "🙏🏽")
         model.performEmojiAction(.favorite("missing"))
     }
 
     @Test func `grid keyboard and input composition`() throws {
-        #expect(EmojiGridKeyboard.Key.resolve(code: 36, modifiers: []) == .copy)
-        #expect(EmojiGridKeyboard.Key.resolve(code: 76, modifiers: .option) == .insert)
+        #expect(EmojiGridKeyboard.Key.resolve(code: 36, modifiers: []) == .insert)
+        #expect(EmojiGridKeyboard.Key.resolve(code: 76, modifiers: []) == .insert)
+        #expect(EmojiGridKeyboard.Key.resolve(code: 76, modifiers: .option) == .copy)
+        #expect(EmojiGridKeyboard.Key.resolve(code: 36, modifiers: [.option, .capsLock]) == .copy)
+        #expect(EmojiGridKeyboard.Key.resolve(code: 36, modifiers: [.option, .shift, .capsLock]) == nil)
         #expect(EmojiGridKeyboard.Key.resolve(code: 8, modifiers: .command) == .copyAndStay)
         #expect(EmojiGridKeyboard.Key.resolve(code: 123, modifiers: [.function, .numericPad]) == .move(-1))
         #expect(EmojiGridKeyboard.Key.resolve(code: 124, modifiers: []) == .move(1))
@@ -199,7 +204,7 @@ struct AskEmojiPluginTests {
                                                   windowNumber: window.windowNumber, context: nil, characters: "\r",
                                                   charactersIgnoringModifiers: "\r", isARepeat: false, keyCode: 36))
         #expect(coordinator.handle(event) == nil)
-        #expect(keys == [.copy])
+        #expect(keys == [.insert])
         coordinator.parent.focused = false
         #expect(coordinator.handle(event) != nil)
         var text = ""
@@ -233,7 +238,7 @@ struct AskEmojiPluginTests {
             model.launcherDraft.text = "🙏🏽"
             model.plugins.update(text: "🙏🏽", selection: nil, language: .english)
             try await settle(model.plugins)
-            let action = try #require(model.plugins.output?.action(for: .optionEnter))
+            let action = try #require(model.plugins.output?.action(for: .enter))
             model.plugins.update(text: "smile", selection: nil, language: .english)
             #expect(model.performPluginAction(action) == .stay)
             #expect(model.emojiUsage.value.recent.isEmpty)

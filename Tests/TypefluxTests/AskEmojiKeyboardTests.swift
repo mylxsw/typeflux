@@ -65,6 +65,57 @@ struct AskEmojiKeyboardTests {
         #expect(launcher.fixture.model.launcherDraft.text == query)
     }
 
+    @Test(arguments: [false, true])
+    func `insert button and return deliver the highlighted emoji after dismissal`(click: Bool) async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        let launcher = try await launcher(query: "grid")
+        defer { launcher.close() }
+        let model = launcher.fixture.model
+        var delivered: [String] = []
+        model.deliverText = { [weak launcher] text in
+            #expect(launcher?.dismissed == 1)
+            delivered.append(text)
+        }
+        try await launcher.press(124)
+        #expect(model.plugins.output?.selectedItem == 1)
+        if click {
+            let window = launcher.window
+            window.setContentSize(NSSize(width: AskMetrics.launcherWidth, height: 540))
+            window.contentView?.layoutSubtreeIfNeeded()
+            let point = try AskWorkspaceTestAccessibility.center(identifier: "emoji.insert", in: window)
+            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                let event = try #require(NSEvent.mouseEvent(
+                    with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                    windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1,
+                    pressure: type == .leftMouseDown ? 1 : 0
+                ))
+                NSApp.sendEvent(event)
+            }
+        } else {
+            try await launcher.press(36, .capsLock)
+        }
+        try await launcher.fixture.wait { !delivered.isEmpty }
+        #expect(delivered == ["😃"])
+        #expect(model.emojiUsage.value.recent.first?.sequence == "😃")
+    }
+
+    @Test func `option return copies the highlighted emoji and closes the launcher`() async throws {
+        let launcher = try await launcher(query: "grid")
+        defer { launcher.close() }
+        let board = NSPasteboard(name: .init("emoji-shortcut-" + UUID().uuidString))
+        let previous = AskQuickResults.pasteboard
+        AskQuickResults.pasteboard = board
+        defer { AskQuickResults.pasteboard = previous; board.releaseGlobally() }
+        let model = launcher.fixture.model
+        model.deliverText = { _ in Issue.record("Copy must not deliver text to the focused input") }
+        try await launcher.press(124)
+        try await launcher.press(36, [.option, .capsLock])
+        #expect(board.string(forType: .string) == "😃")
+        #expect(launcher.dismissed == 1)
+        #expect(model.emojiUsage.value.recent.first?.sequence == "😃")
+    }
+
     @Test func `modified arrows and IME composition do not navigate emoji`() async throws {
         let launcher = try await launcher(query: "grid")
         defer { launcher.close() }

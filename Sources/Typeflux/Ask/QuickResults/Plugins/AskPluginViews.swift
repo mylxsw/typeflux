@@ -301,6 +301,9 @@ struct AskPluginResultsView: View {
         if display.hint != nil {
             return display.asksAI ? L("ask.plugin.hint.keyword") : L("ask.plugin.hint.keyword.enter")
         }
+        if let output = display.output, output.emoji != nil {
+            return output.action(for: .optionEnter).map { L("ask.plugin.hint.option.enter", $0.title) } ?? ""
+        }
         if (display.output ?? display.partial)?.translation != nil { return L("ask.translation.stack.hint") }
         if display.asksAI { return L("ask.launcher.hint") }
         let option = display.optionName.map { L("ask.plugin.hint.option", $0) }
