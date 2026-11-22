@@ -51,7 +51,7 @@ extension AskQuickResultsInteractionTests {
                                             detector: AskTestLanguageDetector(language: "en"))
             model.plugins = AskPluginSession(plugins: [plugin]) { AskTranslatePlugin.keywords }
             model.plugins.debounce = .milliseconds(10)
-            model.deliverText = { [unowned self] text, _ in
+            model.deliverText = { [unowned self] text in
                 if deliveryFails { throw TextDeliveryError.noInput }
                 delivered.append(text)
             }
@@ -445,7 +445,7 @@ extension AskQuickResultsInteractionTests {
                 model.workflows = workflows.store
                 model.passiveNotice = { notices.append($0) }
                 model.notifyUser = { _, body in notified.append(body); return false }
-                model.deliverText = { text, _ in delivered.append(text) }
+                model.deliverText = { delivered.append($0) }
             }
             defer { launcher.close() }
             let model = launcher.fixture.model

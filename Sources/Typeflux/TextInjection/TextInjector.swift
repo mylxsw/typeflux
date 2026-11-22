@@ -115,8 +115,6 @@ enum TextInjectionMethod: String, Sendable {
 
 enum TextDeliveryDestination {
     case currentInput
-    /// Obtain the caret after focus returns, but only in the app that started the action.
-    case currentInputInApp(pid_t)
     case selection(TextSelectionSnapshot)
 }
 

@@ -171,7 +171,7 @@ struct AskClipboardPluginTests {
         let entry = ClipboardTestSupport.entry(.text, text: "Exact\ncontent")
         f.model.clipboardEntries = { [entry] }
         var delivered: [String] = []
-        f.model.deliverText = { text, _ in delivered.append(text) }
+        f.model.deliverText = { delivered.append($0) }
         f.model.plugins.enter(AskClipboardPlugin.keywords[0])
         f.model.launcherDraft.text = "clip"
         let board = NSPasteboard(name: .init("AskClipboardPluginTests-" + UUID().uuidString))
@@ -192,11 +192,7 @@ struct AskClipboardPluginTests {
         let file = ClipboardTestSupport.makeFile(named: "report.pdf", in: directory)
         let entry = ClipboardTestSupport.entry(.files, filePaths: [file.path])
         var closed = 0
-        var frontmost: pid_t = 123
-        var notices: [String] = []
         let actions = ClipboardPluginTestActions()
-        f.model.launcherInputProcessID = frontmost
-        f.model.passiveNotice = { notices.append($0) }
         f.model.owner = f.sessionState.owner
         f.model.clipboardContentActions = actions
         f.model.clipboardEntries = { [entry] }
@@ -204,24 +200,15 @@ struct AskClipboardPluginTests {
         #expect(f.model.applyLauncherClipboard(id: entry.id, paste: false) == .stay)
         try await f.wait { actions.writes.count == 1 && !f.model.clipboardAction.isRunning }
         #expect(actions.writes == [entry] && actions.pastes == 0 && f.model.plugins.isActive)
-        #expect(f.model.applyLauncherClipboard(id: entry.id, paste: true,
-                                               frontmostProcessID: { frontmost }, completed: { closed += 1 }) == .stay)
+        #expect(f.model.applyLauncherClipboard(id: entry.id, paste: true, completed: { closed += 1 }) == .stay)
         try await f.wait { actions.writes.count == 2 }
         #expect(actions.writes == [entry, entry] && actions.pastes == 0 && !f.model.plugins.isActive)
         try await f.wait { actions.pastes == 1 }
         #expect(closed == 1)
-        #expect(f.model.applyLauncherClipboard(id: entry.id, paste: true,
-                                               frontmostProcessID: { frontmost }, completed: {
-            closed += 1
-            frontmost = 456
-        }) == .stay)
-        try await f.wait { actions.writes.count == 3 && !f.model.clipboardAction.isRunning }
-        #expect(actions.pastes == 1 && closed == 2)
-        #expect(notices == [L("ask.plugin.writeBack.failed")])
         actions.succeeds = false
         #expect(f.model.applyLauncherClipboard(id: entry.id, paste: true) == .stay)
-        try await f.wait { actions.writes.count == 4 && !f.model.clipboardAction.isRunning }
-        #expect(actions.pastes == 1 && closed == 2)
+        try await f.wait { actions.writes.count == 3 && !f.model.clipboardAction.isRunning }
+        #expect(actions.pastes == 1 && closed == 1)
     }
 
     @Test func `late image preparation cannot write a deleted launcher entry`() async throws {

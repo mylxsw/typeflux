@@ -66,17 +66,14 @@ struct AskEmojiKeyboardTests {
     }
 
     @Test(arguments: [false, true])
-    func `insert button and option return deliver the highlighted emoji to the opening app`(click: Bool) async throws {
+    func `insert button and option return deliver the highlighted emoji after dismissal`(click: Bool) async throws {
         let accessibility = AskWorkspaceTestAccessibility()
         defer { accessibility.restore() }
         let launcher = try await launcher(query: "grid")
         defer { launcher.close() }
         let model = launcher.fixture.model
-        let source: pid_t = 123
-        model.launcherInputProcessID = source
         var delivered: [String] = []
-        model.deliverText = { [weak launcher] text, processID in
-            #expect(processID == source)
+        model.deliverText = { [weak launcher] text in
             #expect(launcher?.dismissed == 1)
             delivered.append(text)
         }
@@ -98,8 +95,6 @@ struct AskEmojiKeyboardTests {
         } else {
             try await launcher.press(36, [.option, .capsLock])
         }
-        // A new presentation can replace the model's source while focus is being restored.
-        model.launcherInputProcessID = 456
         try await launcher.fixture.wait { !delivered.isEmpty }
         #expect(delivered == ["😃"])
         #expect(model.emojiUsage.value.recent.first?.sequence == "😃")

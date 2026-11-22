@@ -87,7 +87,7 @@ extension AskQuickResultsInteractionTests {
             var opened: [(URL, String)] = []
             var revealed: [URL] = []
             let (launcher, workflows) = try await listLauncher { model in
-                model.deliverText = { text, _ in delivered.append(text) }
+                model.deliverText = { delivered.append($0) }
                 model.openFileInApplication = { url, app in opened.append((url, app)); return app == "Zed" }
                 model.revealFile = { revealed.append($0) }
             }

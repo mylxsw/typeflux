@@ -41,7 +41,7 @@ extension AskQuickResultsInteractionTests {
             model.plugins = AskPluginSession(plugins: [plugin]) { AskTranslatePlugin.keywords }
             model.plugins.debounce = .milliseconds(5)
             model.connectWordBook(to: model.plugins)
-            model.deliverText = { [weak self] text, _ in self?.delivered.append(text) }
+            model.deliverText = { [weak self] in self?.delivered.append($0) }
         }
     }
 

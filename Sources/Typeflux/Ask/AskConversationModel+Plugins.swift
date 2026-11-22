@@ -618,21 +618,19 @@ extension AskConversationModel {
         if let text = plugins.deactivate(argument: launcherDraft.text) { launcherDraft.text = text }
     }
 
-    /// Types `text` into the app the launcher came from, over its selection when
-    /// it still has one. The launcher has closed by now; if typing fails the
-    /// text is on the clipboard and the next launcher says so.
+    /// Types `text` into the input focused after the launcher closes. If typing
+    /// fails, the text goes to the clipboard and the next launcher says so.
     func writeBack(_ text: String, onDelivered: @escaping @MainActor () -> Void = {}) {
         guard let deliverText else {
             if AskQuickResults.copy(text) { onDelivered() }
             confirm(L("ask.plugin.writeBack.failed"), for: .seconds(8))
             return
         }
-        let processID = launcherInputProcessID
         Task { [weak self] in
-            // Let the source app take its own window's focus back first.
+            // Wait for keyboard focus to settle after the launcher closes.
             try? await Task.sleep(for: .milliseconds(150))
             do {
-                try await deliverText(text, processID)
+                try await deliverText(text)
                 onDelivered()
             } catch {
                 if AskQuickResults.copy(text) { onDelivered() }

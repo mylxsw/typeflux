@@ -66,14 +66,8 @@ final class AXTextDeliveryBackend: TextDeliveryBackend {
 
     func resolve(_ destination: TextDeliveryDestination) async throws -> Target {
         try Task.checkCancellation()
-        let frontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier
-        if case let .currentInputInApp(expected) = destination {
-            guard frontmost == expected,
-                  NSApp.keyWindow?.identifier != TypefluxWindowIdentity.askLauncherWindowIdentifier
-            else { throw TextDeliveryError.targetChanged }
-        }
         if let native = injector.typefluxNativeTextTarget(), let window = native.window {
-            guard frontmost == getpid(), native.textView.isEditable else { throw TextDeliveryError.noInput }
+            guard native.textView.isEditable else { throw TextDeliveryError.noInput }
             let range = native.textView.selectedRange()
             if case let .selection(snapshot) = destination {
                 guard snapshot.source == "typeflux-native",
@@ -91,7 +85,8 @@ final class AXTextDeliveryBackend: TextDeliveryBackend {
             return .native(native.textView, window, range, native.textView.string)
         }
         guard AXIsProcessTrusted() else { throw TextDeliveryError.permissionRequired }
-        guard let pid = frontmost, pid != getpid() else { throw TextDeliveryError.noInput }
+        guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier,
+              pid != getpid() else { throw TextDeliveryError.noInput }
         if case let .selection(snapshot) = destination, snapshot.processID != pid {
             throw TextDeliveryError.selectionChanged
         }
@@ -259,8 +254,7 @@ final class AXTextDeliveryBackend: TextDeliveryBackend {
     ) -> Bool {
         // Some custom text composers expose a button as their focused AX target.
         // A text cursor hint permits one guarded paste, never selection replacement.
-        if case .selection = destination { return false }
-        guard role == "AXButton" else { return false }
+        guard case .currentInput = destination, role == "AXButton" else { return false }
         return domClasses.contains("cursor-text")
     }
 }

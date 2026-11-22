@@ -11,7 +11,7 @@ extension AskQuickResultsInteractionTests {
             var delivered: [String] = []
             let launcher = try await Launcher(text: "") { model in
                 model.workflows = workflows.store
-                model.deliverText = { text, _ in delivered.append(text) }
+                model.deliverText = { delivered.append($0) }
             }
             defer { launcher.close() }
             let model = launcher.fixture.model
@@ -43,7 +43,7 @@ extension AskQuickResultsInteractionTests {
             var delivered: [String] = []
             let launcher = try await Launcher(text: "", selection: #"{"a":1}"#) { model in
                 model.workflows = workflows.store
-                model.deliverText = { text, _ in delivered.append(text) }
+                model.deliverText = { delivered.append($0) }
             }
             defer { launcher.close() }
             let model = launcher.fixture.model

@@ -105,12 +105,8 @@ extension AskConversationModel {
     }
 
     var terminalRunnerServices: TerminalRunnerServices {
-        let processID = launcherInputProcessID
-        let deliver = deliverText.map { deliver in
-            { (text: String) async throws in try await deliver(text, processID) }
-        }
-        return TerminalRunnerServices(deliverText: deliver, notifyUser: notifyUser, passiveNotice: passiveNotice,
-                                      dispatcher: terminalCommandDispatcher)
+        TerminalRunnerServices(deliverText: deliverText, notifyUser: notifyUser, passiveNotice: passiveNotice,
+                               dispatcher: terminalCommandDispatcher)
     }
 
     func currentTerminalCommand(_ request: TerminalCommandRequest) -> Bool {

@@ -141,7 +141,7 @@ extension AskConversationModel {
                       NSWorkspace.shared.frontmostApplication?.processIdentifier == source.processIdentifier else {
                     throw TextDeliveryError.noInput
                 }
-                try await deliverText(text, source.processIdentifier)
+                try await deliverText(text)
             } catch {
                 AskQuickResults.copy(text)
                 passiveNotice(L("ask.plugin.writeBack.failed"))

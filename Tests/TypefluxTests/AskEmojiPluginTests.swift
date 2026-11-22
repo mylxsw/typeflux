@@ -246,7 +246,7 @@ struct AskEmojiPluginTests {
             model.plugins.update(text: "🙏🏽", selection: nil, language: .english)
             try await settle(model.plugins)
             var delivered: [String] = []
-            model.deliverText = mode == 2 ? nil : { text, _ in
+            model.deliverText = mode == 2 ? nil : { text in
                 if mode == 1 {
                     throw CocoaError(.featureUnsupported)
                 }

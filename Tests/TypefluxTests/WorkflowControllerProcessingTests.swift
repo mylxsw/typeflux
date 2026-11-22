@@ -3357,7 +3357,7 @@ private final class MockProcessingTextInjector: TextInjector {
         deliveryCallCount += 1
         onDeliver?()
         switch destination {
-        case .currentInput, .currentInputInApp:
+        case .currentInput:
             if let insertError { throw insertError }
             insertedTexts.append(text)
         case let .selection(target):
