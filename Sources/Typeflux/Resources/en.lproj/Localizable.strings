@@ -7652,6 +7652,11 @@
 "terminal.launcher.startFailed" = "Could not start the terminal session.";
 "terminal.launcher.waiting" = "Waiting for Input";
 "terminal.launcher.recent" = "Recent";
+"terminal.session.end" = "End Session";
+"terminal.session.close.short" = "Close";
+"terminal.session.close" = "Close Session";
+"terminal.session.close.others" = "Close Other Sessions";
+"terminal.session.move.launcher" = "Move to Launcher";
 "terminal.session.window.title" = "Terminal";
 
 "terminal.session.window.new" = "New Session ⌘T";

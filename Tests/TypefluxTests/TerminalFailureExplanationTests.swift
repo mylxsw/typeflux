@@ -176,7 +176,7 @@ struct TerminalFailureExplanationTests {
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         for scheme in [ColorScheme.light, .dark] {
             let view = TerminalLauncherView(model: model, session: session, sessions: [session],
-                                            select: { _ in }, new: {}, close: {}, move: {}, dismiss: {},
+                                            select: { _ in }, new: {}, close: {}, move: {}, back: {},
                                             insert: { _ in }, commands: { [] }, error: { _ in })
                 .frame(width: 660, height: 260)
                 .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, scheme)

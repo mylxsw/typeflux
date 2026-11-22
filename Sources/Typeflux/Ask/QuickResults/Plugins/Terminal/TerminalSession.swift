@@ -89,6 +89,7 @@ final class TerminalSession: ObservableObject, Identifiable {
 
     func clearFinishedBlocks() {
         blocks.removeAll { $0.endedAt != nil }
+        changed?()
     }
 
     func move(to host: Host) {
@@ -211,6 +212,7 @@ final class TerminalSession: ObservableObject, Identifiable {
                     cwd = path
                     git = nil
                     directoryChanged?(path)
+                    changed?()
                 }
             case let .path(path):
                 searchPath = path

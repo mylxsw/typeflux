@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 终端会话入口与窗口标签（可交互设计稿）</title>
+<style>
+:root {
+  --glass: rgba(38,38,42,.92); --pop: #2c2c30; --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a;
+  --border: rgba(255,255,255,.12); --soft: rgba(255,255,255,.07); --hover: rgba(255,255,255,.08); --tile: rgba(255,255,255,.08);
+  --accent: #2f8cff; --ok: #30d158; --warn: #ff9f0a; --danger: #ff5f57; --term: #1b1b1e; --tab-on: rgba(255,255,255,.12);
+  --stage: #0e0e10; --desk: radial-gradient(1100px 700px at 15% 10%, #2a3f63 0%, transparent 60%), radial-gradient(900px 600px at 90% 85%, #4a2e3e 0%, transparent 60%), linear-gradient(135deg, #1b2538, #271d33 55%, #33241f);
+}
+body.light {
+  --glass: rgba(246,246,248,.94); --pop: #fff; --text: #161616; --text2: #48484a; --text3: #8a8a8e;
+  --border: rgba(0,0,0,.12); --soft: rgba(0,0,0,.07); --hover: rgba(0,0,0,.05); --tile: rgba(0,0,0,.05);
+  --accent: #0a6cff; --ok: #1fae4b; --warn: #e07b00; --danger: #e5453b; --term: #fbfbfc; --tab-on: rgba(0,0,0,.07);
+  --stage: #d9dde3; --desk: radial-gradient(1100px 700px at 15% 10%, #c7d8f2 0%, transparent 60%), radial-gradient(900px 600px at 90% 85%, #ecd3df 0%, transparent 60%), linear-gradient(135deg, #b9cbe6, #d8c8e8 55%, #ecd6c6);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; color: var(--text); background: var(--stage);
+  display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button { font: inherit; color: inherit; }
+svg { display: block; flex: none; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.stagebar { width: 1100px; display: flex; flex-wrap: wrap; gap: 7px; align-items: center; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--tile); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1100px; color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 34px; }
+.caption b { color: var(--text2); }
+.caption code { font: 11.5px ui-monospace, Menlo, monospace; background: var(--tile); padding: 0 4px; border-radius: 4px; }
+body.solo .stagebar, body.solo .caption { display: none; }
+.desk { position: relative; width: 1100px; height: 760px; border-radius: 14px; overflow: hidden; background: var(--desk); box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+
+/* ---------- Launcher ---------- */
+.launcher { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); width: 750px; border-radius: 18px; background: var(--glass);
+  border: 1px solid var(--border); box-shadow: 0 26px 70px rgba(0,0,0,.45); backdrop-filter: blur(30px) saturate(1.4); overflow: hidden; display: none; flex-direction: column; }
+.launcher.show { display: flex; }
+.grab { width: 40px; height: 4px; border-radius: 2px; background: var(--soft); margin: 7px auto 0; }
+.lhead { display: flex; align-items: center; gap: 12px; padding: 12px 18px 14px 22px; }
+.lhead input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 19px; color: var(--text); }
+.lhead input::placeholder { color: var(--text3); }
+.hbtn { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: var(--text2); cursor: pointer; border: 0; background: transparent; position: relative; }
+.hbtn:hover { background: var(--hover); }
+.lsep { height: 1px; background: var(--soft); margin: 0 16px; }
+.lbody { padding: 6px 14px 8px; height: 470px; overflow: hidden; }
+.launcher.collapsed .lbody, .launcher.collapsed .lsep, .launcher.collapsed .lfoot, .launcher.collapsed .grab { display: none; }
+.launcher.collapsed .lhead { padding: 14px 18px 14px 22px; }
+.seclabel { font-size: 12px; font-weight: 600; color: var(--text3); padding: 10px 8px 2px; }
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px 6px; padding: 6px 2px; }
+.tile { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 10px 2px 8px; border-radius: 12px; cursor: pointer; position: relative; }
+.tile:hover, .tile.on { background: var(--hover); }
+.ico { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 2px 6px rgba(0,0,0,.25); position: relative; }
+.tile .nm { font-size: 12.5px; font-weight: 600; max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app .ico { border-radius: 11px; }
+.badge-dot { position: absolute; right: -3px; top: -3px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--glass); }
+.badge-num { position: absolute; right: -6px; top: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; font-size: 11px; font-weight: 700; display: grid; place-items: center; color: #fff; border: 2px solid var(--glass); }
+.live { animation: live 1.6s infinite; }
+@keyframes live { 50% { opacity: .45; } }
+.lfoot { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--soft); font-size: 12px; color: var(--text3); }
+.seg { display: inline-flex; background: var(--tile); border-radius: 9px; padding: 3px; gap: 2px; }
+.seg span { width: 30px; height: 24px; border-radius: 6px; display: grid; place-items: center; color: var(--text2); }
+.seg span.on { background: var(--tab-on); color: var(--text); }
+.lfoot .model { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 600; font-size: 13px; }
+.lfoot .sp { flex: 1; }
+
+/* Status accessory (option A) */
+.acc { display: none; align-items: center; gap: 6px; height: 30px; padding: 0 9px 0 8px; border-radius: 9px; cursor: pointer; color: var(--text2); border: 0; background: var(--tile); }
+.acc.show { display: inline-flex; }
+.acc:hover, .acc.open { background: var(--tab-on); color: var(--text); }
+.acc .dot { width: 7px; height: 7px; border-radius: 50%; }
+.acc .n { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.popover { position: absolute; top: 58px; right: 70px; width: 360px; background: var(--pop); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.4); padding: 6px; z-index: 5; display: none; }
+.popover.show { display: block; animation: pin .12s ease-out; }
+@keyframes pin { from { opacity: 0; transform: translateY(-4px); } }
+.srow { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 8px 0 10px; border-radius: 8px; cursor: pointer; }
+.srow:hover, .srow.on { background: var(--hover); }
+.srow .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.srow .tx { min-width: 0; flex: 1; }
+.srow .c { font: 500 12.5px ui-monospace, Menlo, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.srow .d { font-size: 11.5px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.srow .r { font-size: 11.5px; color: var(--text3); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px; }
+.srow .x { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; opacity: 0; color: var(--text3); }
+.srow:hover .x { opacity: 1; }
+.srow .x:hover { background: var(--hover); color: var(--text); }
+.err { color: var(--danger); }
+
+/* Launcher terminal (when a session is resumed) */
+.lterm { display: none; flex-direction: column; height: 520px; }
+.launcher.term .lterm { display: flex; }
+.launcher.term .lbody, .launcher.term .lsep, .launcher.term .lfoot, .launcher.term .lhead { display: none; }
+.lterm .th { display: flex; align-items: center; gap: 8px; padding: 10px 12px 12px 10px; }
+.lterm .th .sp { flex: 1; }
+.back { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; border: 0; background: transparent; color: var(--text2); cursor: pointer; }
+.back:hover { background: var(--hover); color: var(--text); }
+.prompt input { flex: 1; border: 0; outline: 0; background: transparent; color: var(--text); font: 13px ui-monospace, Menlo, monospace; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px 0 6px; border-radius: 8px; background: rgba(48,209,88,.15); color: var(--ok); font-weight: 600; font-size: 12.5px; }
+.path { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 8px; background: var(--tile); color: var(--text2); font: 12px ui-monospace, Menlo, monospace; }
+.lterm .tb { flex: 1; background: var(--term); padding: 10px 16px; font: 12px/1.6 ui-monospace, Menlo, monospace; color: var(--text2); white-space: pre; overflow: hidden; border-top: 1px solid var(--soft); }
+.lterm .tb b { color: var(--text); }
+.prompt { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--term); border-top: 1px solid var(--soft); font: 13px ui-monospace, Menlo, monospace; color: var(--ok); }
+
+/* ---------- Window ---------- */
+.win { position: absolute; left: 120px; top: 70px; width: 860px; height: 560px; border-radius: 12px; background: var(--glass); border: 1px solid var(--border);
+  box-shadow: 0 30px 80px rgba(0,0,0,.5); backdrop-filter: blur(30px); display: none; flex-direction: column; overflow: hidden; }
+.win.show { display: flex; }
+.wtitle { height: 44px; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 14px; border-bottom: 1px solid var(--soft); flex: none; }
+.lights { display: flex; gap: 8px; margin-right: 12px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.tabs { display: flex; align-items: center; gap: 2px; min-width: 0; flex: 0 1 auto; overflow: hidden; }
+.tab { position: relative; display: flex; align-items: center; gap: 7px; height: 28px; padding: 0 12px 0 8px; border-radius: 8px; cursor: default;
+  color: var(--text3); font-size: 13px; white-space: nowrap; min-width: 76px; max-width: 220px; flex: 0 1 auto; user-select: none; }
+.tab:hover { background: var(--hover); color: var(--text2); }
+.tab.on { background: var(--tab-on); color: var(--text); }
+.tab .lead { width: 16px; height: 16px; display: grid; place-items: center; flex: none; border-radius: 4px; }
+.tab .lead .dot { width: 7px; height: 7px; border-radius: 50%; }
+.tab .lead .x { display: none; }
+.tab:hover .lead .dot, .tab.kb .lead .dot { display: none; }
+.tab:hover .lead .x, .tab.kb .lead .x { display: grid; }
+.tab .lead:hover { background: var(--hover); color: var(--text); }
+.tab .nm { overflow: hidden; text-overflow: ellipsis; }
+.tab .sub { color: var(--text3); overflow: hidden; text-overflow: ellipsis; font: 12px ui-monospace, Menlo, monospace; }
+.tab.drag { opacity: .4; }
+.wtitle .sp { flex: 1; min-width: 8px; }
+.wbody { flex: 1; background: var(--term); padding: 12px 16px; font: 12px/1.6 ui-monospace, Menlo, monospace; color: var(--text2); white-space: pre; overflow: hidden; }
+.wbody b { color: var(--text); } .wbody .g { color: var(--ok); } .wbody .y { color: var(--warn); }
+.wprompt { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--term); border-top: 1px solid var(--soft); font: 13px ui-monospace, Menlo, monospace; color: var(--ok); flex: none; }
+.empty { display: grid; place-items: center; color: var(--text3); }
+
+/* native-like sheet */
+.sheet { position: absolute; left: 50%; top: 44px; transform: translateX(-50%); width: 300px; background: var(--pop); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.45); padding: 18px 18px 14px; display: none; z-index: 8; text-align: center; }
+.sheet.show { display: block; animation: pin .14s ease-out; }
+.sheet .ic { width: 44px; height: 44px; border-radius: 10px; margin: 0 auto 10px; background: #2b2b2f; display: grid; place-items: center; color: var(--ok); }
+.sheet h4 { margin: 0 0 6px; font-size: 13px; }
+.sheet p { margin: 0 0 14px; font-size: 11.5px; color: var(--text2); }
+.sheet .btns { display: flex; flex-direction: column; gap: 6px; }
+.sheet button { height: 28px; border-radius: 7px; border: 0; background: var(--tile); cursor: pointer; font-size: 13px; }
+.sheet button.danger { background: var(--danger); color: #fff; }
+.menu { position: absolute; background: var(--pop); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.35); padding: 4px; z-index: 9; display: none; min-width: 170px; font-size: 13px; }
+.menu.show { display: block; }
+.menu div { padding: 3px 10px; border-radius: 5px; cursor: default; display: flex; justify-content: space-between; gap: 16px; }
+.menu div:hover { background: var(--accent); color: #fff; }
+.menu div span { color: var(--text3); }
+.menu div:hover span { color: rgba(255,255,255,.8); }
+.menu hr { border: 0; height: 1px; background: var(--soft); margin: 4px 6px; }
+.toast { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--pop); border: 1px solid var(--border); border-radius: 9px; padding: 6px 12px; font-size: 12.5px; display: none; z-index: 10; }
+.toast.show { display: block; }
+.note { position: absolute; font-size: 11.5px; color: #fff; background: rgba(0,0,0,.55); border-radius: 8px; padding: 6px 9px; max-width: 240px; line-height: 1.45; pointer-events: none; }
+body.light .note { background: rgba(255,255,255,.85); color: #222; }
+body.nonotes .note { display: none; }
+</style>
+</head>
+<body>
+<div class="stagebar">
+  <b>终端会话入口 · 窗口标签</b>
+  <span class="pill" data-s="before">改前</span>
+  <span class="pill" data-s="a">① 首页：状态按钮（推荐）</span>
+  <span class="pill" data-s="a-pop">② 展开会话列表</span>
+  <span class="pill" data-s="a-simple">③ 简洁模式</span>
+  <span class="pill" data-s="term-back">⑧ 启动器终端：返回</span>
+  <span class="pill" data-s="b">④ 备选：快捷入口格</span>
+  <span class="pill" data-s="tabs">⑤ 窗口标签：关闭</span>
+  <span class="pill" data-s="tabs-confirm">⑥ 关闭运行中的标签</span>
+  <span class="pill" data-s="tabs-menu">⑦ 标签右键菜单</span>
+  <span class="sp"></span>
+  <span class="pill" id="lightBtn">浅色</span>
+  <span class="pill" id="notesBtn">标注</span>
+</div>
+<div class="caption" id="caption"></div>
+
+<div class="desk" id="desk">
+  <div class="launcher" id="launcher">
+    <div class="grab"></div>
+    <div class="lhead">
+      <input id="q" placeholder="搜索应用、计算，或直接提问" autocomplete="off">
+      <button class="acc" id="acc" title=""></button>
+      <button class="hbtn" title="语音"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/><path d="M3 8a5 5 0 0 0 10 0M8 13v2"/></svg></button>
+      <button class="hbtn" title="提问"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M13.5 3v5a2 2 0 0 1-2 2H3M6 7l-3 3 3 3"/></svg></button>
+    </div>
+    <div class="popover" id="pop"></div>
+    <div class="lsep"></div>
+    <div class="lbody" id="lbody"></div>
+    <div class="lterm" id="lterm"></div>
+    <div class="lfoot">
+      <span class="seg"><span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg></span><span class="on"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M4 6l2 2-2 2"/></svg></span></span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+      <span class="model"><span style="color:#8ab4f8">✦</span> Gemini 4 Hydrogen <span style="color:var(--text3);font-weight:400">中等</span></span>
+      <span class="sp"></span><span>↑ 最近输入 · ⌘↩ 问 AI · ⌘K 上下文</span>
+    </div>
+  </div>
+
+  <div class="win" id="win">
+    <div class="wtitle">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <div class="tabs" id="tabs"></div>
+      <button class="hbtn" id="newTab" title="新会话 ⌘T"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
+      <span class="sp"></span>
+      <span class="path" id="wpath"></span>
+      <button class="hbtn" title="置顶"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 1.5h4l-.6 4.5 2.6 2.5H4l2.6-2.5zM7.4 8.5h1.2v6H7.4z"/></svg></button>
+      <button class="hbtn" title="收回到启动器 ⌘O"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M9.5 2.5h-6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h6M7 8h7M11 5l3 3-3 3"/></svg></button>
+    </div>
+    <div class="wbody" id="wbody"></div>
+    <div class="wprompt">❯ <span class="mono" style="color:var(--text)">▍</span></div>
+    <div class="sheet" id="sheet"></div>
+  </div>
+  <div class="menu" id="menu"></div>
+  <div class="toast" id="toast"></div>
+  <div id="notes"></div>
+</div>
+
+<script>
+'use strict';
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ICON = {
+  term: '<svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="11" rx="2.2"/><path d="M4.5 6.5l2 1.75-2 1.75M8.5 10.5h3"/></svg>',
+  termSm: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="11" rx="2.2"/><path d="M4.5 6.5l2 1.75-2 1.75M8.5 10.5h3"/></svg>',
+  win: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M1.5 5.5h13"/></svg>',
+  x: '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 2l6 6M8 2l-6 6"/></svg>',
+};
+const FEATURES = [['Chat', '#3a8dff', '💬'], ['翻译', '#5b5bd6', 'A文'], ['截图', '#1aa6a6', '⛶'], ['录屏', '#e0503a', '●'], ['笔记', '#e8b423', '≡'], ['单词本', '#3d9b5a', 'A'], ['剪贴板', '#8a5cc9', '▤']];
+const APPS = [['Foliarc', '#f0e6dc', '#d65a1f'], ['Google Chrome', '#fff', '#4285f4'], ['T3 Code', '#111', '#fff'], ['Typeflux', '#1d1d2a', '#9aa7ff'], ['Zed', '#1b1b1b', '#ddd'], ['Finder', '#3aa0ff', '#fff'], ['IINA', '#1c3d8f', '#59a6ff'],
+  ['System Settings', '#8e8e93', '#fff'], ['Freeform', '#16808a', '#9ff'], ['Screen Sharing', '#3b7bdc', '#fff'], ['Warp', '#bcd2e8', '#222'], ['Obsidian', '#2a2440', '#a78bfa'], ['NowCoiner', '#fff', '#1d4ed8'], ['Preview', '#e8eef8', '#3b82f6']];
+
+// Sessions shared by launcher and window (mock).
+const S = {
+  sessions: [
+    { id: 1, cwd: '~/Workspace/codes', cmd: 'npm run dev', state: 'run', t: '12m', host: 'launcher' },
+    { id: 2, cwd: '~/Workspace/codes', cmd: 'df -h', state: 'idle', t: '', host: 'window' },
+    { id: 3, cwd: '~/Projects/typeflux', cmd: 'read -p "Continue?"', state: 'wait', t: '', host: 'launcher' },
+  ],
+  tabs: [], cur: 0, scr: 'a', light: false,
+};
+const color = (st) => ({ run: 'var(--ok)', wait: 'var(--warn)', err: 'var(--danger)', idle: 'var(--text3)' }[st]);
+const folder = (p) => p.split('/').pop();
+function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('show'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('show'), 1600); }
+
+// ---------------- Launcher home ----------------
+function tileHTML([nm, bg, glyph], extra = '') {
+  return `<div class="tile"><div class="ico" style="background:${bg}"><b style="font-size:17px">${glyph}</b>${extra}</div><div class="nm">${nm}</div></div>`;
+}
+function appHTML([nm, bg, fg]) {
+  return `<div class="tile app"><div class="ico" style="background:${bg};color:${fg}"><b style="font-size:20px">${nm[0]}</b></div><div class="nm">${nm}</div></div>`;
+}
+const RANK = { wait: 0, run: 1, err: 2, idle: 3 };
+function liveSessions() { return S.sessions.filter((s) => s.state !== 'gone').sort((x, y) => RANK[x.state] - RANK[y.state]); }
+function summaryState() {
+  const ss = liveSessions();
+  if (ss.some((s) => s.state === 'wait')) return 'wait';
+  if (ss.some((s) => s.state === 'run')) return 'run';
+  if (ss.some((s) => s.state === 'err')) return 'err';
+  return 'idle';
+}
+function renderHome(mode) {
+  const L = $('#launcher');
+  L.classList.add('show'); L.classList.remove('term');
+  L.classList.toggle('collapsed', mode === 'simple');
+  const ss = liveSessions();
+  const acc = $('#acc');
+  const showAcc = (mode === 'a' || mode === 'simple') && ss.length > 0;
+  acc.classList.toggle('show', showAcc);
+  if (showAcc) {
+    const st = summaryState();
+    acc.innerHTML = `${ICON.termSm}<i class="dot ${st === 'run' ? 'live' : ''}" style="background:${color(st)}"></i>${ss.length > 1 ? `<span class="n">${ss.length}</span>` : ''}`;
+    acc.title = ss.length === 1 ? `${ss[0].cmd} · ${ss[0].cwd}` : `终端会话 ⌘J`;
+  }
+  let body = '';
+  if (mode === 'before') {
+    body += `<div style="width:388px;border:2px solid #ff5f57;border-radius:12px;padding:2px 6px 8px;margin:4px 0 2px"><div class="seclabel" style="padding-left:6px">终端会话</div>
+      <div class="srow"><span class="ico" style="width:30px;height:30px;border-radius:8px;background:rgba(48,209,88,.15);color:var(--ok);box-shadow:none">${ICON.termSm}</span><span class="tx"><div class="c" style="font-family:inherit;font-size:14px">df -h</div><div class="d">~/Workspace/codes</div></span></div></div>`;
+  }
+  let feats = FEATURES.map((f) => tileHTML(f));
+  if (mode === 'b' && ss.length) {
+    const st = summaryState();
+    const extra = ss.length > 1 ? `<span class="badge-num" style="background:${color(st)}">${ss.length}</span>` : `<i class="badge-dot ${st === 'run' ? 'live' : ''}" style="background:${color(st)}"></i>`;
+    feats = [`<div class="tile on" id="termTile"><div class="ico" style="background:#26272b;color:var(--ok)">${ICON.term}${extra}</div><div class="nm">${esc(folder(ss[0].cwd))}</div></div>`, ...feats.slice(0, 6)];
+  }
+  body += `<div class="grid">${feats.join('')}</div><div class="seclabel">应用</div><div class="grid">${APPS.map(appHTML).join('')}</div>`;
+  $('#lbody').innerHTML = body;
+  const tt = $('#termTile'); if (tt) tt.onclick = () => openSession(ss[0]);
+}
+function renderPopover(show) {
+  const P = $('#pop');
+  P.classList.toggle('show', show); $('#acc').classList.toggle('open', show);
+  if (!show) return;
+  const ss = liveSessions();
+  P.innerHTML = ss.map((s, i) => `<div class="srow ${i === 0 ? 'on' : ''}" data-id="${s.id}">
+      <i class="dot ${s.state === 'run' ? 'live' : ''}" style="background:${color(s.state)}"></i>
+      <span class="tx"><div class="c">${esc(s.cmd)}</div><div class="d">${esc(s.cwd)}</div></span>
+      <span class="r">${s.state === 'run' ? s.t : s.state === 'wait' ? '<span style="color:var(--warn)">等待输入</span>' : ''}${s.host === 'window' ? `<span title="在窗口中">${ICON.win}</span>` : ''}</span>
+      <span class="x" data-end="${s.id}" title="结束会话">${ICON.x}</span></div>`).join('');
+  P.querySelectorAll('.srow').forEach((r) => r.onclick = (e) => {
+    const s = S.sessions.find((x) => x.id === +r.dataset.id);
+    if (e.target.closest('[data-end]')) { s.state = 'gone'; renderHome(S.scr === 'a-simple' ? 'simple' : 'a'); renderPopover(liveSessions().length > 0); toast('会话已结束'); return; }
+    openSession(s);
+  });
+}
+function openSession(s) {
+  renderPopover(false);
+  if (s.host === 'window') { $('#launcher').classList.remove('show'); S.cur = S.tabs.findIndex((t) => t.id === s.id); if (S.cur < 0) S.cur = 0; renderWindow(); $('#win').classList.add('show'); return; }
+  const L = $('#launcher'); L.classList.remove('collapsed'); L.classList.add('term'); $('#acc').classList.remove('show');
+  S.open = s;
+  $('#lterm').innerHTML = `<div class="th"><button class="back" id="backBtn" title="返回 esc"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg></button><span class="chip">${ICON.termSm} 终端</span><span class="path">${esc(s.cwd)}</span><span class="sp"></span>
+      <button class="hbtn" title="新会话 ⌘T"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
+      <button class="hbtn" title="移到窗口 ⌘O">${ICON.win}</button></div>
+    <div class="tb"><b>❯ ${esc(s.cmd)}</b>\n${s.cmd.startsWith('npm') ? '\n  VITE v7.2.1  ready in 412 ms\n\n  ➜  Local:   http://localhost:5173/\n<span style="opacity:.7">23:41:02 [vite] hmr update /src/App.vue</span>' : 'Continue?'}</div>
+    <div class="prompt">${s.state === 'wait' ? '<span style="color:var(--text2)">read ›</span>' : '❯'} <input id="tin" autocomplete="off" spellcheck="false"></div>`;
+  $('#backBtn').onclick = goHome;
+  const tin = $('#tin'); tin.focus();
+  tin.onkeydown = (e) => {
+    if (e.key === 'Escape' && !tin.value) { e.preventDefault(); goHome(); }
+    else if (e.key === 'Escape') { e.preventDefault(); tin.value = ''; }
+  };
+}
+// Back to the launcher home; the session keeps running and shows in the status button.
+function goHome() {
+  $('#launcher').classList.remove('term');
+  renderHome('a');
+  $('#q').focus();
+  toast(S.open && S.open.state !== 'idle' ? `${S.open.cmd} 继续运行` : '');
+  if (!(S.open && S.open.state !== 'idle')) $('#toast').classList.remove('show');
+}
+
+// ---------------- Window tabs ----------------
+function resetTabs() {
+  S.tabs = [
+    { id: 2, cwd: '~/Workspace/codes', cmd: 'df -h', state: 'idle' },
+    { id: 4, cwd: '~/Workspace/codes', cmd: 'npm run dev', state: 'run' },
+    { id: 5, cwd: '~/Projects/typeflux-api', cmd: 'go test ./...', state: 'err' },
+  ];
+  S.cur = 0;
+}
+function tabTitle(t, all) {
+  const dup = all.filter((x) => folder(x.cwd) === folder(t.cwd)).length > 1;
+  return { nm: folder(t.cwd), sub: t.state === 'run' || dup ? t.cmd : '' };
+}
+function renderWindow() {
+  const T = $('#tabs');
+  if (!S.tabs.length) { $('#win').classList.remove('show'); toast('最后一个会话已关闭，窗口随之关闭'); return; }
+  S.cur = Math.min(S.cur, S.tabs.length - 1);
+  T.innerHTML = S.tabs.map((t, i) => { const { nm, sub } = tabTitle(t, S.tabs);
+    return `<div class="tab ${i === S.cur ? 'on' : ''}" data-i="${i}" draggable="true" title="${esc(t.cwd)}${sub ? ' · ' + esc(t.cmd) : ''}">
+      <span class="lead" data-close="${i}" title="关闭 ⌘W"><i class="dot ${t.state === 'run' ? 'live' : ''}" style="background:${color(t.state)}"></i><span class="x">${ICON.x}</span></span>
+      <span class="nm">${esc(nm)}</span>${sub ? `<span class="sub">${esc(sub)}</span>` : ''}</div>`; }).join('');
+  const t = S.tabs[S.cur];
+  $('#wpath').textContent = t.cwd;
+  const bodies = {
+    'df -h': '<b>❯ df -h</b>\nFilesystem        Size    Used   Avail Capacity  Mounted on\n/dev/disk3s1s1   926Gi    11Gi   430Gi     3%    /\n/dev/disk3s6     926Gi    20Gi   430Gi     5%    /System/Volumes/VM\n/dev/disk3s2     926Gi    13Gi   430Gi     3%    /System/Volumes/Preboot\n/dev/disk3s5     926Gi   448Gi   430Gi    52%    /System/Volumes/Data',
+    'npm run dev': '<b>❯ npm run dev</b>\n\n  <span class="g">VITE v7.2.1</span>  ready in 412 ms\n\n  <span class="g">➜</span>  Local:   http://localhost:5173/\n<span style="opacity:.7">23:41:02 [vite] hmr update /src/App.vue\n23:42:17 [vite] hmr update /src/pages/Usage.vue</span>',
+    'go test ./...': '<b>❯ go test ./...</b>\nok  \ttypeflux-api/internal/auth\t0.412s\n--- <span style="color:var(--danger)">FAIL</span>: TestQuotaRollover (0.00s)\n<span style="color:var(--danger)">FAIL</span>\ttypeflux-api/internal/billing\t0.287s',
+  };
+  $('#wbody').innerHTML = bodies[t.cmd] || `<b>❯</b>`;
+  T.querySelectorAll('.tab').forEach((el) => {
+    el.onmousedown = (e) => { if (e.button === 1) { e.preventDefault(); requestClose(+el.dataset.i); } };
+    el.onclick = (e) => { if (e.target.closest('[data-close]')) { requestClose(+e.target.closest('[data-close]').dataset.close); return; } S.cur = +el.dataset.i; renderWindow(); };
+    el.oncontextmenu = (e) => { e.preventDefault(); showMenu(+el.dataset.i, e.clientX, e.clientY); };
+    el.ondragstart = () => { el.classList.add('drag'); S.dragFrom = +el.dataset.i; };
+    el.ondragend = () => el.classList.remove('drag');
+    el.ondragover = (e) => e.preventDefault();
+    el.ondrop = () => { const to = +el.dataset.i, from = S.dragFrom; if (from == null || from === to) return; const [m] = S.tabs.splice(from, 1); S.tabs.splice(to, 0, m); S.cur = to; renderWindow(); };
+  });
+}
+function requestClose(i) {
+  const t = S.tabs[i];
+  if (t.state === 'run') { S.cur = i; renderWindow(); showSheet(i); return; }
+  S.tabs.splice(i, 1); if (S.cur >= i && S.cur > 0) S.cur--; renderWindow();
+}
+function showSheet(i) {
+  const t = S.tabs[i];
+  const sh = $('#sheet');
+  sh.innerHTML = `<div class="ic">${ICON.term}</div><h4>“${esc(t.cmd)}” 仍在运行</h4><p>关闭会挂断该命令及其启动的所有进程。</p>
+    <div class="btns"><button class="danger" id="endBtn">结束并关闭</button><button id="keepBtn">取消</button></div>`;
+  sh.classList.add('show');
+  $('#endBtn').onclick = () => { sh.classList.remove('show'); S.tabs.splice(i, 1); if (S.cur >= i && S.cur > 0) S.cur--; renderWindow(); };
+  $('#keepBtn').onclick = () => sh.classList.remove('show');
+}
+function showMenu(i, x, y) {
+  const m = $('#menu'); const d = $('#desk').getBoundingClientRect();
+  m.innerHTML = `<div data-m="close">关闭会话<span>⌘W</span></div><div data-m="others">关闭其他会话<span>⌥⌘W</span></div><hr><div data-m="launcher">移到启动器<span>⌘O</span></div>`;
+  m.style.left = (x - d.left) + 'px'; m.style.top = (y - d.top) + 'px'; m.classList.add('show');
+  m.querySelectorAll('[data-m]').forEach((el) => el.onclick = () => {
+    m.classList.remove('show');
+    if (el.dataset.m === 'close') requestClose(i);
+    if (el.dataset.m === 'others') { const keep = S.tabs[i]; const running = S.tabs.filter((t) => t !== keep && t.state === 'run'); S.tabs = [keep, ...running]; S.cur = 0; renderWindow(); if (running.length) toast('运行中的会话需要逐个确认'); }
+    if (el.dataset.m === 'launcher') { const [t] = S.tabs.splice(i, 1); renderWindow(); toast(`${folder(t.cwd)} 已移到启动器`); }
+  });
+}
+document.addEventListener('mousedown', (e) => { if (!e.target.closest('#menu')) $('#menu').classList.remove('show'); if (!e.target.closest('#pop') && !e.target.closest('#acc')) renderPopover(false); });
+document.addEventListener('keydown', (e) => {
+  if ($('#win').classList.contains('show') && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'w') { e.preventDefault(); requestClose(S.cur); }
+  if ($('#launcher').classList.contains('show') && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') { e.preventDefault(); renderPopover(!$('#pop').classList.contains('show')); }
+  if (e.key === 'Escape') { renderPopover(false); $('#menu').classList.remove('show'); $('#sheet').classList.remove('show'); }
+});
+$('#acc').onclick = () => { const ss = liveSessions(); if (ss.length === 1) openSession(ss[0]); else renderPopover(!$('#pop').classList.contains('show')); };
+$('#newTab').onclick = () => { S.tabs.push({ id: Date.now(), cwd: S.tabs[S.cur]?.cwd || '~', cmd: '', state: 'idle' }); S.cur = S.tabs.length - 1; renderWindow(); };
+
+// ---------------- Notes & screens ----------------
+function notes(list) { $('#notes').innerHTML = list.map(([x, y, t]) => `<div class="note" style="left:${x}px;top:${y}px">${t}</div>`).join(''); }
+const CAP = {
+  before: '<b>改前。</b>首页图标网格上方插入一行列表式「终端会话」，宽度、样式与网格不一致；空闲会话也一直占位；简洁模式下它还会把启动器撑开。',
+  a: '<b>① 推荐：输入框右侧的状态按钮。</b>有会话时，语音按钮左边出现一个终端图标，状态点表示最需要关注的会话（橙＝等待输入，绿＝运行中，红＝上一条失败，灰＝空闲），多个会话时显示数量。网格和应用区不变。只有一个会话时点按直接回到它；输入 <code>&gt;</code> 也会回到最近的会话。',
+  'a-pop': '<b>② 多个会话时点按（或 <code>⌘J</code>）展开列表。</b>每行：状态点、命令、目录；运行中显示时长，等待输入用橙字，在窗口中的会话带窗口图标。点按进入，悬停出现 × 结束会话。列表按「等待输入 → 运行中 → 失败 → 空闲」排序。',
+  'a-simple': '<b>③ 简洁模式。</b>状态按钮在单行输入框里同样出现，启动器保持单行，不再因为有后台会话而展开。',
+  'term-back': '<b>⑧ 从启动器里的终端返回首页。</b>头部最左侧是返回按钮 ‹（与命令面板、二级菜单的返回一致）；在空的提示符上按 <code>esc</code> 也返回首页（与日历、系统监控的「esc 返回」一致；提示符里有文字时 esc 先清空）。不用 ⌫ 返回，避免输入密码时连按删除误退出。返回后会话继续运行，在输入框右侧的状态按钮里。再按一次 <code>esc</code> 才隐藏启动器。搜索框在终端里不再显示，头部只有返回、终端标签、目录、新会话和移到窗口。',
+  b: '<b>④ 备选：放进快捷入口网格。</b>终端作为网格第一格，图标右上角是状态点或数量，名称是最近会话的目录。和网格风格一致，但会把用户自定义的第 7 个快捷入口挤到下一行，且只能代表一个会话。不推荐，作为对比。',
+  tabs: '<b>⑤ 窗口标签：悬停出现关闭按钮。</b>标签前端的状态点在悬停时变成 ×（与 Safari / Finder 标签一致），也可以中键点按、<code>⌘W</code> 关闭当前标签。同名目录的标签在名称后用灰色等宽字附上命令，以便区分；运行中的标签总是附命令。标签可拖动排序。关闭最后一个标签时窗口一起关闭。',
+  'tabs-confirm': '<b>⑥ 关闭运行中的标签。</b>沿用现有确认文案：「“npm run dev” 仍在运行」，结束并关闭 / 取消。空闲或已结束的会话直接关闭，不弹确认。',
+  'tabs-menu': '<b>⑦ 标签右键菜单。</b>关闭会话 ⌘W、关闭其他会话 ⌥⌘W（运行中的仍逐个确认）、移到启动器 ⌘O。菜单只放这三项。',
+};
+function screen(name) {
+  S.scr = name;
+  S.sessions.forEach((s) => { if (s.state === 'gone') s.state = s.id === 1 ? 'run' : s.id === 2 ? 'idle' : 'wait'; });
+  document.querySelectorAll('.pill[data-s]').forEach((p) => p.classList.toggle('on', p.dataset.s === name));
+  $('#caption').innerHTML = CAP[name];
+  $('#win').classList.remove('show'); $('#sheet').classList.remove('show'); $('#menu').classList.remove('show'); renderPopover(false); notes([]);
+  const u = new URL(location.href); u.searchParams.set('s', name); history.replaceState(null, '', u);
+  if (name === 'before') { S.sessions.forEach((s) => s.state = s.id === 2 ? 'idle' : 'gone'); renderHome('before'); }
+  if (name === 'a') { renderHome('a'); notes([[742, 70, '状态点取最需要关注的会话：等待输入 > 运行中 > 失败 > 空闲']]); }
+  if (name === 'a-pop') { renderHome('a'); renderPopover(true); }
+  if (name === 'a-simple') { renderHome('simple'); notes([[742, 112, '简洁模式不再被后台会话撑开']]); }
+  if (name === 'b') { renderHome('b'); }
+  if (name === 'term-back') { renderHome('a'); openSession(S.sessions.find((x) => x.id === 3)); notes([[200, 22, '返回 · 空提示符上 esc']]); }
+  if (name.startsWith('tabs')) {
+    $('#launcher').classList.remove('show'); resetTabs(); renderWindow(); $('#win').classList.add('show');
+    if (name === 'tabs') { const el = $('#tabs .tab'); el.classList.add('kb'); notes([[150, 36, '悬停：状态点 → ×'], [380, 36, '同名目录：附上命令区分']]); }
+    if (name === 'tabs-confirm') { S.cur = 1; renderWindow(); showSheet(1); }
+    if (name === 'tabs-menu') { const el = document.querySelectorAll('#tabs .tab')[1].getBoundingClientRect(); showMenu(1, el.left + 30, el.bottom + 4); }
+  }
+}
+document.querySelectorAll('.pill[data-s]').forEach((p) => p.onclick = () => screen(p.dataset.s));
+$('#lightBtn').onclick = () => { S.light = !S.light; document.body.classList.toggle('light', S.light); $('#lightBtn').classList.toggle('on', S.light); };
+$('#notesBtn').onclick = () => { document.body.classList.toggle('nonotes'); $('#notesBtn').classList.toggle('on'); };
+const P = new URLSearchParams(location.search);
+if (P.get('light') === '1') { S.light = true; document.body.classList.add('light'); $('#lightBtn').classList.add('on'); }
+if (P.get('solo') === '1') document.body.classList.add('solo');
+if (P.get('notes') === '0') document.body.classList.add('nonotes');
+screen(CAP[P.get('s')] ? P.get('s') : 'a');
+window.__S = S; window.__screen = screen;
+</script>
+</body>
+</html>

@@ -277,7 +277,7 @@ extension TerminalCommandTests {
         #expect(launcher.dismissed == 0 && !model.plugins.isActive)
         model.foldLauncherKeyword()
         #expect(model.launcherTerminal == nil && process.terminations == 0)
-        #expect(model.terminalHomeRows.first?.action == .terminalSession(terminal.session.id))
+        #expect(model.terminalHomeSessions.first === terminal.session)
         model.resumeLauncherTerminal(terminal.session.id)
         #expect(model.launcherTerminal === terminal)
         #expect(model.launcherInputHistory.history.entries.isEmpty)
@@ -305,7 +305,7 @@ extension TerminalCommandTests {
         let block = session.runningBlock?.id
         var dismissed = false
         model.moveLauncherTerminal { dismissed = true }
-        #expect(dismissed && model.launcherTerminal == nil && model.terminalHomeRows.first?.symbol == "macwindow")
+        #expect(dismissed && model.launcherTerminal == nil && model.terminalHomeSessions.first === session)
         #expect(window.selected === session && session.host == .window(window.windowID))
         #expect(center.sessions.first === session)
         #expect(session.runningBlock?.id == block && process.started.count == 1 && process.terminations == 0)
@@ -386,7 +386,18 @@ extension TerminalCommandTests {
         #expect(model.launcherTerminal?.session === second)
         try await terminalKey(13, .command, in: launcher.window)
         #expect(model.launcherTerminal?.session === session && center.sessions.count == 1)
+        try await terminalKey(51, [], characters: "\u{7f}", in: launcher.window)
+        #expect(model.launcherTerminal === presentation && launcher.dismissed == 0)
         try await terminalKey(53, [], in: launcher.window)
+        #expect(model.launcherTerminal == nil && launcher.dismissed == 0)
+        #expect(center.sessions.first === session && process.terminations == 0)
+        try await AskQuickSearchSessionTests.wait { launcher.window.firstResponder is AskComposerTextView.Editor }
+        let editor = try #require(launcher.window.firstResponder as? AskComposerTextView.Editor)
+        let escape = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
+                                                  timestamp: 0, windowNumber: launcher.window.windowNumber,
+                                                  context: nil, characters: "\u{1b}",
+                                                  charactersIgnoringModifiers: "\u{1b}", isARepeat: false, keyCode: 53))
+        editor.keyDown(with: escape)
         #expect(launcher.dismissed == 1)
     }
 
@@ -521,7 +532,7 @@ extension TerminalCommandTests {
         try await capture("password")
         model.foldLauncherKeyword()
         #expect(center.sessions.first === session)
-        #expect(model.terminalHomeRows.first?.detail == "~/Projects/typeflux")
+        #expect(model.terminalHomeSessions.first === session)
         try await capture("home")
         process.readsHiddenInput = false
         process.emit(osc("133;D;0") + osc("133;B"))

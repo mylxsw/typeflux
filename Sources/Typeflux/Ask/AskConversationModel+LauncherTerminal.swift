@@ -13,18 +13,6 @@ extension AskConversationModel {
         terminalSessionCenter.sessions.filter { !$0.exited }
     }
 
-    var terminalHomeRows: [AskLauncherHome.Row] {
-        terminalHomeSessions.map { session in
-            let block = session.blocks.last
-            let detail = session.displayDirectory(session.cwd)
-            return .init(id: "terminal." + session.id.uuidString,
-                         title: block?.command ?? L("terminal.command.title"), detail: detail,
-                         symbol: session.host == .launcher ? "terminal" : "macwindow",
-                         tint: .green, action: .terminalSession(session.id),
-                         status: block.flatMap(TerminalLauncherModel.homeStatus))
-        }
-    }
-
     func launchTerminal(command: String = "", settings: TerminalRunSettings, window: Bool = false,
                         dismiss: () -> Void = {}) {
         do {
@@ -64,6 +52,14 @@ extension AskConversationModel {
             terminalSessionWindow.panel.makeKeyAndOrderFront(nil)
         } else {
             resumeLauncherTerminal(id)
+        }
+    }
+
+    func endTerminalHomeSession(_ id: UUID) {
+        guard let session = terminalHomeSessions.first(where: { $0.id == id }) else { return }
+        switch session.host {
+        case .launcher: terminalSessionCenter.close(session)
+        case .window: terminalSessionWindow.endTab(session)
         }
     }
 
