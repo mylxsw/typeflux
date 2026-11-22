@@ -66,6 +66,8 @@ struct TerminalSessionPolishTests {
         #expect(running.runningBlock != nil && processes[0].terminations == 0 && launcher.dismissed == 0)
 
         let idle = try center.create()
+        let codes = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Workspace/codes")
+        processes[1].emit(osc("7;" + codes.absoluteString))
         let failed = try center.create()
         #expect(failed.submit("git diff --check"))
         processes[2].emit(osc("133;B") + osc("133;C") + osc("133;D;2"))
@@ -91,6 +93,8 @@ struct TerminalSessionPolishTests {
         try await wait { popover() != nil }
         let popup = try #require(popover())
         popup.appearance = appearance
+        // WindowServer can return a partially transparent frame during the opening animation.
+        if capturePath != nil { try await Task.sleep(for: .milliseconds(350)) }
         try hover(try #require(element("terminal.session.open.\(idle.id)", in: popup)), in: popup)
         let endID = "terminal.session.end.\(idle.id)"
         try await wait { element(endID, in: popup) != nil }
@@ -112,6 +116,26 @@ struct TerminalSessionPolishTests {
         #expect(launcher.dismissed == 1)
         model.endTerminalHomeSession(running.id)
         #expect(processes[0].terminations == 1)
+    }
+
+    @Test func sessionStatusTitleUsesFolderUntilACommandExists() throws {
+        let process = FakeTerminalProcess()
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        let center = TerminalSessionCenter(history: history, makeProcess: { process }, readGitStatus: { _ in nil })
+        defer { center.terminateAll() }
+        let session = try center.create()
+        let home = URL(fileURLWithPath: NSHomeDirectory())
+        process.emit(osc("7;" + home.absoluteString))
+        #expect(session.statusRowTitle == "~")
+        #expect(session.displayDirectory(session.cwd) == "~")
+
+        let codes = home.appendingPathComponent("Workspace/codes")
+        process.emit(osc("7;" + codes.absoluteString))
+        #expect(session.statusRowTitle == "codes")
+        #expect(session.displayDirectory(session.cwd) == "~/Workspace/codes")
+
+        #expect(session.submit("pwd"))
+        #expect(session.statusRowTitle == "pwd")
     }
 
     @Test func backgroundWindowCanBeOpenedAndEndedFromTheLauncher() throws {
