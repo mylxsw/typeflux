@@ -100,7 +100,7 @@ struct TerminalSessionContent: View {
 
     @State private var atTail = true
     @State private var hovered: UUID?
-    @FocusState private var focused: Bool
+    @State private var focusRequest = 0
     @Environment(\.colorScheme) private var appearance
 
     var body: some View {
@@ -122,8 +122,6 @@ struct TerminalSessionContent: View {
         .background(TerminalKeyCapture(handler: handle))
         .task(id: model.prompt) {
             model.synchronizePrompt()
-            await Task.yield()
-            if !Task.isCancelled { focused = model.prompt != .running }
         }
     }
 
@@ -209,7 +207,7 @@ struct TerminalSessionContent: View {
             }
             if block.canExplain {
                 TerminalExplanationCard(explanation: model.explanation, block: block, canFill: model.prompt == .idle && model.pendingRisk == nil) {
-                    if model.fillExplanation() { focused = true }
+                    if model.fillExplanation() { focusRequest += 1 }
                 }
             }
         }
@@ -317,13 +315,8 @@ struct TerminalSessionContent: View {
         let state = model.prompt
         return HStack(spacing: 8) {
             Text("❯").foregroundStyle(.green)
-            TextField(state == .ended ? L("terminal.launcher.ended") : "", text: Binding(get: { model.text }, set: {
-                model.resetCompletion()
-                model.text = $0
-            }))
-                .accessibilityLabel(L("terminal.command.placeholder"))
-                .focused($focused)
-                .onSubmit(submit)
+            TerminalPromptField(model: model, placeholder: state == .ended ? L("terminal.launcher.ended") : "",
+                                focusRequest: focusRequest, submit: submit)
         }
         .textFieldStyle(.plain)
         .font(.system(size: 13, design: .monospaced))
@@ -369,6 +362,7 @@ private extension TerminalSessionContent {
             default: break
             }
         }
+        let focused = editor?.delegate is TerminalPromptField.Field
         if focused, model.prompt == .idle, command == .tab {
             let selection = editor?.selectedRange()
             guard selection == nil || selection == NSRange(location: model.text.utf16.count, length: 0) else {
@@ -396,11 +390,11 @@ private extension TerminalSessionContent {
         case (.command, 40): model.clear(); return true
         default:
             guard let command else { return false }
-            return handle(command, hasSelection: (editor?.selectedRange().length ?? 0) > 0)
+            return handle(command, focused: focused, hasSelection: (editor?.selectedRange().length ?? 0) > 0)
         }
     }
 
-    func handle(_ key: AskCommandKey, hasSelection: Bool) -> Bool {
+    func handle(_ key: AskCommandKey, focused: Bool, hasSelection: Bool) -> Bool {
         switch key {
         case .up, .down:
             guard focused, model.prompt == .idle else { return false }

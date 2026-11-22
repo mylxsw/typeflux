@@ -150,22 +150,26 @@ struct TerminalSessionPolishTests {
         model.launchTerminal(command: command, settings: .init())
         let presentation = try #require(model.launcherTerminal)
         let terminal = presentation.session.terminalView
-        try await wait(timeout: .seconds(10)) {
-            terminal.normalScreenText().contains("demo@localhost:~#") && window.firstResponder === terminal
+        try await wait {
+            // The outer shell can echo the PS1 assignment before Bash is ready for keys.
+            terminal.normalScreenText().components(separatedBy: "\n").last == "demo@localhost:~#"
+                && window.firstResponder === terminal
         }
         func typeLine(_ line: String) throws {
             for character in line { try key(0, characters: String(character), in: window) }
             try key(36, characters: "\r", in: window)
         }
         try typeLine("echo ok")
-        try await wait(timeout: .seconds(10)) { terminal.normalScreenText().components(separatedBy: "\n").contains("ok") }
+        try await wait { terminal.normalScreenText().components(separatedBy: "\n").contains("ok") }
         if let height = launcher.heights.last {
             window.setContentSize(NSSize(width: window.frame.width, height: height))
         }
         try render(window, as: "nested-shell", dark: dark, windowServer: false)
         try typeLine("exit")
-        try await wait(timeout: .seconds(10)) { presentation.session.blocks.last?.endedAt != nil }
-        try await wait(timeout: .seconds(10)) { presentation.prompt == .idle && window.firstResponder is NSTextView }
+        try await wait { presentation.session.blocks.last?.endedAt != nil }
+        try await wait { presentation.prompt == .idle && window.firstResponder is NSTextView }
+        try key(0, characters: "a", in: window)
+        #expect(presentation.text == "a")
         #expect(history.commands == [command])
     }
 
@@ -621,12 +625,7 @@ extension TerminalSessionPolishTests {
     }
 
     private func wait(sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
-        try await wait(timeout: .seconds(3), sourceLocation: sourceLocation, condition)
-    }
-
-    private func wait(timeout: Duration, sourceLocation: SourceLocation = #_sourceLocation,
-                      _ condition: () -> Bool) async throws {
-        let deadline = ContinuousClock.now + timeout
+        let deadline = ContinuousClock.now + .seconds(3)
         while !condition(), ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(10)) }
         try #require(condition(), sourceLocation: sourceLocation)
     }

@@ -106,8 +106,10 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.string = text
         if caretRequestID != nil { editor.setSelectedRange(NSRange(location: (text as NSString).length, length: 0)) }
         DispatchQueue.main.async { [weak editor] in
-            guard let editor, let window = editor.window, window.isKeyWindow else { return }
-            window.makeFirstResponder(editor)
+            guard let editor else { return }
+            if let window = editor.window, window.isKeyWindow, window.makeFirstResponder(editor),
+               window.firstResponder === editor { return }
+            if editor.contextID == "launcher" { editor.focusWhenAttached() }
         }
         return scroll
     }
@@ -194,6 +196,14 @@ struct AskComposerTextView: NSViewRepresentable {
         private var localReleaseMonitor: Any?
         private var inputMonitor: Any?
         private var globalReleaseMonitor: Any?
+        private let mountFocus = MountedEditorFocus()
+        private var awaitingAttachment = false
+
+        fileprivate func focusWhenAttached() {
+            awaitingAttachment = window == nil
+            if !awaitingAttachment { mountFocus.request(self) }
+        }
+
         private var windowObservers: [NSObjectProtocol] = []
         private var mouseRecording = false
         private var mouseSelecting = false
@@ -359,6 +369,7 @@ struct AskComposerTextView: NSViewRepresentable {
         }
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
+            if awaitingAttachment, window != nil { focusWhenAttached() }
             windowObservers.forEach { NotificationCenter.default.removeObserver($0) }
             windowObservers = []
             if let inputMonitor { NSEvent.removeMonitor(inputMonitor); self.inputMonitor = nil }
