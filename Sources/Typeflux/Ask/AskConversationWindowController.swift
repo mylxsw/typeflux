@@ -217,8 +217,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.clipboardEntries = {
             (clipboardHistoryStore?.items(limit: Int(Int32.max)) ?? []).map(ClipboardFeed.entry(for:))
         }
-        model.deliverText = { text in
-            let result = try await injector.deliver(text: text, to: .currentInput)
+        model.deliverText = { text, processID in
+            guard let processID else { throw TextDeliveryError.noInput }
+            let result = try await injector.deliver(text: text, to: .currentInputInApp(processID))
             if case .notApplied = result { throw TextDeliveryError.noInput }
         }
         // Saved AI prompt results, and the windows results and notes open in.
@@ -275,7 +276,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 app.activate(options: [.activateIgnoringOtherApps])
                 // Let the app take focus back before typing into it.
                 try? await Task.sleep(for: .milliseconds(300))
-                guard let result = try? await injector.deliver(text: text, to: .currentInput) else { return false }
+                guard let result = try? await injector.deliver(text: text, to: .currentInputInApp(app.processIdentifier))
+                else { return false }
                 if case .notApplied = result { return false }
                 return true
             },
@@ -392,6 +394,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             tools?.targetApplication = NSWorkspace.shared.frontmostApplication
         }
         let selectionRequest = model.makeLauncherSelectionRequest()
+        model.launcherInputProcessID = selectionRequest.processID
         ShortcutLatency.record(.contextRequestFinished)
         ShortcutLatency.record(launcher == nil ? .windowUncached : .windowCached)
         let panel = ShortcutLatency.measure(.windowAcquisitionStarted, .windowAcquisitionFinished) { launcherPanel() }

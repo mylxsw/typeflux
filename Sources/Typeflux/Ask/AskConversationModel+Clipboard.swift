@@ -1,8 +1,12 @@
-import Foundation
+import AppKit
 
 extension AskConversationModel {
     /// Resolves a live entry again so deleted records and missing files cannot be applied from stale results.
-    func applyLauncherClipboard(id: String, paste: Bool, completed: @escaping @MainActor () -> Void = {}) -> PluginActionOutcome {
+    func applyLauncherClipboard(
+        id: String, paste: Bool,
+        frontmostProcessID: @escaping @MainActor () -> pid_t? = { NSWorkspace.shared.frontmostApplication?.processIdentifier },
+        completed: @escaping @MainActor () -> Void = {}
+    ) -> PluginActionOutcome {
         guard let entry = clipboardEntries().first(where: { $0.id == id }) else {
             confirm(L("ask.plugin.clip.unavailable"))
             return .stay
@@ -22,12 +26,21 @@ extension AskConversationModel {
             return .stay
         }
         let access = contextImageAccess(launcher: true), account = session(), generation = plugins.resultGeneration
+        let processID = launcherInputProcessID, presentation = launcherPresentationID
         clipboardAction.start(entry: entry, plainText: false, paste: paste, actions: clipboardContentActions,
             authorized: { [weak self] in
                 guard let self else { return false }
                 let live = self.session()
                 return account?.owner == live?.owner && account?.token == live?.token && self.clipboardEntries().contains(entry)
             }, beforeCommit: { [weak self] in access.allows() && self?.plugins.resultGeneration == generation },
+            beforePaste: { [weak self] in
+                guard let self else { return false }
+                guard let processID, processID == frontmostProcessID(), self.launcherPresentationID == presentation else {
+                    self.passiveNotice(L("ask.plugin.writeBack.failed"))
+                    return false
+                }
+                return true
+            },
             committed: { [weak self] in
                 guard let self else { return }
                 if paste { self.finishPluginResult(); completed() }

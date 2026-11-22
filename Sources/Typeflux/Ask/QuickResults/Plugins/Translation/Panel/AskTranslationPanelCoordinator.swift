@@ -253,7 +253,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
 
     private func deliveryDestination(processID: pid_t, captured: TextSelectionSnapshot?,
                                      selectedText: String?) async throws -> TextDeliveryDestination {
-        guard let selectedText else { return .currentInput }
+        guard let selectedText else { return .currentInputInApp(processID) }
         let target: TextSelectionSnapshot = if let captured {
             captured
         } else {

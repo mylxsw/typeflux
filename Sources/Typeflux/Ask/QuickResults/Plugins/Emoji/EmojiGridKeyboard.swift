@@ -10,7 +10,7 @@ struct EmojiGridKeyboard: NSViewRepresentable {
         case move(Int), copy, insert, copyAndStay
 
         static func resolve(code: UInt16, modifiers: NSEvent.ModifierFlags) -> Key? {
-            let flags = modifiers.intersection(.deviceIndependentFlagsMask).subtracting([.numericPad, .function])
+            let flags = modifiers.intersection([.command, .option, .control, .shift])
             if flags == .command, code == 8 {
                 return .copyAndStay
             }

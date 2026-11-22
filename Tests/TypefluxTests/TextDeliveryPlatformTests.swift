@@ -199,9 +199,20 @@ struct TextDeliveryPlatformTests {
         ) == .notWritable)
     }
 
+    @Test func boundInsertionRejectsAnotherFrontmostProcessBeforeReadingInput() async {
+        let backend = AXTextDeliveryBackend(injector: AXTextInjector(), selection: nil)
+        await #expect(throws: TextDeliveryError.targetChanged) {
+            _ = try await backend.resolve(.currentInputInApp(-1))
+        }
+    }
+
     @Test func textCursorButtonCanReceiveCurrentInputWithoutAppName() {
         #expect(AXTextDeliveryBackend.allowsOpaqueTextButtonInsertion(
             role: "AXButton", domClasses: ["flex", "cursor-text", "rounded"]
+        ))
+        #expect(AXTextDeliveryBackend.allowsOpaqueTextButtonInsertion(
+            destination: .currentInputInApp(100),
+            role: "AXButton", domClasses: ["cursor-text"]
         ))
         #expect(!AXTextDeliveryBackend.allowsOpaqueTextButtonInsertion(
             destination: .selection(TextSelectionSnapshot()),

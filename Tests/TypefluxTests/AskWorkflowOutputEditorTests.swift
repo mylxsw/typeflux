@@ -382,7 +382,7 @@ struct AskWorkflowActionHostTests {
         let model = fixture.model
         var delivered: [String] = []
         var dismissed = 0
-        model.deliverText = { delivered.append($0) }
+        model.deliverText = { text, _ in delivered.append(text) }
         let writer = AskWorkflowLauncherActionHost(model: model) { dismissed += 1 }
         writer.writeBack("typed")
         #expect(writer.closed && dismissed == 1)

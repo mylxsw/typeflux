@@ -197,8 +197,10 @@ final class AskConversationModel: ObservableObject {
     }()
     /// How often each launcher keyword is used, for the launcher's home.
     lazy var keywordUsage = AskKeywordUsageStore(defaults: defaults)
-    /// Types text into the app the launcher came from; the window controller supplies it.
-    var deliverText: ((String) async throws -> Void)?
+    /// Source app before the nonactivating launcher takes keyboard focus.
+    var launcherInputProcessID: pid_t?
+    /// Types text into the specified app's focused input; the window controller supplies it.
+    var deliverText: ((String, pid_t?) async throws -> Void)?
     /// The existing clipboard history; supplied by the app's shared store.
     var clipboardEntries: @MainActor @Sendable () -> [ClipboardEntry] = { [] }
     let clipboardAction = ClipboardContentAction()

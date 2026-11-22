@@ -51,6 +51,7 @@ struct ClipboardImageRevision: Equatable, Sendable {
     func start(entry: ClipboardEntry, plainText: Bool, paste: Bool, actions: any ClipboardContentActing,
                authorized: @escaping @MainActor () -> Bool,
                beforeCommit: @escaping @MainActor () -> Bool = { true },
+               beforePaste: @escaping @MainActor () -> Bool = { true },
                committed: @escaping @MainActor () -> Void = {},
                failed: @escaping @MainActor () -> Void = {},
                delay: @escaping @MainActor () async -> Void = { try? await Task.sleep(for: .milliseconds(150)) }) -> Bool {
@@ -79,6 +80,7 @@ struct ClipboardImageRevision: Equatable, Sendable {
                 await delay()
                 guard !Task.isCancelled, self?.generation == current, authorized(), actions.pasteboardRevision == revision,
                       image?.sourceRevision == nil || image?.sourceRevision?.matches(URL(fileURLWithPath: entry.imagePath ?? "")) == true else { return }
+                guard beforePaste() else { return }
                 actions.sendPasteShortcut()
             } catch {
                 if !Task.isCancelled, self?.generation == current, authorized(), beforeCommit(),

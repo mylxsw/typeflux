@@ -174,6 +174,8 @@ struct AskEmojiPluginTests {
     @Test func `grid keyboard and input composition`() throws {
         #expect(EmojiGridKeyboard.Key.resolve(code: 36, modifiers: []) == .copy)
         #expect(EmojiGridKeyboard.Key.resolve(code: 76, modifiers: .option) == .insert)
+        #expect(EmojiGridKeyboard.Key.resolve(code: 36, modifiers: [.option, .capsLock]) == .insert)
+        #expect(EmojiGridKeyboard.Key.resolve(code: 36, modifiers: [.option, .shift, .capsLock]) == nil)
         #expect(EmojiGridKeyboard.Key.resolve(code: 8, modifiers: .command) == .copyAndStay)
         #expect(EmojiGridKeyboard.Key.resolve(code: 123, modifiers: [.function, .numericPad]) == .move(-1))
         #expect(EmojiGridKeyboard.Key.resolve(code: 124, modifiers: []) == .move(1))
@@ -244,7 +246,7 @@ struct AskEmojiPluginTests {
             model.plugins.update(text: "🙏🏽", selection: nil, language: .english)
             try await settle(model.plugins)
             var delivered: [String] = []
-            model.deliverText = mode == 2 ? nil : { text in
+            model.deliverText = mode == 2 ? nil : { text, _ in
                 if mode == 1 {
                     throw CocoaError(.featureUnsupported)
                 }

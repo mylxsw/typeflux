@@ -627,11 +627,12 @@ extension AskConversationModel {
             confirm(L("ask.plugin.writeBack.failed"), for: .seconds(8))
             return
         }
+        let processID = launcherInputProcessID
         Task { [weak self] in
             // Let the source app take its own window's focus back first.
             try? await Task.sleep(for: .milliseconds(150))
             do {
-                try await deliverText(text)
+                try await deliverText(text, processID)
                 onDelivered()
             } catch {
                 if AskQuickResults.copy(text) { onDelivered() }
