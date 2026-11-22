@@ -1,9 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// The glass card above the footer name: who is signed in, what is left this
-/// period, what was used, the one next step, and links to the account page and
-/// billing.
+/// The glass card above the footer name shows the signed-in account,
+/// remaining credits, and links to account settings and billing.
 struct AskAccountCard: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
@@ -27,7 +26,6 @@ struct AskAccountCard: View {
         VStack(alignment: .leading, spacing: 6) {
             header(presentation)
             quota(presentation)
-            tiles
             if let offer = presentation.offer {
                 offerRow(offer, presentation: presentation)
             }
@@ -123,37 +121,6 @@ struct AskAccountCard: View {
                 Text(L("account.card.quotaUnavailable")).foregroundStyle(StudioTheme.textTertiary)
             }
         }
-    }
-
-    private var tiles: some View {
-        let stats = auth.usageStats
-        return HStack(spacing: 4) {
-            tile(L("account.card.times", AccountUsageDisplayFormatter.count(stats.asrCount)), L("account.card.voice"))
-            tile(AccountUsageDisplayFormatter.audioDuration(stats.asrAudioDurationMs), L("account.card.recording"))
-            tile(L("account.card.times", AccountUsageDisplayFormatter.count(stats.chatCount)),
-                 L("account.card.aiRequests"))
-        }
-        .padding(.horizontal, 4)
-    }
-
-    private func tile(_ value: String, _ label: String) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(value)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Text(label)
-                .font(.system(size: 10.5))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 8)
-        .padding(.top, 8)
-        .padding(.bottom, 7)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AskAccountTone.chip))
     }
 
     private func offerRow(_ offer: AccountStatusPresentation.Offer,

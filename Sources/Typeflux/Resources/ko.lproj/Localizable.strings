@@ -2004,7 +2004,6 @@
 "account.card.profile" = "계정";
 "account.card.profileHint" = "설정 › 계정";
 "account.card.quotaUnavailable" = "사용량을 불러올 수 없음";
-"account.card.recording" = "녹음 시간";
 "account.card.signIn" = "Typeflux Cloud 로그인";
 "account.card.times" = "%@회";
 "account.card.voice" = "음성 입력";

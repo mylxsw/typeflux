@@ -2004,7 +2004,6 @@
 "account.card.profile" = "アカウント";
 "account.card.profileHint" = "設定 › アカウント";
 "account.card.quotaUnavailable" = "クォータを取得できません";
-"account.card.recording" = "録音時間";
 "account.card.signIn" = "Typeflux Cloud にサインイン";
 "account.card.times" = "%@ 回";
 "account.card.voice" = "音声入力";
