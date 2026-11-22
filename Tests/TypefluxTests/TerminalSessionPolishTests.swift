@@ -409,6 +409,25 @@ extension TerminalSessionPolishTests {
         try await wait { element(statusID, in: window) == nil }
     }
 
+    @Test func sessionStatusSubtitleAppearsOnlyWhenItDiffersFromTheTitle() throws {
+        let process = FakeTerminalProcess()
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        let center = TerminalSessionCenter(history: history, makeProcess: { process }, readGitStatus: { _ in nil })
+        defer { center.terminateAll() }
+        let session = try center.create()
+        let home = URL(fileURLWithPath: NSHomeDirectory())
+        process.emit(osc("7;" + home.absoluteString))
+        #expect(session.statusRowTitle == "~")
+        #expect(session.statusRowSubtitle == nil)
+
+        let codes = home.appendingPathComponent("Workspace/codes")
+        process.emit(osc("7;" + codes.absoluteString))
+        #expect(session.statusRowSubtitle == "~/Workspace/codes")
+
+        #expect(session.submit("~/Workspace/codes"))
+        #expect(session.statusRowSubtitle == nil)
+    }
+
     @Test func shellExitReturnsToLauncherHome() async throws {
         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
         _ = NSApplication.shared
@@ -516,6 +535,7 @@ extension TerminalSessionPolishTests {
                         captureError = error
                     }
                 }
+                #expect(SettingsBehaviorTestSupport.contains(L("terminal.session.end.message"), in: modal))
                 #expect(SettingsBehaviorTestSupport.contains(L("terminal.session.end"), in: modal))
                 #expect(SettingsBehaviorTestSupport.contains(L("common.cancel"), in: modal))
                 NSApp.stopModal(withCode: response)

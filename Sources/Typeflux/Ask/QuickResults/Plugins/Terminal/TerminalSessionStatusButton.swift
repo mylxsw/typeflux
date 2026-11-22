@@ -116,10 +116,12 @@ private struct TerminalSessionStatusRow: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(session.statusRowTitle)
                             .font(.system(size: 12, design: .monospaced))
-                        Text(session.displayDirectory(session.cwd))
-                            .font(.system(size: 11))
-                            .truncationMode(.middle)
-                            .foregroundStyle(.secondary)
+                        if let subtitle = session.statusRowSubtitle {
+                            Text(subtitle)
+                                .font(.system(size: 11))
+                                .truncationMode(.middle)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     Spacer(minLength: 6)
                     Group {
@@ -167,5 +169,10 @@ extension TerminalSession {
     var statusRowTitle: String {
         if let command = blocks.last?.command { return command }
         return displayDirectory(cwd) == "~" ? "~" : tabFolder
+    }
+
+    var statusRowSubtitle: String? {
+        let directory = displayDirectory(cwd)
+        return directory == statusRowTitle ? nil : directory
     }
 }

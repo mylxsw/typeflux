@@ -7671,6 +7671,7 @@
 "terminal.launcher.sessions" = "終端工作階段";
 "terminal.launcher.waiting" = "等待輸入";
 "terminal.session.end" = "結束工作階段";
+"terminal.session.end.message" = "結束工作階段會掛斷該命令及其啟動的所有程序。";
 "terminal.session.close.short" = "關閉";
 "terminal.session.close" = "關閉工作階段";
 "terminal.session.close.others" = "關閉其他工作階段";

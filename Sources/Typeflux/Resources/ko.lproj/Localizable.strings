@@ -7646,6 +7646,7 @@
 "terminal.launcher.sessions" = "터미널 세션";
 "terminal.launcher.waiting" = "입력 대기 중";
 "terminal.session.end" = "세션 종료";
+"terminal.session.end.message" = "세션을 종료하면 명령과 그 명령이 시작한 모든 프로세스가 종료됩니다.";
 "terminal.session.close.short" = "닫기";
 "terminal.session.close" = "세션 닫기";
 "terminal.session.close.others" = "다른 세션 닫기";
