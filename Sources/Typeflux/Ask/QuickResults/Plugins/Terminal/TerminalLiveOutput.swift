@@ -24,7 +24,7 @@ struct TerminalLiveOutput: NSViewRepresentable {
         view.resizeTerminal()
     }
 
-    final class OutputContainer: NSView {
+    final class OutputContainer: TerminalKeyboardContainer {
         var availableRows = 0
 
         override func setFrameSize(_ newSize: NSSize) {

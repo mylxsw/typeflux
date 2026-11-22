@@ -5,11 +5,9 @@ import SwiftUI
 /// Both hosts mount the screen owned by the session so the emulator and PTY survive moves.
 struct TerminalAlternateScreenView: NSViewRepresentable {
     let session: TerminalSession
-    var allowsLauncherClose = false
 
     func makeNSView(context: Context) -> NSView {
-        let container = AlternateScreenContainer()
-        container.allowsLauncherClose = allowsLauncherClose
+        let container = TerminalKeyboardContainer()
         let terminal = session.terminalView
         terminal.removeFromSuperview()
         terminal.inlineBackground = nil
@@ -17,10 +15,6 @@ struct TerminalAlternateScreenView: NSViewRepresentable {
         terminal.frame = container.bounds
         terminal.autoresizingMask = [.width, .height]
         container.addSubview(terminal)
-        DispatchQueue.main.async { [weak container] in
-            guard let container, terminal.superview === container else { return }
-            container.window?.makeFirstResponder(terminal)
-        }
         return container
     }
 
@@ -28,8 +22,7 @@ struct TerminalAlternateScreenView: NSViewRepresentable {
 }
 
 /// Route key-down events before menus and host shortcuts can consume them.
-private final class AlternateScreenContainer: NSView {
-    var allowsLauncherClose = false
+class TerminalKeyboardContainer: NSView {
     private var monitor: Any?
 
     override func viewDidMoveToWindow() {
@@ -37,12 +30,22 @@ private final class AlternateScreenContainer: NSView {
         if let monitor { NSEvent.removeMonitor(monitor) }
         monitor = nil
         guard window != nil else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let terminal = subviews.first as? TerminalRunnerTerminalView,
+                  terminal.acceptsSessionKeys else { return }
+            window?.makeFirstResponder(terminal)
+        }
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, let window, event.window === window, window.isKeyWindow,
                   window.attachedSheet == nil, let terminal = subviews.first as? TerminalRunnerTerminalView,
-                  !Self.isMoveShortcut(event) else { return event }
-            if allowsLauncherClose, TerminalLauncherView.isCloseShortcut(event) { return event }
-            terminal.keyDown(with: event)
+                  terminal.acceptsSessionKeys, !Self.isMoveShortcut(event) else { return event }
+            if TerminalLauncherView.isCloseShortcut(event) { return event }
+            let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
+            switch (modifiers, event.charactersIgnoringModifiers?.lowercased()) {
+            case (.command, "v"): terminal.paste(self)
+            case (.command, "c") where terminal.selectionActive: terminal.copy(self)
+            default: terminal.keyDown(with: event)
+            }
             return nil
         }
     }
@@ -242,11 +245,12 @@ final class TerminalSessionWindowController: NSObject, ObservableObject, NSWindo
         let action: () -> Void
         if modifiers == .command, key == "o" {
             action = { self.moveBack() }
+        } else if modifiers == .command, key == "w" {
+            action = { self.closeTab() }
         } else {
-            guard let selected, !selected.alternateScreen else { return false }
+            guard let selected, selected.runningBlock == nil, !selected.alternateScreen else { return false }
             switch (modifiers, key) {
             case (.command, "t"): action = addTab
-            case (.command, "w"): action = { self.closeTab() }
             case ([.command, .option], "w"): action = { self.closeOtherTabs(keeping: selected) }
             case (.command, "1"..."9"):
                 guard let number = Int(key) else { return false }

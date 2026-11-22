@@ -29,6 +29,10 @@ final class TerminalRunnerTerminalView: TerminalView, TerminalViewDelegate {
 
     private weak var session: TerminalSession?
 
+    var acceptsSessionKeys: Bool {
+        session?.runningBlock != nil || session?.alternateScreen == true
+    }
+
     private init(runModel: TerminalRunModel?, session: TerminalSession?) {
         model = runModel
         self.session = session

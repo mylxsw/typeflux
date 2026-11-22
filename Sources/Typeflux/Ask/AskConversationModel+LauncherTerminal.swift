@@ -65,7 +65,6 @@ extension AskConversationModel {
                 guard let self else { return }
                 let live = Set(sessions.map(\.id))
                 if let presentation = launcherTerminal, !live.contains(presentation.session.id) {
-                    presentation.secret = ""
                     launcherTerminal = nil
                 }
                 terminalPresentations = terminalPresentations.filter { live.contains($0.key) }
@@ -102,7 +101,6 @@ extension AskConversationModel {
     func hideLauncherTerminal(showNotice: Bool = true) {
         guard let presentation = launcherTerminal else { return }
         launcherTerminal = nil
-        presentation.secret = ""
         let session = presentation.session
         if session.host == .launcher {
             terminalSessionCenter.setVisible(false, session: session)
