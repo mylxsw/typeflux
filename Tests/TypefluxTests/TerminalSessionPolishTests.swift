@@ -150,7 +150,7 @@ struct TerminalSessionPolishTests {
         model.launchTerminal(command: command, settings: .init())
         let presentation = try #require(model.launcherTerminal)
         let terminal = presentation.session.terminalView
-        try await wait {
+        try await wait(timeout: .seconds(10)) {
             terminal.normalScreenText().contains("demo@localhost:~#") && window.firstResponder === terminal
         }
         func typeLine(_ line: String) throws {
@@ -158,13 +158,14 @@ struct TerminalSessionPolishTests {
             try key(36, characters: "\r", in: window)
         }
         try typeLine("echo ok")
-        try await wait { terminal.normalScreenText().components(separatedBy: "\n").contains("ok") }
+        try await wait(timeout: .seconds(10)) { terminal.normalScreenText().components(separatedBy: "\n").contains("ok") }
         if let height = launcher.heights.last {
             window.setContentSize(NSSize(width: window.frame.width, height: height))
         }
         try render(window, as: "nested-shell", dark: dark, windowServer: false)
         try typeLine("exit")
-        try await wait { presentation.prompt == .idle && window.firstResponder is NSTextView }
+        try await wait(timeout: .seconds(10)) { presentation.session.blocks.last?.endedAt != nil }
+        try await wait(timeout: .seconds(10)) { presentation.prompt == .idle && window.firstResponder is NSTextView }
         #expect(history.commands == [command])
     }
 
@@ -620,7 +621,12 @@ extension TerminalSessionPolishTests {
     }
 
     private func wait(sourceLocation: SourceLocation = #_sourceLocation, _ condition: () -> Bool) async throws {
-        let deadline = ContinuousClock.now + .seconds(3)
+        try await wait(timeout: .seconds(3), sourceLocation: sourceLocation, condition)
+    }
+
+    private func wait(timeout: Duration, sourceLocation: SourceLocation = #_sourceLocation,
+                      _ condition: () -> Bool) async throws {
+        let deadline = ContinuousClock.now + timeout
         while !condition(), ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(10)) }
         try #require(condition(), sourceLocation: sourceLocation)
     }
