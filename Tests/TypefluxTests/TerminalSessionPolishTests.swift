@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import AppKit
 import Darwin
 import SwiftUI
@@ -45,7 +46,15 @@ struct TerminalSessionPolishTests {
         processes[0].emit(osc("7;file://localhost/tmp/projects/typeflux") + osc("133;B") + osc("133;C") + "Building…\r\n")
         try await wait { element(statusID, in: window) != nil }
         try render(window, as: "01-home", dark: dark)
+        try key(38, characters: "j", modifiers: .command, in: window)
+        try await wait { popover(for: running, relativeTo: window) != nil }
+        let shortcutPopover = try #require(popover(for: running, relativeTo: window))
+        try key(38, characters: "j", modifiers: .command, in: shortcutPopover.isKeyWindow ? shortcutPopover : window)
+        try await wait { popover(for: running, relativeTo: window) == nil }
         try #require(element(statusID, in: window)).press()
+        try await wait { self.popover(for: running, relativeTo: window) != nil }
+        let single = try #require(self.popover(for: running, relativeTo: window))
+        try key(36, characters: "\r", in: single.isKeyWindow ? single : window)
         try await wait { model.launcherTerminal?.session === running }
         let presentation = try #require(model.launcherTerminal)
         try await wait { element("terminal.launcher.back", in: window) != nil }
@@ -84,14 +93,17 @@ struct TerminalSessionPolishTests {
         #expect(TerminalSessionStatus.countBadge(1) == nil)
         #expect(TerminalSessionStatus.countBadge(0) == nil)
 
-        func popover() -> NSWindow? {
-            let rowID = "terminal.session.open.\(running.id)"
-            return NSApp.windows.first { $0.isVisible && $0 !== window && element(rowID, in: $0) != nil }
-        }
+        func runningPopover() -> NSWindow? { popover(for: running, relativeTo: window) }
         try await wait { element(statusID, in: window)?.text == "4" }
         try key(38, characters: "j", modifiers: .command, in: window)
-        try await wait { popover() != nil }
-        let popup = try #require(popover())
+        try await wait { runningPopover() != nil }
+        let popup = try #require(runningPopover())
+        let keyboardWindow = popup.isKeyWindow ? popup : window
+        let secondEndID = "terminal.session.end.\(recent.id)"
+        try key(125, characters: "", in: keyboardWindow)
+        try await wait { element(secondEndID, in: popup) != nil }
+        try key(126, characters: "", in: keyboardWindow)
+        try await wait { element(secondEndID, in: popup) == nil }
         popup.appearance = appearance
         // WindowServer can return a partially transparent frame during the opening animation.
         if capturePath != nil { try await Task.sleep(for: .milliseconds(350)) }
@@ -103,19 +115,20 @@ struct TerminalSessionPolishTests {
         try #require(element(endID, in: popup)).press()
         try await wait { !center.sessions.contains { $0 === idle } }
         #expect(processes[1].terminations == 1)
-        try key(38, characters: "j", modifiers: .command, in: window)
-        try await wait { popover() == nil }
+        try key(38, characters: "j", modifiers: .command, in: popup.isKeyWindow ? popup : window)
+        try await wait { runningPopover() == nil }
 
         model.launcherWindowMode = .simple
         #expect(model.launcherIsCollapsed && !model.launcherNeedsFullWindow)
         window.setContentSize(NSSize(width: window.frame.width, height: AskLauncherWindowMode.simpleHeight))
         try await wait { element(statusID, in: window) != nil }
         try render(window, as: "03-simple", dark: dark, windowServer: false)
-        try await wait { window.firstResponder is AskComposerTextView.Editor }
+        let editor = try #require(window.contentView.flatMap(composerEditor(in:)))
+        #expect(window.makeFirstResponder(editor))
         try key(53, characters: "\u{1b}", in: window)
         #expect(launcher.dismissed == 1)
-        model.endTerminalHomeSession(running.id)
-        #expect(processes[0].terminations == 1)
+        processes[0].exit(1)
+        #expect(!center.sessions.contains { $0 === running } && processes[0].terminations == 0)
     }
 
     @Test func sessionStatusTitleUsesFolderUntilACommandExists() throws {
@@ -212,10 +225,11 @@ struct TerminalSessionPolishTests {
         #expect(failed.tabCommand(duplicateFolder: true) == "git diff --check")
         #expect(exited.tabTooltip == exited.cwd)
         #expect(controller.reorder(failed.id, to: first.id))
-        #expect(controller.tabs.map(\.id) == [failed.id, first.id, second.id, exited.id])
-        #expect(controller.selected === exited && !controller.reorder(first.id, to: first.id))
+        #expect(controller.tabs.map(\.id) == [failed.id, first.id, second.id])
+        #expect(controller.selected === failed && !controller.reorder(first.id, to: first.id))
         #expect(controller.reorder(failed.id, to: second.id))
-        #expect(controller.tabs.map(\.id) == [first.id, second.id, failed.id, exited.id])
+        #expect(controller.tabs.map(\.id) == [first.id, second.id, failed.id])
+        #expect(!center.sessions.contains { $0 === exited } && exitedProcess.terminations == 0)
         #expect(!controller.reorder(UUID(), to: first.id))
 
         func shortcut(_ flags: NSEvent.ModifierFlags) throws -> NSEvent {
@@ -225,8 +239,6 @@ struct TerminalSessionPolishTests {
         }
 
         let close = try shortcut(.command)
-        #expect(controller.handleKey(close))
-        #expect(!controller.tabs.contains { $0 === exited } && controller.panel.attachedSheet == nil)
         controller.select(0)
         let tabID = "terminal.tab.\(first.id)"
         try await wait { element(tabID, in: controller.panel) != nil }
@@ -269,6 +281,129 @@ struct TerminalSessionPolishTests {
 }
 
 extension TerminalSessionPolishTests {
+    @Test(arguments: [true, false])
+    // swiftlint:disable:next function_body_length
+    func launcherEndsSessionsFromListAndHeader(dark: Bool) async throws {
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        _ = NSApplication.shared
+        let previous = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+        let processes = (0..<4).map { _ in FakeTerminalProcess() }
+        var queue = ArraySlice(processes)
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        let center = TerminalSessionCenter(history: history, makeProcess: { queue.removeFirst() },
+                                           readGitStatus: { _ in nil })
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(
+            text: "", apps: AskTestAppIndex([]), prepare: { $0.terminalSessionCenter = center }
+        )
+        let model = launcher.fixture.model
+        let window = launcher.window
+        let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        let previousAppearance = NSApp.appearance
+        NSApp.appearance = appearance
+        defer { NSApp.appearance = previousAppearance }
+        window.appearance = appearance
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        defer { launcher.close(); center.terminateAll() }
+        let statusID = "terminal.sessions.status"
+        let endID = "terminal.launcher.end"
+
+        let idle = try center.create()
+        try await wait { element(statusID, in: window) != nil }
+        try #require(element(statusID, in: window)).press()
+        try await wait { popover(for: idle, relativeTo: window) != nil }
+        let popup = try #require(popover(for: idle, relativeTo: window))
+        #expect(model.launcherTerminal == nil)
+        popup.appearance = appearance
+        if capturePath != nil { try await Task.sleep(for: .milliseconds(350)) }
+        try render(window, as: "09-home", dark: dark, windowServer: false)
+        try render(popup, as: "09-single-session", dark: dark, frame: true)
+        try #require(element("terminal.session.end.\(idle.id)", in: popup)).press()
+        try await wait { element(statusID, in: window) == nil && !popup.isVisible }
+        #expect(center.sessions.isEmpty && processes[0].terminations == 1)
+
+        model.launchTerminal(settings: .init())
+        try await wait { element(endID, in: window) != nil }
+        try key(13, characters: "w", modifiers: .command, in: window)
+        #expect(model.launcherTerminal == nil && center.sessions.isEmpty && processes[1].terminations == 1)
+
+        let failed = try center.create()
+        #expect(failed.submit("false"))
+        processes[2].emit(osc("133;B") + osc("133;C") + osc("133;D;1"))
+        model.resumeLauncherTerminal(failed.id)
+        try await wait { element(endID, in: window) != nil }
+        try #require(element(endID, in: window)).press()
+        #expect(model.launcherTerminal == nil && center.sessions.isEmpty && processes[2].terminations == 1)
+
+        model.launchTerminal(command: "swift build", settings: .init())
+        let running = try #require(model.launcherTerminal?.session)
+        processes[3].emit(osc("7;file://localhost/tmp/projects/typeflux")
+                          + osc("133;B") + osc("133;C") + "Building Typeflux…\r\n")
+        try await wait { element(endID, in: window) != nil }
+        try render(window, as: "10-terminal", dark: dark, windowServer: false)
+        try respondToCloseAlert(with: .alertSecondButtonReturn, dark: dark, capture: true) {
+            try key(13, characters: "w", modifiers: .command, in: window)
+        }
+        #expect(model.launcherTerminal?.session === running && processes[3].terminations == 0)
+        processes[3].emit("\u{1b}[?1049h")
+        try await wait { running.alternateScreen && element("terminal.blockList", in: window) == nil }
+        window.makeKeyAndOrderFront(nil)
+        try respondToCloseAlert(with: .alertSecondButtonReturn, dark: dark) {
+            try key(13, characters: "w", modifiers: .command, in: window)
+        }
+        #expect(model.launcherTerminal?.session === running && processes[3].terminations == 0)
+        processes[3].emit("\u{1b}[?1049l")
+        try await wait { element("terminal.blockList", in: window) != nil }
+        try respondToCloseAlert(with: .alertFirstButtonReturn, dark: dark) {
+            try #require(element(endID, in: window)).press()
+        }
+        #expect(model.launcherTerminal == nil && center.sessions.isEmpty && processes[3].terminations == 1)
+        try await wait { element(statusID, in: window) == nil }
+    }
+
+    @Test func shellExitReturnsToLauncherHome() async throws {
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        _ = NSApplication.shared
+        let previous = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+        let exit = FakeTerminalProcess()
+        let eof = FakeTerminalProcess()
+        var processes = [exit, eof]
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        let center = TerminalSessionCenter(history: history, makeProcess: { processes.removeFirst() },
+                                           readGitStatus: { _ in nil })
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(
+            text: "", apps: AskTestAppIndex([]), prepare: { $0.terminalSessionCenter = center }
+        )
+        let model = launcher.fixture.model
+        defer { launcher.close(); center.terminateAll() }
+
+        model.launchTerminal(settings: .init())
+        let terminal = try #require(model.launcherTerminal)
+        exit.emit(osc("133;A") + osc("133;B"))
+        terminal.fill("exit")
+        #expect(terminal.submit())
+        #expect(exit.writes.last == Array("\u{1b}[200~exit\u{1b}[201~\r".utf8))
+        exit.exit(0)
+        #expect(center.sessions.isEmpty && model.launcherTerminal == nil && model.terminalPresentations.isEmpty)
+        #expect(exit.terminations == 0)
+        let endID = "terminal.launcher.end"
+        try await wait { element(endID, in: launcher.window) == nil }
+        model.launchTerminal(settings: .init())
+        try await wait { element(endID, in: launcher.window) != nil }
+        launcher.window.makeKeyAndOrderFront(nil)
+        try key(2, characters: "d", modifiers: .control, in: launcher.window)
+        #expect(eof.writes.last == [4])
+        eof.exit(0)
+        #expect(center.sessions.isEmpty && model.launcherTerminal == nil && eof.terminations == 0)
+    }
+
+}
+
+extension TerminalSessionPolishTests {
     private func render(_ window: NSWindow, as name: String, dark: Bool, frame: Bool = false,
                         windowServer: Bool = true) throws {
         guard let capturePath else { return }
@@ -276,6 +411,8 @@ extension TerminalSessionPolishTests {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let url = directory.appendingPathComponent("\(name)-\(dark ? "dark" : "light").png")
         if windowServer, let snapshot = ownedWindowSnapshot(window),
+           snapshot.pixelsWide >= Int(window.frame.width / 2),
+           snapshot.pixelsHigh >= Int(window.frame.height / 2),
            let png = snapshot.representation(using: .png, properties: [:]) {
             try png.write(to: url)
             return
@@ -303,6 +440,46 @@ extension TerminalSessionPolishTests {
         let image = capture(.null, CGWindowListOption.optionIncludingWindow.rawValue, id,
                             CGWindowImageOption.boundsIgnoreFraming.rawValue)
         return image.map { NSBitmapImageRep(cgImage: $0.takeRetainedValue()) }
+    }
+
+    private func composerEditor(in view: NSView) -> AskComposerTextView.Editor? {
+        (view as? AskComposerTextView.Editor) ?? view.subviews.lazy.compactMap(composerEditor(in:)).first
+    }
+
+    private func popover(for session: TerminalSession, relativeTo window: NSWindow) -> NSWindow? {
+        NSApp.windows.first {
+            $0.isVisible && $0 !== window && element("terminal.session.open.\(session.id)", in: $0) != nil
+        }
+    }
+
+    private func respondToCloseAlert(with response: NSApplication.ModalResponse, dark: Bool,
+                                     capture: Bool = false, action: () throws -> Void) throws {
+        var handled = false
+        var captureError: Error?
+        let delay: TimeInterval = capture && capturePath != nil ? 0.65 : 0.2
+        let timer = Timer(timeInterval: delay, repeats: false) { _ in
+            MainActor.assumeIsolated {
+                guard let modal = NSApp.modalWindow else { return }
+                handled = true
+                modal.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+                if capture {
+                    modal.displayIfNeeded()
+                    do {
+                        try render(modal, as: "10-confirm", dark: dark, frame: true, windowServer: dark)
+                    } catch {
+                        captureError = error
+                    }
+                }
+                #expect(SettingsBehaviorTestSupport.contains(L("terminal.session.end"), in: modal))
+                #expect(SettingsBehaviorTestSupport.contains(L("common.cancel"), in: modal))
+                NSApp.stopModal(withCode: response)
+            }
+        }
+        RunLoop.main.add(timer, forMode: .modalPanel)
+        defer { timer.invalidate() }
+        try action()
+        #expect(handled)
+        if let captureError { throw captureError }
     }
 
     private func element(_ id: String, in window: NSWindow) -> SettingsBehaviorTestSupport.Element? {

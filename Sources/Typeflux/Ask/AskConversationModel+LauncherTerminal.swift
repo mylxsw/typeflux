@@ -4,13 +4,11 @@ import SwiftUI
 
 extension AskConversationModel {
     var terminalLauncherSessions: [TerminalSession] {
-        terminalSessionCenter.sessions.filter {
-            $0.host == .launcher && (!$0.exited || $0 === launcherTerminal?.session)
-        }
+        terminalSessionCenter.sessions.filter { $0.host == .launcher }
     }
 
     var terminalHomeSessions: [TerminalSession] {
-        terminalSessionCenter.sessions.filter { !$0.exited }
+        terminalSessionCenter.sessions
     }
 
     func launchTerminal(command: String = "", settings: TerminalRunSettings, window: Bool = false,
@@ -57,17 +55,20 @@ extension AskConversationModel {
 
     func endTerminalHomeSession(_ id: UUID) {
         guard let session = terminalHomeSessions.first(where: { $0.id == id }) else { return }
-        switch session.host {
-        case .launcher: terminalSessionCenter.close(session)
-        case .window: terminalSessionWindow.endTab(session)
-        }
+        guard confirmTerminalClose(session) else { return }
+        terminalSessionCenter.close(session)
     }
 
     private func terminalPresentation(for session: TerminalSession, settings: TerminalRunSettings) -> TerminalLauncherModel {
         if terminalPresentationObservation == nil {
             terminalPresentationObservation = terminalSessionCenter.$sessions.sink { [weak self] sessions in
+                guard let self else { return }
                 let live = Set(sessions.map(\.id))
-                self?.terminalPresentations = self?.terminalPresentations.filter { live.contains($0.key) } ?? [:]
+                if let presentation = launcherTerminal, !live.contains(presentation.session.id) {
+                    presentation.secret = ""
+                    launcherTerminal = nil
+                }
+                terminalPresentations = terminalPresentations.filter { live.contains($0.key) }
             }
         }
         if let existing = terminalPresentations[session.id] { return existing }
@@ -104,26 +105,16 @@ extension AskConversationModel {
         presentation.secret = ""
         let session = presentation.session
         if session.host == .launcher {
-            if session.exited {
-                terminalSessionCenter.close(session)
-            } else {
-                terminalSessionCenter.setVisible(false, session: session)
-                if showNotice, let command = session.runningBlock?.command {
-                    passiveNotice(L("terminal.launcher.background", TerminalRunModel.truncated(command, limit: 48)))
-                }
+            terminalSessionCenter.setVisible(false, session: session)
+            if showNotice, let command = session.runningBlock?.command {
+                passiveNotice(L("terminal.launcher.background", TerminalRunModel.truncated(command, limit: 48)))
             }
         }
     }
 
     func closeLauncherTerminal() {
-        guard let presentation = launcherTerminal else { return }
-        let session = presentation.session
-        guard confirmTerminalClose(session) else { return }
-        let next = terminalLauncherSessions.first { $0 !== session }
-        launcherTerminal = nil
-        terminalSessionCenter.close(session)
-        terminalPresentations.removeValue(forKey: session.id)
-        if let next { resumeLauncherTerminal(next.id) }
+        guard let session = launcherTerminal?.session else { return }
+        endTerminalHomeSession(session.id)
     }
 
     func insertTerminalOutput(_ text: String, from presentation: TerminalLauncherModel, dismiss: () -> Void) {
@@ -191,13 +182,19 @@ extension AskConversationModel {
 
     private func confirmTerminalClose(_ session: TerminalSession) -> Bool {
         guard let block = session.runningBlock else { return true }
+        guard !terminalCloseInProgress else { return false }
         terminalCloseInProgress = true
         defer { terminalCloseInProgress = false }
         let alert = NSAlert()
         alert.messageText = L("terminal.runner.close.title", TerminalRunModel.truncated(block.command, limit: 40))
         alert.informativeText = L("terminal.runner.close.message")
-        alert.addButton(withTitle: L("terminal.runner.close.end")).hasDestructiveAction = true
-        alert.addButton(withTitle: L("terminal.runner.close.keep"))
-        return alert.runModal() == .alertFirstButtonReturn
+        alert.addButton(withTitle: L("terminal.session.end")).hasDestructiveAction = true
+        alert.addButton(withTitle: L("common.cancel")).keyEquivalent = "\u{1b}"
+        let observation = terminalSessionCenter.$sessions.dropFirst().sink { sessions in
+            if !sessions.contains(where: { $0 === session }), NSApp.modalWindow === alert.window {
+                NSApp.abortModal()
+            }
+        }
+        return withExtendedLifetime(observation) { alert.runModal() == .alertFirstButtonReturn }
     }
 }

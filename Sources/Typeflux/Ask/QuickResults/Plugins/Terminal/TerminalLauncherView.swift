@@ -42,13 +42,15 @@ struct TerminalLauncherView: View {
                 if let move {
                     terminalButton("macwindow.badge.plus", L("terminal.launcher.move") + " ⌘O", action: move)
                 }
+                terminalButton("xmark", L("terminal.session.end") + " ⌘W", action: close)
+                    .accessibilityIdentifier("terminal.launcher.end")
             }
             .font(.system(size: 12, design: .monospaced))
             .padding(.horizontal, 14)
             .frame(height: 44)
             Divider()
             if session.alternateScreen {
-                TerminalAlternateScreenView(session: session)
+                TerminalAlternateScreenView(session: session, allowsLauncherClose: true)
             } else {
                 TerminalSessionContent(model: model, session: session, commands: commands, new: new,
                                        insert: insert, error: error, launcherOwnsEscape: true)
@@ -57,13 +59,11 @@ struct TerminalLauncherView: View {
         .background(TerminalKeyCapture { event in
             let editor = event.window?.firstResponder as? NSTextView
             guard editor?.hasMarkedText() != true else { return false }
-            let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
-            if session.alternateScreen, AskCommandKey(event) != .commandO { return false }
-            if modifiers == .command, event.keyCode == 13 {
+            if Self.isCloseShortcut(event) {
                 if !event.isARepeat { close() }
                 return true
             }
-            guard let key = AskCommandKey(event) else { return false }
+            guard let key = AskCommandKey(event), !session.alternateScreen || key == .commandO else { return false }
             switch key {
             case .commandT: if !event.isARepeat { new() }
             case .commandO:
@@ -79,6 +79,10 @@ struct TerminalLauncherView: View {
             }
             return true
         })
+    }
+
+    static func isCloseShortcut(_ event: NSEvent) -> Bool {
+        event.modifierFlags.intersection([.command, .shift, .option, .control]) == .command && event.keyCode == 13
     }
 }
 
