@@ -138,6 +138,19 @@ final class TerminalLauncherModel: ObservableObject {
         return hadCandidates
     }
 
+    /// Returns whether Escape cleared the active prompt instead of leaving the session.
+    func clearPromptOnEscape() -> Bool {
+        if cancelRisk() { return true }
+        if prompt == .secure {
+            guard !secret.isEmpty else { return false }
+            secret = ""
+        } else {
+            guard prompt == .idle || prompt == .input, !text.isEmpty else { return false }
+            fill("")
+        }
+        return true
+    }
+
     func recall(_ delta: Int, commands: [String]) {
         guard prompt == .idle else { return }
         resetCompletion()
@@ -213,16 +226,6 @@ final class TerminalLauncherModel: ObservableObject {
         guard duration >= TerminalRunModel.notificationThreshold else { return nil }
         let command = TerminalRunModel.truncated(block.command, limit: 80)
         return "\(mark(block)) \(command) · \(TerminalRunModel.format(duration))"
-    }
-
-    static func homeStatus(_ block: TerminalCommandBlock) -> String? {
-        switch block.state {
-        case .waitingForInput, .hiddenInput: return L("terminal.launcher.waiting")
-        case .running, .alternateScreen:
-            return TerminalRunModel.format(Date().timeIntervalSince(block.startedAt))
-        case .finished: return block.exitCode == 0 ? nil : mark(block)
-        case .interrupted, .cancelled: return mark(block)
-        }
     }
 
     static func mark(_ block: TerminalCommandBlock) -> String {

@@ -1313,11 +1313,7 @@ struct AskComposer: View {
         guard showsLauncherSuggestions else { return [] }
         _ = homeAppsRevision
         if let sections = homeMemo.sections { return sections }
-        let rows = model.terminalHomeRows
-        let terminal: [AskLauncherHome.Section] = rows.isEmpty ? [] : [
-            .context(title: L("terminal.launcher.sessions"), subtitle: nil, rows: rows)
-        ]
-        let sections = terminal + model.presentedLauncherHome()
+        let sections = model.presentedLauncherHome()
         homeMemo.sections = sections
         return sections
     }
@@ -1464,10 +1460,6 @@ struct AskComposer: View {
             case let .ask(question): model.askFromLauncherHome(question); return
             case let .conversation(id): model.openConversationFromLauncher(id); return
             case let .application(app): model.openQuickApp(app); onDismiss(); return
-            case let .terminalSession(id):
-                model.openTerminalHomeSession(id, dismiss: onDismiss)
-                reportHeight()
-                return
             }
         case let .chip(chip): keyword = chip.keyword; run = false
         }
@@ -1685,7 +1677,7 @@ struct AskComposer: View {
                                      select: model.resumeLauncherTerminal, new: model.newLauncherTerminal,
                                      close: model.closeLauncherTerminal, move: {
                                          model.moveLauncherTerminal(dismiss: onDismiss)
-                                     }, dismiss: onDismiss, insert: {
+                                     }, back: { model.hideLauncherTerminal(showNotice: false) }, insert: {
                                          model.insertTerminalOutput($0, from: terminal, dismiss: onDismiss)
                                      }, commands: { terminalCenter.history.commands },
                                      error: model.passiveNotice)
@@ -2386,7 +2378,7 @@ struct AskComposer: View {
             : nil
         return TerminalLauncherHint(
             keyword: keyword, text: draft.wrappedValue.text, directory: directory, recent: terminalRecent,
-            sessions: model.terminalHomeRows, highlighted: $terminalHintIndex
+            sessions: model.terminalHomeSessions, highlighted: $terminalHintIndex
         ) {
             activateTerminalHint(keyword)
         }
@@ -2767,6 +2759,11 @@ struct AskComposer: View {
                 .help(L("ask.voice.cancel"))
                 .accessibilityLabel(L("ask.voice.cancel"))
                 .accessibilityIdentifier("ask.voice.cancel")
+            }
+            if !active, !plugins.isActive, !model.launcherHistoryMode, !paletteOpen {
+                TerminalSessionStatusButton(sessions: model.terminalHomeSessions, open: {
+                    model.openTerminalHomeSession($0, dismiss: onDismiss)
+                }, end: model.endTerminalHomeSession)
             }
             AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
                 .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)

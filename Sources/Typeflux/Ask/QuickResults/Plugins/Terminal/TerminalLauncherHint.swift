@@ -5,7 +5,7 @@ struct TerminalLauncherHint: View {
     let text: String
     let directory: String?
     let recent: [String]
-    let sessions: [AskLauncherHome.Row]
+    let sessions: [TerminalSession]
     @Binding var highlighted: Int
     let activate: () -> Void
 
@@ -31,7 +31,10 @@ struct TerminalLauncherHint: View {
                     if !sessions.isEmpty {
                         heading("terminal.launcher.sessions")
                         ForEach(Array(sessions.enumerated()), id: \.element.id) { index, session in
-                            row(offset + recent.count + index, session.title, session.symbol, detail: session.detail)
+                            let command = session.blocks.last?.command ?? L("terminal.command.title")
+                            row(offset + recent.count + index, command,
+                                session.host == .launcher ? "terminal" : "macwindow",
+                                detail: session.displayDirectory(session.cwd))
                         }
                     }
                 }

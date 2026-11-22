@@ -16,7 +16,9 @@ struct TerminalLauncherModelTests {
         let model = TerminalLauncherModel(session: session, settings: .init(), source: nil,
                                           notify: { _, _ in false }, visible: { true })
         #expect(model.prompt == .idle)
-        #expect(!model.submit())
+        #expect(!model.submit() && !model.clearPromptOnEscape())
+        model.fill("draft command")
+        #expect(model.clearPromptOnEscape() && model.text.isEmpty)
         model.fill("read input")
         process.emit(osc("133;A") + osc("133;B"))
         #expect(model.submit())
@@ -33,7 +35,9 @@ struct TerminalLauncherModelTests {
         process.readsHiddenInput = true
         session.refreshInput()
         model.synchronizePrompt()
-        #expect(model.prompt == .secure && model.text.isEmpty)
+        #expect(model.prompt == .secure && model.text.isEmpty && !model.clearPromptOnEscape())
+        model.secret = "draft secret"
+        #expect(model.clearPromptOnEscape() && model.secret.isEmpty)
         model.secret = "expired prompt response"
         process.readsHiddenInput = false
         #expect(!model.submit() && model.secret.isEmpty)
@@ -64,7 +68,7 @@ struct TerminalLauncherModelTests {
         model.fill("rm -rf sample")
         #expect(!model.submit() && !model.submit())
         #expect(model.pendingRisk == .delete && process.writes.isEmpty && session.blocks.isEmpty)
-        #expect(model.cancelRisk() && !model.cancelRisk())
+        #expect(model.clearPromptOnEscape() && !model.cancelRisk())
         #expect(model.pendingRisk == nil && model.text.isEmpty)
         let cancelled = try #require(session.blocks.last)
         #expect(cancelled.state == .cancelled && !TerminalLauncherModel.mark(cancelled).isEmpty)

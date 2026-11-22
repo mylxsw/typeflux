@@ -7641,3 +7641,11 @@
 "terminal.ai.offline" = "오프라인 상태입니다.";
 "terminal.ai.failed" = "명령을 설명할 수 없습니다.";
 "terminal.ai.continue" = "Ask에서 계속";
+
+"terminal.launcher.sessions" = "터미널 세션";
+"terminal.launcher.waiting" = "입력 대기 중";
+"terminal.session.end" = "세션 종료";
+"terminal.session.close.short" = "닫기";
+"terminal.session.close" = "세션 닫기";
+"terminal.session.close.others" = "다른 세션 닫기";
+"terminal.session.move.launcher" = "런처로 이동";
