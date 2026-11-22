@@ -54,7 +54,9 @@ struct TerminalSessionStatusButton: View {
                     .padding(6)
                 }
                 .frame(width: 360, height: CGFloat(min(ordered.count, 8) * 46 + 12))
-                .background(AskTheme.popoverSurface, in: RoundedRectangle(cornerRadius: 12))
+                .background {
+                    Color(nsColor: .windowBackgroundColor).ignoresSafeArea()
+                }
                 .accessibilityIdentifier("terminal.sessions.list")
                 .background(TerminalKeyCapture(handler: toggleShortcut))
             }
@@ -83,7 +85,7 @@ private struct TerminalSessionStatusRow: View {
                 HStack(spacing: 8) {
                     TerminalSessionStatusDot(status: session.status)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(session.blocks.last?.command ?? L("terminal.command.title"))
+                        Text(session.statusRowTitle)
                             .font(.system(size: 12, design: .monospaced))
                         Text(session.displayDirectory(session.cwd))
                             .font(.system(size: 11))
@@ -128,5 +130,12 @@ private struct TerminalSessionStatusRow: View {
         .padding(.leading, 8)
         .background(hovered ? Color.primary.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 6))
         .onHover { hovered = $0 }
+    }
+}
+
+extension TerminalSession {
+    var statusRowTitle: String {
+        if let command = blocks.last?.command { return command }
+        return displayDirectory(cwd) == "~" ? "~" : tabFolder
     }
 }
