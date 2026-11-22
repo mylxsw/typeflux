@@ -372,8 +372,10 @@ extension TerminalSessionPolishTests {
 
         model.launchTerminal(settings: .init())
         try await wait { element(endID, in: window) != nil }
+        try await waitForTerminalKeys(in: window)
         try key(13, characters: "w", modifiers: .command, in: window)
-        #expect(model.launcherTerminal == nil && center.sessions.isEmpty && processes[1].terminations == 1)
+        try await wait { model.launcherTerminal == nil && element(endID, in: window) == nil }
+        #expect(center.sessions.isEmpty && processes[1].terminations == 1)
 
         let failed = try center.create()
         #expect(failed.submit("false"))
@@ -381,7 +383,8 @@ extension TerminalSessionPolishTests {
         model.resumeLauncherTerminal(failed.id)
         try await wait { element(endID, in: window) != nil }
         try #require(element(endID, in: window)).press()
-        #expect(model.launcherTerminal == nil && center.sessions.isEmpty && processes[2].terminations == 1)
+        try await wait { model.launcherTerminal == nil && element(endID, in: window) == nil }
+        #expect(center.sessions.isEmpty && processes[2].terminations == 1)
 
         model.launchTerminal(command: "swift build", settings: .init())
         let running = try #require(model.launcherTerminal?.session)
@@ -389,20 +392,21 @@ extension TerminalSessionPolishTests {
                           + osc("133;B") + osc("133;C") + "Building Typeflux…\r\n")
         try await wait { element(endID, in: window) != nil }
         try render(window, as: "10-terminal", dark: dark, windowServer: false)
-        try respondToCloseAlert(with: .alertSecondButtonReturn, dark: dark, capture: true) {
+        try await waitForTerminalKeys(in: window)
+        try await respondToCloseAlert(with: .alertSecondButtonReturn, dark: dark, capture: true) {
             try key(13, characters: "w", modifiers: .command, in: window)
         }
         #expect(model.launcherTerminal?.session === running && processes[3].terminations == 0)
         processes[3].emit("\u{1b}[?1049h")
         try await wait { running.alternateScreen && element("terminal.blockList", in: window) == nil }
-        window.makeKeyAndOrderFront(nil)
-        try respondToCloseAlert(with: .alertSecondButtonReturn, dark: dark) {
+        try await waitForTerminalKeys(in: window, listeners: 1)
+        try await respondToCloseAlert(with: .alertSecondButtonReturn, dark: dark) {
             try key(13, characters: "w", modifiers: .command, in: window)
         }
         #expect(model.launcherTerminal?.session === running && processes[3].terminations == 0)
         processes[3].emit("\u{1b}[?1049l")
         try await wait { element("terminal.blockList", in: window) != nil }
-        try respondToCloseAlert(with: .alertFirstButtonReturn, dark: dark) {
+        try await respondToCloseAlert(with: .alertFirstButtonReturn, dark: dark) {
             try #require(element(endID, in: window)).press()
         }
         #expect(model.launcherTerminal == nil && center.sessions.isEmpty && processes[3].terminations == 1)
@@ -459,7 +463,7 @@ extension TerminalSessionPolishTests {
         try await wait { element(endID, in: launcher.window) == nil }
         model.launchTerminal(settings: .init())
         try await wait { element(endID, in: launcher.window) != nil }
-        launcher.window.makeKeyAndOrderFront(nil)
+        try await waitForTerminalKeys(in: launcher.window)
         try key(2, characters: "d", modifiers: .control, in: launcher.window)
         #expect(eof.writes.last == [4])
         eof.exit(0)
@@ -517,14 +521,40 @@ extension TerminalSessionPolishTests {
         }
     }
 
+    private func waitForTerminalKeys(in window: NSWindow, listeners: Int = 2) async throws {
+        func attachedListeners(in view: NSView) -> Int {
+            let listener = view as? TerminalKeyCapture.Listener
+            let ready = listener?.handler != nil && listener?.window === window
+            return view.subviews.reduce(ready ? 1 : 0) { $0 + attachedListeners(in: $1) }
+        }
+
+        window.makeKeyAndOrderFront(nil)
+        try await wait {
+            guard let content = window.contentView else { return false }
+            return attachedListeners(in: content) == listeners
+        }
+    }
+
     private func respondToCloseAlert(with response: NSApplication.ModalResponse, dark: Bool,
-                                     capture: Bool = false, action: () throws -> Void) throws {
+                                     capture: Bool = false, action: () throws -> Void) async throws {
         var handled = false
         var captureError: Error?
-        let delay: TimeInterval = capture && capturePath != nil ? 0.65 : 0.2
-        let timer = Timer(timeInterval: delay, repeats: false) { _ in
+        let deadline = ContinuousClock.now + .seconds(3)
+        let captureScreenshot = capture && capturePath != nil
+        var screenshotReadyAt: ContinuousClock.Instant?
+        let timer = Timer(timeInterval: 0.05, repeats: true) { timer in
             MainActor.assumeIsolated {
-                guard let modal = NSApp.modalWindow else { return }
+                guard let modal = NSApp.modalWindow else {
+                    if ContinuousClock.now >= deadline { timer.invalidate() }
+                    return
+                }
+                if captureScreenshot {
+                    // Let the alert finish animating before capturing its window.
+                    let readyAt = screenshotReadyAt ?? (ContinuousClock.now + .milliseconds(650))
+                    screenshotReadyAt = readyAt
+                    guard ContinuousClock.now >= readyAt else { return }
+                }
+                timer.invalidate()
                 handled = true
                 modal.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
                 if capture {
@@ -544,7 +574,7 @@ extension TerminalSessionPolishTests {
         RunLoop.main.add(timer, forMode: .modalPanel)
         defer { timer.invalidate() }
         try action()
-        #expect(handled)
+        try await wait { handled }
         if let captureError { throw captureError }
     }
 
