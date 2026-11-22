@@ -364,19 +364,23 @@ extension TerminalCommandTests {
         func osc(_ text: String) -> String { "\u{1b}]" + text + "\u{7}" }
         process.emit(osc("133;B") + osc("133;C") + "first\r\n")
 
-        try await terminalKey(2, .control, in: launcher.window)
+        try await AskQuickSearchSessionTests.wait { launcher.window.firstResponder === session.terminalView }
+        try await terminalKey(2, .control, characters: "d", in: launcher.window)
         #expect(process.writes.last == [4])
-        try await terminalKey(8, .control, in: launcher.window)
+        try await terminalKey(8, .control, characters: "c", in: launcher.window)
         #expect(process.writes.last == [3])
         process.emit(osc("133;D;130") + osc("133;B"))
+        try await AskQuickSearchSessionTests.wait { launcher.window.firstResponder is NSTextView }
         try await terminalKey(126, .option, in: launcher.window)
-        #expect(presentation.actionBlock?.state == .interrupted)
+        #expect(presentation.actionBlock?.exitCode == 130)
         try await terminalKey(8, .command, in: launcher.window)
         #expect(pasteboard.string(forType: .string) == "first")
         try await terminalKey(15, .command, in: launcher.window)
         #expect(session.runningBlock?.command == "printf first")
+        process.emit(osc("133;C") + osc("133;D;0") + osc("133;B"))
+        try await AskQuickSearchSessionTests.wait { launcher.window.firstResponder is NSTextView }
         try await terminalKey(40, .command, in: launcher.window)
-        #expect(session.blocks.count == 1)
+        #expect(session.blocks.isEmpty)
         try await terminalKey(17, .command, in: launcher.window)
         let second = try #require(model.launcherTerminal?.session)
         #expect(second !== session && center.sessions.count == 2)
@@ -524,7 +528,7 @@ extension TerminalCommandTests {
         presentation.fill("read response")
         #expect(presentation.submit())
         process.emit(osc("133;C") + "Continue? ")
-        #expect(presentation.prompt == .input)
+        #expect(presentation.prompt == .running)
         #expect(session.liveOutputRows == 1)
         try await capture("stdin")
         #expect(session.terminalView.normalScreenText().contains("Continue?"))

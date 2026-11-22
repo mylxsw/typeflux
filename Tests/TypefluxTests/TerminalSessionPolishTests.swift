@@ -60,15 +60,18 @@ struct TerminalSessionPolishTests {
         try await wait { element("terminal.launcher.back", in: window) != nil }
         try render(window, as: "08-back", dark: dark, windowServer: false)
 
-        // Escape clears an interactive response and then goes back, leaving the command active.
-        processes[0].emit("Continue? ")
-        try await wait { presentation.prompt == .input }
-        presentation.text = "draft answer"
-        try key(53, characters: "\u{1b}", in: window)
-        #expect(presentation.text.isEmpty && model.launcherTerminal === presentation)
-        try key(51, characters: "\u{7f}", in: window)
+        try await wait { window.firstResponder === running.terminalView }
+        for suffix in ["# ", "$ "] {
+            processes[0].emit(suffix)
+            try key(0, characters: "a", in: window)
+            #expect(processes[0].writes.last == [97])
+            try key(53, characters: "\u{1b}", in: window)
+            #expect(processes[0].writes.last == [27])
+            try key(2, characters: "d", modifiers: .control, in: window)
+            #expect(processes[0].writes.last == [4])
+        }
         #expect(model.launcherTerminal === presentation)
-        try key(53, characters: "\u{1b}", in: window)
+        try #require(element("terminal.launcher.back", in: window)).press()
         try await wait {
             model.launcherTerminal == nil && element(statusID, in: window) != nil
         }
@@ -129,6 +132,40 @@ struct TerminalSessionPolishTests {
         #expect(launcher.dismissed == 1)
         processes[0].exit(1)
         #expect(!center.sessions.contains { $0 === running } && processes[0].terminations == 0)
+    }
+
+    @Test(arguments: [false, true])
+    func nestedShellReceivesLauncherKeys(dark: Bool) async throws {
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        let center = TerminalSessionCenter(history: history, readGitStatus: { _ in nil })
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(
+            text: "", apps: AskTestAppIndex([]), prepare: { $0.terminalSessionCenter = center }
+        )
+        defer { launcher.close(); center.terminateAll() }
+        let window = launcher.window
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        window.makeKeyAndOrderFront(nil)
+        let model = launcher.fixture.model
+        let command = "PS1='demo@localhost:~# ' /bin/bash --noprofile --norc -i"
+        model.launchTerminal(command: command, settings: .init())
+        let presentation = try #require(model.launcherTerminal)
+        let terminal = presentation.session.terminalView
+        try await wait {
+            terminal.normalScreenText().contains("demo@localhost:~#") && window.firstResponder === terminal
+        }
+        func typeLine(_ line: String) throws {
+            for character in line { try key(0, characters: String(character), in: window) }
+            try key(36, characters: "\r", in: window)
+        }
+        try typeLine("echo ok")
+        try await wait { terminal.normalScreenText().components(separatedBy: "\n").contains("ok") }
+        if let height = launcher.heights.last {
+            window.setContentSize(NSSize(width: window.frame.width, height: height))
+        }
+        try render(window, as: "nested-shell", dark: dark, windowServer: false)
+        try typeLine("exit")
+        try await wait { presentation.prompt == .idle && window.firstResponder is NSTextView }
+        #expect(history.commands == [command])
     }
 
     @Test(arguments: [false, true])

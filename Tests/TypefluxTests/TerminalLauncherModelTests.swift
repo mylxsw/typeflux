@@ -24,28 +24,12 @@ struct TerminalLauncherModelTests {
         #expect(model.submit())
         #expect(model.text.isEmpty && model.prompt == .running && !model.submit())
         process.emit(osc("133;C") + "Input: ")
-        #expect(model.prompt == .input)
-        model.synchronizePrompt()
-        model.text = "two\nlines"
-        #expect(!model.submit())
-        model.text = "answer"
-        #expect(model.submit() && model.text.isEmpty)
-        #expect(process.writes.last == Array("answer\r".utf8))
-
+        #expect(model.prompt == .running && !model.submit())
         process.readsHiddenInput = true
         session.refreshInput()
-        model.synchronizePrompt()
-        #expect(model.prompt == .secure && model.text.isEmpty && !model.clearPromptOnEscape())
-        model.secret = "draft secret"
-        #expect(model.clearPromptOnEscape() && model.secret.isEmpty)
-        model.secret = "expired prompt response"
-        process.readsHiddenInput = false
-        #expect(!model.submit() && model.secret.isEmpty)
-        #expect(process.writes.last == Array("answer\r".utf8))
-        process.readsHiddenInput = true
-        model.secret = "hidden test response"
-        #expect(model.submit() && model.secret.isEmpty)
-        #expect(process.writes.last == Array("hidden test response\r".utf8))
+        #expect(model.prompt == .running && !model.submit())
+        session.terminalView.send(source: session.terminalView, data: Array("secret".utf8)[...])
+        #expect(process.writes.last == Array("secret".utf8))
         process.readsHiddenInput = false
         process.emit(osc("133;D;1") + osc("133;B"))
         #expect(session.blocks.last?.hadHiddenInput == true && session.blocks.last?.canExplain == false)

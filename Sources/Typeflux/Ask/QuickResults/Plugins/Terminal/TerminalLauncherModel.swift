@@ -5,7 +5,7 @@ import Combine
 @MainActor
 final class TerminalLauncherModel: ObservableObject {
     enum Prompt: Equatable {
-        case idle, running, input, secure, ended
+        case idle, running, ended
     }
 
     let explanation: TerminalFailureExplanation
@@ -21,7 +21,6 @@ final class TerminalLauncherModel: ObservableObject {
     @Published private(set) var completionCandidates: [String] = []
     private var completion = TerminalCompletion()
     var completionSelection: String? { completion.selectedCandidate }
-    @Published var secret = ""
     @Published private(set) var selected: UUID?
     @Published private(set) var collapsed: Set<UUID> = []
     private var history = History()
@@ -52,12 +51,7 @@ final class TerminalLauncherModel: ObservableObject {
 
     var prompt: Prompt {
         if session.exited { return .ended }
-        switch session.runningBlock?.state {
-        case nil: return .idle
-        case .waitingForInput: return .input
-        case .hiddenInput: return .secure
-        default: return .running
-        }
+        return session.runningBlock == nil ? .idle : .running
     }
 
     func synchronizePrompt() {
@@ -65,8 +59,7 @@ final class TerminalLauncherModel: ObservableObject {
         if current != .idle { pendingRisk = nil }
         if current != lastPrompt {
             resetCompletion()
-            if current == .idle || current == .secure || lastPrompt == .input { text = "" }
-            secret = ""
+            if current == .idle { text = "" }
             lastPrompt = current
         }
     }
@@ -82,16 +75,9 @@ final class TerminalLauncherModel: ObservableObject {
                 return false
             }
             return runCommand()
-        case .input, .secure:
-            let hidden = prompt == .secure
-            let line = hidden ? secret : text
-            secret = ""
-            guard session.writeInputLine(line, hidden: hidden) else { return false }
-            text = ""
         case .running, .ended:
             return false
         }
-        return true
     }
 
     @discardableResult
@@ -141,13 +127,8 @@ final class TerminalLauncherModel: ObservableObject {
     /// Returns whether Escape cleared the active prompt instead of leaving the session.
     func clearPromptOnEscape() -> Bool {
         if cancelRisk() { return true }
-        if prompt == .secure {
-            guard !secret.isEmpty else { return false }
-            secret = ""
-        } else {
-            guard prompt == .idle || prompt == .input, !text.isEmpty else { return false }
-            fill("")
-        }
+        guard prompt == .idle, !text.isEmpty else { return false }
+        fill("")
         return true
     }
 

@@ -50,7 +50,7 @@ struct TerminalLauncherView: View {
             .frame(height: 44)
             Divider()
             if session.alternateScreen {
-                TerminalAlternateScreenView(session: session, allowsLauncherClose: true)
+                TerminalAlternateScreenView(session: session)
             } else {
                 TerminalSessionContent(model: model, session: session, commands: commands, new: new,
                                        insert: insert, error: error, launcherOwnsEscape: true)
@@ -63,7 +63,8 @@ struct TerminalLauncherView: View {
                 if !event.isARepeat { close() }
                 return true
             }
-            guard let key = AskCommandKey(event), !session.alternateScreen || key == .commandO else { return false }
+            guard let key = AskCommandKey(event),
+                  key == .commandO || (session.runningBlock == nil && !session.alternateScreen) else { return false }
             switch key {
             case .commandT: if !event.isARepeat { new() }
             case .commandO:
@@ -113,8 +114,10 @@ struct TerminalSessionContent: View {
             if !model.completionCandidates.isEmpty {
                 completionList
             }
-            Divider()
-            prompt
+            if model.prompt != .running {
+                Divider()
+                prompt
+            }
         }
         .background(TerminalKeyCapture(handler: handle))
         .task(id: model.prompt) {
@@ -122,20 +125,26 @@ struct TerminalSessionContent: View {
             await Task.yield()
             if !Task.isCancelled { focused = model.prompt != .running }
         }
-        .onDisappear { model.secret = "" }
     }
 
     private var blockList: some View {
         GeometryReader { viewport in
             ScrollViewReader { scroll in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 6) {
-                        ForEach(session.blocks) { block in
-                            row(block, viewportHeight: viewport.size.height)
+                    VStack(alignment: .leading, spacing: 6) {
+                        let active = session.runningBlock
+                        LazyVStack(alignment: .leading, spacing: 6) {
+                            ForEach(session.blocks.dropLast(active == nil ? 0 : 1)) { block in
+                                row(block, viewportHeight: viewport.size.height)
+                            }
                         }
-                        Color.clear.frame(height: 1).id("terminal-tail")
-                            .onAppear { atTail = true }
-                            .onDisappear { atTail = false }
+                        // Keep the PTY mounted when the user scrolls back into history.
+                        if let active { row(active, viewportHeight: viewport.size.height).id(active.id) }
+                        LazyVStack {
+                            Color.clear.frame(height: 1).id("terminal-tail")
+                                .onAppear { atTail = true }
+                                .onDisappear { atTail = false }
+                        }
                     }
                     .padding(.vertical, 10)
                     .padding(.horizontal, TerminalRunnerHost.inset.left)
@@ -188,7 +197,7 @@ struct TerminalSessionContent: View {
                 let height = CGFloat(min(session.liveOutputRows, availableRows)) * rowHeight
                 TerminalLiveOutput(session: session, background: background,
                                    availableRows: viewportHeight > 0 ? availableRows : 0)
-                    .frame(height: height).allowsHitTesting(false)
+                    .frame(height: height)
             } else if collapsed {
                 Text(L("terminal.launcher.lines", block.output.string.components(separatedBy: "\n").count))
                     .foregroundStyle(.secondary)
@@ -307,36 +316,19 @@ struct TerminalSessionContent: View {
     private var prompt: some View {
         let state = model.prompt
         return HStack(spacing: 8) {
-            if state == .secure {
-                Image(systemName: "lock.fill").foregroundStyle(Color.orange)
-            }
-            if state == .secure || state == .input {
-                Text(session.runningBlock?.command.split(whereSeparator: \.isWhitespace).first.map(String.init) ?? "")
-                    .lineLimit(1)
-            }
-            Text(state == .input ? "›" : "❯")
-                .foregroundStyle(state == .secure ? Color.orange : state == .input ? .blue : .green)
-            if state == .secure {
-                SecureField("", text: $model.secret)
-                    .accessibilityLabel(L("terminal.launcher.password"))
-                    .focused($focused)
-                    .onSubmit(submit)
-            } else {
-                TextField(state == .ended ? L("terminal.launcher.ended") : "", text: Binding(get: { model.text }, set: {
-                    model.resetCompletion()
-                    model.text = $0
-                }))
-                    .accessibilityLabel(L("terminal.command.placeholder"))
-                    .focused($focused)
-                    .disabled(state == .running)
-                    .onSubmit(submit)
-            }
+            Text("❯").foregroundStyle(.green)
+            TextField(state == .ended ? L("terminal.launcher.ended") : "", text: Binding(get: { model.text }, set: {
+                model.resetCompletion()
+                model.text = $0
+            }))
+                .accessibilityLabel(L("terminal.command.placeholder"))
+                .focused($focused)
+                .onSubmit(submit)
         }
         .textFieldStyle(.plain)
         .font(.system(size: 13, design: .monospaced))
         .padding(.horizontal, 14)
         .frame(height: 42)
-        .opacity(state == .running ? 0.45 : 1)
     }
 
     private func submit() {
@@ -362,6 +354,7 @@ private extension TerminalSessionContent {
     }
 
     func handle(_ event: NSEvent) -> Bool {
+        guard session.runningBlock == nil else { return false }
         let editor = event.window?.firstResponder as? NSTextView
         guard editor?.hasMarkedText() != true else { return false }
         let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
@@ -390,12 +383,10 @@ private extension TerminalSessionContent {
         }
         switch (modifiers, event.keyCode) {
         case (.control, 8):
-            model.secret = ""
             session.interrupt()
             return true
         case (.control, 2):
             guard session.runningBlock != nil || model.text.isEmpty else { return false }
-            model.secret = ""
             session.eof()
             return true
         case (.command, 14):

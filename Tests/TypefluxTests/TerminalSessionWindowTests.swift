@@ -74,8 +74,7 @@ struct TerminalSessionWindowTests {
             }
         }
         let close = try shortcut("w")
-        #expect(!controller.handleKey(close))
-        controller.closeTab()
+        #expect(controller.handleKey(close))
         let sheet = try #require(controller.panel.attachedSheet)
         controller.panel.endSheet(sheet, returnCode: .alertSecondButtonReturn)
         #expect(process.terminations == 0)
