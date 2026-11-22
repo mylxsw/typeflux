@@ -118,6 +118,52 @@ struct TerminalSessionPolishTests {
         #expect(processes[0].terminations == 1)
     }
 
+    @Test(arguments: [false, true])
+    func commandCardsKeepTheirFramesOnHover(running: Bool) async throws {
+        _ = NSApplication.shared
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previous = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+
+        let process = FakeTerminalProcess()
+        let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        let center = TerminalSessionCenter(history: history, makeProcess: { process }, readGitStatus: { _ in nil })
+        defer { center.terminateAll() }
+        let session = try center.create()
+        let model = TerminalLauncherModel(session: session, settings: .init(), source: nil,
+                                          notify: { _, _ in false }, visible: { true })
+        process.emit(osc("133;B"))
+        try #require(session.submit("pwd"))
+        process.emit(osc("133;C") + "/tmp/projects\r\n" + osc("133;D;0") + osc("133;B"))
+        try #require(session.submit("echo Ready"))
+        process.emit(osc("133;C") + "Ready\r\n")
+        if !running { process.emit(osc("133;D;0") + osc("133;B")) }
+        try #require(session.blocks.count == 2)
+
+        let ids = session.blocks.map { "terminal.block.\($0.id)" }
+        let action = running ? L("terminal.launcher.interrupt") + " ⌃C" : L("terminal.launcher.copy") + " ⌘C"
+        let view = TerminalLauncherView(model: model, session: session, sessions: [session],
+                                        select: { _ in }, new: {}, close: {}, move: nil, back: {},
+                                        insert: { _ in }, commands: { [] }, error: { _ in })
+        try await SettingsBehaviorTestSupport.withWindow(view, width: 720, height: 240) { window, _ in
+            @MainActor func frames() -> [NSRect] { ids.compactMap { element($0, in: window)?.frame } }
+            @MainActor func actionIsVisible() -> Bool {
+                SettingsBehaviorTestSupport.elements(in: window).contains { $0.label == action }
+            }
+            try await wait { frames().count == 2 && frames().allSatisfy { !$0.isEmpty } }
+            let resting = frames()
+            #expect(!actionIsVisible())
+            let card = try #require(element(ids[running ? 1 : 0], in: window))
+            try hover(card, in: window)
+            try await wait { actionIsVisible() }
+            #expect(frames() == resting)
+            try hover(card, in: window, inside: false)
+            try await wait { !actionIsVisible() }
+            #expect(frames() == resting)
+        }
+    }
+
     @Test func sessionStatusTitleUsesFolderUntilACommandExists() throws {
         let process = FakeTerminalProcess()
         let history = TerminalCommandHistory(defaults: UserDefaults(suiteName: UUID().uuidString)!)
@@ -315,7 +361,8 @@ extension TerminalSessionPolishTests {
         try #require(condition(), sourceLocation: sourceLocation)
     }
 
-    private func hover(_ control: SettingsBehaviorTestSupport.Element, in window: NSWindow) throws {
+    private func hover(_ control: SettingsBehaviorTestSupport.Element, in window: NSWindow,
+                       inside: Bool = true) throws {
         let point = window.convertPoint(fromScreen: NSPoint(x: control.frame.midX, y: control.frame.midY))
         func dispatch(in view: NSView) {
             for area in view.trackingAreas {
@@ -323,7 +370,8 @@ extension TerminalSessionPolishTests {
                 guard rect.contains(view.convert(point, from: nil)), let owner = area.owner as? NSResponder else {
                     continue
                 }
-                owner.mouseEntered(with: TerminalPolishHoverEvent(area: area, point: point, window: window))
+                let event = TerminalPolishHoverEvent(area: area, point: point, window: window, inside: inside)
+                if inside { owner.mouseEntered(with: event) } else { owner.mouseExited(with: event) }
             }
             view.subviews.forEach(dispatch)
         }
@@ -346,11 +394,13 @@ private final class TerminalPolishHoverEvent: NSEvent {
     private let area: NSTrackingArea
     private let point: NSPoint
     private let targetWindowNumber: Int
+    private let eventType: NSEvent.EventType
 
-    init(area: NSTrackingArea, point: NSPoint, window: NSWindow) {
+    init(area: NSTrackingArea, point: NSPoint, window: NSWindow, inside: Bool) {
         self.area = area
         self.point = point
         targetWindowNumber = window.windowNumber
+        eventType = inside ? .mouseEntered : .mouseExited
         super.init()
     }
 
@@ -359,6 +409,6 @@ private final class TerminalPolishHoverEvent: NSEvent {
     override var trackingArea: NSTrackingArea? { area }
     override var locationInWindow: NSPoint { point }
     override var windowNumber: Int { targetWindowNumber }
-    override var type: NSEvent.EventType { .mouseEntered }
+    override var type: NSEvent.EventType { eventType }
     override var timestamp: TimeInterval { ProcessInfo.processInfo.systemUptime }
 }

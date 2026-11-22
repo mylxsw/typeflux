@@ -250,6 +250,7 @@ struct TerminalSessionContent: View {
                 ProgressView().controlSize(.small).scaleEffect(0.65)
             }
         }
+        .frame(minHeight: terminalButtonSize)
     }
 
     @ViewBuilder
@@ -422,9 +423,11 @@ private extension TerminalSessionContent {
     }
 }
 
+private let terminalButtonSize: CGFloat = 22
+
 private func terminalButton(_ symbol: String, _ title: String, action: @escaping () -> Void) -> some View {
     Button(action: action) {
-        Image(systemName: symbol).frame(width: 22, height: 22)
+        Image(systemName: symbol).frame(width: terminalButtonSize, height: terminalButtonSize)
     }
     .buttonStyle(.borderless)
     .help(title)
