@@ -806,6 +806,7 @@ struct AskCapsuleButtonStyle: ButtonStyle {
         }
 
         var body: some View {
+            let shape = Capsule(style: .circular)
             configuration.label
                 .font(.system(size: expands ? 13 : 12.5, weight: .semibold))
                 .lineLimit(1)
@@ -814,19 +815,19 @@ struct AskCapsuleButtonStyle: ButtonStyle {
                 .padding(.horizontal, 14)
                 .frame(maxWidth: expands ? .infinity : nil)
                 .frame(height: expands ? 36 : 30)
-                .background(fill, in: Capsule())
+                .background(fill, in: shape)
                 // Dark filled buttons keep their glass highlight; light primary actions are solid.
                 .overlay {
                     if lit, !solidPrimary {
-                        Capsule().fill(LinearGradient(colors: [Color.white.opacity(0.18), .clear],
+                        shape.fill(LinearGradient(colors: [Color.white.opacity(0.18), .clear],
                                                       startPoint: .top, endPoint: .bottom))
                             .allowsHitTesting(false)
                     }
                 }
-                .overlay(Capsule().strokeBorder(borderColor, lineWidth: lit ? 0.5 : 1))
+                .overlay(shape.strokeBorder(borderColor, lineWidth: lit ? 0.5 : 1))
                 .shadow(color: kind == .primary && isEnabled && !solidPrimary ? AskTheme.accent.opacity(0.4) : .clear,
                         radius: 7, y: 3)
-                .contentShape(Capsule())
+                .contentShape(shape)
                 .scaleEffect(configuration.isPressed ? 0.95 : 1)
                 .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
                 .opacity(configuration.isPressed ? 0.85 : 1)
