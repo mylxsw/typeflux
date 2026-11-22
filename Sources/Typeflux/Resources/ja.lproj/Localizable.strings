@@ -1597,6 +1597,7 @@
 "ask.empty.voice.after" = "を長押しで音声入力";
 "ask.empty.voice.button" = "マイクを長押しで音声入力";
 "ask.models.capacity" = "コンテキスト %@ · 出力 %@";
+"ask.usage.recordedSpend" = "確定済みの消費";
 "ask.usage.spent" = "消費";
 "ask.reasoning.default.caption" = "どれだけ考えるかはモデルが決めます";
 "ask.reasoning.low.caption" = "最速。簡単な質問向け";

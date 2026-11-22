@@ -1597,6 +1597,7 @@
 "ask.empty.voice.after" = "키를 길게 눌러 음성 입력";
 "ask.empty.voice.button" = "마이크를 길게 눌러 말하기";
 "ask.models.capacity" = "컨텍스트 %@ · 출력 %@";
+"ask.usage.recordedSpend" = "확정된 사용량";
 "ask.usage.spent" = "사용량";
 "ask.reasoning.default.caption" = "얼마나 생각할지 모델이 정합니다";
 "ask.reasoning.low.caption" = "가장 빠름, 간단한 질문에 적합";

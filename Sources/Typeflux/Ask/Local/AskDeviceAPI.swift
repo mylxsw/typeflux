@@ -165,6 +165,10 @@ actor AskDeviceAPI: AskAPI {
             retryAfter[owner]?[id] = nil
             if accounts[owner]?.journal.pending.isEmpty == true { failures.remove(owner) }
             retryDelay[owner] = 1
+            // Pick up posted charges after a completed turn even if its panel is closed.
+            if snapshot.conversation?.run?.isActive == false, let account = accounts[owner] {
+                try? await refreshBilling(id: id, account: account, owner: owner, token: token)
+            }
         } catch {
             failures.insert(owner)
             let delay = retryDelay[owner] ?? 1
@@ -499,16 +503,21 @@ actor AskDeviceAPI: AskAPI {
         let owner = try await account(token), (api, route) = try await execution(id, owner: owner)
         let page = try await api.usage(id: id, runId: runId, cursor: cursor, token: route)
         guard route.isEmpty, let account = accounts[owner] else { return page }
-        let pending = try await account.engine.pendingBillingKeys(id: id)
         let visible = page.items.filter { $0.modelRef.hasPrefix("cloud:") && $0.status != "confirmed" }.compactMap(\.billingKey)
-        var seen = Set<String>()
-        let keys = Array((pending + visible).filter { seen.insert($0).inserted }.prefix(100))
-        // Receipt delays or an offline display must never interrupt a conversation.
-        let receipts = keys.isEmpty ? [] : (try? await transport.billingReceipts(keys: keys, token: tokens[owner] ?? token)) ?? []
-        try Task.checkCancellation()
-        guard accounts[owner]?.lease === account.lease else { throw CancellationError() }
-        try await account.engine.reconcileUsage(id: id, receipts: receipts)
+        try await refreshBilling(id: id, account: account, owner: owner, token: token, visible: visible)
         return try await account.engine.usage(id: id, runId: runId, cursor: cursor, token: "")
+    }
+
+    private func refreshBilling(id: String, account: Account, owner: String, token: String, visible: [String] = []) async throws {
+        try Task.checkCancellation()
+        let pending = try await account.engine.pendingBillingKeys(id: id)
+        var seen = Set<String>()
+        let keys = Array((visible + pending).filter { seen.insert($0).inserted }.prefix(100))
+        guard !keys.isEmpty else { return }
+        let receipts = (try? await transport.billingReceipts(keys: keys, token: tokens[owner] ?? token)) ?? []
+        try Task.checkCancellation()
+        guard accounts[owner]?.engine === account.engine else { throw CancellationError() }
+        try await account.engine.reconcileUsage(id: id, receipts: receipts)
     }
 
     func models(token: String) async throws -> [AskCloudModel] {

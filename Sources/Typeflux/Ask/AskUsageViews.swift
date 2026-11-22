@@ -70,7 +70,8 @@ struct AskUsagePanel: View {
     private var usage: AskConversationUsage? { model.selected?.usage }
     private var local: Bool { model.selectedId.map(model.isLocal) ?? false }
     private var totals: AskUsageTotals? { runId.flatMap { usage?.runs[$0] } ?? (runId == nil ? usage?.total : nil) }
-    private var loadKey: String { "\(model.selectedId ?? "")/\(usage?.version ?? 0)/\(model.selected?.run?.id ?? "none")/\(runId ?? "all")" }
+    private var scopeKey: String { "\(model.owner)/\(model.selectedId ?? "")/\(runId ?? "all")" }
+    private var loadKey: String { "\(scopeKey)/\(usage?.version ?? 0)/\(model.hasUsageRecords)" }
 
     @State private var expandedCall: String?
 
@@ -189,7 +190,7 @@ struct AskUsagePanel: View {
 
     private func totalsCard(_ totals: AskUsageTotals) -> some View {
         card {
-            cardLabel(L("ask.usage.spent")) {
+            cardLabel(L(!local && totals.pending > 0 ? "ask.usage.recordedSpend" : "ask.usage.spent")) {
                 Text(L(runId == nil ? "ask.usage.conversation" : "ask.usage.round"))
                     .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
             }
@@ -224,7 +225,7 @@ struct AskUsagePanel: View {
                     if index > 0 { rule }
                     invocation(item)
                 }
-                if loading { ProgressView().controlSize(.small).padding(10) }
+                if loading && items.isEmpty { ProgressView().controlSize(.small).padding(10) }
             }
             .background(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
             if loadError {
@@ -299,7 +300,7 @@ struct AskUsagePanel: View {
                            : item.purpose == "summary" ? "ask.usage.summary" : "ask.usage.inference"))
                         .foregroundStyle(StudioTheme.textSecondary)
                     Spacer(minLength: 8)
-                    Text(invocationCost(item)).foregroundStyle(StudioTheme.textPrimary).monospacedDigit()
+                    Text(item.tokenUsageText).foregroundStyle(StudioTheme.textPrimary).monospacedDigit()
                 }
                 .font(.system(size: 12, weight: .medium))
                 .padding(.horizontal, 12)
@@ -326,19 +327,6 @@ struct AskUsagePanel: View {
         }
     }
 
-    private func invocationCost(_ item: AskUsageInvocation) -> String {
-        if local, let tokens = item.tokens {
-            return (tokens.incomplete == true ? "≥" : "")
-                + AccountUsageDisplayFormatter.count(Int64(tokens.totalTokens)) + " tokens"
-        }
-        if local { return L(item.status == "pending" ? "ask.usage.pendingShort" : "ask.usage.unavailable") }
-        if item.status == "confirmed", let amount = item.microcredits {
-            return AskUsageTotals(microcredits: amount, calls: 1, unitScale: item.unitScale).creditsText + " credits"
-        }
-        return L(item.status == "external" ? "ask.usage.externalShort"
-                 : item.status == "pending" ? "ask.usage.pendingShort" : "ask.usage.unavailable")
-    }
-
     private func detail(_ title: String, _ value: String) -> some View {
         HStack {
             Text(L(title)).foregroundStyle(StudioTheme.textSecondary)
@@ -355,7 +343,7 @@ struct AskUsagePanel: View {
     @MainActor private func load(reset: Bool) async {
         let id = model.selectedId
         let scope = runId
-        await details.load(key: loadKey, hasRecords: id != nil && model.hasUsageRecords, reset: reset) { cursor in
+        await details.load(key: scopeKey, hasRecords: id != nil && model.hasUsageRecords, reset: reset) { cursor in
             guard let id else { return AskUsagePage(items: [], nextCursor: nil) }
             return try await model.usagePage(id: id, runId: scope, cursor: cursor)
         }

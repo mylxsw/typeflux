@@ -8,7 +8,7 @@ import Testing
 @MainActor
 struct AskUsageDetailsTests {
     private func item(_ id: String) -> AskUsageInvocation {
-        .init(id: id, runId: "run", modelRef: "cloud:default", purpose: "answer", createdAt: Date(),
+        .init(id: id, runId: "run", modelRef: "cloud:default", purpose: "answer", createdAt: Date(timeIntervalSince1970: 0),
               source: "provider", status: "confirmed", version: 1)
     }
 
@@ -22,9 +22,113 @@ struct AskUsageDetailsTests {
         await details.load(key: "image/run", hasRecords: true, reset: true) { _ in page }
         let receipt = try #require(details.items.first)
         #expect(receipt.purpose == "image_generate" && receipt.tokens == nil)
+        #expect(receipt.tokenUsageText == "—")
         let totals = AskUsageTotals(microcredits: receipt.microcredits ?? 0, calls: 1,
                                     unitScale: receipt.unitScale)
         #expect(totals.creditsText == "10")
+    }
+
+    @Test func refreshKeepsLoadedPagesAndTokenLabelsAfterChargesPost() async {
+        let details = AskUsageDetails()
+        var pending = item("a")
+        pending.status = "pending"
+        pending.tokens = .init(promptTokens: 15, completionTokens: 5, totalTokens: 20)
+        #expect(pending.tokenUsageText == "20 tokens")
+        var unknown = pending
+        unknown.tokens = nil
+        #expect(unknown.tokenUsageText == "—")
+        await details.load(key: "c", hasRecords: true, reset: true) { _ in
+            .init(items: [pending], nextCursor: 2)
+        }
+        await details.load(key: "c", hasRecords: true, reset: false) { _ in
+            .init(items: [item("b")], nextCursor: nil)
+        }
+        let before = details.items
+        await details.load(key: "c", hasRecords: true, reset: true) { cursor in
+            #expect(details.items == before)
+            var posted = pending
+            posted.status = "confirmed"
+            posted.microcredits = 1_000_000
+            return cursor == nil ? .init(items: [item("b")], nextCursor: 1) : .init(items: [posted], nextCursor: nil)
+        }
+        #expect(details.items.map(\.id) == ["a", "b"])
+        #expect(details.items.first?.tokenUsageText == "20 tokens")
+        #expect(details.items.first?.microcredits == 1_000_000)
+        let posted = details.items
+        await details.load(key: "c", hasRecords: true, reset: true) { _ in throw URLError(.notConnectedToInternet) }
+        #expect(details.items == posted && !details.loadError)
+    }
+
+    @Test func externalAndPartialTokenReportsKeepTheirUnits() {
+        var call = item("custom")
+        call.status = "external"
+        call.tokens = .init(promptTokens: 15, completionTokens: 5, totalTokens: 20)
+        #expect(call.tokenUsageText == "20 tokens")
+        call.source = "estimated"
+        #expect(call.tokenUsageText == "≈20 tokens")
+        call.tokens?.incomplete = true
+        #expect(call.tokenUsageText == "≥20 tokens")
+    }
+
+    @Test func expandedRowsStayInPlaceWhileAReceiptLoadsAndSettles() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        var first = item("a"), second = item("b")
+        first.status = "pending"
+        first.tokens = .init(promptTokens: 15, completionTokens: 5, totalTokens: 20)
+        second.tokens = .init(promptTokens: 25, completionTokens: 5, totalTokens: 30)
+        second.microcredits = 1_000_000
+        var chat = AskConversation(id: "receipt-test", title: "Usage", revision: 1, updatedAt: Date(), messages: [])
+        chat.usage = .init(version: 1, since: Date(), historicalGap: false,
+                           total: .init(inputTokens: 40, outputTokens: 10, totalTokens: 50,
+                                        microcredits: 1_000_000, calls: 2, pending: 1), runs: [:])
+        await fixture.api.setUsageRecords([first, second])
+        await fixture.api.seed(chat)
+        await fixture.model.select(chat.id)
+
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            try await SettingsBehaviorTestSupport.withWindow(
+                AskUsagePanel(model: fixture.model, runId: .constant(nil), close: {}), width: 380, height: 620
+            ) { window, host in
+                @MainActor func rows() -> [SettingsBehaviorTestSupport.Element] {
+                    SettingsBehaviorTestSupport.elements(in: window).filter {
+                        $0.role == "AXButton" && ($0.label.contains("20 tokens") || $0.label.contains("30 tokens"))
+                    }
+                }
+                try await SettingsBehaviorTestSupport.wait { rows().count == 2 }
+                let firstRow = try #require(rows().first { $0.label.contains("20 tokens") })
+                try firstRow.press()
+                try await SettingsBehaviorTestSupport.wait { SettingsBehaviorTestSupport.contains("15", in: window) }
+                try await Task.sleep(for: .milliseconds(220))
+                let before = rows().map(\.frame)
+                #expect(before.allSatisfy { !$0.isEmpty })
+                let gate = AsyncStream<Void>.makeStream()
+                defer { gate.continuation.finish() }
+                let initialRequests = await fixture.api.usageRequests
+                await fixture.api.pauseNextUsage(until: gate.stream)
+                let deadline = ContinuousClock.now + .seconds(6)
+                while await fixture.api.usageRequests == initialRequests && ContinuousClock.now < deadline {
+                    try await Task.sleep(for: .milliseconds(20))
+                }
+                #expect(await fixture.api.usageRequests > initialRequests)
+                host.layoutSubtreeIfNeeded()
+                #expect(rows().map(\.frame) == before)
+                #expect(SettingsBehaviorTestSupport.contains("15", in: window))
+                first.status = "confirmed"
+                first.microcredits = 2_000_000
+                await fixture.api.setUsageRecords([first, second])
+                chat.usage?.total.pending = 0
+                chat.usage?.total.microcredits = 3_000_000
+                chat.usage?.version = 2
+                await fixture.api.seed(chat)
+                gate.continuation.finish()
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains("3", in: window) && rows().count == 2
+                }
+                #expect(rows().map(\.frame) == before)
+                #expect(SettingsBehaviorTestSupport.contains("15", in: window))
+            }
+        }
     }
 
     @Test func noRecordsIsAnEmptyStateWithoutARequest() async {

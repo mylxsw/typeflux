@@ -12,9 +12,14 @@ final class AskConversationModel: ObservableObject {
         guard owner == current.account else { throw CancellationError() }
         if let latest, let cached = snapshots[id] {
             let merged = cached.mergingUsage(from: latest)
-            snapshots[id] = merged
-            if selectedId == id { selected = selected?.mergingUsage(from: latest) ?? merged }
-            try? await cache.save(merged, owner: current.owner)
+            if selectedId == id {
+                let visible = selected?.mergingUsage(from: latest) ?? merged
+                if visible != selected { selected = visible }
+            }
+            if merged != cached {
+                snapshots[id] = merged
+                try? await cache.save(merged, owner: current.owner)
+            }
         }
         return page
     }

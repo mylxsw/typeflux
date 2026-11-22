@@ -1604,6 +1604,7 @@
 "ask.empty.voice.after" = "語音輸入";
 "ask.empty.voice.button" = "按住麥克風說話";
 "ask.models.capacity" = "%@ 上下文 · %@ 輸出";
+"ask.usage.recordedSpend" = "已入帳消耗";
 "ask.usage.spent" = "消耗";
 "ask.reasoning.default.caption" = "由模型決定思考深度";
 "ask.reasoning.low.caption" = "最快，適合簡單問題";

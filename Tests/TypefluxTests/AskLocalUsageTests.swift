@@ -500,10 +500,12 @@ struct AskLocalUsageTests {
         await model.select(done.id)
         #expect(model.isSignedIn == signedIn && model.hasUsageRecords)
         #expect(model.selected?.usage == done.usage)
+        let revision = model.transcriptRevision
         let details = AskUsageDetails()
         await details.load(key: "local", hasRecords: model.hasUsageRecords, reset: true) { cursor in
             try await model.usagePage(id: done.id, runId: done.run?.id, cursor: cursor)
         }
+        #expect(model.transcriptRevision == revision)
         #expect(!details.loadError && details.items.first?.tokens == tokens)
         #expect(await cloud.usageRequests == 0)
     }

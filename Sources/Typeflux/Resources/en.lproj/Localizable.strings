@@ -1607,6 +1607,7 @@
 "ask.empty.voice.after" = "to dictate";
 "ask.empty.voice.button" = "Hold the microphone to speak";
 "ask.models.capacity" = "%@ context · %@ output";
+"ask.usage.recordedSpend" = "Recorded spend";
 "ask.usage.spent" = "Spent";
 "ask.reasoning.default.caption" = "The model decides how much to think";
 "ask.reasoning.low.caption" = "Fastest, for simple questions";

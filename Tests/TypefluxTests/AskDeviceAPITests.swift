@@ -148,6 +148,19 @@ private actor DeviceTestTransport: AskDeviceTransporting {
         }
     }
 
+    @Test func finishedTurnCollectsReceiptsWithThePanelClosed() async throws {
+        try await environment { api, _, transport, _, _, _ in
+            await transport.connect()
+            let id = UUID().uuidString.lowercased()
+            let queued = try await api.send(conversationId: id, request: request(model: "cloud:default"), token: "user-a")
+            let run = try #require(queued.run), inference = try #require(run.inference)
+            _ = try await api.inferenceResult(conversationId: id, request: .init(
+                runId: run.id, deviceId: run.deviceId, inferenceId: inference.id, content: "OK",
+                usage: .init(promptTokens: 5, completionTokens: 1, totalTokens: 6)), token: "user-a")
+            try await wait { try await api.conversation(id: id, token: "user-a").usage?.total.microcredits == 12_300 }
+        }
+    }
+
     @Test func billingDisplaySurvivesOfflineAndUsesRotatedAccountToken() async throws {
         try await environment { api, _, transport, session, _, _ in
             let id = UUID().uuidString.lowercased()

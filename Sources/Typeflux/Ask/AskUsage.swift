@@ -138,6 +138,12 @@ struct AskUsageInvocation: Codable, Equatable, Identifiable, Sendable {
     var version: Int64
     var unitScale: Int64? = nil
     var billingKey: String? = nil
+
+    var tokenUsageText: String {
+        guard let tokens else { return "—" }
+        let prefix = tokens.incomplete == true ? "≥" : source == "estimated" ? "≈" : ""
+        return prefix + AccountUsageDisplayFormatter.count(Int64(tokens.totalTokens)) + " tokens"
+    }
 }
 
 struct AskUsagePage: Codable, Sendable {
