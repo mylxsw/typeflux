@@ -1964,6 +1964,8 @@
 "ask.run.needsDecision" = "Needs your decision";
 "ask.artifact.caption" = "Created by %@";
 "ask.artifact.save" = "Save As…";
+"ask.readPages.one" = "Read %d page";
+"ask.readPages.many" = "Read %d pages";
 "ask.sources" = "Sources";
 "ask.approval.risk.read" = "Read";
 "ask.approval.risk.write" = "Change";

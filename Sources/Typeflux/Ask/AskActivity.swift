@@ -14,6 +14,7 @@ struct AskRunOutputs: Equatable {
     var storedArtifactNames: [String: String] = [:]
     var generatedImages: [AskGeneratedImage] = []
     var sources: [URL] = []
+    var pageTitles: [URL: String] = [:]
 
     var isEmpty: Bool { artifacts.isEmpty && storedArtifacts.isEmpty && generatedImages.isEmpty && sources.isEmpty }
 }
@@ -153,9 +154,12 @@ enum AskActivity {
             let name = call.function.name
             if name == "web_fetch", let result = resultIndex[call.id], result.isError != true,
                let raw = (try? AskLocalTools.jsonArguments(call.function.arguments))?["url"] as? String,
-               let url = URL(string: raw), ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
-               !value.sources.contains(url) {
-                value.sources.append(url)
+               let url = URL(string: raw), url.host?.isEmpty == false,
+               ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
+                if !value.sources.contains(url) { value.sources.append(url) }
+                if value.pageTitles[url] == nil {
+                    value.pageTitles[url] = webFetchTitle(result.resultText)
+                }
             }
             if let result = resultIndex[call.id] {
                 if ["image_generate", "image_edit"].contains(name), result.isError != true,
@@ -191,6 +195,15 @@ enum AskActivity {
             }
         }
         return value
+    }
+
+    /// web_fetch puts URL and optional Title on the first two lines, before the page body.
+    private static func webFetchTitle(_ receipt: String) -> String? {
+        guard receipt.hasPrefix("URL: "), let newline = receipt.firstIndex(of: "\n") else { return nil }
+        let rest = receipt[receipt.index(after: newline)...]
+        guard rest.hasPrefix("Title: ") else { return nil }
+        let title = rest.dropFirst("Title: ".count).prefix { !$0.isNewline }.trimmingCharacters(in: .whitespaces)
+        return title.isEmpty ? nil : title
     }
 
     /// The plan shown in a block: the run's live plan for the latest block of the

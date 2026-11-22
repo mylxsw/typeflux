@@ -256,6 +256,62 @@ extension AskSidePanelConversationTests {
 }
 
 extension AskSidePanelConversationTests {
+    @Test func toolbarStaysBetweenLateFileChangesAndTheNextQuestion() async throws {
+        let previousKeychain = KeychainTokenStore.useInMemoryStoreForTesting
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        defer { KeychainTokenStore.useInMemoryStoreForTesting = previousKeychain }
+        func message(_ id: String, role: String = "assistant", text: String) -> AskMessage {
+            .init(id: id, role: role, text: text, createdAt: .distantPast)
+        }
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let conversation = AskConversation(id: "turn-footer", title: "文件变更", revision: 1, updatedAt: .distantPast,
+            messages: [message("first", role: "user", text: "生成一个克隆仓库的脚本"),
+                       message("script", text: "脚本已生成，可以复制到服务器使用。"),
+                       message("next", role: "user", text: "能指定目标目录吗？"),
+                       message("plain", text: "可以，把目标目录作为第一个参数传入。")])
+        await fixture.api.seed(conversation)
+        await fixture.model.select(conversation.id)
+        let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil }, loadStoredUserProfile: { nil })
+        let host = NSHostingView(rootView: AskConversationView(model: fixture.model, auth: auth))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 740), styleMask: [.titled],
+                              backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.contentView = nil; window.close() }
+        func settle() async throws {
+            try await Task.sleep(for: .milliseconds(350))
+            host.layoutSubtreeIfNeeded()
+        }
+        try await settle()
+        // Saved answers keep their actions visible without moving the user's pointer.
+        fixture.model.answerNoteIDs["script"] = UUID()
+        fixture.model.fileChanges["script"] = [.init(path: "outputs/clone-typeflux.sh", kind: .added)]
+        try await settle()
+        func frame(_ id: String) throws -> NSRect { try AskWorkspaceTestAccessibility.frame(identifier: id, in: window) }
+        let copy = try frame("ask.answer.copy.script")
+        let files = try frame("ask.fileChanges.toggle")
+        #expect(shows("clone-typeflux.sh", in: window))
+        let question = try frame("ask.question.next")
+        #expect(files.minY >= copy.maxY && copy.minY >= question.maxY)
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        try bitmap.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "/tmp/typeflux-turn-footer.png"))
+
+        let toggle = try #require(find("ask.fileChanges.toggle", in: window))
+        _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
+        try await settle()
+        let collapsed = try frame("ask.fileChanges.toggle")
+        let moved = try frame("ask.answer.copy.script")
+        #expect(!shows("clone-typeflux.sh", in: window))
+        #expect(files.minY - copy.maxY > collapsed.minY - moved.maxY)
+        let next = try frame("ask.question.next")
+        #expect(collapsed.minY >= moved.maxY && moved.minY >= next.maxY)
+    }
+
     @Test func anAnswerListsItsFilesAndOpensTheFilesTab() async throws {
         // The model menu also consults the shared account when the conversation window opens.
         let previousStore = KeychainTokenStore.useInMemoryStoreForTesting

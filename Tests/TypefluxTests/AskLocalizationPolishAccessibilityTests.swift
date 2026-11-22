@@ -75,6 +75,96 @@ struct AskLocalizationPolishAccessibilityTests {
         }
     }
 
+    @Test func readPagesInReopenedNewsAnswerExpandAndOpenTheExactURL() async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        let language = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(language) }
+        let urls = ["https://news.ycombinator.com/news", "https://www.bbc.com/news/world",
+                    "https://www.bbc.com/sport/formula1", "https://www.theguardian.com/world",
+                    "https://example.org/science"].map { URL(string: $0)! }
+        let now = Date()
+        let calls = urls.enumerated().map { index, url in
+            AskToolCall(id: "fetch-\(index)", function: .init(name: "web_fetch", arguments: "{\"url\":\"\(url.absoluteString)\"}"))
+        }
+        let titles = ["Hacker News", "World news", "Formula 1", "World news | The Guardian", ""]
+        var messages = [AskMessage(id: "q", role: "user", text: "今天有哪些值得关注的新闻？", createdAt: now),
+                        AskMessage(id: "s", role: "assistant", text: "", toolCalls: calls, createdAt: now)]
+        for (index, call) in calls.enumerated() {
+            let title = titles[index].isEmpty ? "" : "Title: " + titles[index] + "\n"
+            messages.append(.init(id: "r-\(index)", role: "tool", text: "URL: \(urls[index])\n" + title + "\nSample article",
+                                  toolCallId: call.id, createdAt: now))
+        }
+        messages.append(.init(id: "a", role: "assistant", text: "国际新闻见 [BBC 世界新闻](https://www.bbc.com/news/world)，赛事动态见 [BBC 赛车](https://www.bbc.com/sport/formula1)。", createdAt: now))
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        await fixture.api.seed(.init(id: "news", title: "今日新闻", revision: 1, updatedAt: now, messages: messages))
+        await fixture.model.select("news")
+        var opened: URL?
+        let view = AskConversationView(model: fixture.model)
+            .environment(\.openURL, OpenURLAction { opened = $0; return .handled })
+        try await withWindow(view, size: .init(width: 1060, height: 660)) { window in
+            window.appearance = NSAppearance(named: .darkAqua)
+            @MainActor func press(containing name: String) throws {
+                let element = try #require(nodes(window).first { node in
+                    ["AXButton", "AXLink"].contains(value(node, "accessibilityRole") as? String ?? "")
+                        && text([node]).contains(name)
+                }, "Missing control: \(name)")
+                element.perform(NSSelectorFromString("accessibilityPerformPress"))
+            }
+            @MainActor func snapshot(_ name: String) throws {
+                guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+                let content = try #require(window.contentView)
+                content.layoutSubtreeIfNeeded()
+                let bitmap = try #require(content.bitmapImageRepForCachingDisplay(in: content.bounds))
+                content.cacheDisplay(in: content.bounds, to: bitmap)
+                let png = try #require(bitmap.representation(using: .png, properties: [:]))
+                try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent(name + ".png"))
+            }
+            let label = L("ask.readPages.many", urls.count)
+            #expect(!text(nodes(window)).contains(label))
+            #expect(!text(nodes(window)).contains(L("ask.activity.results")))
+            #expect(!text(nodes(window)).contains("Hacker News"))
+            try press(containing: L("ask.activity.process"))
+            try await Task.sleep(for: .milliseconds(150))
+            try press(containing: label)
+            try await Task.sleep(for: .milliseconds(200))
+            let expanded = text(nodes(window))
+            for url in urls { #expect(expanded.contains(String(url.absoluteString.dropFirst(8)))) }
+            #expect(expanded.contains("Formula 1"))
+            try snapshot("news-expanded")
+            try press(containing: "www.bbc.com/sport/formula1")
+            #expect(opened == urls[2])
+            try press(containing: L("ask.activity.process"))
+            try await Task.sleep(for: .milliseconds(100))
+            #expect(!text(nodes(window)).contains(label))
+            #expect(!text(nodes(window)).contains("Hacker News"))
+            try snapshot("news-collapsed")
+        }
+    }
+
+    @Test func artifactFooterContainsOnlyDeliverables() async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        var outputs = AskRunOutputs()
+        let file = AskArtifactRef(id: "report", ownerId: "owner", conversationId: "c", runId: "r", version: "1",
+                                  mediaType: "text/html", sizeBytes: 42, sha256: "", cleanup: "")
+        outputs.storedArtifacts = [file]
+        let outcome = AskTaskOutcome(id: "out", messageIDs: [], runIDs: [], changes: [])
+        for count in [0, 8] {
+            outputs.sources = (0..<count).map { URL(string: "https://example.org/story/\($0)")! }
+            try await withWindow(AskTaskOutcomeView(outcome: outcome, outputs: outputs, active: false, actions: .init()),
+                                 size: .init(width: 360, height: 500)) { window in
+                let tree = nodes(window)
+                #expect(text(tree).contains(L("ask.activity.results")))
+                #expect(text(tree).contains(file.mediaType))
+                let label = L("ask.readPages.many", count)
+                #expect(!text(tree).contains(label))
+            }
+        }
+    }
+
     private func withWindow<V: View>(_ view: V, size: NSSize, body: (NSWindow) async throws -> Void) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
                                         backing: .buffered, defer: false)

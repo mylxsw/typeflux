@@ -192,9 +192,11 @@ actor AskDeviceAPI: AskAPI {
         return accounts[owner]?.journal.pending.isEmpty == false || failures.contains(owner)
     }
 
-    func historySyncPending(token: String) async -> Bool {
-        guard let owner = try? await account(token) else { return false }
-        return accounts[owner]?.journal.pending.isEmpty == false
+    func historySyncStatus(token: String) async -> AskHistorySyncStatus {
+        guard let owner = try? await account(token), let pending = accounts[owner]?.journal.pending,
+              !pending.isEmpty else { return .idle }
+        if let retries = retryAfter[owner], retries.keys.contains(where: { pending[$0] != nil }) { return .retrying }
+        return .uploading
     }
 
     private func ensureAvailable(_ id: String, owner: String) throws -> AskLocalEngine {

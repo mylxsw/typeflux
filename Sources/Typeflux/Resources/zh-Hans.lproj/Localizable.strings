@@ -1964,6 +1964,8 @@
 "ask.run.needsDecision" = "需要你确认";
 "ask.artifact.caption" = "由 %@ 生成";
 "ask.artifact.save" = "存储为…";
+"ask.readPages.one" = "已读取 %d 个网页";
+"ask.readPages.many" = "已读取 %d 个网页";
 "ask.sources" = "来源";
 "ask.approval.risk.read" = "读取";
 "ask.approval.risk.write" = "修改";

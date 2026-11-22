@@ -160,7 +160,7 @@ struct FeatureAskAdapterTests {
         #expect(try await api.models(token: "fixture-token").count == 1)
         #expect(try await api.models(token: "fixture-token", scenario: "chat").count == 1)
         _ = try await api.featureModels(feature: "title", token: "fixture-token")
-        #expect(await !api.historySyncPending(token: "fixture-token"))
+        #expect(await api.historySyncStatus(token: "fixture-token") == .idle)
         try await api.purgeMemory(token: "fixture-token")
         try await api.purgeMemory(owner: "owner", token: "fixture-token")
         await backend.setFailModels(true)

@@ -23,8 +23,12 @@ protocol AskAgentRuntime: Sendable {
     func resume(conversationId: String, runId: String, token: String) async throws -> AskConversation
 }
 
+enum AskHistorySyncStatus: String, Codable, Sendable {
+    case idle, uploading, retrying
+}
+
 protocol AskConversationAccess: Sendable {
-    func historySyncPending(token: String) async -> Bool
+    func historySyncStatus(token: String) async -> AskHistorySyncStatus
     func updateTitle(id: String, request: AskTitleRequest, token: String) async throws -> AskConversation
     func list(token: String, offset: Int) async throws -> [AskConversationSummary]
     func conversation(id: String, token: String) async throws -> AskConversation
@@ -72,7 +76,7 @@ extension AskAgentRuntime {
 }
 
 extension AskConversationAccess {
-    func historySyncPending(token: String) async -> Bool { false }
+    func historySyncStatus(token: String) async -> AskHistorySyncStatus { .idle }
     func updateTitle(id: String, request: AskTitleRequest, token: String) async throws -> AskConversation {
         throw AskLocalError.message(L("ask.models.requestError"))
     }

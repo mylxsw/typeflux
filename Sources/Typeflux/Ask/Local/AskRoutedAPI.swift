@@ -12,7 +12,7 @@ struct AskRoutedAPI: AskAPI {
     let local: any AskAPI
 
     private func api(_ token: String) -> any AskAPI { token.isEmpty ? local : cloud }
-    func historySyncPending(token: String) async -> Bool { await api(token).historySyncPending(token: token) }
+    func historySyncStatus(token: String) async -> AskHistorySyncStatus { await api(token).historySyncStatus(token: token) }
 
     func updateTitle(id: String, request: AskTitleRequest, token: String) async throws -> AskConversation {
         try await api(token).updateTitle(id: id, request: request, token: token)

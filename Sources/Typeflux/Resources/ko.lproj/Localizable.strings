@@ -1954,6 +1954,8 @@
 "ask.run.needsDecision" = "확인이 필요합니다";
 "ask.artifact.caption" = "%@에서 생성";
 "ask.artifact.save" = "다른 이름으로 저장…";
+"ask.readPages.one" = "웹페이지 %d개 읽음";
+"ask.readPages.many" = "웹페이지 %d개 읽음";
 "ask.sources" = "출처";
 "ask.approval.risk.read" = "읽기";
 "ask.approval.risk.write" = "변경";

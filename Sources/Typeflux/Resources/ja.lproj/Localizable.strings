@@ -1954,6 +1954,8 @@
 "ask.run.needsDecision" = "確認が必要です";
 "ask.artifact.caption" = "%@ で生成";
 "ask.artifact.save" = "別名で保存…";
+"ask.readPages.one" = "%d 件のページを読み取り済み";
+"ask.readPages.many" = "%d 件のページを読み取り済み";
 "ask.sources" = "出典";
 "ask.approval.risk.read" = "読み取り";
 "ask.approval.risk.write" = "変更";

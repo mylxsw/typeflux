@@ -56,8 +56,10 @@ struct AskActivityBlock: View, Equatable {
     /// and a waiting card already shows the plan and the decision.
     private var expanded: Bool { userExpanded ?? startsExpanded ?? false }
 
+    private var hasImageStep: Bool { group.steps.contains { AskImageCardState.isImageTool($0.function.name) } }
+
     private var title: String {
-        if group.steps.contains(where: { AskImageCardState.isImageTool($0.function.name) }) {
+        if hasImageStep {
             return L("ask.image.details")
         }
         if status == .done || status == .failed { return AskActivityRowPresentation.groupTitle(group) }
@@ -68,12 +70,6 @@ struct AskActivityBlock: View, Equatable {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ForEach(group.steps.filter { AskImageCardState.isImageTool($0.function.name) }, id: \.id) { call in
-                AskImageGenerationCard(call: call,
-                    result: results.first { $0.toolCallId == call.id },
-                    status: status, active: imageRunActive,
-                    startedAt: imageStartedAt[call.id])
-            }
             if status == .attention && (approval != nil || approvalToolId == nil) {
                 card
             } else {
@@ -82,10 +78,22 @@ struct AskActivityBlock: View, Equatable {
                     AskPlanList(items: plan, active: false)
                 }
             }
+            ForEach(group.steps.filter { AskImageCardState.isImageTool($0.function.name) }, id: \.id) { call in
+                AskImageGenerationCard(call: call,
+                    result: results.first { $0.toolCallId == call.id },
+                    status: status, active: imageRunActive,
+                    startedAt: imageStartedAt[call.id])
+            }
             if let resolution, !resolution.reason.isEmpty {
                 Text(resolution.reason).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).textSelection(.enabled)
             }
-            if !outputs.isEmpty { AskRunOutputsView(outputs: outputs).padding(.top, 4) }
+            if !outputs.artifacts.isEmpty || !outputs.storedArtifacts.isEmpty || !outputs.generatedImages.isEmpty {
+                AskRunOutputsView(outputs: outputs).padding(.top, 4)
+            }
+            // Image blocks live outside the process fold, so use their own detail toggle.
+            if !outputs.sources.isEmpty && (!hasImageStep || expanded) {
+                AskReadPagesView(urls: outputs.sources, titles: outputs.pageTitles)
+            }
             if let sidePanel, !fileChanges.isEmpty {
                 AskFileChangesView(list: AskFileChangeList(changes: fileChanges), actions: sidePanel).padding(.top, 4)
             }
@@ -469,9 +477,6 @@ struct AskRunOutputsView: View {
             ForEach(outputs.artifacts) { artifact in
                 AskArtifactCard(artifact: artifact)
             }
-            if !outputs.sources.isEmpty {
-                AskSourceList(sources: outputs.sources)
-            }
         }
     }
 }
@@ -560,20 +565,53 @@ enum AskArtifactActions {
     }
 }
 
-/// Numbered pages the run read; each opens in the browser.
-private struct AskSourceList: View {
-    let sources: [URL]
+/// Pages read during this turn, independent of deliverables and inline citations.
+struct AskReadPagesView: View {
+    let urls: [URL]
+    let titles: [URL: String]
+    @State private var expanded = false
+    @Environment(\.askInspectTranscript) private var inspectTranscript
 
     var body: some View {
-        HStack(spacing: 6) {
-            Text(L("ask.sources")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-            ForEach(Array(sources.prefix(6).enumerated()), id: \.offset) { index, url in
-                AskChip(title: "\(index + 1) " + (url.host ?? url.absoluteString), systemImage: "link",
-                        action: { NSWorkspace.shared.open(url) }, help: url.absoluteString)
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                inspectTranscript()
+                expanded.toggle()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "globe")
+                    Text(L(urls.count == 1 ? "ask.readPages.one" : "ask.readPages.many", urls.count))
+                    Image(systemName: expanded ? "chevron.down" : "chevron.right")
+                }
+                .font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                .contentShape(Rectangle())
             }
-            if sources.count > 6 {
-                Text("+\(sources.count - 6)").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+            .buttonStyle(.plain)
+            .accessibilityValue(L(expanded ? "ask.activity.expanded" : "ask.activity.collapsed"))
+
+            if expanded {
+                ForEach(urls, id: \.self) { url in
+                    pageLink(url)
+                        .padding(.leading, 19)
+                }
             }
         }
+    }
+
+    private func pageLink(_ url: URL) -> some View {
+        let address = url.absoluteString.dropFirst((url.scheme?.count ?? 0) + "://".count)
+        return Link(destination: url) {
+            VStack(alignment: .leading, spacing: 2) {
+                if let title = titles[url] {
+                    Text(verbatim: title).font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(2)
+                }
+                Text(verbatim: String(address)).font(.system(size: 12))
+                    .foregroundStyle(StudioTheme.textSecondary).lineLimit(1).truncationMode(.middle)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(url.absoluteString)
     }
 }

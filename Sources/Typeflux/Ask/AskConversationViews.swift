@@ -486,6 +486,7 @@ struct AskConversationView: View {
                     HStack {
                         Text(L("ask.search.conversations")).font(.system(size: 13, weight: .semibold))
                         Spacer()
+                        historySyncIndicator
                         Button(action: closeDrawer) { Image(systemName: "xmark").frame(width: 28, height: 28) }
                             .buttonStyle(.plain)
                             .keyboardShortcut(.cancelAction)
@@ -555,6 +556,7 @@ struct AskConversationView: View {
             if sidebarHidden {
                 collapsedTools.askCollapsedSidebarTools()
             } else {
+                historySyncIndicator
                 expandedTools
                     .padding(.horizontal, style.usesGlass ? 3 : 0)
                     .frame(height: AskMetrics.headerCapsuleHeight)
@@ -576,6 +578,17 @@ struct AskConversationView: View {
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
+        }
+    }
+
+    @ViewBuilder private var historySyncIndicator: some View {
+        if model.historySyncNeedsRetry {
+            Image(systemName: "icloud.slash")
+                .font(.system(size: 12))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .padding(.horizontal, 4)
+                .help(L("ask.history.syncPending"))
+                .accessibilityLabel(L("ask.history.syncPending"))
         }
     }
 
@@ -768,13 +781,6 @@ struct AskConversationView: View {
         let items = AskHistoryPeriod.ordered(visibleConversations, now: now, calendar: calendar)
         return ScrollView {
             LazyVStack(spacing: 2) {
-                if model.historyHasPendingSync {
-                    Label(L("ask.history.syncPending"), systemImage: "icloud.slash")
-                        .font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 8).padding(.vertical, 6)
-                }
                 ForEach(model.temporaryConversations, id: \.id) { temporary in
                     AskTemporaryHistoryRow(selected: model.selectedId == temporary.id,
                                            onSelect: { Task { await model.select(temporary.id) } },
@@ -1417,60 +1423,85 @@ struct AskConversationView: View {
                                                    isCommitted: activityCache.containsCommittedMessage)
         let items = activityCache.appendingProgress(liveMessage)
         let activeRun = model.selected?.run.flatMap { $0.isActive ? $0 : nil }
-        let sections = AskTranscriptSection.make(items, activeRunID: activeRun?.id, activeMessageID: activeRun?.assistantId)
+        let turns = AskTranscriptTurn.make(items, activeRunID: activeRun?.id, activeMessageID: activeRun?.assistantId)
         let showsWaiting = model.showsResponseWaiting && (model.hasPendingSubmission || (liveMessage.map {
             $0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && ($0.toolCalls ?? []).isEmpty
         } ?? true))
         let phase = model.runPhase
         let latestActivityID = items.last(where: { if case .activity = $0.kind { return true }; return false })?.id
         let lastContentID = items.last(where: { if case .outcome = $0.kind { return false }; return true })?.id
+        @ViewBuilder func sectionContent(_ section: AskTranscriptSection) -> some View {
+            if section.isProcess {
+                AskTurnProcessView(section: section,
+                                   active: runIsActive(section, model: model),
+                                   locatedMessageID: model.highlightedMessageId) { visibleItems in
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(visibleItems, id: \.viewID) { item in
+                            sectionRow(item, model: model, actions: rowActions, phase: phase,
+                                       latestActivityID: latestActivityID, lastContentID: lastContentID,
+                                       regenerable: regenerable)
+                        }
+                    }
+                }
+                .id(section.id)
+            } else {
+                ForEach(section.items, id: \.viewID) { item in
+                    sectionRow(item, model: model, actions: rowActions, phase: phase,
+                               latestActivityID: latestActivityID, lastContentID: lastContentID,
+                               regenerable: regenerable)
+                }
+            }
+        }
+
+        @ViewBuilder func currentRunDetails() -> some View {
+            if showsWaiting {
+                AskResponseWaitingView()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .id("response-waiting")
+            }
+            // Errors, interrupted runs and model switches follow the last answer.
+            if hasStatus { statusColumn.id("status") }
+            // The draft follows what happened to the run that wrote it.
+            if let session = model.authoringSession {
+                AskWorkflowAuthoringCard(session: session, selected: showsWorkflow, open: {
+                    showsUsage = false
+                    session.isPresented = true
+                    model.objectWillChange.send()
+                }, close: {
+                    session.isPresented = false
+                    model.objectWillChange.send()
+                })
+            }
+        }
+
         return GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 16) {
-                        ForEach(sections) { section in
-                            if section.isProcess {
-                                AskTurnProcessView(section: section,
-                                                   active: runIsActive(section, model: model),
-                                                   locatedMessageID: model.highlightedMessageId) { visibleItems in
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        ForEach(visibleItems, id: \.viewID) { item in
-                                            sectionRow(item, model: model, actions: rowActions, phase: phase,
-                                                       latestActivityID: latestActivityID, lastContentID: lastContentID,
-                                                       regenerable: regenerable)
-                                        }
-                                    }
+                        ForEach(turns) { turn in
+                            let split = turn.answerIndex ?? turn.sections.endIndex
+                            ForEach(turn.sections[..<split]) { section in sectionContent(section) }
+                            if let answer = turn.answer {
+                                AskTurnConclusion(message: answer,
+                                                  usage: answer.runId.flatMap { model.selected?.usage?.runs[$0] },
+                                                  canRegenerate: regenerable == answer.id,
+                                                  savedToNotes: model.answerNoteIDs[answer.id] != nil,
+                                                  onReference: model.addReference,
+                                                  onRegenerate: { model.regenerate(answer.id) },
+                                                  onSaveNote: model.notes == nil ? nil : {
+                                                      model.performNotebookAction { await model.toggleAnswerNote(answer, excerpt: nil) }
+                                                  },
+                                                  onUsage: { usageRunId = answer.runId; setUsage(true) }) {
+                                    ForEach(turn.sections[split...]) { section in sectionContent(section) }
+                                    if turn.id == turns.last?.id { currentRunDetails() }
                                 }
-                                .id(section.id)
-                            } else {
-                                ForEach(section.items, id: \.viewID) { item in
-                                    sectionRow(item, model: model, actions: rowActions, phase: phase,
-                                               latestActivityID: latestActivityID, lastContentID: lastContentID,
-                                               regenerable: regenerable)
-                                }
+                                .id(turn.sections[split].id)
                             }
                         }
-                        if showsWaiting {
-                            AskResponseWaitingView()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .id("response-waiting")
-                        }
+                        if turns.last?.answer == nil { currentRunDetails() }
                         // Jumped messages wait after everything the run still has to finish.
                         ForEach(steeredMessages) { message in
                             AskMessageView(message: message, steeredPending: true, onReference: { _ in }).id(message.id)
-                        }
-                        // Errors, interrupted runs and model switches follow the last answer.
-                        if hasStatus { statusColumn.id("status") }
-                        // The draft follows what happened to the run that wrote it.
-                        if let session = model.authoringSession {
-                            AskWorkflowAuthoringCard(session: session, selected: showsWorkflow, open: {
-                                showsUsage = false
-                                session.isPresented = true
-                                model.objectWillChange.send()
-                            }, close: {
-                                session.isPresented = false
-                                model.objectWillChange.send()
-                            })
                         }
                         // The end marker spans the space under the composer, so
                         // scrolling to it leaves the last answer above the card.
@@ -1526,7 +1557,7 @@ struct AskConversationView: View {
                 .onChange(of: model.referenceLocation) { id in
                     // A step folded into an activity block scrolls to its block.
                     if let id {
-                        let target = sections.first { $0.isProcess && $0.contains(id) }?.id ?? items.first { item in
+                        let target = turns.lazy.flatMap(\.sections).first { $0.isProcess && $0.contains(id) }?.id ?? items.first { item in
                             if case let .activity(group) = item.kind { return group.messageIds.contains(id) }
                             return false
                         }?.viewID ?? items.first { item in
@@ -1619,17 +1650,14 @@ struct AskConversationView: View {
             AskMessageView(message: message,
                            onReference: { model.addReference($0) },
                            onLocate: model.locateReference,
-                           usage: message.runId.flatMap { model.selected?.usage?.runs[$0] },
-                           onUsage: { usageRunId = message.runId; setUsage(true) },
                            isStreaming: message.id == streamingId,
-                           isProgress: item.isProgress,
                            canRegenerate: regenerable == message.id,
                            onRegenerate: { model.regenerate(message.id) },
                            outputs: item.outputs,
                            fileChanges: [],
                            onSaveNote: model.notes == nil || message.role != "assistant" ? nil
                                : { excerpt in model.performNotebookAction { await model.toggleAnswerNote(message, excerpt: excerpt) } },
-                           savedToNotes: model.answerNoteIDs[message.id] != nil, actionIdentity: ObjectIdentifier(model))
+                           actionIdentity: ObjectIdentifier(model))
                 .equatable()
         case .outcome(let outcome):
             AskTaskOutcomeView(outcome: outcome, outputs: item.outputs,
@@ -1732,10 +1760,7 @@ private struct AskMessageView: View, Equatable {
     var onReference: (AskReference) -> Void
     /// Scrolls to the answer a sent quote came from.
     var onLocate: (String) -> Void = { _ in }
-    var usage: AskUsageTotals? = nil
-    var onUsage: () -> Void = {}
     var isStreaming = false
-    var isProgress = false
     var canRegenerate = false
     var onRegenerate: () -> Void = {}
     /// Images and pages from the tool steps before this answer.
@@ -1744,21 +1769,17 @@ private struct AskMessageView: View, Equatable {
     var fileChanges: [AskWorkspaceFileChange] = []
     /// Saves the answer, or the given part of it, to the notebook; nil hides the action.
     var onSaveNote: ((String?) -> Void)?
-    /// The whole answer is in the notebook.
-    var savedToNotes = false
     var actionIdentity: ObjectIdentifier?
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.actionIdentity != nil && lhs.actionIdentity == rhs.actionIdentity
             && lhs.message == rhs.message && lhs.steeredPending == rhs.steeredPending
-            && lhs.usage == rhs.usage && lhs.isStreaming == rhs.isStreaming && lhs.isProgress == rhs.isProgress
+            && lhs.isStreaming == rhs.isStreaming
             && lhs.canRegenerate == rhs.canRegenerate && lhs.outputs == rhs.outputs
-            && lhs.fileChanges == rhs.fileChanges && lhs.savedToNotes == rhs.savedToNotes
+            && lhs.fileChanges == rhs.fileChanges
             && (lhs.onSaveNote == nil) == (rhs.onSaveNote == nil)
     }
 
-    @State private var copied = false
-    @State private var hovering = false
     @Environment(\.askSidePanelActions) private var sidePanel
 
     var body: some View {
@@ -1825,6 +1846,8 @@ private struct AskMessageView: View, Equatable {
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("ask.question." + message.id)
             .frame(maxWidth: AskMetrics.bubbleMaxWidth, alignment: .trailing)
         }
     }
@@ -1854,10 +1877,8 @@ private struct AskMessageView: View, Equatable {
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
             }
             if message.isError == true { interruptedTag }
-            if !message.text.isEmpty, !isStreaming, !isProgress { turnActions }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .onHover { hovering = $0 }
     }
 
     /// A small tag instead of a loose grey line. When the answer can be
@@ -1888,49 +1909,6 @@ private struct AskMessageView: View, Equatable {
         .accessibilityElement(children: .contain)
     }
 
-    /// The row keeps its height while hidden, so hovering never reflows the
-    /// transcript under the pointer. Opacity (not a conditional view) also keeps
-    /// the actions reachable by VoiceOver and the keyboard at all times.
-    private var turnActions: some View {
-        HStack(spacing: 2) {
-            AskIconGhostButton(label: copied ? L("ask.copied") : L("ask.copy"),
-                               systemImage: copied ? "checkmark" : "doc.on.doc", active: copied) {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(message.text, forType: .string)
-                copied = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
-            }
-            // An interrupted answer already offers this on its tag.
-            if canRegenerate, message.isError != true {
-                AskIconGhostButton(label: L("ask.regenerate"), systemImage: "arrow.clockwise", action: onRegenerate)
-            }
-            AskIconGhostButton(label: L("ask.quote"), systemImage: "text.quote") {
-                onReference(AskReference(messageId: message.id, text: message.text, question: ""))
-            }
-            if let onSaveNote {
-                AskIconGhostButton(label: L(savedToNotes ? "ask.notes.savedAnswer" : "ask.notes.saveAnswer"),
-                                   systemImage: savedToNotes ? "note.text" : "note.text.badge.plus",
-                                   active: savedToNotes) { onSaveNote(nil) }
-                    .accessibilityIdentifier("ask.message.saveNote")
-            }
-            AskIconGhostButton(label: usageHelp, systemImage: "chart.bar.xaxis", action: onUsage)
-            .accessibilityLabel(L("ask.usage.title"))
-            .accessibilityValue(usageLabel)
-        }
-        .opacity(hovering || copied || savedToNotes ? 1 : 0)
-        .animation(.easeOut(duration: 0.12), value: hovering)
-    }
-
-    private var usageLabel: String {
-        guard let usage else { return L("ask.usage.title") }
-        if usage.calls > 0, usage.external == usage.calls { return usage.tokenText(usage.totalTokens) + " tokens" }
-        return usage.creditsText + " credits"
-    }
-
-    private var usageHelp: String {
-        guard usage != nil else { return L("ask.usage.title") }
-        return L("ask.usage.title") + " · " + usageLabel
-    }
 }
 
 /// Reasoning is a single quiet line above the answer. It used to take a full

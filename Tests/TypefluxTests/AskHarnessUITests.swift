@@ -67,6 +67,24 @@ struct AskHarnessUITests {
         #expect(items[2].outputs.isEmpty)
     }
 
+    @Test func readPagesSurviveHistoryReplayWithAndWithoutReceiptTitles() {
+        let paths = ["one", "two", "one", "failed", "missing"]
+        let calls = paths.enumerated().map { index, path in
+            call(String(index), "web_fetch", ["url": "https://example.org/" + path])
+        }
+        let messages = [step("history", calls)]
+        var receipts = (0..<4).map { result(String($0), error: $0 == 3) }
+        receipts[0].text = "Legacy receipt"
+        receipts[1].text = "URL: https://example.org/two\n\nTitle: part of the body"
+        receipts[2].text = "URL: https://example.org/one\nTitle: First story\n\nMore"
+        let expected = AskActivity.items(messages, results: receipts)
+        let cached = AskActivityOutputCache().prepare(conversationID: "previous", messages: messages, results: receipts, changes: [:])
+        #expect(cached == expected)
+        #expect(expected.last?.outputs.sources.map(\.lastPathComponent) == ["one", "two"])
+        #expect(expected.last?.outputs.pageTitles == [URL(string: "https://example.org/one")!: "First story"])
+        #expect(AskActivity.items([step("answer", [], text: "Hello")], results: []).count == 1)
+    }
+
     @Test func outputsIgnoreNonWebURLs() {
         let group = AskActivityGroup(id: "a", messages: [step("a", [call("f", "web_fetch", ["url": "file:///etc/passwd"]),
                                                                     call("g", "web_fetch", ["url": 3])])])
@@ -308,12 +326,15 @@ struct AskHarnessUITests {
         #expect(waiting < fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention,
                                                 startsExpanded: true)))
         #expect(waiting > fits(AskActivityBlock(group: group, results: results, plan: nil, status: .attention)))
-        #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .attention, approvalToolId: "c")) > collapsed)
+        #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .attention, approvalToolId: "c",
+                                      approval: AnyView(Text("Approve this step")))) > collapsed)
         #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .failed, outputs: outputs)) > collapsed)
         #expect(fits(AskToolStepRow(call: calls[1], result: results[1])) > 10)
         #expect(fits(AskToolStepRow(call: calls[2], result: nil, preparing: true)) > 10)
         #expect(fits(AskToolStepRow(call: calls[2], result: nil, pending: true)) > 10)
-        #expect(fits(AskRunOutputsView(outputs: outputs)) > 40)
+        let artifactHeight = fits(AskRunOutputsView(outputs: .init(artifacts: outputs.artifacts)))
+        #expect(artifactHeight > 0)
+        #expect(fits(AskRunOutputsView(outputs: outputs)) == artifactHeight)
     }
 
     @Test func artifactsCopyAsImagesAndEncodeAsPNG() async throws {

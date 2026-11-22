@@ -6,6 +6,11 @@ import Testing
 @Suite(.exclusiveUIState)
 @MainActor
 struct AskTurnProcessTests {
+    private func sectionsFor(_ items: [AskTranscriptItem], activeRunID: String? = nil,
+                             activeMessageID: String? = nil) -> [AskTranscriptSection] {
+        AskTranscriptTurn.make(items, activeRunID: activeRunID, activeMessageID: activeMessageID).flatMap(\.sections)
+    }
+
     private func message(_ id: String, role: String = "assistant", text: String = "Checking") -> AskMessage {
         .init(id: id, role: role, text: text, createdAt: .distantPast, runId: "run")
     }
@@ -26,6 +31,27 @@ struct AskTurnProcessTests {
         )
     }
 
+    @Test func readPagesAppearOnceInProcessAndOnlyFilesFollowTheAnswer() throws {
+        var step = message("fetch", text: "")
+        let url = URL(string: "https://example.org/news")!
+        step.toolCalls = [.init(id: "f", function: .init(name: "web_fetch", arguments: "{\"url\":\"\(url)\"}"))]
+        var receipt = message("receipt", role: "tool", text: "URL: \(url)\nTitle: News\n\nStory")
+        receipt.toolCallId = "f"
+        let messages = [message("q", role: "user"), step, message("answer")]
+        for hasFile in [false, true] {
+            let changes: [String: [AskWorkspaceFileChange]] = hasFile ? ["fetch": [.init(path: "report.html", kind: .added)]] : [:]
+            let rows = AskActivity.items(messages, results: [receipt], fileChanges: changes)
+            let turn = try #require(AskTranscriptTurn.make(rows).first)
+            let process = try #require(turn.sections.first(where: { $0.isProcess }))
+            #expect(process.items.flatMap { $0.outputs.sources } == [url])
+            #expect(process.items.first?.outputs.pageTitles[url] == "News")
+            let answer = try #require(turn.answerIndex)
+            let conclusion = turn.sections[answer...].flatMap(\.items)
+            #expect(conclusion.map(\.id) == (hasFile ? ["answer", "outcome-q"] : ["answer"]))
+            #expect(conclusion.allSatisfy { $0.outputs.sources.isEmpty })
+        }
+    }
+
     @Test func imageCardStaysOutsideProcessBeforeAndAfterTheAnswer() throws {
         var step = message("image-step", text: "")
         step.toolCalls = [.init(id: "image-call", function: .init(name: "image_generate", arguments: "{}"))]
@@ -34,17 +60,17 @@ struct AskTurnProcessTests {
         receipt.toolCallId = "image-call"
         receipt.generatedImage = .init(assetId: "image-job", url: "https://image.test/result.png")
         let finished = AskActivity.items([message("user", role: "user"), step, message("answer")], results: [receipt])
-        let liveSection = try #require(AskTranscriptSection.make(waiting, activeRunID: "run").first { $0.contains("image-step") })
-        let finalSection = try #require(AskTranscriptSection.make(finished).first { $0.contains("image-step") })
+        let liveSection = try #require(sectionsFor(waiting, activeRunID: "run").first { $0.contains("image-step") })
+        let finalSection = try #require(sectionsFor(finished).first { $0.contains("image-step") })
         #expect(!liveSection.isProcess && !finalSection.isProcess)
         #expect(liveSection.id == finalSection.id)
         #expect(finalSection.id == "activity/image-step")
-        #expect(AskTranscriptSection.make(finished).firstIndex { $0.contains("image-step") }!
-            < AskTranscriptSection.make(finished).firstIndex { $0.contains("answer") }!)
+        #expect(sectionsFor(finished).firstIndex { $0.contains("image-step") }!
+            < sectionsFor(finished).firstIndex { $0.contains("answer") }!)
     }
 
     @Test func `completed turn keeps its answer and files outside one process disclosure`() throws {
-        let sections = AskTranscriptSection.make(transcript())
+        let sections = sectionsFor(transcript())
         #expect(sections.count == 4)
         #expect(sections.filter(\.isProcess).count == 1)
         let process = try #require(sections.first(where: { $0.isProcess }))
@@ -60,7 +86,7 @@ struct AskTurnProcessTests {
     }
 
     @Test func `unfinished turns remain open and each question gets its own process`() {
-        let unfinished = AskTranscriptSection.make(transcript(answer: false))
+        let unfinished = sectionsFor(transcript(answer: false))
         #expect(unfinished.first(where: { $0.isProcess })?.hasConclusion == false)
         var second = transcript()
         second = second.map { item in
@@ -70,10 +96,10 @@ struct AskTurnProcessTests {
             }
             return value
         }
-        let sections = AskTranscriptSection.make(transcript() + second)
+        let sections = sectionsFor(transcript() + second)
         #expect(sections.filter(\.isProcess).count == 2)
-        #expect(AskTranscriptSection.make([]).isEmpty)
-        let plain = AskTranscriptSection.make([.init(kind: .message(message("plain")))])
+        #expect(sectionsFor([]).isEmpty)
+        let plain = sectionsFor([.init(kind: .message(message("plain")))])
         #expect(plain.count == 1 && !plain[0].isProcess)
     }
 
@@ -81,14 +107,14 @@ struct AskTurnProcessTests {
         let narration = message("note", text: "Found the cause.")
         var final = message("answer", text: "The result.")
         final.reasoning = "Verify the fix."
-        let sections = AskTranscriptSection.make([.init(kind: .message(narration)), .init(kind: .message(final))])
+        let sections = sectionsFor([.init(kind: .message(narration)), .init(kind: .message(final))])
         #expect(sections.count == 2)
         #expect(sections[0].items.count == 2)
         #expect(sections[0].items.last?.viewID != sections[1].items.first?.viewID)
         guard case let .message(answer) = sections[1].items[0].kind else { Issue.record("Missing answer"); return }
         #expect(answer.text == final.text && answer.id == final.id && answer.reasoning == nil)
         #expect(final.reasoning == "Verify the fix.")
-        let thought = AskTranscriptSection.make([.init(kind: .message(message("thought", text: "")))])
+        let thought = sectionsFor([.init(kind: .message(message("thought", text: "")))])
         #expect(thought[0].isProcess && !thought[0].hasConclusion)
     }
 
@@ -96,7 +122,7 @@ struct AskTurnProcessTests {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
-        let section = try #require(AskTranscriptSection.make(transcript()).first(where: { $0.isProcess }))
+        let section = try #require(sectionsFor(transcript()).first(where: { $0.isProcess }))
         let state = ProcessState()
         let host = NSHostingView(rootView: ProcessScene(state: state, section: section))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 650, height: 400), styleMask: [.borderless],
@@ -144,14 +170,27 @@ struct AskTurnProcessTests {
 
     @Test func streamingTextAndToolPreamblesShareOneStableProcessIdentity() throws {
         let text = message("live")
-        let before = AskTranscriptSection.make([.init(kind: .message(text))], activeRunID: "run", activeMessageID: text.id)
+        let before = sectionsFor([.init(kind: .message(text))], activeRunID: "run", activeMessageID: text.id)
         var step = text
         step.toolCalls = [.init(id: "call", function: .init(name: "files", arguments: "{}"))]
-        let after = AskTranscriptSection.make(AskActivity.items([step], results: []), activeRunID: "run", activeMessageID: text.id)
+        let after = sectionsFor(AskActivity.items([step], results: []), activeRunID: "run", activeMessageID: text.id)
         #expect(before.first?.id == after.first?.id)
         #expect(before.first?.isProcess == true)
         #expect(before.first?.hasConclusion == false)
         #expect(before.first?.items.first?.viewID == after.first?.items.first?.viewID)
+    }
+
+    @Test func onlyFinishedAnswersOwnActionsIncludingWhenFilesArriveLater() throws {
+        let secondQuestion = message("next", role: "user")
+        var partial = message("stream")
+        partial.runId = "live"
+        let turns = AskTranscriptTurn.make(transcript() + [.init(kind: .message(secondQuestion)), .init(kind: .message(partial))],
+                                           activeRunID: "live")
+        #expect(turns.map { $0.answer?.id } == ["answer", nil])
+        let first = try #require(turns.first)
+        let index = try #require(first.answerIndex)
+        #expect(first.sections[index...].flatMap(\.items).map(\.id) == ["answer", "outcome-user"])
+        #expect(AskTranscriptTurn.make(transcript(answer: false)).first?.answer == nil)
     }
 
     @Test func conversationKeepsItsConclusionVisibleAndCanLocateFoldedSteps() async throws {
@@ -193,7 +232,7 @@ struct AskTurnProcessTests {
     }
 
     @Test func `completed and running layouts render with compact file rows in both themes`() async throws {
-        var section = try #require(AskTranscriptSection.make(transcript()).first(where: { $0.isProcess }))
+        var section = try #require(sectionsFor(transcript()).first(where: { $0.isProcess }))
         if case var .activity(group) = section.items[1].kind {
             var second = group.messages[0].toolCalls![0]
             second.id = "second-command"

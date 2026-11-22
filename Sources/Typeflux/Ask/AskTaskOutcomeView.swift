@@ -5,12 +5,6 @@ import SwiftUI
 struct AskTaskOutcomeView: View {
     let outcome: AskTaskOutcome
     let outputs: AskRunOutputs
-    private var remainingOutputs: AskRunOutputs {
-        var value = outputs
-        // Generated images stay beside their original tool call, before the final prose.
-        value.generatedImages = []
-        return value
-    }
     let active: Bool
     let actions: AskSidePanelActions
     @State private var expanded = true
@@ -18,7 +12,8 @@ struct AskTaskOutcomeView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if !remainingOutputs.isEmpty {
+            // Generated images already appear alongside their tool call.
+            if !outputs.storedArtifacts.isEmpty || !outputs.artifacts.isEmpty {
                 Button { inspectTranscript(); expanded.toggle() } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "shippingbox")
@@ -30,7 +25,7 @@ struct AskTaskOutcomeView: View {
                 }
                 .buttonStyle(.plain)
                 if expanded {
-                    AskPagedRunOutputs(outputs: remainingOutputs)
+                    AskPagedRunOutputs(outputs: outputs)
                 }
             }
             if !outcome.changes.isEmpty {
@@ -45,16 +40,12 @@ struct AskTaskOutcomeView: View {
 private struct AskPagedRunOutputs: View {
     let outputs: AskRunOutputs
     @State private var page = 0
-    private var count: Int { outputs.generatedImages.count + outputs.storedArtifacts.count + outputs.artifacts.count }
+    private var count: Int { outputs.storedArtifacts.count + outputs.artifacts.count }
 
     private var visible: AskRunOutputs {
         let range = AskActivityPage.range(count: count, page: page)
         var result = AskRunOutputs()
         var offset = 0
-        for image in outputs.generatedImages {
-            if range.contains(offset) { result.generatedImages.append(image) }
-            offset += 1
-        }
         for artifact in outputs.storedArtifacts {
             if range.contains(offset) { result.storedArtifacts.append(artifact) }
             offset += 1
@@ -63,7 +54,6 @@ private struct AskPagedRunOutputs: View {
             if range.contains(offset) { result.artifacts.append(artifact) }
             offset += 1
         }
-        result.sources = outputs.sources
         result.storedArtifactNames = outputs.storedArtifactNames
         return result
     }

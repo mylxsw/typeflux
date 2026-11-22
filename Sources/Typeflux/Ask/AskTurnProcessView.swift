@@ -36,14 +36,50 @@ struct AskTranscriptSection: Identifiable {
             }
         }
     }
+}
+
+/// The conclusion and everything following it share one hover area and action footer.
+struct AskTranscriptTurn: Identifiable {
+    let id: String
+    let sections: [AskTranscriptSection]
+    let answerIndex: Int?
+    var answer: AskMessage? {
+        guard let answerIndex, case let .message(message) = sections[answerIndex].items.first?.kind else { return nil }
+        return message
+    }
+
+    /// Keep the turn-wide, deduplicated reading list with its first fetch step.
+    /// A sources-only turn ends at its answer, with no empty outcome row.
+    private static func placeReadPages(in turn: inout [AskTranscriptItem]) {
+        guard let last = turn.last, case let .outcome(outcome) = last.kind,
+              !last.outputs.sources.isEmpty,
+              let index = turn.firstIndex(where: {
+                  if case let .activity(group) = $0.kind {
+                      return group.calls.contains { $0.function.name == "web_fetch" }
+                  }
+                  return false
+              }) else { return }
+        turn[index].outputs.sources = last.outputs.sources
+        turn[index].outputs.pageTitles = last.outputs.pageTitles
+        var footer = turn.removeLast()
+        footer.outputs.sources = []
+        footer.outputs.pageTitles = [:]
+        if !footer.outputs.artifacts.isEmpty || !footer.outputs.storedArtifacts.isEmpty || !outcome.changes.isEmpty {
+            turn.append(footer)
+        }
+    }
 
     /// The last answer stays outside the process. Earlier narration and reasoning belong
     /// to the same disclosure as the tools. A new user turn always starts a new disclosure.
     static func make(_ items: [AskTranscriptItem], activeRunID: String? = nil,
                      activeMessageID: String? = nil) -> [Self] {
-        var sections: [Self] = []
+        var turns: [Self] = []
         var turn: [AskTranscriptItem] = []
         func flushTurn() {
+            placeReadPages(in: &turn)
+            guard let first = turn.first else { return }
+            var sections: [AskTranscriptSection] = []
+            var answerIndex: Int?
             let isActive = turn.contains { item in
                 switch item.kind {
                 case let .message(message):
@@ -85,6 +121,7 @@ struct AskTranscriptSection: Identifiable {
                             answer.reasoningMilliseconds = nil
                         }
                         flushProcess()
+                        answerIndex = sections.count
                         sections.append(.init(id: item.viewID, items: [.init(kind: .message(answer))]))
                     } else { process.append(item) }
                 case let .activity(group):
@@ -99,6 +136,7 @@ struct AskTranscriptSection: Identifiable {
                 }
             }
             flushProcess()
+            turns.append(.init(id: first.viewID, sections: sections, answerIndex: answerIndex))
             turn = []
         }
         for item in items {
@@ -108,7 +146,7 @@ struct AskTranscriptSection: Identifiable {
             turn.append(item)
         }
         flushTurn()
-        return sections
+        return turns
     }
 }
 

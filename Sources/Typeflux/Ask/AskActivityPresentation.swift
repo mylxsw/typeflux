@@ -130,6 +130,7 @@ final class AskActivityOutputCache {
                 combined.artifacts += value.artifacts.filter { images.insert($0.id).inserted }
                 combined.storedArtifacts += value.storedArtifacts.filter { artifacts.insert($0.id).inserted }
                 combined.generatedImages += value.generatedImages.filter { generated.insert($0.assetId).inserted }
+                combined.pageTitles.merge(value.pageTitles, uniquingKeysWith: { first, _ in first })
                 combined.sources += value.sources.filter { sources.insert($0).inserted }
                 combined.storedArtifactNames.merge(value.storedArtifactNames, uniquingKeysWith: { _, new in new })
             }

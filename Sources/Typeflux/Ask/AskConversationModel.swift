@@ -549,7 +549,7 @@ final class AskConversationModel: ObservableObject {
     @Published var captureWarning: String?
     @Published private(set) var isRefreshingHistory = false
     @Published private(set) var historyRefreshError: String?
-    @Published private(set) var historyHasPendingSync = false
+    @Published private(set) var historySyncNeedsRetry = false
     private var historySyncTask: Task<Void, Never>?
     private var pullRefreshID: UUID?
     private var historyErrorTask: Task<Void, Never>?
@@ -855,7 +855,7 @@ final class AskConversationModel: ObservableObject {
         tools.cancelProjects(conversationId: nil)
         voiceInput.cancel()
         historyErrorTask?.cancel(); historyRefreshError = nil
-        historySyncTask?.cancel(); historySyncTask = nil; historyHasPendingSync = false
+        historySyncTask?.cancel(); historySyncTask = nil; historySyncNeedsRetry = false
         pullRefreshID = nil; isRefreshingHistory = false
         titleTasks.values.forEach { $0.cancel() }; titleTasks = [:]; titleRetryAfter = [:]
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]; operationGenerations = [:]; operationRuns = [:]; operationOwners = [:]
@@ -1977,11 +1977,12 @@ final class AskConversationModel: ObservableObject {
         historySyncTask = Task { [weak self, api] in
             while !Task.isCancelled {
                 guard self?.owner == current.account, self?.session()?.owner == current.account else { return }
-                let pending = await api.historySyncPending(token: current.token)
+                let status = await api.historySyncStatus(token: current.token)
                 guard !Task.isCancelled else { return }
                 guard self?.owner == current.account, self?.session()?.owner == current.account else { return }
-                self?.historyHasPendingSync = pending
-                if !pending { self?.historySyncTask = nil; return }
+                let needsRetry = status == .retrying
+                if self?.historySyncNeedsRetry != needsRetry { self?.historySyncNeedsRetry = needsRetry }
+                if status == .idle { self?.historySyncTask = nil; return }
                 do { try await Task.sleep(for: .seconds(1)) } catch { return }
             }
         }

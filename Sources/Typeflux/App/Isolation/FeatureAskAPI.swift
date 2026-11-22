@@ -16,7 +16,7 @@ struct FeatureAskAPI: AskAPI {
     func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation { try await invoke("ask.regenerate.8", Call8(conversationId: conversationId, request: request, token: token)) }
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation { try await invoke("ask.steer.9", Call9(conversationId: conversationId, request: request, token: token)) }
     func resume(conversationId: String, runId: String, token: String) async throws -> AskConversation { try await invoke("ask.resume.10", Call10(conversationId: conversationId, runId: runId, token: token)) }
-    func historySyncPending(token: String) async -> Bool { (try? await invoke("ask.historySyncPending.11", Call11(token: token))) ?? false }
+    func historySyncStatus(token: String) async -> AskHistorySyncStatus { (try? await invoke("ask.historySyncStatus.11", Call11(token: token))) ?? .idle }
     func updateTitle(id: String, request: AskTitleRequest, token: String) async throws -> AskConversation { try await invoke("ask.updateTitle.12", Call12(id: id, request: request, token: token)) }
     func list(token: String, offset: Int) async throws -> [AskConversationSummary] { try await invoke("ask.list.13", Call13(token: token, offset: offset)) }
     func conversation(id: String, token: String) async throws -> AskConversation { try await invoke("ask.conversation.14", Call14(id: id, token: token)) }
@@ -79,9 +79,9 @@ struct FeatureAskAPI: AskAPI {
             case "ask.resume.10":
                 let value = try JSONDecoder().decode(Call10.self, from: payload)
                 result = try JSONEncoder().encode(try await api.resume(conversationId: value.conversationId, runId: value.runId, token: value.token))
-            case "ask.historySyncPending.11":
+            case "ask.historySyncStatus.11":
                 let value = try JSONDecoder().decode(Call11.self, from: payload)
-                result = try JSONEncoder().encode(await api.historySyncPending(token: value.token))
+                result = try JSONEncoder().encode(await api.historySyncStatus(token: value.token))
             case "ask.updateTitle.12":
                 let value = try JSONDecoder().decode(Call12.self, from: payload)
                 result = try JSONEncoder().encode(try await api.updateTitle(id: value.id, request: value.request, token: value.token))

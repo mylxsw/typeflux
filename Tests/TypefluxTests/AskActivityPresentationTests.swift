@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Testing
+import Vision
 @testable import Typeflux
 
 @Suite("Stable task presentation", .exclusiveUIState)
@@ -65,6 +66,34 @@ import Testing
             try data.write(to: root.appendingPathComponent(name + ".png"))
             #expect(data.count > 2000)
         }
+    }
+
+    @Test func expandedImageEditProcessAppearsAboveTheImageCard() throws {
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.english)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let call = AskToolCall(id: "edit", function: .init(name: "image_edit", arguments: "{}"))
+        let message = AskMessage(id: "step", role: "assistant", text: "", toolCalls: [call], createdAt: now)
+        let block = AskActivityBlock(group: .init(id: "step", messages: [message]), results: [], plan: nil,
+                                     status: .paused, imageRunActive: false, imageStartedAt: [call.id: now],
+                                     startsExpanded: true)
+        let host = NSHostingView(rootView: block.padding(20).frame(width: 460).background(AskTheme.surface))
+        host.frame.size = host.fittingSize
+        host.layoutSubtreeIfNeeded()
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        let request = VNRecognizeTextRequest()
+        try VNImageRequestHandler(cgImage: #require(bitmap.cgImage)).perform([request])
+        func bounds(of label: String) throws -> CGRect {
+            let match = request.results?.first { observation in
+                observation.topCandidates(1).first?.string.localizedCaseInsensitiveContains(label) == true
+            }
+            return try #require(match, "Missing rendered label: \(label)").boundingBox
+        }
+        let process = try bounds(of: L("ask.image.details"))
+        let placeholder = try bounds(of: L("ask.image.interrupted"))
+        // Vision coordinates increase upward.
+        #expect(process.minY > placeholder.maxY)
     }
 
     @Test func historyToolUsesReadableTitleAndToolCountHasItsOwnUnit() {
@@ -273,9 +302,9 @@ import Testing
         let filesOnly = height(AskTaskOutcomeView(outcome: outcome, outputs: .init(), active: true, actions: .init()))
         let sourcesOnly = height(AskTaskOutcomeView(outcome: .init(id: "sources", messageIDs: [], runIDs: [], changes: []),
             outputs: outputs, active: true, actions: .init()))
-        // Both sections must contribute to the layout, independent of font metrics.
-        #expect(filesOnly > 0 && sourcesOnly > 0)
-        #expect(active > max(filesOnly, sourcesOnly))
+        // Reading pages must not add any height below the answer.
+        #expect(filesOnly > 0 && sourcesOnly == 0)
+        #expect(active == filesOnly)
         #expect(active == done)
         #expect(active < 600)
         #expect(height(AskMonoBlock(title: "Output", text: String(repeating: "line\n", count: 10000))) < 350)

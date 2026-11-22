@@ -294,7 +294,7 @@ private actor DeviceTestTransport: AskDeviceTransporting {
             let repeated = try await finish(api, initial)
             #expect(repeated.revision == done.revision)
             #expect(repeated.messages == done.messages)
-            #expect(await api.historySyncPending(token: "user-a"))
+            try await wait { await api.historySyncStatus(token: "user-a") == .retrying }
             #expect(done.messages.last?.text == "Game completed")
             #expect(try await api.hasPendingSynchronization(token: "user-a"))
             #expect(await legacy.sends.isEmpty)
@@ -314,8 +314,10 @@ private actor DeviceTestTransport: AskDeviceTransporting {
             try await wait { await transport.attempts.count == 1 }
             let done = try await finish(api, initial)
             #expect(done.run?.status == "completed")
+            #expect(await api.historySyncStatus(token: "user-a") == .uploading)
             await transport.release()
             try await wait { try await !api.hasPendingSynchronization(token: "user-a") }
+            #expect(await api.historySyncStatus(token: "user-a") == .idle)
             #expect(await transport.values["user-a"]?[done.id]?.revision == done.revision)
             #expect(await transport.values["user-a"]?[done.id]?.conversation?.run?.inference == nil)
         }
@@ -637,7 +639,7 @@ private actor DeviceTestTransport: AskDeviceTransporting {
             #expect(await transport.attempts.isEmpty)
             let kept = try await api.keep(conversationId: initial.id, token: "user-a")
             #expect(kept.id == initial.id)
-            #expect(await api.historySyncPending(token: "user-a"))
+            #expect(try await api.hasPendingSynchronization(token: "user-a"))
             let list = try await api.list(token: "user-a", offset: 0)
             #expect(list.map(\.id).contains(initial.id))
         }

@@ -1961,6 +1961,8 @@
 "ask.run.needsDecision" = "需要你確認";
 "ask.artifact.caption" = "由 %@ 產生";
 "ask.artifact.save" = "儲存為…";
+"ask.readPages.one" = "已讀取 %d 個網頁";
+"ask.readPages.many" = "已讀取 %d 個網頁";
 "ask.sources" = "來源";
 "ask.approval.risk.read" = "讀取";
 "ask.approval.risk.write" = "修改";
