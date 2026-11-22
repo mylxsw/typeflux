@@ -8,6 +8,17 @@ import Testing
 /// event-delivery suite so clicks never overlap the hold-to-talk monitors.
 extension AskComposerInteractionTests {
     @Test func accountNameClickTogglesTheAccountCard() async throws {
+        _ = NSApplication.shared
+        let enhanced = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previousAccessibility = NSApp.accessibilityAttributeValue(enhanced)
+        let previousLanguage = AppLocalization.shared.language
+        NSApp.accessibilitySetValue(true, forAttribute: enhanced)
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer {
+            AppLocalization.shared.setLanguage(previousLanguage)
+            NSApp.accessibilitySetValue(previousAccessibility ?? false, forAttribute: enhanced)
+        }
+
         let auth = makeFooterAuth()
         #expect(auth.isLoggedIn)
         var openedAccount = 0
@@ -47,6 +58,14 @@ extension AskComposerInteractionTests {
         #expect(presenter.containsPointer(NSPoint(x: panel.frame.midX, y: panel.frame.midY)))
         #expect(presenter.containsPointer(window.convertPoint(toScreen: point)))
         #expect(!presenter.containsPointer(NSPoint(x: panel.frame.maxX + 100, y: panel.frame.maxY + 100)))
+
+        let content = try #require(panel.contentView)
+        typealias UI = SettingsBehaviorTestSupport
+        try await UI.wait { UI.contains(L("auth.account.usageQuotaCurrentPeriod"), in: content) }
+        #expect(UI.elements(in: content).contains { $0.label.contains(L("account.card.profile")) })
+        #expect(!UI.contains(L("account.card.voice"), in: content))
+        #expect(!UI.contains("录音时长", in: content))
+        #expect(!UI.contains(L("account.card.aiRequests"), in: content))
 
         try click(point, in: window)
         try await poll { !presenter.isShowing }

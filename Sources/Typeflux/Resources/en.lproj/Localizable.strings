@@ -2014,7 +2014,6 @@
 "account.card.profile" = "Account";
 "account.card.profileHint" = "Settings › Account";
 "account.card.quotaUnavailable" = "Quota unavailable";
-"account.card.recording" = "Recorded";
 "account.card.signIn" = "Sign in to Typeflux Cloud";
 "account.card.times" = "%@";
 "account.card.voice" = "Dictations";

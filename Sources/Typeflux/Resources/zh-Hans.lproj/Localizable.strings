@@ -2014,7 +2014,6 @@
 "account.card.profile" = "个人中心";
 "account.card.profileHint" = "设置 › 账号";
 "account.card.quotaUnavailable" = "额度暂不可用";
-"account.card.recording" = "录音时长";
 "account.card.signIn" = "登录 Typeflux Cloud";
 "account.card.times" = "%@ 次";
 "account.card.voice" = "语音输入";
