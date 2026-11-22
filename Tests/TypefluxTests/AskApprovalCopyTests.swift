@@ -269,6 +269,29 @@ struct AskApprovalCopyTests {
         }
     }
 
+    @Test func approvalButtonsFitTheNarrowCardWithScopeSelection() async throws {
+        typealias UI = SettingsBehaviorTestSupport
+        try await UI.withFixture { _ in
+            var granted = false
+            let file = call("files", ["action": "write", "path": "index.html", "content": "<html></html>"])
+            let card = AskApprovalCard(call: file, risk: .write, canAllowForConversation: true,
+                                       onDeny: {}, onAllowForConversation: { granted = true }, onAllow: {})
+            try await UI.withWindow(card.padding(.horizontal, 16), width: 360, height: 230) { window, host in
+                let deny = try UI.button(L("ask.deny"), in: host)
+                let allow = try UI.button(L("ask.approval.allowExact"), in: host)
+                let scope = try UI.button(L("ask.approval.scope"), in: host)
+                for button in [deny, allow, scope] {
+                    #expect(window.frame.contains(button.frame))
+                    #expect(button.frame.height >= 30)
+                }
+                #expect(deny.frame.maxX < allow.frame.minX)
+                #expect(allow.frame.maxX < scope.frame.minX)
+                try allow.press()
+                try await UI.wait { granted }
+            }
+        }
+    }
+
     @Test func pendingFileDecisionSurvivesFoldingTheConversation() async throws {
         typealias UI = SettingsBehaviorTestSupport
         try await UI.withFixture { _ in

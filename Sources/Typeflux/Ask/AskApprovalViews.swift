@@ -236,19 +236,21 @@ struct AskApprovalCard: View {
     private func actions(_ decision: AskApprovalCopy.Decision?) -> some View {
         HStack(spacing: 8) {
             Button(action: onDeny) { Text(L("ask.deny")) }
-                .buttonStyle(.bordered)
+                .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
                 .keyboardShortcut(.cancelAction)
                 .help(L("ask.approval.denyHelp"))
-            allowButton(decision)
-            // An irreversible step is approved one call at a time.
-            if canAllowForConversation, !irreversible {
-                Button { choosingScope.toggle() } label: {
-                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold))
+            HStack(spacing: 4) {
+                allowButton(decision)
+                // An irreversible step is approved one call at a time.
+                if canAllowForConversation, !irreversible {
+                    Button { choosingScope.toggle() } label: {
+                        Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold))
+                    }
+                    .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                    .help(L("ask.approval.scope"))
+                    .accessibilityLabel(L("ask.approval.scope"))
+                    .popover(isPresented: $choosingScope, arrowEdge: .bottom) { scopeMenu }
                 }
-                .buttonStyle(.bordered)
-                .help(L("ask.approval.scope"))
-                .accessibilityLabel(L("ask.approval.scope"))
-                .popover(isPresented: $choosingScope, arrowEdge: .bottom) { scopeMenu }
             }
         }
     }
@@ -257,14 +259,12 @@ struct AskApprovalCard: View {
         if irreversible {
             // No shortcut: an irreversible step is never one keystroke away.
             Button(action: onAllow) { Text(L("ask.approval.allowDestructive")) }
-                .buttonStyle(.borderedProminent)
-                .tint(StudioTheme.danger)
+                .buttonStyle(AskCapsuleButtonStyle(kind: .destructive))
         } else {
             Button(action: conversationScope ? onAllowForConversation : onAllow) {
                 Text(conversationScope ? L("ask.approval.allowExact") : decision?.allowLabel ?? L("ask.allow"))
             }
-            .buttonStyle(.borderedProminent)
-            .tint(AskTheme.accent)
+            .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
             .keyboardShortcut(.return, modifiers: .command)
             .help(L(conversationScope ? "ask.approval.exactScope" : "ask.approval.allowHelp"))
         }
