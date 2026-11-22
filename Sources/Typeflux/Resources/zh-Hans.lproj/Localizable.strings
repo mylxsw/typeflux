@@ -7649,6 +7649,11 @@
 "terminal.launcher.startFailed" = "无法启动终端会话。";
 "terminal.launcher.waiting" = "等待输入";
 "terminal.launcher.recent" = "最近";
+"terminal.session.end" = "结束会话";
+"terminal.session.close.short" = "关闭";
+"terminal.session.close" = "关闭会话";
+"terminal.session.close.others" = "关闭其他会话";
+"terminal.session.move.launcher" = "移到启动器";
 "terminal.session.window.title" = "终端";
 
 "terminal.session.window.new" = "新会话 ⌘T";

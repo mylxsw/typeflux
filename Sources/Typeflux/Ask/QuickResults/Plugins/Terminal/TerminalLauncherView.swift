@@ -9,7 +9,7 @@ struct TerminalLauncherView: View {
     let new: () -> Void
     let close: () -> Void
     let move: (() -> Void)?
-    let dismiss: () -> Void
+    let back: () -> Void
     let insert: (String) -> Void
     let commands: () -> [String]
     let error: (String) -> Void
@@ -17,6 +17,9 @@ struct TerminalLauncherView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
+                terminalButton("chevron.left", L("ask.action.back") + " esc", action: back)
+                    .accessibilityIdentifier("terminal.launcher.back")
+
                 Label(L("terminal.launcher.label"), systemImage: "terminal")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color.green)
@@ -35,23 +38,6 @@ struct TerminalLauncherView: View {
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
                 Spacer(minLength: 8)
-                if sessions.count > 1 {
-                    Menu {
-                        ForEach(sessions) { candidate in
-                            Button {
-                                select(candidate.id)
-                            } label: {
-                                let icon = candidate.id == session.id ? "checkmark" : "terminal"
-                                Label(name(candidate), systemImage: icon)
-                            }
-                        }
-                    } label: {
-                        Text(name(session)).lineLimit(1).frame(maxWidth: 140)
-                    }
-                    .menuStyle(.borderlessButton)
-                    .fixedSize()
-                    .accessibilityLabel(L("terminal.launcher.sessions"))
-                }
                 terminalButton("plus", L("terminal.launcher.new") + " ⌘T", action: new)
                 if let move {
                     terminalButton("macwindow.badge.plus", L("terminal.launcher.move") + " ⌘O", action: move)
@@ -65,14 +51,14 @@ struct TerminalLauncherView: View {
                 TerminalAlternateScreenView(session: session)
             } else {
                 TerminalSessionContent(model: model, session: session, commands: commands, new: new,
-                                       insert: insert, error: error)
+                                       insert: insert, error: error, launcherOwnsEscape: true)
             }
         }
         .background(TerminalKeyCapture { event in
             let editor = event.window?.firstResponder as? NSTextView
             guard editor?.hasMarkedText() != true else { return false }
             let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
-            if session.alternateScreen, modifiers != .command || event.keyCode != 31 { return false }
+            if session.alternateScreen, AskCommandKey(event) != .commandO { return false }
             if modifiers == .command, event.keyCode == 13 {
                 if !event.isARepeat { close() }
                 return true
@@ -84,17 +70,15 @@ struct TerminalLauncherView: View {
                 guard let move else { return false }
                 move()
             case .escape:
-                if !model.cancelRisk(), !model.resetCompletion(), !model.deselect() { dismiss() }
+                if !event.isARepeat {
+                    if !model.clearPromptOnEscape() { back() }
+                }
             case let .number(number):
                 if sessions.indices.contains(number - 1) { select(sessions[number - 1].id) }
             default: return false
             }
             return true
         })
-    }
-
-    private func name(_ candidate: TerminalSession) -> String {
-        candidate.blocks.last?.command ?? candidate.displayDirectory(candidate.cwd)
     }
 }
 
@@ -106,6 +90,8 @@ struct TerminalSessionContent: View {
     let new: () -> Void
     let insert: (String) -> Void
     let error: (String) -> Void
+
+    var launcherOwnsEscape = false
 
     @State private var atTail = true
     @State private var hovered: UUID?
@@ -374,17 +360,18 @@ private extension TerminalSessionContent {
         let editor = event.window?.firstResponder as? NSTextView
         guard editor?.hasMarkedText() != true else { return false }
         let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
-        if let key = AskCommandKey(event), model.pendingRisk != nil {
+        let command = AskCommandKey(event)
+        if let key = command, model.pendingRisk != nil {
             switch key {
             case .commandEnter:
                 if !event.isARepeat { model.confirmRisk() }
                 return true
-            case .escape: return model.cancelRisk()
+            case .escape: return !launcherOwnsEscape && model.cancelRisk()
             case .enter, .tab, .commandR: return true
             default: break
             }
         }
-        if focused, model.prompt == .idle, AskCommandKey(event) == .tab {
+        if focused, model.prompt == .idle, command == .tab {
             let selection = editor?.selectedRange()
             guard selection == nil || selection == NSRange(location: model.text.utf16.count, length: 0) else {
                 return false
@@ -412,8 +399,8 @@ private extension TerminalSessionContent {
             return true
         case (.command, 40): model.clear(); return true
         default:
-            guard let key = AskCommandKey(event) else { return false }
-            return handle(key, hasSelection: (editor?.selectedRange().length ?? 0) > 0)
+            guard let command else { return false }
+            return handle(command, hasSelection: (editor?.selectedRange().length ?? 0) > 0)
         }
     }
 
@@ -422,7 +409,7 @@ private extension TerminalSessionContent {
         case .up, .down:
             guard focused, model.prompt == .idle else { return false }
             model.recall(key == .up ? 1 : -1, commands: commands())
-        case .escape: return model.resetCompletion()
+        case .escape: return !launcherOwnsEscape && model.resetCompletion()
         case .optionUp, .optionDown: model.select(key == .optionUp ? -1 : 1)
         case .commandEnter: model.insertSelected(using: insert)
         case .commandC:
@@ -445,7 +432,7 @@ private func terminalButton(_ symbol: String, _ title: String, action: @escaping
 }
 
 /// Intercepts session shortcuts only while that host's window is receiving keys.
-private struct TerminalKeyCapture: NSViewRepresentable {
+struct TerminalKeyCapture: NSViewRepresentable {
     let handler: (NSEvent) -> Bool
 
     func makeNSView(context: Context) -> Listener { Listener() }
@@ -461,7 +448,7 @@ private struct TerminalKeyCapture: NSViewRepresentable {
             stop()
             guard window != nil else { return }
             monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-                guard let self, let window, event.window === window, window.isVisible,
+                guard let self, let window, event.window === window, window.isVisible, window.isKeyWindow,
                       window.attachedSheet == nil, handler?(event) == true else { return event }
                 return nil
             }

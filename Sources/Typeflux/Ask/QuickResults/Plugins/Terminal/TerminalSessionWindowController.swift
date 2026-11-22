@@ -91,13 +91,13 @@ final class TerminalSessionWindowController: NSObject, ObservableObject, NSWindo
             panel.isReleasedWhenClosed = false
             panel.hidesOnDeactivate = false
             panel.delegate = self
-            panel.keyHandler = { [weak self] event in self?.handleKey(event) ?? false }
             panel.titleVisibility = .hidden
             panel.titlebarAppearsTransparent = true
             panel.toolbar = NSToolbar(identifier: "typeflux.terminal.sessions")
             panel.toolbarStyle = .unifiedCompact
             panel.titlebarSeparatorStyle = .none
-            let hosting = NSHostingView(rootView: TerminalSessionWindow(controller: self).ignoresSafeArea())
+            let root = TerminalSessionWindow(controller: self, center: center)
+            let hosting = NSHostingView(rootView: root.ignoresSafeArea())
             hosting.sizingOptions = []
             panel.contentView = hosting
             panel.center()
@@ -130,11 +130,24 @@ final class TerminalSessionWindowController: NSObject, ObservableObject, NSWindo
         panel.level = pinned ? .floating : .normal
     }
 
-    func moveBack() {
-        guard let selected, let center, let presentation = presentations[selected.id] else { return }
-        center.move(selected, to: .launcher)
-        remove(selected)
-        presentation.returnToLauncher(selected)
+    func moveBack(_ session: TerminalSession? = nil) {
+        guard let session = session ?? selected, let center,
+              let presentation = presentations[session.id] else { return }
+        center.move(session, to: .launcher)
+        remove(session)
+        presentation.returnToLauncher(session)
+    }
+
+    @discardableResult
+    func reorder(_ id: UUID, to target: UUID) -> Bool {
+        guard let sourceIndex = tabs.firstIndex(where: { $0.id == id }),
+              let targetIndex = tabs.firstIndex(where: { $0.id == target }),
+              sourceIndex != targetIndex else { return false }
+        var reordered = tabs
+        let session = reordered.remove(at: sourceIndex)
+        reordered.insert(session, at: targetIndex)
+        tabs = reordered
+        return true
     }
 
     private func remove(_ session: TerminalSession) {
@@ -143,25 +156,50 @@ final class TerminalSessionWindowController: NSObject, ObservableObject, NSWindo
         tabs.remove(at: index)
         if selected === session { selected = tabs.isEmpty ? nil : tabs[min(index, tabs.count - 1)] }
         if tabs.isEmpty {
-            panel.orderOut(nil)
+            panel.close()
             panel.contentView = nil
             center = nil
         }
     }
 
-    func closeTab() {
-        guard let selected else { return }
-        confirm([selected]) { [weak self] in self?.end(selected) }
+    func closeTab(_ session: TerminalSession? = nil) {
+        guard let session = session ?? selected, tabs.contains(where: { $0 === session }) else { return }
+        confirm([session]) { [weak self] accepted in
+            if accepted { self?.endTab(session) }
+        }
     }
 
-    private func end(_ session: TerminalSession) {
+    func closeOtherTabs(keeping session: TerminalSession) {
+        guard tabs.contains(where: { $0 === session }), panel.attachedSheet == nil else { return }
+        closeInOrder(ArraySlice(tabs.filter { $0 !== session }))
+    }
+
+    private func closeInOrder(_ sessions: ArraySlice<TerminalSession>) {
+        var remaining = sessions
+        while let session = remaining.popFirst() {
+            guard tabs.contains(where: { $0 === session }) else { continue }
+            if session.runningBlock == nil {
+                endTab(session)
+            } else {
+                let rest = remaining
+                confirm([session]) { [weak self] accepted in
+                    if accepted { self?.endTab(session) }
+                    self?.closeInOrder(rest)
+                }
+                return
+            }
+        }
+    }
+
+    func endTab(_ session: TerminalSession) {
+        guard tabs.contains(where: { $0 === session }) else { return }
         center?.close(session)
         remove(session)
     }
 
-    private func confirm(_ sessions: [TerminalSession], action: @escaping () -> Void) {
+    private func confirm(_ sessions: [TerminalSession], completion: @escaping (Bool) -> Void) {
         guard let command = sessions.compactMap({ $0.runningBlock?.command }).first else {
-            action()
+            completion(true)
             return
         }
         guard panel.attachedSheet == nil else { return }
@@ -170,51 +208,69 @@ final class TerminalSessionWindowController: NSObject, ObservableObject, NSWindo
         alert.informativeText = L("terminal.runner.close.message")
         alert.addButton(withTitle: L("terminal.runner.close.end")).hasDestructiveAction = true
         alert.addButton(withTitle: L("terminal.runner.close.keep"))
-        alert.beginSheetModal(for: panel) { if $0 == .alertFirstButtonReturn { action() } }
+        alert.beginSheetModal(for: panel) { response in
+            // AppKit detaches the current sheet after its completion handler.
+            DispatchQueue.main.async {
+                completion(response == .alertFirstButtonReturn)
+            }
+        }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         let closing = tabs
-        confirm(closing) { [weak self] in closing.forEach { self?.end($0) } }
+        confirm(closing) { [weak self] accepted in
+            if accepted { closing.forEach { self?.endTab($0) } }
+        }
         return false
     }
 
     func handleKey(_ event: NSEvent) -> Bool {
-        guard event.modifierFlags.intersection([.command, .shift, .control, .option]) == .command,
-              let key = event.charactersIgnoringModifiers?.lowercased() else { return false }
-        if key == "o" {
-            moveBack()
-            return true
+        let modifiers = event.modifierFlags.intersection([.command, .shift, .control, .option])
+        guard let key = event.charactersIgnoringModifiers?.lowercased() else { return false }
+        let action: () -> Void
+        if modifiers == .command, key == "o" {
+            action = { self.moveBack() }
+        } else {
+            guard let selected, !selected.alternateScreen else { return false }
+            switch (modifiers, key) {
+            case (.command, "t"): action = addTab
+            case (.command, "w"): action = { self.closeTab() }
+            case ([.command, .option], "w"): action = { self.closeOtherTabs(keeping: selected) }
+            case (.command, "1"..."9"):
+                guard let number = Int(key) else { return false }
+                action = { self.select(number - 1) }
+            default: return false
+            }
         }
-        guard selected?.alternateScreen == false else { return false }
-        switch key {
-        case "t": addTab()
-        case "w": closeTab()
-        case "1"..."9":
-            guard let number = Int(key) else { return false }
-            select(number - 1)
-        default: return false
-        }
+        if !event.isARepeat { action() }
         return true
     }
 }
 
 private struct TerminalSessionWindow: View {
     @ObservedObject var controller: TerminalSessionWindowController
+    @ObservedObject var center: TerminalSessionCenter
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
+                    HStack(spacing: 4) {
+                        let folderCounts = Dictionary(grouping: controller.tabs, by: \.tabFolder).mapValues(\.count)
                         ForEach(Array(controller.tabs.enumerated()), id: \.element.id) { index, session in
-                            Button { controller.select(index) } label: {
-                                SessionTabLabel(session: session)
+                            SessionWindowTab(
+                                session: session, duplicateFolder: folderCounts[session.tabFolder, default: 0] > 1,
+                                selected: controller.selected === session,
+                                select: { controller.select(index) },
+                                close: { controller.closeTab(session) },
+                                closeOthers: { controller.closeOtherTabs(keeping: session) },
+                                move: { controller.moveBack(session) }
+                            )
+                            .draggable(session.id.uuidString)
+                            .dropDestination(for: String.self) { items, _ in
+                                guard let first = items.first, let id = UUID(uuidString: first) else { return false }
+                                return controller.reorder(id, to: session.id)
                             }
-                            .buttonStyle(.borderless)
-                            .padding(5)
-                            .background(controller.selected === session ? Color.primary.opacity(0.1) : .clear,
-                                        in: RoundedRectangle(cornerRadius: 5))
                         }
                     }
                 }
@@ -225,8 +281,12 @@ private struct TerminalSessionWindow: View {
                 }
                 Button(action: controller.togglePin) { Image(systemName: controller.pinned ? "pin.fill" : "pin") }
                     .help(L("terminal.session.window.pin"))
-                Button(action: controller.moveBack) { Image(systemName: "rectangle.portrait.and.arrow.forward") }
-                    .help(L("terminal.session.window.back"))
+                Button {
+                    controller.moveBack()
+                } label: {
+                    Image(systemName: "rectangle.portrait.and.arrow.forward")
+                }
+                .help(L("terminal.session.window.back"))
             }
             .buttonStyle(.borderless)
             .padding(.leading, 76)
@@ -237,6 +297,7 @@ private struct TerminalSessionWindow: View {
                 SessionWindowBody(session: selected, content: content).id(selected.id)
             }
         }
+        .background(TerminalKeyCapture(handler: controller.handleKey))
     }
 }
 
@@ -251,18 +312,6 @@ private struct SessionWindowDirectory: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(Color.secondary.opacity(0.1), in: Capsule())
-    }
-}
-
-private struct SessionTabLabel: View {
-    @ObservedObject var session: TerminalSession
-
-    var body: some View {
-        HStack {
-            Circle().fill(session.runningBlock == nil ? Color.secondary : .green).frame(width: 6, height: 6)
-            Text(URL(fileURLWithPath: session.cwd).lastPathComponent)
-            if let command = session.runningBlock?.command { Text(command).foregroundStyle(.secondary) }
-        }.lineLimit(1)
     }
 }
 

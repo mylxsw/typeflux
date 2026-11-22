@@ -7665,3 +7665,11 @@
 "terminal.ai.offline" = "目前處於離線狀態。";
 "terminal.ai.failed" = "無法解釋這條命令。";
 "terminal.ai.continue" = "在 Ask 中繼續";
+
+"terminal.launcher.sessions" = "終端工作階段";
+"terminal.launcher.waiting" = "等待輸入";
+"terminal.session.end" = "結束工作階段";
+"terminal.session.close.short" = "關閉";
+"terminal.session.close" = "關閉工作階段";
+"terminal.session.close.others" = "關閉其他工作階段";
+"terminal.session.move.launcher" = "移到啟動器";
