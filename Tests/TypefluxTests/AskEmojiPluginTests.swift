@@ -304,13 +304,15 @@ struct AskEmojiPluginTests {
             let output = try await plugin.run(queryRequest, plan: plan)
             #expect(AskPluginResultsView.cardHeight(output: output, failure: nil, comparing: false) == EmojiResultsView
                 .height)
+            let display = AskPluginDisplay(
+                title: plugin.title,
+                symbol: plugin.symbol,
+                phase: .done(plan, output),
+                offersAskAI: false
+            )
+            let expectedHint = output.items.isEmpty ? "" : "↩ 插入 · ⌥↩ 复制"
+            #expect(AskPluginResultsView.hint(for: display) == expectedHint)
             for scheme in [ColorScheme.light, .dark] {
-                let display = AskPluginDisplay(
-                    title: plugin.title,
-                    symbol: plugin.symbol,
-                    phase: .done(plan, output),
-                    offersAskAI: false
-                )
                 let view = VStack(spacing: 0) {
                     HStack {
                         AskKeywordChip(title: AskEmojiPlugin.keywords[0].keyword,

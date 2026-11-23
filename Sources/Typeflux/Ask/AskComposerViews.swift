@@ -2891,19 +2891,6 @@ struct AskComposer: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
-            if !active, plugins.isPlanCurrent, let output = plugins.output, output.emoji != nil,
-               let insert = output.action(for: .enter) {
-                Button { performPluginAction(insert) } label: {
-                    HStack(spacing: 6) {
-                        Text(insert.title)
-                        Text("↩").foregroundStyle(AskTheme.launcherMetaText)
-                    }
-                    .font(.system(size: 11, weight: .medium))
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .accessibilityIdentifier("emoji.insert")
-            }
         }
         .padding(.horizontal, 16)
         .frame(height: launcherBottomBarHeight)
