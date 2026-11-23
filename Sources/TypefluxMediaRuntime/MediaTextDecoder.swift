@@ -49,7 +49,7 @@ public enum MediaTextDecoder {
         try VNImageRequestHandler(cgImage: image).perform([request])
         let observations = request.results ?? []
         guard observations.count <= 1024 else { throw MediaFailure.tooLarge }
-        let result = MediaTextGeometry(boxes: observations.map(\.boundingBox))
+        let result = MediaTextGeometry(boxes: observations.compactMap { MediaTextRecognition.clamped($0.boundingBox) })
         try result.validate()
         return result
     }
@@ -64,7 +64,8 @@ public enum MediaTextDecoder {
         var lines: [MediaTextRecognition.Line] = []
         var textBytes = 0, regionCount = 0
         for observation in observations {
-            guard let candidate = observation.topCandidates(1).first else { continue }
+            guard let candidate = observation.topCandidates(1).first,
+                  let lineBox = MediaTextRecognition.clamped(topLeft(observation.boundingBox)) else { continue }
             try MediaOCRResult(lines: [candidate.string]).validate()
             textBytes += candidate.string.utf8.count + (lines.isEmpty ? 0 : 1)
             guard textBytes <= MediaOCRResult.textBytes else { throw MediaFailure.tooLarge }
@@ -73,12 +74,13 @@ public enum MediaTextDecoder {
             guard matches.count <= 128, regionCount <= 4096 else { throw MediaFailure.tooLarge }
             let regions = matches.compactMap { match -> MediaTextRecognition.Region? in
                 guard let range = Range(match.range, in: candidate.string),
-                      let box = try? candidate.boundingBox(for: range)?.boundingBox,
-                      MediaTextRecognition.valid(topLeft(box)) else { return nil }
-                return .init(kind: match.kind, range: match.range, box: topLeft(box))
+                      let rawBox = try? candidate.boundingBox(for: range)?.boundingBox,
+                      let box = MediaTextRecognition.clamped(topLeft(rawBox)) else { return nil }
+                return .init(kind: match.kind, range: match.range, box: box)
             }
-            lines.append(.init(text: candidate.string, confidence: candidate.confidence,
-                               box: topLeft(observation.boundingBox), regions: regions))
+            let confidence = candidate.confidence.isFinite ? min(max(candidate.confidence, 0), 1) : 0
+            lines.append(.init(text: candidate.string, confidence: confidence,
+                               box: lineBox, regions: regions))
         }
         let result = MediaTextRecognition(lines: lines)
         try result.validate()

@@ -66,4 +66,13 @@ public struct MediaTextRecognition: Codable, Sendable {
         [rect.origin.x, rect.origin.y, rect.width, rect.height].allSatisfy(\.isFinite) &&
             rect.minX >= 0 && rect.minY >= 0 && rect.width > 0 && rect.height > 0 && rect.maxX <= 1 && rect.maxY <= 1
     }
+    public static func clamped(_ rect: CGRect) -> CGRect? {
+        guard [rect.origin.x, rect.origin.y, rect.width, rect.height].allSatisfy(\.isFinite),
+              rect.width > 0, rect.height > 0 else { return nil }
+        if valid(rect) { return rect }
+        let minX = min(max(rect.minX, 0), 1), minY = min(max(rect.minY, 0), 1)
+        let maxX = min(max(rect.maxX, 0), 1), maxY = min(max(rect.maxY, 0), 1)
+        let clamped = CGRect(x: minX, y: minY, width: min(maxX - minX, 1 - minX), height: min(maxY - minY, 1 - minY))
+        return valid(clamped) ? clamped : nil
+    }
 }

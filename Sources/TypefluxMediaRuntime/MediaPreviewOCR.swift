@@ -36,8 +36,8 @@ public enum MediaPreviewOCR {
             guard intersection.length > 0 else { continue }
             let local = NSRange(location: intersection.location - line.location, length: intersection.length)
             guard let range = Range(local, in: candidate.string),
-                  let box = try candidate.boundingBox(for: range)?.boundingBox,
-                  MediaTextRecognition.valid(box) else { return .init(boxes: []) }
+                  let rawBox = try candidate.boundingBox(for: range)?.boundingBox,
+                  let box = MediaTextRecognition.clamped(rawBox) else { return .init(boxes: []) }
             boxes.append(box)
             guard boxes.count <= 64 else { throw MediaFailure.tooLarge }
         }

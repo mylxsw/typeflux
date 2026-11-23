@@ -79,6 +79,15 @@ private final class SharedOCRBlock: @unchecked Sendable {
         for regions in [[region, region], Array(repeating: region, count: 129)] {
             XCTAssertThrowsError(try MediaTextRecognition(lines: [.init(text: "😀x", confidence: 1, box: box, regions: regions)]).validate())
         }
+        XCTAssertEqual(MediaTextRecognition.clamped(box), box)
+        let bleedingTop = try XCTUnwrap(MediaTextRecognition.clamped(.init(x: 1.58e-9, y: -1.5e-10, width: 0.2, height: 0.013)))
+        XCTAssertTrue(MediaTextRecognition.valid(bleedingTop))
+        XCTAssertEqual(bleedingTop.minY, 0)
+        let bleedingLeftRight = try XCTUnwrap(MediaTextRecognition.clamped(.init(x: -2.1e-11, y: 0.4, width: 1.00001, height: 0.60001)))
+        XCTAssertTrue(MediaTextRecognition.valid(bleedingLeftRight))
+        for invalid in [CGRect.zero, .init(x: CGFloat.nan, y: 0, width: 1, height: 1), .init(x: 1.1, y: 0, width: 0.2, height: 0.2), .init(x: -0.5, y: 0, width: 0.2, height: 0.2)] {
+            XCTAssertNil(MediaTextRecognition.clamped(invalid))
+        }
     }
 
     func testChildReadsRawOrEncodedInputAndRejectsTruncationBeforeEngine() throws {
