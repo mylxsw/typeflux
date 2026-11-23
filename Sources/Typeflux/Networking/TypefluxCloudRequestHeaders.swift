@@ -9,6 +9,7 @@ struct TypefluxCloudClientInfo: Equatable, Sendable {
     let osName: String
     let osVersion: String
     let architecture: String
+    var buildID: String? = nil
 
     var userAgent: String {
         "\(Self.sanitizeProductToken(appName))/\(Self.sanitizeProductToken(appVersion))"
@@ -47,8 +48,18 @@ struct TypefluxCloudClientInfoProvider: Sendable {
             preferredLanguages: clientPreferredLanguages(appLanguage: appLanguage),
             osName: "macOS",
             osVersion: operatingSystemVersion(),
-            architecture: architecture()
+            architecture: architecture(),
+            buildID: buildIdentity()
         )
+    }
+
+    private static func buildIdentity() -> String? {
+        if let id = bundleString("TypefluxBuildID") { return id }
+        #if DEBUG
+        return "development"
+        #else
+        return nil
+        #endif
     }
 
     static func clientLocaleIdentifier(appLanguage: AppLanguage) -> String {
@@ -156,6 +167,7 @@ enum TypefluxCloudRequestHeaders {
         let info = provider.info()
         request.setValue("2", forHTTPHeaderField: "X-Typeflux-Credit-Version")
         request.setValue(info.userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(info.buildID, forHTTPHeaderField: "X-Client-Build-ID")
         if !info.acceptLanguage.isEmpty {
             request.setValue(info.acceptLanguage, forHTTPHeaderField: "Accept-Language")
         }

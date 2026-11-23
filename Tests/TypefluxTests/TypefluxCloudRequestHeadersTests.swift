@@ -44,6 +44,19 @@ final class TypefluxCloudRequestHeadersTests: XCTestCase {
         XCTAssertEqual(request.value(forHTTPHeaderField: TypefluxCloudRequestHeaders.clientOSField), "macOS")
         XCTAssertEqual(request.value(forHTTPHeaderField: TypefluxCloudRequestHeaders.clientOSVersionField), "14.6.1")
         XCTAssertEqual(request.value(forHTTPHeaderField: TypefluxCloudRequestHeaders.clientArchitectureField), "arm64")
+        XCTAssertNil(request.value(forHTTPHeaderField: "X-Client-Build-ID"))
+    }
+
+    func testApplyClientInfoAddsBuildIdentityWithoutChangingTheVersion() throws {
+        let provider = TypefluxCloudClientInfoProvider {
+            var info = TypefluxCloudClientInfoProvider.fixture.info()
+            info.buildID = "stable-fixture"
+            return info
+        }
+        var request = try URLRequest(url: XCTUnwrap(URL(string: "https://cloud.typeflux.dev/api/v1/me")))
+        TypefluxCloudRequestHeaders.applyClientInfo(to: &request, provider: provider)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "X-Client-Build-ID"), "stable-fixture")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "Typeflux/1.2.3")
     }
 
     func testClientPreferredLanguagesUsesAppLanguageBeforeSystemLanguages() {

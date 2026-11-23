@@ -136,6 +136,8 @@ jobs:
             --keychain "$KEYCHAIN_PATH"
 
       - name: Build, sign, notarize, staple, and package installers
+        env:
+          TYPEFLUX_BUILD_CHANNEL: ${{ github.event_name == 'release' && !github.event.release.prerelease && 'stable' || 'preview' }}
         run: |
           set -euo pipefail
 
@@ -342,6 +344,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Read build IDs from signed release archives
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          BUILD_CHANNEL: ${{ github.event.release.prerelease && 'preview' || 'stable' }}
+        run: python3 scripts/release_build_manifest.py .build/release "$RELEASE_TAG" "$BUILD_CHANNEL"
+
       - name: Upload release assets
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
@@ -360,6 +369,7 @@ jobs:
             .build/release/Typeflux-app-only-apple-silicon.dmg
             .build/release/Typeflux-app-only-intel.zip
             .build/release/Typeflux-app-only-intel.dmg
+            .build/release/typeflux-builds.json
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

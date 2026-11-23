@@ -136,6 +136,13 @@ mkdir -p "$APP_BUNDLE/Contents/MacOS"
 mkdir -p "$APP_BUNDLE/Contents/Resources"
 
 cp "$ROOT_DIR/app/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
+BUILD_CHANNEL="${TYPEFLUX_BUILD_CHANNEL:-development}"
+case "$BUILD_CHANNEL" in
+  stable|preview|development) ;;
+  *) echo "Invalid build channel: $BUILD_CHANNEL" >&2; exit 1 ;;
+esac
+BUILD_ID="$BUILD_CHANNEL-$(uuidgen | tr '[:upper:]' '[:lower:]')"
+/usr/libexec/PlistBuddy -c "Add :TypefluxBuildID string $BUILD_ID" "$APP_BUNDLE/Contents/Info.plist"
 cp "$BIN" "$APP_BUNDLE/Contents/MacOS/Typeflux"
 bash "$ROOT_DIR/scripts/copy_inference_helper.sh" "$BIN_DIR" "$APP_BUNDLE"
 bash "$ROOT_DIR/scripts/copy_media_helper.sh" "$BIN_DIR" "$APP_BUNDLE"

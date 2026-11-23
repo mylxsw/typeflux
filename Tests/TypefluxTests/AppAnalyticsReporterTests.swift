@@ -2,6 +2,31 @@ import XCTest
 @testable import Typeflux
 
 final class AppAnalyticsReporterTests: XCTestCase {
+    func testVersionObservationPersistsBuildAndAccountAtOccurrence() throws {
+        let suite = "AppAnalyticsReporterTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let info = TypefluxCloudClientInfo(
+            appName: "Typeflux", appVersion: "1.0.1", clientID: "test-client",
+            localeIdentifier: "en", preferredLanguages: [], osName: "macOS",
+            osVersion: "15.0", architecture: "arm64", buildID: "stable-fixture"
+        )
+        let account = UUID().uuidString.lowercased()
+        let reporter = AppAnalyticsReporter(
+            defaults: defaults, transport: FailingAnalyticsTransport(),
+            clientInfoProvider: TypefluxCloudClientInfoProvider { info }, accountAtOccurrence: { account }
+        )
+        reporter.report(eventName: "app_launch")
+        reporter.report(eventName: "permission_status")
+        let events = queuedEvents(defaults: defaults)
+        XCTAssertEqual(events.first?.buildAtOccurrence, "stable-fixture")
+        XCTAssertEqual(events.first?.accountAtOccurrence, account)
+        XCTAssertNil(events.last?.accountAtOccurrence)
+        let payload = Data("{\"sub\":\"\(account)\"}".utf8).base64EncodedString()
+            .replacingOccurrences(of: "=", with: "")
+        XCTAssertEqual(AppAnalyticsReporter.accountSubject("header.\(payload).signature"), account)
+        XCTAssertNil(AppAnalyticsReporter.accountSubject("invalid"))
+    }
     func testFirstOpenIsQueuedOnlyOnce() throws {
         let suite = "AppAnalyticsReporterTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

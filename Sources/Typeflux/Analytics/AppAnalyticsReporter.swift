@@ -101,6 +101,8 @@ struct AppAnalyticsEvent: Codable, Equatable, Sendable {
     let clientID: String
     let architecture: String
     let properties: [String: String]
+    var buildAtOccurrence: String? = nil
+    var accountAtOccurrence: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case eventID = "event_id"
@@ -110,6 +112,8 @@ struct AppAnalyticsEvent: Codable, Equatable, Sendable {
         case clientID = "client_id"
         case architecture
         case properties
+        case buildAtOccurrence = "build_at_occurrence"
+        case accountAtOccurrence = "account_at_occurrence"
     }
 }
 
@@ -200,11 +204,17 @@ struct URLSessionAppAnalyticsTransport: AppAnalyticsTransporting {
 
 final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
     private static let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "AppAnalyticsReporter")
+    private static let versionObservationEvents: Set<String> = [
+        "app_launch", "app_login", "dictation_session_completed", "screenshot_completed",
+        "translation_completed", "keyword_executed", "launcher_action_executed",
+        "ring_action_triggered", "clipboard_action_executed", "workflow_completed"
+    ]
     private let defaults: UserDefaults
     private let transport: AppAnalyticsTransporting
     private let counterReporter: UsageCounterReporter
     private let clientInfoProvider: TypefluxCloudClientInfoProvider
     private let now: @Sendable () -> Date
+    private let accountAtOccurrence: @Sendable () -> String?
     private let lock = NSLock()
     private let queueKey: String
     private let firstOpenKey: String
@@ -226,7 +236,13 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
         maximumQueueSize: Int = 100,
         retryDelay: Duration = .seconds(30),
         sessionID: String = UUID().uuidString.lowercased(),
-        now: @escaping @Sendable () -> Date = { Date() }
+        now: @escaping @Sendable () -> Date = { Date() },
+        accountAtOccurrence: @escaping @Sendable () -> String? = {
+            guard let stored = KeychainTokenStore.loadToken(),
+                  stored.expiresAt > Int(Date().timeIntervalSince1970)
+            else { return nil }
+            return AppAnalyticsReporter.accountSubject(stored.token)
+        }
     ) {
         self.defaults = defaults
         self.transport = transport
@@ -238,6 +254,7 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
         self.retryDelay = retryDelay
         self.sessionID = sessionID
         self.now = now
+        self.accountAtOccurrence = accountAtOccurrence
     }
 
     func setEnabled(_ enabled: Bool) {
@@ -356,8 +373,23 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
         return AppAnalyticsEvent(
             eventID: UUID().uuidString.lowercased(), eventName: eventName, source: "app",
             occurredAt: now(), clientID: info.clientID, architecture: info.architecture,
-            properties: properties.merging(clientProperties(), uniquingKeysWith: { _, clientValue in clientValue })
+            properties: properties.merging(clientProperties(), uniquingKeysWith: { _, clientValue in clientValue }),
+            buildAtOccurrence: info.buildID,
+            accountAtOccurrence: info.buildID != nil && Self.versionObservationEvents.contains(eventName) ? accountAtOccurrence() : nil
         )
+    }
+
+    // The server checks this subject against the authenticated sender before using it.
+    static func accountSubject(_ token: String) -> String? {
+        let parts = token.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 3 else { return nil }
+        var payload = parts[1].replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        payload += String(repeating: "=", count: (4 - payload.count % 4) % 4)
+        guard let data = Data(base64Encoded: payload),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let subject = object["sub"] as? String
+        else { return nil }
+        return UUID(uuidString: subject)?.uuidString.lowercased()
     }
 
     private func appendToQueue(_ event: AppAnalyticsEvent) {
