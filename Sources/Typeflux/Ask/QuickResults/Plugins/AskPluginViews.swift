@@ -322,10 +322,10 @@ struct AskPluginResultsView: View {
         case .running: return L("ask.plugin.hint.running")
         case let .done(_, output) where !output.items.isEmpty:
             // A list: what the chosen row's keys do.
-            parts = [output.action(for: .enter).map { L("ask.plugin.hint.action", $0.title) },
-                     output.action(for: .optionEnter).map { L("ask.plugin.hint.option.enter", $0.title) },
-                     output.selected?.autocomplete.map { _ in L("ask.plugin.hint.complete") },
-                     askAI]
+            let returnHint = output.action(for: .enter).map { L("ask.plugin.hint.action", $0.title) }
+            let optionReturnHint = output.action(for: .optionEnter).map { L("ask.plugin.hint.option.enter", $0.title) }
+            let shortcuts = output.emoji == nil ? [returnHint, optionReturnHint] : [optionReturnHint, returnHint]
+            parts = shortcuts + [output.selected?.autocomplete.map { _ in L("ask.plugin.hint.complete") }, askAI]
         case let .done(_, output):
             // Without a main action Return does nothing, so the bar leaves it out.
             let main = output.action(for: .enter)?.title

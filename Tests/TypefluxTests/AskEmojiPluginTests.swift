@@ -310,7 +310,7 @@ struct AskEmojiPluginTests {
                 phase: .done(plan, output),
                 offersAskAI: false
             )
-            let expectedHint = output.items.isEmpty ? "" : "↩ 插入 · ⌥↩ 复制"
+            let expectedHint = output.items.isEmpty ? "" : "⌥↩ 复制 · ↩ 插入"
             #expect(AskPluginResultsView.hint(for: display) == expectedHint)
             for scheme in [ColorScheme.light, .dark] {
                 let view = VStack(spacing: 0) {
