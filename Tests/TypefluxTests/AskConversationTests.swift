@@ -130,8 +130,15 @@ actor AskTestAPI: AskAPI {
         return value
     }
     var recoveries: [AskRecoveryRequest] = []
+    private var recoveryGate: AsyncStream<Void>?
+    func pauseNextRecovery(until gate: AsyncStream<Void>) { recoveryGate = gate }
     func recover(conversationId: String, request: AskRecoveryRequest, token: String) async throws -> AskConversation {
         recoveries.append(request)
+        if let gate = recoveryGate {
+            recoveryGate = nil
+            for await _ in gate { break }
+            try Task.checkCancellation()
+        }
         var value = try await conversation(id: conversationId, token: token)
         if echoRecoveryCheck {
             let step = value.run?.steps ?? 0

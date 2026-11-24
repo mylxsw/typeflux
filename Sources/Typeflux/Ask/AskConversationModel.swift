@@ -1680,6 +1680,8 @@ final class AskConversationModel: ObservableObject {
         let id = value.id, operationId = UUID()
         busyIds.insert(id); error = nil; operationErrors[id] = nil
         registerOperation(id, operationId: operationId, account: current.account)
+        // Recovery operates on this already bound run, even before its reply arrives.
+        operationRuns[operationId] = .init(ownerId: current.account, conversationId: id, runId: run.id)
         operations[id] = Task { [weak self] in
             guard let self else { return }
             defer { finishOperation(id, operationId: operationId) }
@@ -1687,10 +1689,13 @@ final class AskConversationModel: ObservableObject {
                 try checkOperation(id, operationId: operationId, account: current.account)
                 let response = try await api.recover(conversationId: id, request: request, token: current.token)
                 try checkOperation(id, operationId: operationId, account: current.account)
+                // Compare the wire values with stable key ordering, including nested user content.
+                let encoder = AskCoding.encoder()
+                encoder.outputFormatting = [.sortedKeys]
                 guard response.run?.id == run.id,
                       (request.callIds.isEmpty || response.run?.internalRecovery != nil),
-                      try AskCoding.encoder().encode(response.messages.filter({ $0.role == "user" }))
-                        == AskCoding.encoder().encode(value.messages.filter({ $0.role == "user" })) else {
+                      try encoder.encode(response.messages.filter({ $0.role == "user" }))
+                        == encoder.encode(value.messages.filter({ $0.role == "user" })) else {
                     throw AskLocalError.message(L("ask.recovery.readOnlyUnavailable"))
                 }
                 try await drive(response, current: current, operationId: operationId, screenshotConsentMessageID: screenshotConsent[id])
@@ -2121,6 +2126,15 @@ final class AskConversationModel: ObservableObject {
                 continue
             }
             guard let call = run.pending.first else { return }
+            if call.function.name == AskTaskModeHandoff.toolName, value.resolvedKind == .chat,
+               run.recoveryCheck != true, run.internalRecovery?.phase != .inspecting {
+                // The transcript retains the handoff. Neither another model call nor a tool
+                // needs to run before the user can decide what to do.
+                sendQueue.pause(value.id)
+                let stopped = try await api.cancel(conversationId: value.id, runId: run.id, token: current.token)
+                try await accept(stopped, route: current, operationId: operationId)
+                return
+            }
             let identity = AskExecutionIdentity(owner: current.account, conversation: value, run: run,
                                                 callId: call.id, kind: "tool")
             let journalKey = identity.key
@@ -2738,7 +2752,7 @@ final class AskConversationModel: ObservableObject {
         recoveringImages[id] = nil
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
         queueDidSettle(id)
-        if selectedId == id { Task { await recoverWithoutUser() } }
+        if selectedId == id, !Task.isCancelled { Task { await recoverWithoutUser() } }
     }
 
     private func recordInferenceUsage(_ usage: AskTokenUsage, id: String, owner expectedOwner: String) {

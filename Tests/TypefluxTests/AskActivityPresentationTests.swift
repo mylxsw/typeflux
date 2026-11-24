@@ -20,6 +20,21 @@ import Vision
         items.first { if case .outcome = $0.kind { return true }; return false }
     }
 
+    @Test(arguments: [true, false])
+    func taskModeHandoffKeepsAChatReplyInHistory(hasReply: Bool) throws {
+        let reply = "I can’t see your Mac’s live load from Chat. Open Activity Monitor to see CPU and memory usage."
+        let call = AskToolCall(id: "handoff", function: .init(name: AskTaskModeHandoff.toolName,
+            arguments: hasReply ? #"{"reply":"\#(reply)"}"# : "{}"))
+        let signal = AskMessage(id: "response", role: "assistant", text: "", toolCalls: [call],
+                                createdAt: now, reasoning: "Internal planning", runId: "run")
+        let items = AskActivity.items([user("first"), signal, user("followup")], results: [])
+        let turn = try #require(AskTranscriptTurn.make(items).first)
+        let answer = try #require(turn.answer)
+        #expect(answer.id == signal.id)
+        #expect(answer.text == (hasReply ? reply : L("ask.kind.taskModeHelp")))
+        #expect(turn.sections.allSatisfy { !$0.isProcess })
+    }
+
     @Test func imageApprovalAndRefusalDoNotReserveImageSpace() throws {
         let call = AskToolCall(id: "image", function: .init(name: "image_generate", arguments: "{}"))
         let message = AskMessage(id: "proposal", role: "assistant", text: "", toolCalls: [call], createdAt: now)

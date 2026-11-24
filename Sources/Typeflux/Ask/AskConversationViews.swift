@@ -1030,9 +1030,10 @@ struct AskConversationView: View {
                         .foregroundStyle(StudioTheme.textPrimary)
                     if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
                     if layout.mainWidth >= 760, let phase = model.runPhase {
+                        let needsTaskMode = model.taskModeHandoff != nil
                         HStack(spacing: 5) {
-                            AskRunToneDot(tone: phase.tone)
-                            Text(model.imageRunSummary ?? phase.summary)
+                            AskRunToneDot(tone: needsTaskMode ? .attention : phase.tone)
+                            Text(needsTaskMode ? L("ask.kind.taskModeNeeded") : model.imageRunSummary ?? phase.summary)
                                 .font(.system(size: 12))
                                 .foregroundStyle(StudioTheme.textSecondary)
                                 .monospacedDigit()
@@ -1232,7 +1233,8 @@ struct AskConversationView: View {
     /// Whether `statusArea` shows anything, so an empty one adds no gap to the transcript.
     private var hasStatus: Bool {
         model.visibleVisionSwitch != nil || model.error != nil || model.imageRecoveryTarget != nil
-            || (stoppedRun && !stepLimitEnded) || resumable || model.hasRecoveryNotice || creditPaused
+            || (model.taskModeHandoff == nil && ((stoppedRun && !stepLimitEnded) || resumable || model.hasRecoveryNotice))
+            || creditPaused
     }
 
     /// The selected run stopped at the step limit and the user chose to end it there.
@@ -1251,10 +1253,11 @@ struct AskConversationView: View {
     }
 
     @ViewBuilder private var statusArea: some View {
+        let showsHandoff = model.taskModeHandoff != nil
         if creditPaused {
             AskCreditPauseSection(model: model, auth: auth)
         }
-        if model.hasRecoveryNotice, let value = model.selected, !model.busyIds.contains(value.id) {
+        if !showsHandoff, model.hasRecoveryNotice, let value = model.selected, !model.busyIds.contains(value.id) {
             AskRecoveryCard(
                 presentation: model.recoveryPresentation,
                 canRetransmit: model.canRetransmitReceipts,
@@ -1275,6 +1278,7 @@ struct AskConversationView: View {
         }
         if model.imageRecoveryTarget == nil, let error = model.error,
            !model.submissionIssues.values.contains(where: { $0.text == error }),
+           !showsHandoff || error != L("ask.recovery.readOnlyUnavailable"),
            !model.hasRecoveryNotice || error != L("ask.recovery.unknownBody") {
             let storageFailure = error == L("ask.cache.failed")
             let recoveryReadFailure = model.selectedRecoveryEntries.contains(where: \.readUnavailable)
@@ -1295,19 +1299,19 @@ struct AskConversationView: View {
         if let target = model.imageRecoveryTarget {
             AskImageRecoveryCard(model: model, target: target)
                 .id(target.id)
-        } else if stoppedRun, !model.hasRecoveryNotice, let value = model.selected,
+        } else if !showsHandoff, stoppedRun, !model.hasRecoveryNotice, let value = model.selected,
                   !model.recoveryBlocksResume(value), let run = value.run, AskStepLimitPrompt.applies(run) {
             if endedStepLimitRunId != run.id {
                 AskStepLimitPrompt(steps: run.steps, plan: run.plan,
                                    onEnd: { endedStepLimitRunId = run.id },
                                    onContinue: { model.resume() })
             }
-        } else if stoppedRun, !model.hasRecoveryNotice, let value = model.selected,
+        } else if !showsHandoff, stoppedRun, !model.hasRecoveryNotice, let value = model.selected,
                   !model.recoveryBlocksResume(value), let notice = value.run?.interruptionNotice {
             AskBanner(text: notice, tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
-        } else if resumable, !model.hasRecoveryNotice, model.error == nil {
+        } else if !showsHandoff, resumable, !model.hasRecoveryNotice, model.error == nil {
             AskBanner(text: L("ask.resume.hint"), tone: .info, systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
         }
@@ -1422,9 +1426,10 @@ struct AskConversationView: View {
                                                    message: liveTranscriptMessage,
                                                    isCommitted: activityCache.containsCommittedMessage)
         let items = activityCache.appendingProgress(liveMessage)
-        let activeRun = model.selected?.run.flatMap { $0.isActive ? $0 : nil }
+        let handoff = model.taskModeHandoff
+        let activeRun = model.selected?.run.flatMap { $0.isActive && handoff == nil ? $0 : nil }
         let turns = AskTranscriptTurn.make(items, activeRunID: activeRun?.id, activeMessageID: activeRun?.assistantId)
-        let showsWaiting = model.showsResponseWaiting && (model.hasPendingSubmission || (liveMessage.map {
+        let showsWaiting = handoff == nil && model.showsResponseWaiting && (model.hasPendingSubmission || (liveMessage.map {
             $0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && ($0.toolCalls ?? []).isEmpty
         } ?? true))
         let phase = model.runPhase
@@ -1433,7 +1438,7 @@ struct AskConversationView: View {
         @ViewBuilder func sectionContent(_ section: AskTranscriptSection) -> some View {
             if section.isProcess {
                 AskTurnProcessView(section: section,
-                                   active: runIsActive(section, model: model),
+                                   active: phase?.isWorking == true && runIsActive(section, model: model),
                                    locatedMessageID: model.highlightedMessageId) { visibleItems in
                     VStack(alignment: .leading, spacing: 10) {
                         ForEach(visibleItems, id: \.viewID) { item in
@@ -1453,7 +1458,25 @@ struct AskConversationView: View {
             }
         }
 
-        @ViewBuilder func currentRunDetails() -> some View {
+        @ViewBuilder func currentRunDetails(afterAnswer: Bool) -> some View {
+            if let handoff {
+                VStack(alignment: .leading, spacing: 10) {
+                    if !afterAnswer {
+                        Text(handoff.reply)
+                            .font(.system(size: AskMarkdownText.bodySize))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .lineSpacing(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
+                    Button { model.continueInTask(handoff) } label: {
+                        Label(L("ask.kind.continueAsWork"), systemImage: AskConversationKind.work.symbol)
+                    }
+                    .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                    .accessibilityIdentifier("ask.taskMode.continue")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
             if showsWaiting {
                 AskResponseWaitingView()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1493,12 +1516,12 @@ struct AskConversationView: View {
                                                   },
                                                   onUsage: { usageRunId = answer.runId; setUsage(true) }) {
                                     ForEach(turn.sections[split...]) { section in sectionContent(section) }
-                                    if turn.id == turns.last?.id { currentRunDetails() }
+                                    if turn.id == turns.last?.id { currentRunDetails(afterAnswer: true) }
                                 }
                                 .id(turn.sections[split].id)
                             }
                         }
-                        if turns.last?.answer == nil { currentRunDetails() }
+                        if turns.last?.answer == nil { currentRunDetails(afterAnswer: false) }
                         // Jumped messages wait after everything the run still has to finish.
                         ForEach(steeredMessages) { message in
                             AskMessageView(message: message, steeredPending: true, onReference: { _ in }).id(message.id)
@@ -1716,7 +1739,8 @@ struct AskConversationView: View {
     private var liveTranscriptMessage: AskMessage? {
         guard let value = model.selected, let progress = model.liveProgress(value), let run = value.run else { return nil }
         return .init(id: run.assistantId ?? "live-" + run.id, role: "assistant", text: progress.text,
-                     toolCalls: progress.toolCalls, createdAt: run.updatedAt, reasoning: progress.reasoning,
+                     toolCalls: progress.toolCalls.filter { $0.function.name != AskTaskModeHandoff.toolName },
+                     createdAt: run.updatedAt, reasoning: progress.reasoning,
                      reasoningMilliseconds: progress.reasoningMilliseconds, runId: run.id)
     }
 

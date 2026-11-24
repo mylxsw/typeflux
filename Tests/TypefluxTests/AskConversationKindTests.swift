@@ -37,16 +37,20 @@ struct AskConversationKindTests {
                      "project_terminal", "artifact", AskNotebookTool.name, AskEmbeddedBrowserTool.name, "mcp_github",
                      "skill", "memory", "generate_image"]
         let tools = names.map(definition)
-        #expect(AskConversationKind.chat.offered(tools).map(\.name) == ["skill", "memory", "generate_image"])
+        #expect(AskConversationKind.chat.offered(tools).map(\.name)
+            == ["skill", "memory", "generate_image", AskTaskModeHandoff.toolName])
         #expect(AskConversationKind.work.offered(tools).map(\.name) == names)
         let workflow = AskLocalTools.workflowChatNames.sorted()
-        #expect(AskConversationKind.chat.offered(workflow.map(definition)).map(\.name) == workflow)
+        #expect(AskConversationKind.chat.offered(workflow.map(definition)).map(\.name)
+            == workflow + [AskTaskModeHandoff.toolName])
     }
 
     @Test func temporaryChatAlsoDropsMemory() {
         let tools = ["memory", "skill", "browser"].map(definition)
-        #expect(AskConversationModel.offeredTools(tools, temporary: true, kind: .chat).map(\.name) == ["skill"])
-        #expect(AskConversationModel.offeredTools(tools, temporary: false, kind: .chat).map(\.name) == ["memory", "skill"])
+        #expect(AskConversationModel.offeredTools(tools, temporary: true, kind: .chat).map(\.name)
+            == ["skill", AskTaskModeHandoff.toolName])
+        #expect(AskConversationModel.offeredTools(tools, temporary: false, kind: .chat).map(\.name)
+            == ["memory", "skill", AskTaskModeHandoff.toolName])
         #expect(AskConversationModel.offeredTools(tools, temporary: true, kind: .work).map(\.name) == ["skill", "browser"])
     }
 
@@ -139,7 +143,7 @@ struct AskConversationKindTests {
         f.model.submitDraft()
         try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.run?.status == "completed" }
         let chatTools = try #require(await f.api.sends.last?.tools)
-        #expect(chatTools.isEmpty, "builtins are computer and browser only")
+        #expect(chatTools.map(\.name) == [AskTaskModeHandoff.toolName], "Chat can suggest a task without accessing the Mac")
         #expect(f.model.selected?.kind == "chat")
 
         f.model.newConversation()
@@ -160,7 +164,7 @@ struct AskConversationKindTests {
         f.model.submitLauncher()
         try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.run?.status == "completed" }
         #expect(await f.api.sends.last?.kind == "chat")
-        #expect(await f.api.sends.last?.tools.isEmpty == true)
+        #expect(await f.api.sends.last?.tools.map(\.name) == [AskTaskModeHandoff.toolName])
     }
 
     @Test func chatRefusesADeviceToolTheModelNamesAnyway() async throws {

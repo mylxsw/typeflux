@@ -242,6 +242,89 @@ struct AskChatWorkPhase2Tests {
 
     // MARK: - Continuing elsewhere, commands and hosts
 
+    @Test func taskModeHandoffSendsTheOriginalQuestionOnceAfterClick() async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        let prompt = "看一下电脑的负载情况"
+        let attachment = AskAttachment(kind: .file, name: "notes.txt", text: "Synthetic context")
+        await f.api.setTool(.init(id: "offer-task", function: .init(name: AskTaskModeHandoff.toolName, arguments: "{}")))
+        f.model.newConversation(storesLocally: false)
+        f.model.setConversationKind(.chat, launcher: false)
+        f.model.draft.modelRef = "cloud:default"
+        f.model.draft.text = prompt
+        f.model.draft.attachments = [attachment]
+        f.model.submitDraft()
+        try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.run?.status == "cancelled" }
+
+        let original = try #require(f.model.selected)
+        let originalRun = try #require(original.run)
+        let handoff = try #require(f.model.taskModeHandoff)
+        #expect(await f.api.sends.count == 1)
+        #expect(await f.api.results.isEmpty && f.tools.executions == 0)
+        #expect(await f.api.sends.first?.tools.contains { $0.name == AskTaskModeHandoff.toolName } == true)
+        #expect(await f.api.cancellations == [originalRun.id])
+        #expect(handoff.question.text == prompt)
+
+        let owner = f.sessionState.owner
+        f.sessionState.owner = "another-account"
+        f.model.continueInTask(handoff)
+        #expect(f.model.selectedId == original.id && f.model.selected?.resolvedKind == .chat)
+        #expect(await f.api.sends.count == 1)
+        f.sessionState.owner = owner
+
+        let computer = AskToolCall(id: "needs-approval", function: .init(name: "computer", arguments: "{}"))
+        await f.api.setTool(computer)
+        f.model.continueInTask(handoff)
+        f.model.continueInTask(handoff)
+        try await f.wait { !f.model.pendingApprovals.isEmpty }
+
+        let newID = try #require(f.model.selectedId)
+        #expect(newID != original.id)
+        #expect(f.model.selected?.resolvedKind == .work)
+        let requests = await f.api.sends
+        #expect(requests.count == 2)
+        let request = try #require(requests.last)
+        #expect(request.kind == "work" && request.text == prompt && request.attachments == [attachment])
+        #expect(!request.tools.contains { $0.name == AskTaskModeHandoff.toolName })
+        #expect(f.model.pendingApprovals[newID]?.id == computer.id && f.tools.executions == 0)
+        f.model.approve(conversationId: newID, allowed: false)
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.tools.executions == 0)
+    }
+
+    @Test func stalledLegacyChatOffersTaskWithoutRetryingAndPreservesTheOldChat() async throws {
+        let f = try AskTestFixture(automaticRecovery: true)
+        defer { f.model.resetSession() }
+        var old = AskRecoveryFixture.conversation()
+        old.kind = "chat"
+        old.messages[0].text = "看一下电脑的负载情况"
+        old.run?.modelRef = "cloud:default"
+        old.run?.recovery = .init(state: "unknown_outcome", sequence: 2)
+        let keyword = AskToolCall(id: "check", function: .init(name: "workflow_check_keyword", arguments: "{}"))
+        old.run?.pending = [keyword]
+        await f.api.seed(old)
+        await f.model.select(old.id)
+        let handoff = try #require(f.model.taskModeHandoff)
+        #expect(handoff.stalled)
+        #expect(await f.api.recoveries.isEmpty)
+        #expect(await f.api.sends.isEmpty)
+
+        f.model.continueInTask(handoff)
+        try await f.wait { f.model.selected?.resolvedKind == .work && f.model.busyIds.isEmpty }
+        #expect(await f.api.sends.last?.text == old.messages[0].text)
+        for _ in 0 ..< 100 where try await f.api.conversation(id: old.id, token: "token").run?.status != "cancelled" {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let original = try await f.api.conversation(id: old.id, token: "token")
+        #expect(original.run?.status == "cancelled" && original.messages == old.messages)
+
+        var withAnUncertainEffect = old
+        withAnUncertainEffect.messages.append(.init(id: "effect", role: "assistant", text: "", toolCalls: [
+            .init(id: "test", function: .init(name: "workflow_test", arguments: "{}")),
+        ], createdAt: Date()))
+        #expect(AskTaskModeHandoff(conversation: withAnUncertainEffect, needsRecovery: true) == nil)
+    }
+
     @Test func `continue as work carries the chat into a new task`() async throws {
         let f = try AskTestFixture()
         f.model.newConversation()

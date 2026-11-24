@@ -261,7 +261,14 @@ extension AskToolResultRequest {
             copy.harness?.observation = nil
         }
         guard AskTypedContent.advertisement.permits(.typedContent, peer: peer, enabled: enabled) else {
-            copy.harness = nil
+            // A refusal that never dispatched must not become an ambiguous tool failure.
+            // The status-only envelope carries no typed content or execution authority.
+            if copy.approveExecution == nil, copy.harness?.version == 1,
+               let outcome = copy.harness?.outcome, outcome.safeStatus == .invalid, outcome.eventDispatched == false {
+                copy.harness = .init(version: 1, outcome: .init(status: "invalid", eventDispatched: false))
+            } else {
+                copy.harness = nil
+            }
             return copy
         }
         if copy.harness?.version == 1, var outcome = copy.harness?.outcome, let content = outcome.content {

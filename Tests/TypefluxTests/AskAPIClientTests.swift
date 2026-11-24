@@ -134,6 +134,27 @@ struct AskAPIClientTests {
         #expect(try AskCoding.decoder().decode(AskToolResultRequest.self, from: wire).approveExecution == true)
     }
 
+    @Test(arguments: [false, true, nil] as [Bool?])
+    func cloudToolFailureCarriesOnlyAnExplicitPreDispatchRefusal(dispatched: Bool?) async throws {
+        let stub = AskHTTPStub(), api = client(stub)
+        await stub.configure(payload: Data(#"{"code":"OK","data":{"id":"c","title":"Mac load","revision":2,"updated_at":"2026-11-24T00:00:00Z","messages":[]}}"#.utf8))
+        let receipt = AskToolResultRequest(runId: "run", deviceId: "device", toolCallId: "keyword",
+            content: "No workflow draft is open.", isError: true,
+            harness: .init(version: 1, capabilities: ["typed_content_v1"],
+                           outcome: .init(status: "invalid", durationMs: 12, eventDispatched: dispatched)))
+
+        _ = try await api.result(conversationId: "c", request: receipt, token: "t")
+
+        let wire = try #require(await stub.requests.last?.httpBody)
+        let sent = try AskCoding.decoder().decode(AskToolResultRequest.self, from: wire)
+        #expect(sent.isError && sent.content == receipt.content)
+        if dispatched == false {
+            #expect(sent.harness == .init(version: 1, outcome: .init(status: "invalid", eventDispatched: false)))
+        } else {
+            #expect(sent.harness == nil)
+        }
+    }
+
     @Test(arguments: [false, true]) func streamingTransportDecodesSnapshotsAndCompactUpdates(recovery: Bool) async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [AskEventsURLProtocol.self]

@@ -2353,9 +2353,9 @@
 "ask.skills.install.nameConflict" = "スキル名がローカルフォルダと競合しています。競合するフォルダの名前を変更してからインストールしてください。";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "今回の処理結果を確認できませんでした";
-"ask.recovery.unknownBody" = "直前の操作結果は不明です。Typeflux が重複実行せずに確認します。";
-"ask.recovery.unknownToolBody" = "%@の結果は不明です。Typeflux が先に確認します。";
+"ask.recovery.unknown" = "処理が完了していません";
+"ask.recovery.unknownBody" = "直前の操作を繰り返さないよう、Typeflux が処理を中断しました。";
+"ask.recovery.unknownToolBody" = "%@を繰り返さないよう、Typeflux が処理を中断しました。";
 "ask.recovery.tool.browser" = "ブラウザー操作";
 "ask.recovery.tool.computer" = "画面操作";
 "ask.recovery.tool.command" = "コマンド";
@@ -2379,7 +2379,7 @@
 "ask.recovery.followUpBody" = "すでに完了していれば、やり直す必要はありません。まだ助けが必要な場合は、会話に戻り、何が未完了なのか Typeflux に伝えてください。";
 "ask.recovery.message" = "あなたのメッセージ";
 "ask.recovery.stopped" = "この先の処理を停止しました";
-"ask.recovery.checkAndContinue" = "再確認";
+"ask.recovery.checkAndContinue" = "確認して続ける";
 "ask.recovery.details" = "一時停止の詳細";
 "ask.recovery.recommended" = "おすすめ";
 "ask.recovery.option.check" = "Typeflux に確認させる";
@@ -6714,7 +6714,10 @@
 "ask.kind.switched" = "%@に切り替えました";
 "ask.kind.continuedAsWork" = "このチャットを添えて新しいタスクを始めました";
 "ask.kind.continuedAsChat" = "この会話を添えて新しいチャットを始めました";
-"ask.kind.continueAsWork" = "タスクとして続ける";
+"ask.kind.continueAsWork" = "タスクモードで続ける";
+"ask.kind.taskModeNeeded" = "タスクモードが必要";
+"ask.kind.taskModeHelp" = "チャットではこの Mac にアクセスできません。依頼を引き継いで、タスクモードで続けられます。";
+"ask.kind.stalledChat" = "チャットではこの依頼を完了できませんでした。依頼を引き継いで、タスクモードで続けられます。";
 "ask.input.placeholder.work" = "やりたいタスクを入力、/ でコマンド";
 "ask.kind.defaultWorkspace" = "既定のワークスペース";
 "ask.kind.folders" = "%@ ほか %ld";

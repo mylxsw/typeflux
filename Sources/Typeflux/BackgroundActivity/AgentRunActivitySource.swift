@@ -12,6 +12,7 @@ struct AgentActivityInput: Codable, Equatable, Sendable {
         var step: AskToolCall?
         /// The run's plan, known for the conversation on screen.
         var plan: [AskPlanItem]?
+        var needsDecision: Bool? = nil
     }
 
     var runs: [Run] = []
@@ -34,7 +35,8 @@ extension AgentActivityInput {
 
     /// The runs in `busy`, described with what the conversation model knows of each.
     static func make(busy: Set<String>, titles: [String: String], selected: Selection?,
-                     liveSteps: [String: [AskToolCall]], approvals: [String: AskToolCall]) -> Self {
+                     liveSteps: [String: [AskToolCall]], approvals: [String: AskToolCall],
+                     needingDecision: Set<String> = []) -> Self {
         AgentActivityInput(runs: busy.sorted().map { id in
             let loaded = selected?.id == id ? selected : nil
             let steps = liveSteps[id] ?? loaded?.run?.previewTools ?? []
@@ -43,7 +45,8 @@ extension AgentActivityInput {
                 title: titles[id] ?? loaded?.title,
                 approval: approvals[id],
                 step: steps.last { $0.function.name != "update_plan" },
-                plan: loaded?.run?.plan
+                plan: loaded?.run?.plan,
+                needsDecision: needingDecision.contains(id) ? true : nil
             )
         })
     }
@@ -58,7 +61,11 @@ extension AskConversationModel: AgentActivityControlling {
             titles: Dictionary(conversations.filter { busy.contains($0.id) }.map { ($0.id, $0.title) },
                                uniquingKeysWith: { first, _ in first }),
             selected: selected.map { .init(id: $0.id, title: $0.title, run: $0.run) },
-            liveSteps: inferenceProgress.mapValues(\.toolCalls), approvals: pendingApprovals
+            liveSteps: inferenceProgress.mapValues(\.toolCalls), approvals: pendingApprovals,
+            needingDecision: busy.filter { id in
+                guard let conversation = snapshots[id], case .needsDecision = runPhase(for: conversation) else { return false }
+                return true
+            }
         )
     }
 
@@ -132,6 +139,11 @@ final class AgentRunActivitySource: BackgroundActivitySource {
                 id: activityID(run.id), kind: .agent, title: title(run), detail: "", progress: nil,
                 state: .running, actions: [.open, .stop], route: .conversation(run.id)
             )
+            if run.needsDecision == true {
+                activity.state = .attention
+                activity.detail = L("ask.run.needsDecision")
+                return activity
+            }
             if let approval = run.approval {
                 activity.state = .attention
                 activity.detail = L("activity.agent.approval", AskTheme.toolTitle(approval))

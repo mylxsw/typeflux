@@ -106,7 +106,21 @@ enum AskActivity {
             }
             taskMessages = []
         }
-        for message in messages {
+        for original in messages {
+            var message = original
+            if let calls = message.toolCalls, let handoff = calls.last(where: { $0.function.name == AskTaskModeHandoff.toolName }) {
+                let visible = calls.filter { $0.function.name != AskTaskModeHandoff.toolName }
+                message.toolCalls = visible.isEmpty ? nil : visible
+                if visible.isEmpty {
+                    if let reply = AskTaskModeHandoff.reply(from: handoff) {
+                        message.text = reply
+                    } else if message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        message.text = L("ask.kind.taskModeHelp")
+                    }
+                    message.reasoning = nil
+                    message.reasoningMilliseconds = nil
+                }
+            }
             if message.role == "user", message.steered != true {
                 flushSteps()
                 flushOutcome()

@@ -224,6 +224,31 @@ struct AskRecoveryJournalTests {
 @Suite("Ask recovery interactions", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryInteractionTests {
+    @Test func stopFromComposerCancelsTheBoundRunWhileRecoveryIsInFlight() async throws {
+        let fixture = try AskTestFixture(automaticRecovery: true)
+        let gate = AsyncStream<Void>.makeStream()
+        defer { gate.continuation.finish(); fixture.model.resetSession() }
+        let value = AskRecoveryFixture.conversation()
+        let audit = AskRecoveryFixture.audit(value)
+        #expect(try await fixture.cache.claimExecution(audit, owner: "owner"))
+        await fixture.api.seed(value)
+        await fixture.api.pauseNextRecovery(until: gate.stream)
+        await fixture.model.select(value.id)
+
+        #expect(fixture.model.busyIds.contains(value.id))
+        #expect(fixture.model.canStopRecoveryFromComposer)
+        let activity = try #require(AgentRunActivitySource.activities(for: fixture.model.agentActivityInput).first)
+        #expect(activity.state == .attention)
+        #expect(activity.detail == L("ask.run.needsDecision"))
+        #expect(activity.actions.contains(.stop))
+
+        fixture.model.stopFromComposer()
+        try await fixture.wait { fixture.model.selected?.run?.status == "cancelled" && fixture.model.busyIds.isEmpty }
+        #expect(await fixture.api.cancellations == ["run"])
+        #expect(fixture.model.agentActivityInput.runs.isEmpty)
+        #expect(fixture.tools.executions == 0)
+    }
+
     @Test func `uncertain claim automatically recovers the original run without a user message`() async throws {
         let fixture = try AskTestFixture(automaticRecovery: true)
         defer { fixture.model.resetSession() }
@@ -424,7 +449,9 @@ struct AskRecoveryInteractionTests {
         fixture.model.submitDraft()
         #expect(fixture.model.queuedMessages.count == 1)
         #expect(!fixture.model.canSteer)
-        await fixture.model.endRecoveryRun()
+        #expect(fixture.model.canStopRecoveryFromComposer)
+        fixture.model.stopFromComposer()
+        try await fixture.wait { fixture.model.selected?.run?.status == "cancelled" && !fixture.model.recoveryWorking }
         fixture.model.resumeQueue()
         #expect(fixture.model.isQueuePaused)
         #expect(fixture.model.selected?.run?.status == "cancelled")

@@ -14,9 +14,7 @@ extension AskConversationModel {
 
     var recoveryPresentation: AskRecoveryPresentation {
         if let cachedRecoveryPresentation { return cachedRecoveryPresentation }
-        let value = AskRecoveryPresentation(run: selected?.run, entries: selectedRecoveryEntries, deviceId: deviceId,
-                                            local: selected.map { isLocal($0.id) } ?? false,
-                                            liveExecutions: Array(liveToolExecutions.values))
+        let value = recoveryPresentation(for: selected)
         cachedRecoveryPresentation = value
         recordRecoveryPresentationBuild()
         return value
@@ -24,11 +22,33 @@ extension AskConversationModel {
 
     /// The single state every run indicator reads; see `AskRunPhase`.
     var runPhase: AskRunPhase? {
-        guard let value = selected else { return nil }
-        return AskRunPhase.resolve(run: value.run, busy: busyIds.contains(value.id),
-                                   pendingApproval: pendingApprovals[value.id] != nil,
-                                   recovery: recoveryPresentation,
-                                   storageUnavailable: selectedRecoveryEntries.contains(where: \.readUnavailable))
+        selected.flatMap(runPhase(for:))
+    }
+
+    func runPhase(for value: AskConversation) -> AskRunPhase? {
+        AskRunPhase.resolve(run: value.run, busy: busyIds.contains(value.id),
+                            pendingApproval: pendingApprovals[value.id] != nil,
+                            recovery: selected?.id == value.id ? recoveryPresentation : recoveryPresentation(for: value),
+                            storageUnavailable: recoveryEntries[value.id]?.contains(where: \.readUnavailable) == true)
+    }
+
+    private func recoveryPresentation(for value: AskConversation?) -> AskRecoveryPresentation {
+        AskRecoveryPresentation(run: value?.run, entries: value.flatMap { recoveryEntries[$0.id] } ?? [],
+                                deviceId: deviceId, local: value.map { isLocal($0.id) } ?? false,
+                                liveExecutions: Array(liveToolExecutions.values))
+    }
+
+    var canStopRecoveryFromComposer: Bool {
+        guard case .needsDecision = runPhase, let run = selected?.run else { return false }
+        return run.isActive && run.deviceId == deviceId && !recoveryWorking
+    }
+
+    func stopFromComposer() {
+        if canStopRecoveryFromComposer, let id = selectedId, !busyIds.contains(id) {
+            performRecovery(.stop)
+        } else {
+            stop()
+        }
     }
 
     var selectedImageStartTimes: [String: Date] {
@@ -91,6 +111,7 @@ extension AskConversationModel {
               let run = value.run, !isLoadingSelection,
               !busyIds.contains(value.id), !recoveryWorking,
               !selectedRecoveryEntries.contains(where: \.readUnavailable),
+              taskModeHandoff?.stalled != true,
               !recoveryPresentation.otherDevice else { return }
         let key = value.id + "/" + run.id
         if canRetransmitReceipts {
@@ -191,7 +212,7 @@ extension AskConversationModel {
 
     /// Ends only the inspected run. This never asserts that an unknown effect succeeded.
     func endRecoveryRun() async {
-        guard !recoveryWorking, let value = selected, let run = value.run, run.isActive,
+        guard !recoveryWorking, let value = selected, let run = value.run, run.isActive, run.deviceId == deviceId,
               !busyIds.contains(value.id), let current = credentials(for: value.id) else { return }
         guard admitAgentCommand(value) else { return }
         let generation = recoveryGeneration
@@ -225,7 +246,12 @@ extension AskConversationModel {
         case .refresh: inspectingRecovery = false; Task { await retransmitSavedReceipts() }
         case .continueRun: inspectingRecovery = false; resume()
         case .selfCheck: dismissRecoveryInspector()
-        case .stop: Task { await endRecoveryRun() }
+        case .stop:
+            guard let value = selected, let run = value.run else { return }
+            Task {
+                guard selectedId == value.id, selected?.run?.id == run.id else { return }
+                await endRecoveryRun()
+            }
         }
     }
 

@@ -13,7 +13,9 @@ enum AskWorkflowAuthorSkill {
     static let chatInstructions = instructions + """
 
     Chat integration: Use this skill when the user wants to CREATE or MODIFY a reusable tool, not merely
-    perform a one-off task. For a fresh conversation: workflow_list, workflow_start, workflow_read,
+    perform a one-off task. If Chat cannot access the Mac data or local action the user needs, call
+    continue_in_task if available so the app can offer to continue the request in a new Task.
+    For a fresh conversation: workflow_list, workflow_start, workflow_read,
     workflow_environment / workflow_check_keyword, workflow_propose, workflow_test, workflow_save.
     workflow_list only lists tools and loads these instructions; it never opens a draft. workflow_read
     reports hasDraft=false when absent: call workflow_start with name (new tool) / workflow_id (existing

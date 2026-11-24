@@ -276,6 +276,7 @@ struct AskActivityBlock: View, Equatable {
                     AskToolStepRow(call: call, result: index[call.id],
                                    preparing: streamingId == messageID && index[call.id] == nil,
                                    pending: approvalToolId == call.id, running: runningToolIDs.contains(call.id), queued: queuedToolIDs.contains(call.id),
+                                   paused: status == .paused,
                                    interrupted: AskImageCardState.isImageTool(call.function.name) && (!imageRunActive || status == .paused), exportProjectPatch: exportProjectPatch)
                 }
             }
@@ -296,6 +297,7 @@ struct AskToolStepRow: View {
     var pending = false
     var running = false
     var queued = false
+    var paused = false
     var interrupted = false
     var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     var startsExpanded = false
@@ -319,7 +321,7 @@ struct AskToolStepRow: View {
     }
 
     private var state: AskActivityState {
-        if interrupted && result == nil { return .attention }
+        if (interrupted || paused) && result == nil { return .attention }
         if preparing || running { return .running }
         if pending { return .attention }
         return AskPresentation.toolState(result: result)
@@ -327,6 +329,7 @@ struct AskToolStepRow: View {
 
     private var statusText: String {
         if interrupted && result == nil { return L("ask.image.interrupted") }
+        if paused && result == nil { return L("ask.recovery.timeline.paused") }
         if preparing { return L("ask.tool.preparing") }
         if running { return L("ask.tool.running") }
         if queued { return L("ask.activity.queuedTool") }

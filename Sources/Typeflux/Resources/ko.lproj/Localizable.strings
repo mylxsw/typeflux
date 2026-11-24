@@ -2353,9 +2353,9 @@
 "ask.skills.install.nameConflict" = "스킬 이름이 로컬 폴더와 충돌합니다. 충돌하는 폴더 이름을 변경한 후 설치하세요.";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "이번 작업의 결과를 확인할 수 없습니다";
-"ask.recovery.unknownBody" = "직전 작업의 결과가 불분명합니다. Typeflux가 작업을 반복하지 않고 확인합니다.";
-"ask.recovery.unknownToolBody" = "%@의 결과가 불분명합니다. Typeflux가 먼저 확인합니다.";
+"ask.recovery.unknown" = "이번 요청이 완료되지 않았습니다";
+"ask.recovery.unknownBody" = "직전 작업을 두 번 하지 않도록 Typeflux가 처리를 멈췄습니다.";
+"ask.recovery.unknownToolBody" = "%@을(를) 반복하지 않도록 Typeflux가 처리를 멈췄습니다.";
 "ask.recovery.tool.browser" = "브라우저 작업";
 "ask.recovery.tool.computer" = "화면 작업";
 "ask.recovery.tool.command" = "명령";
@@ -2379,7 +2379,7 @@
 "ask.recovery.followUpBody" = "이미 완료되었다면 다시 할 필요가 없습니다. 도움이 더 필요하다면 대화로 돌아가 아직 끝나지 않은 일을 Typeflux에 알려 주세요.";
 "ask.recovery.message" = "내 메시지";
 "ask.recovery.stopped" = "남은 작업이 중지되었습니다";
-"ask.recovery.checkAndContinue" = "다시 확인";
+"ask.recovery.checkAndContinue" = "확인하고 계속";
 "ask.recovery.details" = "일시 중지 상세 보기";
 "ask.recovery.recommended" = "추천";
 "ask.recovery.option.check" = "Typeflux가 확인";
@@ -6714,7 +6714,10 @@
 "ask.kind.switched" = "%@(으)로 전환했습니다";
 "ask.kind.continuedAsWork" = "이 채팅을 첨부해 새 작업을 시작했습니다";
 "ask.kind.continuedAsChat" = "이 대화를 첨부해 새 채팅을 시작했습니다";
-"ask.kind.continueAsWork" = "작업으로 이어가기";
+"ask.kind.continueAsWork" = "작업 모드에서 계속";
+"ask.kind.taskModeNeeded" = "작업 모드 필요";
+"ask.kind.taskModeHelp" = "채팅에서는 이 Mac에 접근할 수 없어요. 같은 요청을 작업 모드에서 이어갈 수 있어요.";
+"ask.kind.stalledChat" = "채팅에서 이 요청을 끝내지 못했어요. 같은 요청을 작업 모드에서 이어갈 수 있어요.";
 "ask.input.placeholder.work" = "할 작업을 설명하세요, / 로 명령";
 "ask.kind.defaultWorkspace" = "기본 작업 공간";
 "ask.kind.folders" = "%@ 외 %ld";

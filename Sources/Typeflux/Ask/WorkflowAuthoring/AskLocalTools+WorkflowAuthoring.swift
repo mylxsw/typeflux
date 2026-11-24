@@ -11,12 +11,17 @@ extension AskLocalTools {
             return .init(name: name, description: description,
                          parameters: JSONValue(data: try! JSONSerialization.data(withJSONObject: schema)))
         }
-        return AskWorkflowAuthorTools.definitions + [
-            definition("workflow_list", "Find installed reusable launcher tools and load workflow authoring instructions. Listing does not open a draft. To create or edit, call workflow_start next, then workflow_read.", [:]),
+        let tools = AskWorkflowAuthorTools.definitions + [
+            definition("workflow_list", "Find installed reusable launcher tools. Listing does not open a draft. To create or edit, call workflow_start next, then workflow_read. For a one-off request that needs this Mac in Chat, call continue_in_task if available.", [:]),
             definition("workflow_start", "Start a new draft with name, or open an installed workflow by workflow_id. Required before proposing, testing or saving. Check workflow_read for an existing draft first; never replace unsaved work.",
                        ["name": ["type": "string"], "workflow_id": ["type": "string"]]),
             definition("workflow_save", "Request saving the current draft to the launcher. The user must explicitly choose Save in the preview panel; this tool never installs automatically.", [:])
         ]
+        return tools.map { tool in
+            var tool = tool
+            tool.description = "Use only when the user asks to create or edit a reusable launcher tool. " + tool.description
+            return tool
+        }
     }
 
     nonisolated static var workflowChatNames: Set<String> {
@@ -80,12 +85,13 @@ extension AskLocalTools {
         guard let session = authoring.session(conversationId) else {
             let state: [String: Any] = [
                 "hasDraft": false,
-                "nextStep": "Call workflow_start with name (new tool) or workflow_id (installed tool), then workflow_read. workflow_list only lists tools; it does not open a draft. Do not retry draft operations before workflow_start succeeds.",
+                "nextStep": "If the user asked to create or edit a reusable tool, call workflow_start with name (new tool) or workflow_id (installed tool), then workflow_read. Do not retry draft operations before workflow_start succeeds. For a one-off request that needs access to this Mac in Chat, call continue_in_task if available.",
                 "instructions": instructions
             ]
             // An absent draft is normal discovery state, not a failed read.
-            return .init(content: AskWorkflowAuthorTools.json(state),
-                         isError: call.function.name != AskWorkflowAuthorTools.read)
+            let requiresDraft = call.function.name != AskWorkflowAuthorTools.read
+            return .init(content: AskWorkflowAuthorTools.json(state), isError: requiresDraft,
+                         outcome: requiresDraft ? .init(status: "invalid", eventDispatched: false) : nil)
         }
         if call.function.name == "workflow_save" {
             session.isPresented = true

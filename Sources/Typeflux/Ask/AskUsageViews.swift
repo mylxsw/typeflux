@@ -97,6 +97,7 @@ struct AskUsagePanel: View {
             // The flush panel spans the whole title row, so its rule lines up
             // with the one under the conversation's title.
             .frame(height: AskMetrics.titleBarRowHeight - 1)
+            .zIndex(1)
             Rectangle().fill(AskTheme.separator).frame(height: 1)
             ScrollView {
                 // Two questions, two cards: "does the next message still fit?"
@@ -135,6 +136,9 @@ struct AskUsagePanel: View {
                 }
                 .padding(compact ? 12 : 16)
             }
+            // The native scroll view can otherwise receive clicks above the visible viewport.
+            .clipped()
+            .contentShape(Rectangle())
         }
         // The sidebar's twin on the trailing side: a full-height column flush
         // with the window edge.

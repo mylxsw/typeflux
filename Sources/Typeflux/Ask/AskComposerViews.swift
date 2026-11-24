@@ -1470,8 +1470,8 @@ struct AskComposer: View {
     }
     private var sendControl: AskSendControl {
         guard !launcher else { return .send(enabled: canSend) }
-        // Stop only while the run works, waits on an approval or waits for credits: a run
-        // waiting for a recovery decision is stopped from its card, so the composer offers no second Stop.
+        // The recovery card can be offscreen while the user reads the transcript.
+        if model.canStopRecoveryFromComposer, !canSend { return .stop }
         let working = model.isBusy && model.runPhase?.offersStop != false
         return AskSendControl.resolve(busy: working, hasDraft: model.draft.canSend,
                                       canSend: canSend, editingQueued: editingQueued)
@@ -3022,6 +3022,9 @@ struct AskComposer: View {
                                     onCancel: { model.cancelQueuedEdit() },
                                     onSave: { model.saveQueuedEdit() })
             } else {
+                if canSend, model.canStopRecoveryFromComposer {
+                    AskStopButton { model.stopFromComposer() }
+                }
                 Group {
                     switch sendControl {
                     case .stop:
@@ -3031,7 +3034,7 @@ struct AskComposer: View {
                                 .font(.system(size: 12, weight: .medium))
                                 .help(L("ask.image.stopHint"))
                                 .accessibilityHint(L("ask.image.stopHint"))
-                        } else { AskStopButton { model.stop() } }
+                        } else { AskStopButton { model.stopFromComposer() } }
                     case let .send(enabled):
                         AskSendButton(enabled: enabled, tint: AskTheme.sendFill, ink: AskTheme.sendInk,
                                       glows: false, action: submit)

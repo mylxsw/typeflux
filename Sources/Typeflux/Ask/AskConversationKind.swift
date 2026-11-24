@@ -23,10 +23,14 @@ enum AskConversationKind: String, CaseIterable, Sendable {
     ]
 
     func offers(_ name: String) -> Bool {
-        self == .work || Self.chatDeviceTools.contains(name) || AskLocalTools.workflowChatNames.contains(name)
+        if name == AskTaskModeHandoff.toolName { return self == .chat }
+        return self == .work || Self.chatDeviceTools.contains(name) || AskLocalTools.workflowChatNames.contains(name)
     }
 
-    func offered(_ tools: [AskToolDefinition]) -> [AskToolDefinition] { tools.filter { offers($0.name) } }
+    func offered(_ tools: [AskToolDefinition]) -> [AskToolDefinition] {
+        let available = tools.filter { $0.name != AskTaskModeHandoff.toolName && offers($0.name) }
+        return self == .chat ? available + [AskTaskModeHandoff.definition] : available
+    }
 
     /// A conversation from before kinds existed did work on this Mac when its transcript
     /// called a device tool outside chat's set, and keeps doing so; any other reads as chat.

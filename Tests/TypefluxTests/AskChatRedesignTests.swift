@@ -239,14 +239,14 @@ struct AskRecoveryActionTests {
 
     @Test func unknownOffersCheckStopAndDetails() {
         let unknown = presentation([unknownEntry])
-        let actions = unknown.actions(canRetransmit: false, canContinue: false)
+        let actions = unknown.actions(canRetransmit: false, canContinue: false, hasUsefulDetails: true)
         #expect(actions == .init(primary: .checkAndContinue, stop: true, details: true))
         #expect(unknown.options(canRetransmit: false, canContinue: false) == [.checkAndContinue, .stop])
     }
 
     @Test func stoppedUnknownCannotBeStoppedAgain() {
         let stopped = presentation([unknownEntry], status: "cancelled")
-        #expect(stopped.actions(canRetransmit: false, canContinue: false)
+        #expect(stopped.actions(canRetransmit: false, canContinue: false, hasUsefulDetails: true)
             == .init(primary: nil, stop: false, details: true))
         #expect(stopped.options(canRetransmit: false, canContinue: false).isEmpty)
     }
@@ -270,7 +270,7 @@ struct AskRecoveryActionTests {
 
     @Test func pausedRunContinues() {
         let paused = presentation([])
-        #expect(paused.actions(canRetransmit: false, canContinue: true)
+        #expect(paused.actions(canRetransmit: false, canContinue: true, hasUsefulDetails: true)
             == .init(primary: .continueRun, stop: true, details: true))
         #expect(paused.actions(canRetransmit: false, canContinue: false).primary == nil)
         #expect(paused.options(canRetransmit: false, canContinue: true) == [.continueRun, .stop])
@@ -449,6 +449,7 @@ struct AskWorkflowChecklistTests {
 struct AskChatRedesignCopyTests {
     static let keys = [
         "ask.run.needsDecision", "ask.usage.conversationSpent", "ask.usage.conversationSpentHelp",
+        "ask.kind.continueAsWork", "ask.kind.taskModeNeeded", "ask.kind.taskModeHelp", "ask.kind.stalledChat",
         "ask.recovery.checkAndContinue", "ask.recovery.details", "ask.recovery.recommended",
         "ask.recovery.option.check", "ask.recovery.option.checkBody",
         "ask.recovery.option.refresh", "ask.recovery.option.refreshBody", "ask.recovery.option.continue",
@@ -502,9 +503,9 @@ struct AskChatRedesignCopyTests {
         let bundle = try #require(Bundle(path: path))
         func text(_ key: String) -> String { bundle.localizedString(forKey: key, value: nil, table: nil) }
         #expect(text("ask.recovery.retransmit") == "刷新进度")
-        #expect(text("ask.recovery.checkAndContinue") == "重新核对")
+        #expect(text("ask.recovery.checkAndContinue") == "检查并继续")
         #expect(text("ask.recovery.end") == "停止任务")
-        #expect(text("ask.recovery.details") == "了解详情")
+        #expect(text("ask.recovery.details") == "查看暂停详情")
         #expect(text("ask.usage.conversationSpent") == "本对话已用")
         #expect(text("ask.run.needsDecision") == "需要你确认")
         #expect(text("ask.recovery.savedBody").contains("刷新进度"))

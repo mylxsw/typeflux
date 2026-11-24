@@ -11,6 +11,60 @@ import Testing
 @Suite("Ask responsive workspace", .serialized, .exclusiveUIState)
 @MainActor
 struct AskResponsiveWorkspaceTests {
+    @Test func taskModeButtonInChatStartsANewTaskWithTheOriginalQuestion() async throws {
+        guard enabled else { return }
+        let session = PreviewSession()
+        defer { session.restore() }
+        let host = try await makeHost(scene: "empty")
+        defer { host.close() }
+        let fixture = host.fixture
+        let model = fixture.model
+        let question = "看一下电脑的负载情况"
+        let reply = "我在聊天模式下看不到这台 Mac 的实时负载。你可以打开「活动监视器」查看 CPU 和内存用量，也可以让我在任务模式帮你查看。"
+        await fixture.api.setTool(.init(id: "handoff", function: .init(
+            name: AskTaskModeHandoff.toolName, arguments: #"{"reply":"\#(reply)"}"#)))
+        model.setConversationKind(.chat, launcher: false)
+        model.draft.modelRef = "cloud:default"
+        model.draft.text = question
+        model.submitDraft()
+        try await fixture.wait { model.taskModeHandoff != nil && model.busyIds.isEmpty }
+        let originalID = try #require(model.selectedId)
+        #expect(await fixture.api.sends.count == 1)
+        await fixture.api.setTool(nil)
+
+        try await resize(host.window, to: NSSize(width: 440, height: 640))
+        let button = try element(identifier: "ask.taskMode.continue", in: host.window)
+        assertVisible(button, in: host.window)
+        let replyView = try #require(descendants(host.window.contentView!).compactMap { $0 as? NSTextView }
+            .first { $0.string.contains(reply) })
+        #expect(replyView.convert(replyView.bounds, to: nil).minY
+                > host.window.convertFromScreen(button.accessibilityFrame()).maxY)
+        try click(button, in: host.window)
+        try await fixture.wait { model.selected?.resolvedKind == .work && model.busyIds.isEmpty }
+        #expect(model.selectedId != originalID)
+        #expect(await fixture.api.sends.count == 2)
+        #expect(await fixture.api.sends.last?.text == question)
+    }
+
+    @Test(arguments: [CGFloat(1115), 820])
+    func usageCloseReceivesMouseClicksInTheTitleBar(width: CGFloat) async throws {
+        guard enabled else { return }
+        let session = PreviewSession()
+        defer { session.restore() }
+        let host = try await makeHost(scene: "chat")
+        defer { host.close() }
+
+        try await resize(host.window, to: NSSize(width: width, height: 760))
+        try click(identifier: "ask.workspace.usage", in: host.window)
+        try await settle(host.window)
+        let close = try element(label: L("ask.usage.close"), in: host.window)
+        let frame = host.window.convertFromScreen(close.accessibilityFrame())
+        try click(NSPoint(x: frame.maxX - 4, y: frame.midY), in: host.window)
+        try await settle(host.window)
+        let panelIsOpen = find(label: L("ask.usage.close"), in: host.window) != nil
+        #expect(!panelIsOpen, "A single click in the close button's padding must close the panel.")
+    }
+
     @Test func storageWarningOffersFeedbackAndImageRecoveryButtonIsAbsent() async throws {
         let session = PreviewSession()
         defer { session.restore() }

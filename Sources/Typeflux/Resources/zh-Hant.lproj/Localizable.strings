@@ -2360,9 +2360,9 @@
 "ask.skills.install.nameConflict" = "技能名稱與本機資料夾衝突。請先重新命名衝突的資料夾，再安裝。";
 
 /* Execution recovery */
-"ask.recovery.unknown" = "還不能確認這次處理的結果";
-"ask.recovery.unknownBody" = "上一步結果尚不明確。Typeflux 會先核對，不會重複操作。";
-"ask.recovery.unknownToolBody" = "%@的結果尚不明確。Typeflux 會先核對。";
+"ask.recovery.unknown" = "這輪處理未完成";
+"ask.recovery.unknownBody" = "為了避免重複執行剛才的操作，Typeflux 暫停了這輪處理。";
+"ask.recovery.unknownToolBody" = "為了避免重複執行%@，Typeflux 暫停了這輪處理。";
 "ask.recovery.tool.browser" = "瀏覽器操作";
 "ask.recovery.tool.computer" = "螢幕操作";
 "ask.recovery.tool.command" = "命令";
@@ -2386,7 +2386,7 @@
 "ask.recovery.followUpBody" = "如果已經完成，就不用再做。若還需要協助，返回對話後告訴 Typeflux 哪些事還沒完成。";
 "ask.recovery.message" = "你的訊息";
 "ask.recovery.stopped" = "後續處理已停止";
-"ask.recovery.checkAndContinue" = "重新核對";
+"ask.recovery.checkAndContinue" = "檢查並繼續";
 "ask.recovery.details" = "查看暫停詳情";
 "ask.recovery.recommended" = "推薦";
 "ask.recovery.option.check" = "讓 Typeflux 核對";
@@ -6715,7 +6715,10 @@
 "ask.kind.switched" = "已切換為%@";
 "ask.kind.continuedAsWork" = "已新建任務，並帶上這段聊天";
 "ask.kind.continuedAsChat" = "已新建聊天，並帶上這段對話";
-"ask.kind.continueAsWork" = "轉為任務繼續";
+"ask.kind.continueAsWork" = "在任務模式繼續";
+"ask.kind.taskModeNeeded" = "需要任務模式";
+"ask.kind.taskModeHelp" = "我在聊天模式下無法直接存取這台 Mac。你可以帶著原問題在任務模式繼續。";
+"ask.kind.stalledChat" = "這輪聊天未能完成。你可以帶著原問題在任務模式繼續。";
 "ask.input.placeholder.work" = "描述要完成的任務，/ 呼叫命令";
 "ask.kind.defaultWorkspace" = "預設工作區";
 "ask.kind.folders" = "%@ 等 +%ld";
