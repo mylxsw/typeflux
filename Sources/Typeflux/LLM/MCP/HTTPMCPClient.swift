@@ -15,7 +15,7 @@ struct MCPHTTPConfig {
         self.url = url
         self.headers = headers
         self.urlSession = urlSession
-        self.authorizer = authorizer
+        self.authorizer = MCPHTTPTransportConfig.hasAuthenticationHeader(headers) ? nil : authorizer
         self.requestTimeout = requestTimeout.isFinite ? max(0.001, requestTimeout) : 60
         self.maximumResponseBytes = max(1, maximumResponseBytes)
     }
@@ -182,7 +182,7 @@ actor HTTPMCPClient: MCPClient {
     private func post(message: MCPJsonRPCMessage) async throws -> MCPHTTPExchange.Response {
         let current = generation
         let hadSession = sessionId != nil
-        let token = await config.authorizer?.accessToken()
+        let token = try await config.authorizer?.accessToken()
         do {
             try checkGeneration(current)
             do {
@@ -198,6 +198,7 @@ actor HTTPMCPClient: MCPClient {
             await handleFailure(error, message: message, bearer: token, generation: current, hadSession: hadSession)
             switch error {
             case MCPHTTPTransportError.unauthorized:
+                await config.authorizer?.recordRejectedRetry()
                 throw MCPClientError.serverError(code: 401, message: "HTTP 401 after authentication retry")
             case let MCPHTTPTransportError.status(code):
                 throw MCPClientError.serverError(code: code, message: code == 404 && hadSession

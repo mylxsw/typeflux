@@ -11,8 +11,10 @@ struct MCPServerEditorView: View {
             Text(L(viewModel
                     .mcpDraftEditingServerID == nil ? "agent.mcp.dialog.addTitle" : "agent.mcp.dialog.editTitle"))
                 .font(.system(size: 17, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+            authorizationRow
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
+                    mcpConnectionTestResultView
                     connectionCard
                     ModelSurface {
                         VStack(spacing: 0) {
@@ -23,7 +25,6 @@ struct MCPServerEditorView: View {
                                        selection: $viewModel.mcpDraftAutoConnect)
                         }
                     }
-                    mcpConnectionTestResultView
                 }.padding(2)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -32,8 +33,37 @@ struct MCPServerEditorView: View {
         .padding(24)
         .frame(width: 520, height: min(640, max(400, (NSScreen.main?.visibleFrame.height ?? 800) - 120)))
         .background(AskWindowBackdrop())
+        .task(id: viewModel.mcpDraftResource) {
+            guard let url = viewModel.mcpDraftResource else { return }
+            // A URL field can generate many partial resource addresses while typing.
+            do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+            viewModel.inspectMCPAuthorization(url)
+        }
         .onDisappear { viewModel.resetMCPDraftConnectionTest() }
         .onChange(of: connectionFields) { _ in viewModel.resetMCPDraftConnectionTest() }
+    }
+
+    @ViewBuilder
+    private var authorizationRow: some View {
+        if let url = viewModel.mcpDraftResource, let state = viewModel.mcpAuthorization[url] {
+            let waiting = viewModel.mcpAuthorizingURL == url
+            ModelSurface {
+                HStack(spacing: 10) {
+                    Image(systemName: "key").foregroundStyle(ModelVisualStyle.accent).accessibilityHidden(true)
+                    Text("OAuth").font(.system(size: 13, weight: .semibold))
+                    Text(waiting ? L("agent.mcp.oauth.waiting") : state.label)
+                        .foregroundStyle(StudioTheme.textSecondary)
+                    Spacer(minLength: 4)
+                    Button(waiting ? L("agent.mcp.oauth.cancel") : state.action) {
+                        if waiting { viewModel.cancelMCPAuthorization() }
+                        else { viewModel.testMCPDraftConnection(authorize: true) }
+                    }
+                    .buttonStyle(ModelActionStyle(primary: state.needsAuthorization))
+                    .disabled(!waiting && viewModel.mcpConnectionTestState == .testing)
+                }
+                .padding(.horizontal, 18).padding(.vertical, 10)
+            }
+        }
     }
 
     private var connectionFields: [String] {
@@ -118,6 +148,10 @@ struct MCPServerEditorView: View {
         .onHover { hoveredSetting = $0 ? title : nil }
     }
 
+    private var testLabel: String {
+        L(viewModel.mcpConnectionTestState == .testing && viewModel.mcpAuthorizingURL == nil ? "agent.mcp.testing" : "agent.mcp.testConnection")
+    }
+
     private var actions: some View {
         HStack(spacing: 8) {
             Button(L("common.cancel"), action: closeEditor).buttonStyle(ModelActionStyle())
@@ -127,22 +161,20 @@ struct MCPServerEditorView: View {
                 viewModel.testMCPDraftConnection()
             } label: {
                 HStack(spacing: 6) {
-                    if viewModel.mcpConnectionTestState == .testing {
+                    if viewModel.mcpConnectionTestState == .testing && viewModel.mcpAuthorizingURL == nil {
                         ProgressView().controlSize(.small).accessibilityHidden(true)
                     }
-                    Text(L(viewModel
-                            .mcpConnectionTestState == .testing ? "agent.mcp.testing" : "agent.mcp.testConnection"))
+                    Text(testLabel)
                 }
             }
             .buttonStyle(ModelActionStyle())
-            .accessibilityLabel(L(viewModel.mcpConnectionTestState == .testing
-                    ? "agent.mcp.testing" : "agent.mcp.testConnection"))
+            .accessibilityLabel(testLabel)
             .disabled(!viewModel.canSaveMCPDraft || viewModel.mcpConnectionTestState == .testing)
             Button(L("common.save")) {
                 viewModel.saveMCPDraft()
                 closeEditor()
             }
-            .buttonStyle(ModelActionStyle(primary: true)).disabled(!viewModel.canSaveMCPDraft)
+            .buttonStyle(ModelActionStyle(primary: true)).disabled(!viewModel.canSaveMCPDraft || viewModel.mcpConnectionTestState == .testing)
             .keyboardShortcut(.defaultAction)
         }
     }
@@ -159,23 +191,12 @@ struct MCPServerEditorView: View {
         case .idle:
             EmptyView()
         case .testing:
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                ProgressView().controlSize(.small)
-                Text(L("agent.mcp.testing"))
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
+            EmptyView()
         case let .success(tools):
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                HStack(spacing: StudioTheme.Spacing.xSmall) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(StudioTheme.success)
-                    Text(L("agent.mcp.testSuccess", tools.count))
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                }
-                if !tools.isEmpty {
+            if tools.isEmpty {
+                Text(L("agent.mcp.status.connected", 0)).font(.caption)
+            } else {
+                DisclosureGroup {
                     VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
                         ForEach(tools) { tool in
                             HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
@@ -204,6 +225,9 @@ struct MCPServerEditorView: View {
                         RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
                             .fill(StudioTheme.controlSurface)
                     )
+                } label: {
+                    Text(L("agent.mcp.status.connected", tools.count))
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
                 }
             }
         case let .failure(message):
