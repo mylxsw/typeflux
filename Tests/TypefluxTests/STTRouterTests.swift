@@ -688,7 +688,7 @@ final class STTRouterTests: XCTestCase {
         let router = makeRouter(typefluxOfficialCloudPriorityWindow: nil)
         XCTAssertEqual(router.typefluxOfficialCloudPriorityWindow, 1)
 
-        settings.voiceProcessingTimeout = .thirtySeconds
+        settings.voiceProcessingTimeout = .fortySeconds
 
         XCTAssertEqual(router.typefluxOfficialCloudPriorityWindow, 1)
     }

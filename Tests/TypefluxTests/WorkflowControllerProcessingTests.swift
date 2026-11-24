@@ -1187,43 +1187,44 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
     }
 
-    func testPersonaRewriteTimeoutUsesFiveSecondDefault() {
+    func testPersonaRewriteTimeoutUsesTenSecondDefault() {
         let controller = makeWorkflowController()
 
-        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 5)
-        XCTAssertEqual(controller.llmRewriteTimeoutBudget(for: "Short text").baseSeconds, 5)
+        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 10)
+        let budget = controller.llmRewriteTimeoutBudget(for: "Short text")
+        XCTAssertEqual(budget.firstOutputSeconds, 10)
     }
 
     func testPersonaRewriteTimeoutUsesCurrentSetting() {
         let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.voiceProcessingTimeout = .tenSeconds
+            settingsStore.voiceProcessingTimeout = .fifteenSeconds
         })
-        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 10)
+        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 15)
 
-        controller.settingsStore.voiceProcessingTimeout = .thirtySeconds
+        controller.settingsStore.voiceProcessingTimeout = .fortySeconds
 
-        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 30)
+        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 40)
     }
 
     func testPersonaRewriteTimeoutBudgetScalesWithSourceText() {
         let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.voiceProcessingTimeout = .threeSeconds
+            settingsStore.voiceProcessingTimeout = .fiveSeconds
         })
 
         let shortBudget = controller.llmRewriteTimeoutBudget(for: String(repeating: "中", count: 100))
         let longBudget = controller.llmRewriteTimeoutBudget(for: String(repeating: "中", count: 1_000))
 
-        XCTAssertEqual(shortBudget.totalSeconds, 3)
-        XCTAssertEqual(longBudget.totalSeconds, 30)
-        XCTAssertEqual(longBudget.watchdogSeconds, 40)
+        XCTAssertEqual(shortBudget.totalSeconds, 5)
+        XCTAssertEqual(longBudget.totalSeconds, 41)
+        XCTAssertEqual(longBudget.watchdogSeconds, 51)
     }
 
     func testProcessingWatchdogIsIndependentFromFallbackWaitSetting() {
         let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.voiceProcessingTimeout = .oneSecond
+            settingsStore.voiceProcessingTimeout = .twoSeconds
         })
 
-        XCTAssertEqual(controller.settingsStore.voiceProcessingTimeout.seconds, 1)
+        XCTAssertEqual(controller.settingsStore.voiceProcessingTimeout.seconds, 2)
         XCTAssertEqual(WorkflowController.processingWatchdogTimeoutSeconds, 30)
     }
 
@@ -2592,10 +2593,11 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(savedRecord?.personaResultText, "persona rewrite")
     }
 
-    func testLockedRecordingAppliesPersonaRewrite() async {
+    func testDictationUsesRewriteArrivingAfterPreviousDeadline() async {
         let textInjector = MockProcessingTextInjector()
         let historyStore = MockProcessingHistoryStore()
-        let llmService = CountingProcessingLLMService(rewriteText: "persona rewrite")
+        // The first output arrives after the old 4-second deadline, but within the new 5-second deadline.
+        let llmService = SlowProcessingLLMService(delay: .milliseconds(4_500))
         let controller = makeWorkflowController(
             textInjector: textInjector,
             sttTranscriber: MockProcessingTranscriber(transcript: "raw transcript"),
@@ -2603,7 +2605,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             historyStore: historyStore,
             configureSettings: { settingsStore in
                 self.configureReadyLLM(settingsStore: settingsStore)
-                settingsStore.voiceProcessingTimeout = .threeSeconds
+                settingsStore.voiceProcessingTimeout = .fiveSeconds
                 settingsStore.applyPersonaSelection(settingsStore.personas[0].id)
             }
         )
@@ -2623,18 +2625,13 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             recordingIntent: .dictation,
             sessionID: controller.processingSessionID
         )
-        await waitUntil {
-            textInjector.insertedTexts == ["persona rewrite"]
-        }
-
-        XCTAssertEqual(textInjector.insertedTexts, ["persona rewrite"])
-        XCTAssertEqual(llmService.streamRewriteCallCount, 1)
+        XCTAssertEqual(textInjector.insertedTexts, ["late"])
         let savedRecord = historyStore.list().last
         XCTAssertEqual(savedRecord?.mode, .personaRewrite)
         XCTAssertEqual(savedRecord?.transcriptText, "raw transcript")
-        XCTAssertEqual(savedRecord?.personaResultText, "persona rewrite")
+        XCTAssertEqual(savedRecord?.personaResultText, "late")
         XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.outcome, .completed)
-        XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.timeoutMilliseconds, 3_000)
+        XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.timeoutMilliseconds, 5_000)
         XCTAssertEqual(savedRecord?.pipelineTiming?.llmOutcome?.usedTranscriptFallback, false)
     }
 

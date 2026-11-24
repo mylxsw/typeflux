@@ -76,19 +76,30 @@ enum HistoryRetentionPolicy: String, CaseIterable, Identifiable {
 }
 
 enum VoiceProcessingTimeout: Int, CaseIterable, Identifiable {
-    case oneSecond = 1
-    case threeSeconds = 3
-    case fiveSeconds = 5
-    case tenSeconds = 10
-    case thirtySeconds = 30
+    // Raw values are the original stored presets. Keep them stable across upgrades.
+    case twoSeconds = 1
+    case fiveSeconds = 3
+    case tenSeconds = 5
+    case fifteenSeconds = 10
+    case fortySeconds = 30
 
-    static let defaultValue: VoiceProcessingTimeout = .fiveSeconds
+    static let defaultValue: VoiceProcessingTimeout = .tenSeconds
 
     var id: Int { rawValue }
-    var seconds: TimeInterval { TimeInterval(rawValue) }
+    var initialProgressSeconds: TimeInterval { TimeInterval(rawValue) }
+
+    var seconds: Int {
+        switch self {
+        case .twoSeconds: 2
+        case .fiveSeconds: 5
+        case .tenSeconds: 10
+        case .fifteenSeconds: 15
+        case .fortySeconds: 40
+        }
+    }
 
     var displayName: String {
-        L("settings.advanced.voiceProcessingTimeout.option", rawValue)
+        L("settings.advanced.voiceProcessingTimeout.option", seconds)
     }
 }
 
@@ -276,10 +287,10 @@ final class SettingsStore {
             let storedSeconds = defaults.integer(forKey: "voice.processing.timeoutSeconds")
             if storedSeconds == 60 {
                 defaults.set(
-                    VoiceProcessingTimeout.thirtySeconds.rawValue,
+                    VoiceProcessingTimeout.fortySeconds.rawValue,
                     forKey: "voice.processing.timeoutSeconds"
                 )
-                return .thirtySeconds
+                return .fortySeconds
             }
             return VoiceProcessingTimeout(rawValue: storedSeconds) ?? .defaultValue
         }

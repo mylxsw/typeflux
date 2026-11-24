@@ -56,7 +56,7 @@ final class WorkflowController {
     static let paidCreditExhaustedPromptSuppressionInterval: TimeInterval = 60 * 60
     private var llmTimeoutAfterTranscriptionOverride: TimeInterval?
     var llmTimeoutAfterTranscription: TimeInterval {
-        get { llmTimeoutAfterTranscriptionOverride ?? settingsStore.voiceProcessingTimeout.seconds }
+        get { llmTimeoutAfterTranscriptionOverride ?? TimeInterval(settingsStore.voiceProcessingTimeout.seconds) }
         set { llmTimeoutAfterTranscriptionOverride = max(0, newValue) }
     }
 
@@ -66,7 +66,7 @@ final class WorkflowController {
         }
         return LLMRewriteTimeoutPolicy.budget(
             sourceText: sourceText,
-            baseSeconds: settingsStore.voiceProcessingTimeout.seconds
+            baseSeconds: llmTimeoutAfterTranscription
         )
     }
 
@@ -75,8 +75,8 @@ final class WorkflowController {
         let kind: LLMRewriteTimeoutKind
 
         var errorDescription: String? {
-            "Persona rewrite timed out after \(Int(timeoutSeconds)) seconds " +
-                "(\(kind.rawValue)), inserting transcript as fallback"
+            let seconds = timeoutSeconds.formatted(.number.precision(.fractionLength(0...2)))
+            return "AI rewrite timed out after \(seconds) seconds (\(kind.rawValue))"
         }
     }
 
@@ -525,13 +525,13 @@ final class WorkflowController {
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.retry"))
 
         let sessionID = beginProcessingSession()
-        let fallbackWaitSeconds = settingsStore.voiceProcessingTimeout.seconds
+        let initialProgressSeconds = settingsStore.voiceProcessingTimeout.initialProgressSeconds
         startProcessingWatchdog(sessionID: sessionID)
         processingTask = Task { [weak self] in
             guard let self else { return }
             await MainActor.run {
                 self.appState.setStatus(.processing)
-                self.overlayController.showProcessing(timeout: fallbackWaitSeconds)
+                self.overlayController.showProcessing(timeout: initialProgressSeconds)
             }
             await reprocess(record: record, sessionID: sessionID)
             cancelProcessingWatchdog()

@@ -163,7 +163,7 @@ Application settings are managed through the `SettingsStore` singleton, backed b
 | `stt.local.downloadSource` | String | Model download source |
 | `stt.local.autoSetup` | Bool | Auto-setup local model |
 | `stt.multimodal.baseURL` | String | Multimodal LLM base URL |
-| `voice.processing.timeoutSeconds` | Int | Base AI rewrite wait time for short source text (1, 3, 5, 10, or 30 seconds; default 5). Longer source text receives an automatically extended timeout, capped at 90 seconds. Legacy 60-second values migrate to 30. |
+| `voice.processing.timeoutSeconds` | Int | Stored AI rewrite preset (1, 3, 5, 10, or 30). These presets allow 2, 5, 10, 15, or 40 seconds for short text, with 10 seconds as the default. Longer source text receives more time, up to 120 seconds. Legacy values of 60 migrate to the preset stored as 30. |
 | `stt.multimodal.model` | String | Multimodal model |
 | `stt.multimodal.apiKey` | String | Multimodal API key |
 | `stt.alicloud.apiKey` | String | AliCloud API key |

@@ -175,38 +175,50 @@ final class SettingsStoreTests: XCTestCase {
 
     // MARK: - Voice Processing Timeout
 
-    func testVoiceProcessingTimeoutDefaultsToFiveSeconds() {
-        XCTAssertEqual(store.voiceProcessingTimeout, .fiveSeconds)
+    func testVoiceProcessingTimeoutDefaultsToTenSeconds() {
+        XCTAssertEqual(store.voiceProcessingTimeout, .tenSeconds)
+        XCTAssertEqual(store.voiceProcessingTimeout.seconds, 10)
     }
 
-    func testVoiceProcessingTimeoutPreservesPreviouslySelectedThreeSeconds() {
+    func testVoiceProcessingTimeoutUpgradesPreviouslySelectedThreeSecondPreset() {
         defaults.set(3, forKey: "voice.processing.timeoutSeconds")
 
-        XCTAssertEqual(store.voiceProcessingTimeout, .threeSeconds)
+        XCTAssertEqual(store.voiceProcessingTimeout, .fiveSeconds)
+        XCTAssertEqual(store.voiceProcessingTimeout.seconds, 5)
+        XCTAssertEqual(defaults.integer(forKey: "voice.processing.timeoutSeconds"), 3)
     }
 
     func testVoiceProcessingTimeoutPersistsAllowedValue() {
-        store.voiceProcessingTimeout = .thirtySeconds
+        store.voiceProcessingTimeout = .fortySeconds
 
-        XCTAssertEqual(store.voiceProcessingTimeout, .thirtySeconds)
-        XCTAssertEqual(SettingsStore(defaults: defaults).voiceProcessingTimeout, .thirtySeconds)
+        XCTAssertEqual(store.voiceProcessingTimeout, .fortySeconds)
+        XCTAssertEqual(SettingsStore(defaults: defaults).voiceProcessingTimeout, .fortySeconds)
     }
 
     func testVoiceProcessingTimeoutRejectsUnsupportedStoredValue() {
         defaults.set(7, forKey: "voice.processing.timeoutSeconds")
 
-        XCTAssertEqual(store.voiceProcessingTimeout, .fiveSeconds)
+        XCTAssertEqual(store.voiceProcessingTimeout, .tenSeconds)
     }
 
-    func testVoiceProcessingTimeoutMigratesLegacySixtySecondsToThirtySeconds() {
+    func testVoiceProcessingTimeoutMigratesLegacySixtySecondsToLongestPreset() {
         defaults.set(60, forKey: "voice.processing.timeoutSeconds")
 
-        XCTAssertEqual(store.voiceProcessingTimeout, .thirtySeconds)
+        XCTAssertEqual(store.voiceProcessingTimeout, .fortySeconds)
         XCTAssertEqual(defaults.integer(forKey: "voice.processing.timeoutSeconds"), 30)
     }
 
     func testVoiceProcessingTimeoutProvidesRequiredChoices() {
         XCTAssertEqual(VoiceProcessingTimeout.allCases.map(\.rawValue), [1, 3, 5, 10, 30])
+    }
+
+    func testVoiceProcessingTimeoutDisplaysEffectiveWaitTimes() {
+        let expectedSeconds = [2, 5, 10, 15, 40]
+        XCTAssertEqual(VoiceProcessingTimeout.allCases.map(\.seconds), expectedSeconds)
+        XCTAssertEqual(
+            VoiceProcessingTimeout.allCases.map(\.displayName),
+            expectedSeconds.map { L("settings.advanced.voiceProcessingTimeout.option", $0) }
+        )
     }
 
     // MARK: - Analytics Sharing

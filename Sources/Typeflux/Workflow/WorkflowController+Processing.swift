@@ -583,13 +583,13 @@ extension WorkflowController {
             let personaPrompt = activePersonaProfile.flatMap { persona in
                 personaSnapshot?.prompt ?? settingsStore.resolvedPersonaPrompt(for: persona)
             }
-            let fallbackWaitSeconds = settingsStore.voiceProcessingTimeout.seconds
+            let initialProgressSeconds = settingsStore.voiceProcessingTimeout.initialProgressSeconds
 
             NetworkDebugLogger.logMessage(selectionSnapshotLog(selectionSnapshot))
             if WorkflowOverlayPresentationPolicy.shouldShowProcessingAfterRecording() {
                 await MainActor.run {
                     self.appState.setStatus(.processing)
-                    self.overlayController.showProcessing(timeout: fallbackWaitSeconds)
+                    self.overlayController.showProcessing(timeout: initialProgressSeconds)
                 }
             }
 

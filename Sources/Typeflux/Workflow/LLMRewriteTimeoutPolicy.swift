@@ -50,11 +50,12 @@ struct LLMRewriteTimeoutBudget: Equatable, Sendable {
 enum LLMRewriteTimeoutPolicy {
     static let baseInputUnits = 100
     static let unitsPerTotalStep = 50
-    static let secondsPerTotalStep: TimeInterval = 1.5
+    static let secondsPerTotalStep: TimeInterval = 2
     static let unitsPerFirstOutputStep = 200
-    static let maximumFirstOutputSeconds: TimeInterval = 15
-    static let minimumStallSeconds: TimeInterval = 10
-    static let maximumTotalSeconds: TimeInterval = 90
+    static let secondsPerFirstOutputStep: TimeInterval = 1.5
+    static let maximumFirstOutputSeconds: TimeInterval = 20
+    static let minimumStallSeconds: TimeInterval = 15
+    static let maximumTotalSeconds: TimeInterval = 120
     static let watchdogGraceSeconds: TimeInterval = 10
 
     static func budget(sourceText: String, baseSeconds: TimeInterval) -> LLMRewriteTimeoutBudget {
@@ -70,7 +71,7 @@ enum LLMRewriteTimeoutPolicy {
         let firstOutputCap = max(normalizedBase, maximumFirstOutputSeconds)
         let firstOutputSeconds = min(
             totalSeconds,
-            min(firstOutputCap, normalizedBase + TimeInterval(firstOutputSteps))
+            min(firstOutputCap, normalizedBase + TimeInterval(firstOutputSteps) * secondsPerFirstOutputStep)
         )
         let stallSeconds = min(totalSeconds, max(minimumStallSeconds, normalizedBase))
 
