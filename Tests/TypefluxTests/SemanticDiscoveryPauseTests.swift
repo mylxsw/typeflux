@@ -20,9 +20,9 @@ private final class PausingDirectoryReader: AskFileReading, @unchecked Sendable 
         let modified = Date(timeIntervalSince1970: 100)
         let first = AskFileCrawler.Entry(path: root + "/first.txt", kind: .file, modified: modified)
         let second = AskFileCrawler.Entry(path: root + "/second.txt", kind: .file, modified: modified)
-        guard receive(.init(entries: [first], more: true)) else { return }
+        guard receive(.init(entries: [first], more: true, inspected: 765)) else { return }
         gate.setPaused(true)
-        _ = receive(.init(entries: [second], more: false))
+        _ = receive(.init(entries: [second], more: false, inspected: 11))
     }
 }
 
@@ -36,10 +36,11 @@ struct SemanticDiscoveryPauseTests {
         let reader = PausingDirectoryReader(root: root.path, gate: gate)
         let work = Task.detached {
             var summary = SemanticFileIndexer.Summary()
+            var reportedCounts: [Int] = []
             try SemanticFileIndexer.discover(scope: semanticScope(root.path), store: store, reader: reader,
                                              paused: { gate.isPaused }, cancelled: { false },
-                                             summary: &summary, progress: { _ in })
-            return summary
+                                             summary: &summary, progress: { reportedCounts.append($0.scanned) })
+            return (summary, reportedCounts)
         }
         defer { gate.setPaused(false); work.cancel() }
         let deadline = ContinuousClock.now + .seconds(2)
@@ -52,8 +53,9 @@ struct SemanticDiscoveryPauseTests {
         #expect(try store.nextDirectory() == root.path)
 
         gate.setPaused(false)
-        let summary = try await work.value
-        #expect(summary.scanned == 2)
+        let (summary, reportedCounts) = try await work.value
+        #expect(reportedCounts.first == 765)
+        #expect(summary.scanned == 776)
         #expect(try store.lock.withLock { try store.count("discovery") } == 2)
         #expect(try store.nextDirectory() == nil)
     }

@@ -52,16 +52,22 @@ struct SemanticIndexFairnessTests {
         }
         let budget = SemanticWorkBudget(enabled: true, state: { .init() })
         let started = ProcessInfo.processInfo.systemUptime
+        var processingWithoutTotal: [Int] = []
         let result = try budget.perform(cancelled: { false }, operation: {
             try SemanticFileIndexer.run(scope: scope, store: store, reader: reader, encoder: worker, media: media,
                                         idle: { Issue.record("Cached media must not wait for idle"); return true },
-                                        cancelled: { false }, progress: { _ in })
+                                        cancelled: { false }, progress: { summary in
+                                            if summary.stage == .processing, summary.total == nil {
+                                                processingWithoutTotal.append(summary.processed)
+                                            }
+                                        })
         })
         let starts = try String(contentsOf: launches, encoding: .utf8).split(separator: "\n").count
         let counts = try store.counts()
         #expect(starts == 1)
         #expect(counts.documents == 12 && counts.images == (cachedImages ? 3 : 0))
         #expect(media.calls == counts.images && result.processed == 12 + counts.images)
+        #expect(processingWithoutTotal.last == result.processed)
         print("SEMANTIC_TEXT_REUSE cached_images=\(counts.images) documents=\(counts.documents) " +
             "helper_starts=\(starts) seconds=\(ProcessInfo.processInfo.systemUptime - started)")
     }

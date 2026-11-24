@@ -14,6 +14,14 @@ extension SemanticFileIndexer {
             try store.record(.subtreeScans)
         }
         if preparing { try store.beginDiscovery(scope: scope, roots: roots) }
+        let previousStage = summary.stage
+        summary.stage = .discovering
+        let progressInterval: Duration = .milliseconds(500)
+        let clock = ContinuousClock()
+        // Brief subtree scans should not interrupt the processing status.
+        var nextProgress = clock.now
+        if previousStage == .processing { nextProgress += progressInterval }
+        var reportedProgress = false
         while let path = try store.nextDirectory() {
             try waitWhilePaused(paused, cancelled: cancelled)
             var failed = false, writeFailure: Error?
@@ -35,6 +43,7 @@ extension SemanticFileIndexer {
                             failed = true
                         }
                         do {
+                            let scannedBeforeFrame = summary.scanned
                             if response.more != true {
                                 next = response.directoryCursor
                             }
@@ -60,14 +69,17 @@ extension SemanticFileIndexer {
                                 }
                                 try store.recordDirectories(directories)
                                 summary.discovered += try store.discover(files)
-                                if summary.scanned.isMultiple(of: 1000) {
-                                    progress(summary)
-                                }
                             }
                             summary.scanned += response.inspected ?? 0
                             try store.record(.scanned, count: response.inspected ?? response.entries.count)
                             if response.more != true {
                                 try store.checkpointDirectory(path, cursor: next)
+                            }
+                            let now = clock.now
+                            if summary.scanned > scannedBeforeFrame, now >= nextProgress {
+                                nextProgress = now + progressInterval
+                                reportedProgress = true
+                                progress(summary)
                             }
                         } catch { writeFailure = error; return false }
                         return true
@@ -90,7 +102,6 @@ extension SemanticFileIndexer {
                 throw writeFailure
             }
             if next != nil, !failed {
-                progress(summary)
                 continue
             }
             try waitWhilePaused(paused, cancelled: cancelled)
@@ -101,5 +112,9 @@ extension SemanticFileIndexer {
         }
         // Includes entries committed by an earlier process during this scan.
         summary.discovered = try store.lock.withLock { try store.count("discovery") }
+        summary.stage = previousStage
+        if previousStage == .processing, reportedProgress {
+            progress(summary)
+        }
     }
 }

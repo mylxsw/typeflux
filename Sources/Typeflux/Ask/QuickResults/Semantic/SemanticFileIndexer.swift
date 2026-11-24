@@ -4,6 +4,9 @@ enum SemanticMediaFailure: Error { case unavailable(Error) }
 
 enum SemanticFileIndexer {
     struct Summary: Codable, Equatable, Sendable {
+        enum Stage: String, Codable, Equatable, Sendable { case discovering, processing }
+
+        var stage: Stage = .discovering
         var files = 0
         var skipped = 0
         var scanned = 0
@@ -15,6 +18,9 @@ enum SemanticFileIndexer {
         var waitingForIdle = false
         var priorityUpdates = 0
         var diagnostics: SemanticIndexDiagnostics?
+
+        /// Priority work is counted separately from the initial workload.
+        var processedForProgress: Int { total == nil ? processed + priorityUpdates : processed }
     }
 
     enum Failure: Error { case inference(Error) }
@@ -33,6 +39,7 @@ enum SemanticFileIndexer {
         try maintainSearch(store: store, paused: paused, cancelled: cancelled, summary: summary, progress: progress)
         try discover(scope: scope, store: store, reader: reader, paused: paused,
                      cancelled: cancelled, summary: &summary, progress: progress)
+        summary.stage = .processing
         summary.total = summary.discovered
         progress(summary)
         // Progress can revoke the original scope before its discovery receipt.
@@ -72,6 +79,7 @@ enum SemanticFileIndexer {
                          cancelled: cancelled, summary: &summary, progress: progress, preparing: false)
             try store.pruneSubtree(directory, cancelled: cancelled)
         }
+        summary.stage = .processing
         summary.total = try store.lock.withLock { try store.count("work_queue") }
         progress(summary)
         try drainWork(scope: scope, store: store, reader: reader, encoder: encoder, media: media,

@@ -155,21 +155,26 @@ final class ContentIndexActivitySource: BackgroundActivitySource {
     }
 
     private static func indexActivity(_ summary: SemanticFileIndexer.Summary?, paused: Bool) -> BackgroundActivity {
-        let progress: Double? = summary.flatMap { summary in
-            summary.total.flatMap { $0 > 0 ? min(1, Double(summary.processed) / Double($0)) : nil }
-        }
-        let counts: String = if let summary, let total = summary.total {
-            L("activity.contentIndex.progress", BackgroundActivityFormat.count(summary.processed),
-              BackgroundActivityFormat.count(total))
-        } else if paused {
-            L("activity.contentIndex.scanningPaused", BackgroundActivityFormat.count(summary?.scanned ?? 0))
+        let progress: Double?
+        let counts: String
+        if let summary, summary.stage == .processing {
+            let processed = BackgroundActivityFormat.count(summary.processedForProgress)
+            if let total = summary.total {
+                progress = total > 0 ? min(1, Double(summary.processed) / Double(total)) : nil
+                counts = L("activity.contentIndex.progress", processed, BackgroundActivityFormat.count(total))
+            } else {
+                progress = nil
+                counts = L("semantic.progress.processed", processed)
+            }
         } else {
-            L("activity.contentIndex.scanning", BackgroundActivityFormat.count(summary?.scanned ?? 0))
+            progress = nil
+            counts = L(paused ? "activity.contentIndex.scanningPaused" : "activity.contentIndex.scanning",
+                       BackgroundActivityFormat.count(summary?.scanned ?? 0))
         }
-        let waiting = !paused && summary?.waitingForIdle == true
+        let waiting = !paused && summary?.stage == .processing && summary?.waitingForIdle == true
         let state: BackgroundActivity.State = paused ? .paused : (waiting ? .waiting : .running)
         let detail = switch state {
-        case .paused: summary?.total == nil ? counts : L("activity.paused", counts)
+        case .paused where summary?.stage == .processing: L("activity.paused", counts)
         case .waiting: L("activity.contentIndex.waitingIdle", counts)
         default: counts
         }

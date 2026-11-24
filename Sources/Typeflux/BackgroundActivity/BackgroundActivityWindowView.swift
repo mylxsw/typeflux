@@ -27,7 +27,7 @@ struct BackgroundActivityWindowView: View {
             footer
         }
         .frame(minWidth: 460, minHeight: 360)
-        .background(AskWindowBackdrop())
+        .background { AskWindowBackdrop().ignoresSafeArea() }
     }
 
     private var header: some View {

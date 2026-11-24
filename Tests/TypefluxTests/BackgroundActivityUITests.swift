@@ -235,6 +235,7 @@ final class BackgroundActivityUITests: XCTestCase {
         let window = try XCTUnwrap(controller.window)
         XCTAssertEqual(window.title, L("activity.window.title"))
         XCTAssertEqual(window.identifier, BackgroundActivityWindowController.identifier)
+        XCTAssertTrue(window.styleMask.contains(.fullSizeContentView))
         controller.show(activate: false)
         XCTAssertTrue(controller.window === window, "showing again reuses the window")
         NotificationCenter.default.post(name: .appLanguageDidChange, object: nil)

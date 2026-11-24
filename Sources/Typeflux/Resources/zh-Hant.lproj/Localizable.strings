@@ -5089,6 +5089,7 @@
 "semantic.progress.scanning" = "正在統計：已掃描 %@ 項，找到 %@ 個支援的檔案";
 "semantic.progress.scanningPaused" = "暫停時已掃描 %@ 項，找到 %@ 個支援的檔案";
 "semantic.progress.indexing" = "已處理 %@ / %@ 個檔案";
+"semantic.progress.processed" = "已處理 %@ 個檔案";
 "semantic.metrics" = "內容索引";
 "semantic.metric.files" = "已索引檔案";
 "semantic.metric.documents" = "文件";

@@ -123,6 +123,7 @@ final class BackgroundActivitySourceTests: XCTestCase {
 
     func testContentIndexMapsIndexingWithMediaModelDownload() {
         var summary = SemanticFileIndexer.Summary()
+        summary.stage = .processing
         summary.total = 200
         summary.processed = 50
         let activities = ContentIndexActivitySource.activities(for: .init(
@@ -155,6 +156,7 @@ final class BackgroundActivitySourceTests: XCTestCase {
         XCTAssertEqual(pausedScan[0].detail, L("activity.contentIndex.scanningPaused", 12.formatted()))
         XCTAssertFalse(pausedScan[0].detail.contains(L("activity.contentIndex.scanning", 12.formatted())))
 
+        summary.stage = .processing
         summary.total = 0
         summary.waitingForIdle = true
         let waiting = ContentIndexActivitySource.activities(for: .init(phase: .indexing, indexProgress: summary))
@@ -171,6 +173,23 @@ final class BackgroundActivitySourceTests: XCTestCase {
         XCTAssertEqual(paused[0].actions, [.resume])
         XCTAssertEqual(paused[0].detail, L("activity.paused", L("activity.contentIndex.progress", "5", "10")))
         XCTAssertTrue(ContentIndexActivitySource.activities(for: .init(phase: .paused)).isEmpty)
+    }
+
+    func testContentIndexKeepsProcessingStatusWhenTheTotalChanges() throws {
+        let summary = SemanticFileIndexer.Summary(stage: .processing, scanned: 765, processed: 15, priorityUpdates: 4)
+        let count = L("semantic.progress.processed", 19.formatted())
+        let active = try XCTUnwrap(ContentIndexActivitySource.activities(for: .init(
+            phase: .indexing, indexProgress: summary
+        )).first)
+        XCTAssertEqual(active.detail, count)
+        XCTAssertNil(active.progress)
+        XCTAssertEqual(active.actions, [.pause])
+
+        let paused = try XCTUnwrap(ContentIndexActivitySource.activities(for: .init(
+            phase: .paused, indexProgress: summary
+        )).first)
+        XCTAssertEqual(paused.detail, L("activity.paused", count))
+        XCTAssertEqual(paused.actions, [.resume])
     }
 
     func testContentIndexMapsFailuresAndRestingPhases() {

@@ -4,8 +4,8 @@ import Foundation
 struct SemanticFileSearchStatus: Equatable {
     enum Tone: Equatable { case off, busy, ready, warning }
     enum Progress: Equatable {
-        case download(Double), mediaDownload(Double), scanning(Int, Int), indexing(Int, Int)
-        case pausedScanning(Int, Int), pausedIndexing(Int, Int)
+        case download(Double), mediaDownload(Double), scanning(Int, Int), indexing(Int, Int?)
+        case pausedScanning(Int, Int), pausedIndexing(Int, Int?)
     }
     enum Action: Equatable { case none, download, retryDownload, retry, permission }
 
@@ -43,7 +43,7 @@ struct SemanticFileSearchStatus: Equatable {
         case .indexing where input.mediaDownload != nil:
             return .init(tone: .busy, text: L("semantic.media.downloading"),
                          progress: .mediaDownload(input.mediaDownload ?? 0))
-        case .indexing where input.indexProgress?.waitingForIdle == true:
+        case .indexing where input.indexProgress?.stage == .processing && input.indexProgress?.waitingForIdle == true:
             return .init(tone: .ready, text: L("semantic.media.waiting"), isPassiveWaiting: true)
         case .indexing:
             return .init(tone: .busy, text: L("semantic.indexing", files),
@@ -51,7 +51,9 @@ struct SemanticFileSearchStatus: Equatable {
         case .paused:
             return .init(tone: .busy, text: L("semantic.paused", files),
                          progress: input.indexProgress.map { summary in
-                             if let total = summary.total { return .pausedIndexing(summary.processed, total) }
+                             if summary.stage == .processing {
+                                 return .pausedIndexing(summary.processedForProgress, summary.total)
+                             }
                              return .pausedScanning(summary.scanned, summary.discovered)
                          })
         case .ready where !input.blocked.isEmpty:
@@ -67,10 +69,10 @@ struct SemanticFileSearchStatus: Equatable {
     }
 
     private static func indexProgress(_ summary: SemanticFileIndexer.Summary?) -> Progress {
-        guard let summary, let total = summary.total else {
+        guard let summary, summary.stage == .processing else {
             return .scanning(summary?.scanned ?? 0, summary?.discovered ?? 0)
         }
-        return .indexing(summary.processed, total)
+        return .indexing(summary.processedForProgress, summary.total)
     }
 
     /// "120 MB / 310 MB" for a download in progress.

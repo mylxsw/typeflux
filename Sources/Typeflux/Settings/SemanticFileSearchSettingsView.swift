@@ -275,22 +275,32 @@ struct SemanticProgressView: View {
                 Text(L("semantic.progress.scanning", scanned.formatted(), discovered.formatted()))
                     .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
             case let .indexing(processed, total):
-                let fraction = total > 0 ? min(1, Double(processed) / Double(total)) : 1
-                ProgressView(value: fraction).progressViewStyle(.linear)
-                HStack {
-                    Text(L("semantic.progress.indexing", processed.formatted(), total.formatted()))
-                    Spacer()
-                    Text(verbatim: "\(Int((fraction * 100).rounded()))%").monospacedDigit()
+                if let total {
+                    let fraction = total > 0 ? min(1, Double(processed) / Double(total)) : 1
+                    ProgressView(value: fraction).progressViewStyle(.linear)
+                    HStack {
+                        Text(L("semantic.progress.indexing", processed.formatted(), total.formatted()))
+                        Spacer()
+                        Text(verbatim: "\(Int((fraction * 100).rounded()))%").monospacedDigit()
+                    }
+                    .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
+                } else {
+                    ProgressView().progressViewStyle(.linear)
+                    processedCount(processed, total: nil)
                 }
-                .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
             case let .pausedScanning(scanned, discovered):
                 Text(L("semantic.progress.scanningPaused", scanned.formatted(), discovered.formatted()))
                     .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
             case let .pausedIndexing(processed, total):
-                Text(L("semantic.progress.indexing", processed.formatted(), total.formatted()))
-                    .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
+                processedCount(processed, total: total)
             }
         }
         .controlSize(.small)
+    }
+
+    private func processedCount(_ processed: Int, total: Int?) -> some View {
+        Text(total.map { L("semantic.progress.indexing", processed.formatted(), $0.formatted()) }
+            ?? L("semantic.progress.processed", processed.formatted()))
+            .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
     }
 }
