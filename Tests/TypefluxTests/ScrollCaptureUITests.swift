@@ -227,6 +227,7 @@ final class ScrollCaptureUITests: XCTestCase {
         // AppKit frames: the region at y = 600 - 250 from the bottom.
         let regionInAppKit = CGRect(x: 100, y: 350, width: 300, height: 200)
         XCTAssertFalse(controller.dimPanels.contains { $0.frame.intersects(regionInAppKit) })
+        XCTAssertTrue(controller.dimPanels.allSatisfy(\.ignoresMouseEvents))
         let outline = try XCTUnwrap(controller.outlinePanel)
         XCTAssertTrue(outline.ignoresMouseEvents)
         XCTAssertEqual(outline.frame, regionInAppKit.insetBy(dx: -2, dy: -2))
@@ -235,8 +236,10 @@ final class ScrollCaptureUITests: XCTestCase {
         let barPanel = try XCTUnwrap(controller.barPanel)
         XCTAssertTrue(barPanel.canBecomeKey)
         XCTAssertFalse(barPanel.canBecomeMain)
+        XCTAssertFalse(barPanel.ignoresMouseEvents)
         XCTAssertFalse(controller.dimPanels[0].canBecomeKey)
         XCTAssertLessThan(barPanel.frame.maxY, regionInAppKit.minY, "Under the region")
+        XCTAssertEqual(controller.automaticScrollRect, region.rect)
         XCTAssertTrue(controller.dimPanels.allSatisfy { $0.level == .screenSaver && $0.isVisible })
 
         let state = ScrollCaptureViewState(status: .scrolling, pixelSize: ScreenPixelSize(width: 600, height: 900),
@@ -250,7 +253,34 @@ final class ScrollCaptureUITests: XCTestCase {
         let panels = controller.dimPanels + [outline, barPanel]
         controller.dismiss()
         XCTAssertFalse(controller.isPresented)
+        XCTAssertNil(controller.automaticScrollRect)
         XCTAssertTrue(panels.allSatisfy { !$0.isVisible })
+    }
+
+    func testAutomaticWheelAvoidsTheToolbarInsideTheSelection() throws {
+        let controller = ScrollCaptureOverlayController(primaryDisplayHeight: { 600 })
+        let secondaryDisplay = display.offsetBy(dx: -800, dy: 80)
+        let region = ScrollCaptureRegion(displayID: 2, displayFrame: secondaryDisplay, scale: 2,
+                                         rect: secondaryDisplay)
+        controller.present(region, actions: actions(Calls()))
+        defer { controller.dismiss() }
+
+        let bar = try XCTUnwrap(controller.barPanel)
+        let barRect = ScreenCaptureGeometry.flipped(bar.frame, primaryDisplayHeight: 600)
+        let pointer = CGPoint(x: barRect.midX, y: barRect.midY)
+        XCTAssertTrue(region.rect.contains(pointer))
+
+        let target = try XCTUnwrap(controller.automaticScrollRect)
+        XCTAssertTrue(region.rect.contains(target))
+        XCTAssertTrue(target.intersection(barRect).isEmpty)
+
+        var posted: [CGEvent] = []
+        let driver = ScrollDriver(pointerLocation: { pointer }, warp: { _ in }, post: { posted.append($0) })
+        driver.begin(in: target)
+        driver.scroll(by: 100)
+        let event = try XCTUnwrap(posted.first)
+        XCTAssertTrue(target.contains(event.location))
+        XCTAssertFalse(barRect.contains(event.location))
     }
 
     func testTheFillAndOutlineDraw() throws {
@@ -315,6 +345,26 @@ final class ScrollCaptureUITests: XCTestCase {
         pointer = CGPoint(x: 400, y: 400)
         driver.end()
         XCTAssertEqual(warps, [CGPoint(x: 200, y: 150)], "The user moved it: left alone")
+    }
+
+    func testTheDriverDoesNotRestoreAnOldPointerAfterResumingAtANewPosition() {
+        var pointer = CGPoint(x: 10, y: 10)
+        var warps: [CGPoint] = []
+        let driver = ScrollDriver(pointerLocation: { pointer },
+                                  warp: { warps.append($0); pointer = $0 }, post: { _ in })
+        let region = CGRect(x: 100, y: 100, width: 200, height: 100)
+        driver.begin(in: region)
+        driver.begin(in: region)
+        driver.end()
+        XCTAssertEqual(warps, [CGPoint(x: 200, y: 150), CGPoint(x: 10, y: 10)])
+
+        warps.removeAll()
+        driver.begin(in: region)
+        pointer = CGPoint(x: 140, y: 130)
+        driver.begin(in: region)
+        driver.end()
+        XCTAssertEqual(warps, [CGPoint(x: 200, y: 150)])
+        XCTAssertEqual(pointer, CGPoint(x: 140, y: 130))
     }
 
     func testWheelEvents() {

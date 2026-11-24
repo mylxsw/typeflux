@@ -78,6 +78,8 @@ struct ScrollCaptureActions {
 /// The dimmed surroundings, the region's outline, the bar and the preview.
 @MainActor
 protocol ScrollCapturePresenting: AnyObject {
+    /// The part of the selection where the automatic scroll wheel can reach the source.
+    var automaticScrollRect: CGRect? { get }
     func present(_ region: ScrollCaptureRegion, actions: ScrollCaptureActions)
     func update(_ state: ScrollCaptureViewState, preview: ScrollCapturePreview)
     func dismiss()

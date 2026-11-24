@@ -26,6 +26,7 @@ enum ScrollDriverEventMark {
 /// Pixel-precise wheel events through Quartz Event Services.
 @MainActor
 final class ScrollDriver: ScrollDriving {
+    private static let restoreTolerance: CGFloat = 2
     private let isTrusted: () -> Bool
     private let pointerLocation: () -> CGPoint
     private let warp: (CGPoint) -> Void
@@ -55,12 +56,15 @@ final class ScrollDriver: ScrollDriving {
 
     func begin(in region: CGRect) {
         let pointer = pointerLocation()
+        if let anchor, !Self.isAtAnchor(pointer, anchor) {
+            restoreLocation = nil
+        }
         guard !region.insetBy(dx: 1, dy: 1).contains(pointer) else {
             anchor = pointer
             return
         }
         let center = CGPoint(x: region.midX, y: region.midY)
-        restoreLocation = pointer
+        restoreLocation = restoreLocation ?? pointer
         anchor = center
         warp(center)
     }
@@ -77,8 +81,12 @@ final class ScrollDriver: ScrollDriving {
         }
         guard let restoreLocation, let anchor else { return }
         let pointer = pointerLocation()
-        guard hypot(pointer.x - anchor.x, pointer.y - anchor.y) < 2 else { return }
+        guard Self.isAtAnchor(pointer, anchor) else { return }
         warp(restoreLocation)
+    }
+
+    private static func isAtAnchor(_ pointer: CGPoint, _ anchor: CGPoint) -> Bool {
+        hypot(pointer.x - anchor.x, pointer.y - anchor.y) < restoreTolerance
     }
 
     /// A pixel wheel event along the selected axis, marked as Typeflux's; negative points rewind.

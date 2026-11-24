@@ -35,7 +35,7 @@ final class ScrollCaptureOutlineView: NSView {
 }
 
 /// The scrolling capture's panels: four dimmed panels around the region, its outline, the bar and
-/// the preview strip. The region itself stays uncovered, so the wheel reaches the app under it.
+/// the preview strip. Only the bar handles mouse input.
 @MainActor
 final class ScrollCaptureOverlayController: ScrollCapturePresenting {
     static let dimAlpha: CGFloat = 0.42
@@ -55,11 +55,22 @@ final class ScrollCaptureOverlayController: ScrollCapturePresenting {
 
     var isPresented: Bool { barPanel != nil }
 
+    var automaticScrollRect: CGRect? {
+        guard let region, let barPanel else { return nil }
+        let barFrame = appKitFrame(barPanel.frame)
+        let covered = region.rect.intersection(barFrame)
+        guard !covered.isEmpty else { return region.rect }
+        // The bar only overlaps the selection when it is placed along its bottom edge.
+        return CGRect(x: region.rect.minX, y: region.rect.minY,
+                      width: region.rect.width, height: covered.minY - region.rect.minY)
+    }
+
     func present(_ region: ScrollCaptureRegion, actions: ScrollCaptureActions) {
         dismiss()
         self.region = region
         for rect in ScrollCaptureLayout.dimRects(around: region.rect, in: region.displayFrame) {
             let panel = makePanel(rect)
+            panel.ignoresMouseEvents = true
             panel.contentView = ScrollCaptureFillView(frame: CGRect(origin: .zero, size: rect.size),
                                                       color: NSColor.black.withAlphaComponent(Self.dimAlpha))
             dimPanels.append(panel)

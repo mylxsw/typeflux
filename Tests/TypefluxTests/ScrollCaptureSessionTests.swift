@@ -71,6 +71,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
 
     private final class Presenter: ScrollCapturePresenting {
         private(set) var presented: ScrollCaptureRegion?
+        var automaticScrollRect: CGRect?
         var actions: ScrollCaptureActions?
         private(set) var states: [ScrollCaptureViewState] = []
         private(set) var previews: [ScrollCapturePreview] = []
@@ -160,6 +161,23 @@ final class ScrollCaptureSessionTests: XCTestCase {
     }
 
     // MARK: Automatic scrolling
+
+    func testAutomaticScrollingTargetsTheUncoveredPartOfTheSelection() async {
+        let session = makeSession()
+        let target = region.rect.insetBy(dx: 0, dy: 20)
+        presenter.automaticScrollRect = target
+        await start(session)
+        session.receive(frame(0))
+        await tick(session)
+
+        presenter.actions?.togglePause()
+        await tick(session)
+
+        XCTAssertEqual(driver.begins, [target])
+        XCTAssertEqual(driver.scrolls, [75], "The step size still comes from the full captured region")
+        XCTAssertEqual(source.started, [region])
+        session.cancel()
+    }
 
     func testScrollsStepByStepAndEndsAtTheBottom() async throws {
         let session = makeSession()

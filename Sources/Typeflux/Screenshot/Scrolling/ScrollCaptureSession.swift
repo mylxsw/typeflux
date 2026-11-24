@@ -282,7 +282,7 @@ final class ScrollCaptureSession: ScrollCapturing {
     private func sendStep(_ kind: Step, points: CGFloat) {
         if !hasDriven {
             hasDriven = true
-            driver.begin(in: region.rect)
+            driver.begin(in: presenter.automaticScrollRect ?? region.rect)
         }
         // Only what the screen shows after this step counts for it.
         pending = nil
@@ -315,7 +315,7 @@ final class ScrollCaptureSession: ScrollCapturing {
             step = nil
             state.status = .scrolling
             // The user may have moved the pointer away; put it back in the region.
-            driver.begin(in: region.rect)
+            driver.begin(in: presenter.automaticScrollRect ?? region.rect)
             hasDriven = true
         case .starting:
             return
