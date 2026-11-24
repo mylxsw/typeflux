@@ -1076,8 +1076,14 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         muteTask = Task { [weak self] in
             guard let self else { return }
             await sleep(delay)
-            let isRecording = currentRecordingState()
-            guard !Task.isCancelled, isRecording else { return }
+            beginMutedSessionIfRecording()
+        }
+    }
+
+    private func beginMutedSessionIfRecording() {
+        // Serialize the check and the device write with stop(), which restores the output.
+        lifecycleLock.withLock {
+            guard !Task.isCancelled, currentRecordingState() else { return }
             outputMuter.beginMutedSession()
         }
     }
@@ -1180,6 +1186,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         }
 
         func cancelMutedSessionForTesting() {
+            lifecycleLock.lock()
+            defer { lifecycleLock.unlock() }
             stateCondition.lock()
             isRecording = false
             stateCondition.unlock()

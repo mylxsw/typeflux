@@ -730,6 +730,44 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         XCTAssertEqual(muter.endCallCount, 1)
     }
 
+    func testCancelRestoresOutputAfterAnInFlightMute() async throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let muteStarted = expectation(description: "Mute started")
+        let allowMuteToFinish = DispatchSemaphore(value: 0)
+        let cancellationStarted = expectation(description: "Cancellation started")
+        let cancellationFinished = expectation(description: "Cancellation finished")
+        let prematureRestore = expectation(description: "Restore before mute finished")
+        prematureRestore.isInverted = true
+        let events = OrderedValueRecorder()
+        let muter = MockSystemAudioOutputMuter(onBegin: {
+            muteStarted.fulfill()
+            _ = allowMuteToFinish.wait(timeout: .now() + 2)
+            events.append(1)
+        }, onEnd: {
+            if events.values.isEmpty { prematureRestore.fulfill() }
+            events.append(2)
+        })
+        let recorder = AVFoundationAudioRecorder(settingsStore: SettingsStore(defaults: defaults),
+                                                 outputMuter: muter, sleep: { _ in })
+
+        recorder.beginMutedSessionAfterDelayForTesting()
+        await fulfillment(of: [muteStarted], timeout: 1)
+        DispatchQueue.global().async(execute: DispatchWorkItem {
+            cancellationStarted.fulfill()
+            recorder.cancelMutedSessionForTesting()
+            cancellationFinished.fulfill()
+        })
+        await fulfillment(of: [cancellationStarted], timeout: 1)
+        await fulfillment(of: [prematureRestore], timeout: 0.05)
+        allowMuteToFinish.signal()
+        await fulfillment(of: [cancellationFinished], timeout: 1)
+
+        XCTAssertEqual(events.values, [1, 2])
+    }
+
     func testAudioBufferWriteCoordinatorDrainWaitsForQueuedWork() async {
         let coordinator = AudioBufferWriteCoordinator()
         let started = expectation(description: "Queued work started")
@@ -912,20 +950,30 @@ private final class MockAudioInputDeviceChangeObservation: AudioInputDeviceChang
 
 private final class MockSystemAudioOutputMuter: SystemAudioOutputMuting {
     private let beginExpectation: XCTestExpectation?
+    private let onBegin: () -> Void
+    private let onEnd: () -> Void
     private(set) var beginCallCount = 0
     private(set) var endCallCount = 0
 
-    init(beginExpectation: XCTestExpectation? = nil) {
+    init(
+        beginExpectation: XCTestExpectation? = nil,
+        onBegin: @escaping () -> Void = {},
+        onEnd: @escaping () -> Void = {}
+    ) {
         self.beginExpectation = beginExpectation
+        self.onBegin = onBegin
+        self.onEnd = onEnd
     }
 
     func beginMutedSession() {
         beginCallCount += 1
         beginExpectation?.fulfill()
+        onBegin()
     }
 
     func endMutedSession() {
         endCallCount += 1
+        onEnd()
     }
 }
 
