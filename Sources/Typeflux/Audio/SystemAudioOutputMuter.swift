@@ -19,62 +19,85 @@ protocol AudioOutputDeviceAccessing {
 
 /// Mutes the default output device while recording.
 ///
-/// Some external displays (for example DisplayPort audio over USB-C) expose no software
-/// mute control. In that case the default output is temporarily switched to the built-in
-/// output device, which is muted instead, and the original default output is restored when
-/// the session ends. Playback keeps running; it is only inaudible.
+/// For displays without a Core Audio mute control, prefer the display's own volume control.
+/// If it is unavailable, temporarily route default playback to muted built-in speakers.
 final class SystemAudioOutputMuter: SystemAudioOutputMuting {
-    private struct State {
-        let deviceID: AudioDeviceID
-        let wasMuted: UInt32
-        /// The original default output device, set only when the default output was switched.
-        let switchedFromDeviceID: AudioDeviceID?
+    private enum State {
+        case audioDevice(id: AudioDeviceID, unmuteOnEnd: Bool, switchedFrom: AudioDeviceID?)
+        case display(DisplayAudioVolumeControlling, previousVolume: UInt16)
     }
 
     private let devices: AudioOutputDeviceAccessing
+    private let displayVolume: (AudioDeviceID) -> DisplayAudioVolumeControlling?
+    private let lock = NSLock()
     private var capturedState: State?
 
-    init(devices: AudioOutputDeviceAccessing = CoreAudioOutputDeviceAccess()) {
+    init(
+        devices: AudioOutputDeviceAccessing = CoreAudioOutputDeviceAccess(),
+        displayVolume: @escaping (AudioDeviceID) -> DisplayAudioVolumeControlling? = DisplayAudioVolume.control(for:)
+    ) {
         self.devices = devices
+        self.displayVolume = displayVolume
     }
 
+    deinit { endMutedSession() }
+
     func beginMutedSession() {
-        guard capturedState == nil else { return }
-        guard let originalDeviceID = devices.defaultOutputDeviceID() else { return }
+        lock.withLock {
+            guard capturedState == nil, let originalID = devices.defaultOutputDeviceID() else { return }
 
-        var targetDeviceID = originalDeviceID
-        var switchedFrom: AudioDeviceID?
-        var currentMute = devices.currentMuteState(for: originalDeviceID)
+            if let needsUnmute = muteIfSupported(originalID) {
+                capturedState = .audioDevice(id: originalID, unmuteOnEnd: needsUnmute, switchedFrom: nil)
+                return
+            }
+            if let display = displayVolume(originalID), let volume = display.volume(),
+                devices.defaultOutputDeviceID() == originalID
+            {
+                if volume == 0 || (display.setVolume(0) && display.volume() == 0) {
+                    capturedState = .display(display, previousVolume: volume)
+                    return
+                }
+                // A display can accept a write without replying to the verification read.
+                restoreDisplayVolume(display, previous: volume)
+            }
 
-        if currentMute == nil,
-           let builtInID = devices.builtInOutputDeviceID(),
-           builtInID != originalDeviceID,
-           let builtInMute = devices.currentMuteState(for: builtInID) {
-            targetDeviceID = builtInID
-            switchedFrom = originalDeviceID
-            currentMute = builtInMute
+            guard devices.defaultOutputDeviceID() == originalID, let builtInID = devices.builtInOutputDeviceID(),
+                builtInID != originalID, let needsUnmute = muteIfSupported(builtInID)
+            else { return }
+            if devices.setDefaultOutputDeviceID(builtInID) {
+                capturedState = .audioDevice(id: builtInID, unmuteOnEnd: needsUnmute, switchedFrom: originalID)
+            } else if needsUnmute {
+                _ = devices.setMute(false, for: builtInID)
+            }
         }
-        guard let wasMuted = currentMute else { return }
-
-        _ = devices.setMute(true, for: targetDeviceID)
-
-        // Mute first, then switch, so nothing is audible on the built-in output.
-        if switchedFrom != nil, !devices.setDefaultOutputDeviceID(targetDeviceID) {
-            _ = devices.setMute(wasMuted != 0, for: targetDeviceID)
-            return
-        }
-
-        capturedState = State(deviceID: targetDeviceID, wasMuted: wasMuted, switchedFromDeviceID: switchedFrom)
     }
 
     func endMutedSession() {
-        guard let capturedState else { return }
-        // Switch back first, then unmute, so nothing is audible on the built-in output.
-        if let originalDeviceID = capturedState.switchedFromDeviceID {
-            _ = devices.setDefaultOutputDeviceID(originalDeviceID)
+        lock.withLock {
+            guard let capturedState else { return }
+            self.capturedState = nil
+            switch capturedState {
+            case let .audioDevice(deviceID, needsUnmute, originalID):
+                if let originalID, devices.defaultOutputDeviceID() == deviceID {
+                    _ = devices.setDefaultOutputDeviceID(originalID)
+                }
+                if needsUnmute { _ = devices.setMute(false, for: deviceID) }
+            case let .display(display, volume):
+                restoreDisplayVolume(display, previous: volume)
+            }
         }
-        _ = devices.setMute(capturedState.wasMuted != 0, for: capturedState.deviceID)
-        self.capturedState = nil
+    }
+
+    private func muteIfSupported(_ deviceID: AudioDeviceID) -> Bool? {
+        guard let mute = devices.currentMuteState(for: deviceID) else { return nil }
+        if mute != 0 { return false }
+        return devices.setMute(true, for: deviceID) ? true : nil
+    }
+
+    private func restoreDisplayVolume(_ display: DisplayAudioVolumeControlling, previous: UInt16) {
+        guard previous > 0 else { return }
+        if let current = display.volume(), current != 0 { return }
+        if !display.setVolume(previous) { _ = display.setVolume(previous) }
     }
 }
 

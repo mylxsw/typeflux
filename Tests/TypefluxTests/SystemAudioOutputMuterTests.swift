@@ -62,6 +62,108 @@ final class SystemAudioOutputMuterTests: XCTestCase {
         XCTAssertEqual(devices.events, ["setDefault \(monitorID)", "mute \(builtInID)=0"])
     }
 
+    func testKeepsUserSelectedOutputWhenSessionEnds() {
+        let otherOutput: AudioDeviceID = 222
+        let devices = FakeAudioOutputDevices(defaultID: monitorID, builtInID: builtInID, muteStates: [builtInID: 0])
+        let muter = SystemAudioOutputMuter(devices: devices)
+
+        muter.beginMutedSession()
+        devices.defaultID = otherOutput
+        muter.endMutedSession()
+
+        XCTAssertEqual(devices.defaultID, otherOutput)
+        XCTAssertEqual(devices.setDefaultCalls, [builtInID])
+        XCTAssertEqual(devices.muteStates[builtInID], 0)
+    }
+
+    func testDoesNotSwitchToBuiltInOutputWhenMuteFails() {
+        let devices = FakeAudioOutputDevices(defaultID: monitorID, builtInID: builtInID, muteStates: [builtInID: 0])
+        devices.setMuteSucceeds = false
+        let muter = SystemAudioOutputMuter(devices: devices)
+
+        muter.beginMutedSession()
+        muter.endMutedSession()
+
+        XCTAssertEqual(devices.defaultID, monitorID)
+        XCTAssertEqual(devices.setDefaultCalls, [])
+    }
+
+    func testMutesAndRestoresMonitorVolumeWithoutChangingTheOutput() {
+        let devices = FakeAudioOutputDevices(defaultID: monitorID, builtInID: builtInID, muteStates: [builtInID: 0])
+        let display = FakeDisplayVolume(45)
+        let muter = SystemAudioOutputMuter(devices: devices, displayVolume: { id in
+            XCTAssertEqual(id, self.monitorID)
+            return display
+        })
+
+        muter.beginMutedSession()
+
+        XCTAssertEqual(display.level, 0)
+        XCTAssertEqual(devices.defaultID, monitorID)
+        XCTAssertEqual(devices.events, [])
+
+        muter.endMutedSession()
+
+        XCTAssertEqual(display.writes, [0, 45])
+        XCTAssertEqual(display.level, 45)
+        XCTAssertEqual(devices.events, [])
+    }
+
+    func testKeepsMonitorVolumeChangedByUserDuringTheSession() {
+        let devices = FakeAudioOutputDevices(defaultID: monitorID, builtInID: builtInID, muteStates: [builtInID: 0])
+        let display = FakeDisplayVolume(45)
+        let muter = SystemAudioOutputMuter(devices: devices, displayVolume: { _ in display })
+
+        muter.beginMutedSession()
+        display.level = 20
+        muter.endMutedSession()
+
+        XCTAssertEqual(display.level, 20)
+        XCTAssertEqual(display.writes, [0])
+    }
+
+    func testReleasingMuterRestoresMonitorVolume() {
+        let devices = FakeAudioOutputDevices(defaultID: monitorID, builtInID: builtInID, muteStates: [builtInID: 0])
+        let display = FakeDisplayVolume(45)
+        var muter: SystemAudioOutputMuter? = SystemAudioOutputMuter(devices: devices, displayVolume: { _ in display })
+
+        muter?.beginMutedSession()
+        muter = nil
+
+        XCTAssertEqual(display.writes, [0, 45])
+        XCTAssertEqual(devices.events, [])
+    }
+
+    func testDoesNotChangeAlreadySilentMonitor() {
+        let devices = FakeAudioOutputDevices(defaultID: monitorID, builtInID: builtInID, muteStates: [builtInID: 0])
+        let display = FakeDisplayVolume(0)
+        let muter = SystemAudioOutputMuter(devices: devices, displayVolume: { _ in display })
+
+        muter.beginMutedSession()
+        muter.endMutedSession()
+
+        XCTAssertEqual(display.writes, [])
+        XCTAssertEqual(devices.events, [])
+    }
+
+    func testRestoresMonitorAfterUnconfirmedVolumeWriteBeforeChangingOutput() {
+        let devices = FakeAudioOutputDevices(defaultID: monitorID, builtInID: builtInID, muteStates: [builtInID: 0])
+        let display = FakeDisplayVolume(45)
+        display.failNextReadAfterWrite = true
+        let muter = SystemAudioOutputMuter(devices: devices, displayVolume: { _ in display })
+
+        muter.beginMutedSession()
+
+        XCTAssertEqual(display.writes, [0, 45])
+        XCTAssertEqual(display.level, 45)
+        XCTAssertEqual(devices.defaultID, builtInID)
+
+        muter.endMutedSession()
+
+        XCTAssertEqual(devices.defaultID, monitorID)
+        XCTAssertEqual(devices.muteStates[builtInID], 0)
+    }
+
     func testKeepsBuiltInOutputMutedWhenItWasAlreadyMuted() {
         let devices = FakeAudioOutputDevices(defaultID: monitorID, builtInID: builtInID, muteStates: [builtInID: 1])
         let muter = SystemAudioOutputMuter(devices: devices)
@@ -163,6 +265,7 @@ private final class FakeAudioOutputDevices: AudioOutputDeviceAccessing {
     let builtInID: AudioDeviceID?
     var muteStates: [AudioDeviceID: UInt32]
     var setDefaultSucceeds = true
+    var setMuteSucceeds = true
     private(set) var setDefaultCalls: [AudioDeviceID] = []
     var events: [String] = []
 
@@ -187,9 +290,33 @@ private final class FakeAudioOutputDevices: AudioOutputDeviceAccessing {
     func currentMuteState(for deviceID: AudioDeviceID) -> UInt32? { muteStates[deviceID] }
 
     func setMute(_ isMuted: Bool, for deviceID: AudioDeviceID) -> Bool {
-        guard muteStates[deviceID] != nil else { return false }
+        guard setMuteSucceeds, muteStates[deviceID] != nil else { return false }
         events.append("mute \(deviceID)=\(isMuted ? 1 : 0)")
         muteStates[deviceID] = isMuted ? 1 : 0
+        return true
+    }
+}
+
+private final class FakeDisplayVolume: DisplayAudioVolumeControlling {
+    var level: UInt16
+    var failNextReadAfterWrite = false
+    private(set) var writes: [UInt16] = []
+
+    init(_ level: UInt16) {
+        self.level = level
+    }
+
+    func volume() -> UInt16? {
+        if failNextReadAfterWrite, !writes.isEmpty {
+            failNextReadAfterWrite = false
+            return nil
+        }
+        return level
+    }
+
+    func setVolume(_ value: UInt16) -> Bool {
+        writes.append(value)
+        level = value
         return true
     }
 }
