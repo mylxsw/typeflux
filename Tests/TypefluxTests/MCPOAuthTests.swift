@@ -3,16 +3,17 @@ import Foundation
 @testable import Typeflux
 import XCTest
 
-private final class MemoryTokenStore: MCPOAuthTokenStore, @unchecked Sendable {
+final class MemoryTokenStore: MCPOAuthTokenStore, @unchecked Sendable {
     private let lock = NSLock()
     private var items: [String: MCPOAuthCredentials] = [:]
+    func contains(_ key: String) -> Bool { load(key) != nil }
     func load(_ key: String) -> MCPOAuthCredentials? { lock.lock(); defer { lock.unlock() }; return items[key] }
     func save(_ credentials: MCPOAuthCredentials, key: String) { lock.lock(); items[key] = credentials; lock.unlock() }
     func delete(_ key: String) { lock.lock(); items[key] = nil; lock.unlock() }
 }
 
 /// Routes stubbed OAuth and MCP endpoints by host and path.
-private final class OAuthStubProtocol: URLProtocol, @unchecked Sendable {
+final class OAuthStubProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var routes: [String: (URLRequest, Data?) -> (Int, [String: String], String)] = [:]
     nonisolated(unsafe) static var requests: [(URLRequest, Data?)] = []
 
@@ -96,7 +97,7 @@ final class MCPOAuthTests: XCTestCase {
         XCTAssertNil(MCPLoopbackListener.parameters(fromRequestLine: "POST /callback HTTP/1.1"))
         XCTAssertTrue(MCPOAuthCredentials(accessToken: "a", tokenEndpoint: "t", clientId: "c").isUsable(now: Date()))
         XCTAssertFalse(MCPOAuthCredentials(accessToken: "a", expiresAt: Date(), tokenEndpoint: "t", clientId: "c").isUsable(now: Date()))
-        XCTAssertTrue(MCPOAuthError.signInRequired.localizedDescription.contains("Test Connection"))
+        XCTAssertTrue(MCPOAuthError.signInRequired.localizedDescription.contains("Settings"))
     }
 
     func testInteractiveSignInWithPKCEAndRefresh() async throws {
@@ -132,17 +133,17 @@ final class MCPOAuthTests: XCTestCase {
         let token = try await authorizer.authorize(challenge: nil)
         XCTAssertEqual(token, "at1")
         XCTAssertFalse(verifier.isEmpty)
-        let accessToken = await authorizer.accessToken()
+        let accessToken = try await authorizer.accessToken()
         XCTAssertEqual(accessToken, "at1")
 
         // An expired token is refreshed and keeps the previous refresh token.
         clock.now = Date().addingTimeInterval(7200)
-        let refreshed = await authorizer.accessToken()
+        let refreshed = try await authorizer.accessToken()
         XCTAssertEqual(refreshed, "at2")
         XCTAssertEqual(store.load(resource.absoluteString)?.refreshToken, "rt1")
 
         await authorizer.signOut()
-        let signedOut = await authorizer.accessToken()
+        let signedOut = try await authorizer.accessToken()
         XCTAssertNil(signedOut)
     }
 
@@ -154,13 +155,22 @@ final class MCPOAuthTests: XCTestCase {
             XCTFail("Background connections must not sign in")
         } catch let error as MCPOAuthError { XCTAssertEqual(error, .signInRequired) }
 
-        // A failed refresh drops the stored credentials.
+        // A rejected grant requires explicit reauthorization and preserves the old record.
         OAuthStubProtocol.routes["auth.example.com/token"] = { _, _ in (400, [:], #"{"error":"invalid_grant"}"#) }
         store.save(MCPOAuthCredentials(accessToken: "old", refreshToken: "r", expiresAt: Date.distantPast, tokenEndpoint: "https://auth.example.com/token", clientId: "cid"),
                    key: resource.absoluteString)
-        let expired = await quiet.accessToken()
-        XCTAssertNil(expired)
-        XCTAssertNil(store.load(resource.absoluteString))
+        do {
+            _ = try await quiet.accessToken()
+            XCTFail("Expected rejection")
+        } catch let error as MCPOAuthError { XCTAssertEqual(error, .signInRequired) }
+        XCTAssertNotNil(store.load(resource.absoluteString))
+        OAuthStubProtocol.routes["auth.example.com/token"] = { _, _ in (503, [:], "{}") }
+        do {
+            _ = try await quiet.accessToken()
+            XCTFail("Expected transient failure")
+        } catch let error as MCPOAuthError { XCTAssertEqual(error, .tokenFailed("HTTP 503")) }
+        XCTAssertNotNil(store.load(resource.absoluteString))
+        store.delete(resource.absoluteString)
 
         // State mismatches and browser errors are rejected.
         let mismatched = MCPOAuthAuthorizer(resource: resource, interactive: true, store: store, session: OAuthStubProtocol.session(), callbackTimeout: .seconds(10)) { url in
@@ -190,7 +200,33 @@ final class MCPOAuthTests: XCTestCase {
         do {
             _ = try await timedOut.discover(challenge: nil)
             XCTFail("No metadata")
-        } catch let error as MCPOAuthError { XCTAssertEqual(error, .discoveryFailed("no authorization server metadata at https://mcp.example.com/")) }
+        } catch let error as MCPOAuthError { XCTAssertEqual(error, .discoveryFailed("no authorization server metadata")) }
+    }
+
+    func testKeychainPreservesAndReplacesOnlyTheTestResource() {
+        let service = "com.typeflux.test.oauth." + UUID().uuidString
+        let store = MCPKeychainTokenStore(service: service)
+        let key = resource.absoluteString
+        defer { store.delete(key) }
+        XCTAssertFalse(store.contains(key))
+        var fixture = MCPOAuthCredentials(accessToken: "fixture-one", tokenEndpoint: key, clientId: "fixture")
+        store.save(fixture, key: key)
+        let reopened = MCPKeychainTokenStore(service: service)
+        XCTAssertTrue(reopened.contains(key))
+        XCTAssertEqual(reopened.load(key), fixture)
+        fixture.accessToken = "fixture-two"
+        reopened.save(fixture, key: key)
+        XCTAssertEqual(store.load(key), fixture)
+    }
+
+    func testManualAuthorizationTakesPrecedenceOverSavedOAuthCredentials() {
+        let oauth = MCPOAuthAuthorizer(resource: resource, interactive: false, store: MemoryTokenStore())
+        let manual = ["authorization": "test"]
+        XCTAssertNil(MCPHTTPTransportConfig(url: resource.absoluteString, headers: manual).oauthResource)
+        XCTAssertNil(MCPHTTPConfig(url: resource, headers: manual, authorizer: oauth).authorizer)
+        XCTAssertNil(MCPHTTPConfig(url: resource, headers: ["X-API-Key": "fixture"], authorizer: oauth).authorizer)
+        XCTAssertEqual(MCPHTTPTransportConfig(url: resource.absoluteString, headers: ["X-Region": "local"]).oauthResource, resource)
+        XCTAssertNil(MCPTransportConfig.stdio(.init(command: "test")).oauthResource)
     }
 
     func testHTTPClientRetriesWithAFreshTokenAfter401() async throws {
@@ -235,17 +271,7 @@ final class MCPOAuthTests: XCTestCase {
         XCTAssertEqual(OAuthStubProtocol.requests.filter { $0.0.url?.path == "/mcp" }.count - before, 2)
     }
 
-    func testKeychainStoreRoundTrip() {
-        let store = MCPKeychainTokenStore(service: "com.typeflux.tests.\(UUID().uuidString)")
-        let credentials = MCPOAuthCredentials(accessToken: "a", refreshToken: "r", tokenEndpoint: "t", clientId: "c")
-        store.save(credentials, key: "k")
-        // Some CI keychains are locked; only assert when the item could be written.
-        if let loaded = store.load("k") {
-            XCTAssertEqual(loaded, credentials)
-        }
-        store.delete("k")
-        XCTAssertNil(store.load("k"))
-    }
+
 }
 
 private final class ClockBox: @unchecked Sendable {

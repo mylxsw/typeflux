@@ -1,12 +1,12 @@
 import Foundation
 
 /// MCP 服务器传输配置
-enum MCPTransportConfig: Codable {
+enum MCPTransportConfig: Codable, Equatable {
     case stdio(MCPStdioTransportConfig)
     case http(MCPHTTPTransportConfig)
 }
 
-struct MCPStdioTransportConfig: Codable {
+struct MCPStdioTransportConfig: Codable, Equatable {
     let command: String
     var args: [String]
     var env: [String: String]
@@ -18,7 +18,7 @@ struct MCPStdioTransportConfig: Codable {
     }
 }
 
-struct MCPHTTPTransportConfig: Codable {
+struct MCPHTTPTransportConfig: Codable, Equatable {
     var url: String
     var headers: [String: String]
 
@@ -88,5 +88,38 @@ final class MCPSettingsStore: @unchecked Sendable {
 
     func updateServer(_ config: MCPServerConfig) {
         servers = servers.map { $0.id == config.id ? config : $0 }
+    }
+}
+
+enum MCPAuthorizationState: String {
+    case required, authorized, expired, saved
+
+    var label: String { L("agent.mcp.oauth." + rawValue) }
+
+    var action: String {
+        L(self == .required ? "agent.mcp.oauth.signIn" : "agent.mcp.oauth.again")
+    }
+
+    var needsAuthorization: Bool { self == .required || self == .expired }
+}
+
+extension MCPHTTPTransportConfig {
+    static func hasAuthenticationHeader(_ headers: [String: String]) -> Bool {
+        let names: Set<String> = ["authorization", "x-api-key", "api-key", "x-auth-token", "x-access-token", "cookie"]
+        return headers.keys.contains { names.contains($0.lowercased()) }
+    }
+
+    var oauthResource: URL? {
+        guard !Self.hasAuthenticationHeader(headers),
+              let resource = URL(string: url.trimmingCharacters(in: .whitespacesAndNewlines)),
+              ["http", "https"].contains(resource.scheme?.lowercased() ?? ""), resource.host != nil else { return nil }
+        return resource
+    }
+}
+
+extension MCPTransportConfig {
+    var oauthResource: URL? {
+        guard case let .http(config) = self else { return nil }
+        return config.oauthResource
     }
 }

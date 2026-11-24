@@ -222,6 +222,15 @@ final class StudioViewModel: ObservableObject {
     /// Latest connection test of each saved server in this session; untested servers are absent.
     @Published private(set) var mcpServerTestResults: [UUID: MCPConnectionTestState] = [:]
 
+    @Published private(set) var mcpAuthorization: [URL: MCPAuthorizationState] = [:]
+    @Published private(set) var mcpAuthorizingURL: URL?
+    private var mcpChallenges: [URL: String] = [:]
+    var mcpCredentialStore: any MCPOAuthTokenStore = MCPKeychainTokenStore()
+    var mcpSession: URLSession?
+    var mcpOpenBrowser: @Sendable (URL) async -> Void = { url in
+        await MainActor.run { _ = NSWorkspace.shared.open(url) }
+    }
+
     // Agent Jobs
 
     @Published var personaRewriteEnabled: Bool
@@ -297,6 +306,8 @@ final class StudioViewModel: ObservableObject {
     private var llmTestTask: Task<Void, Never>?
     private var sttTestTask: Task<Void, Never>?
     private var mcpTestTask: Task<Void, Never>?
+    private var mcpResultBeforeAuthorization: MCPConnectionTestState = .idle
+    private var mcpTestTransport: MCPTransportConfig?
     private var mcpTestServerID: UUID?
     private var historyRefreshTask: Task<Void, Never>?
     private var localSTTPreparationTask: Task<Void, Never>?
@@ -1815,6 +1826,7 @@ final class StudioViewModel: ObservableObject {
 
     func beginAddMCPServer() {
         mcpDraftEditingServerID = nil
+        mcpTestTransport = nil
         mcpDraftName = ""
         mcpDraftTransportType = .stdio
         mcpDraftStdioCommand = ""
@@ -1830,11 +1842,13 @@ final class StudioViewModel: ObservableObject {
 
     func beginEditMCPServer(_ server: MCPServerConfig) {
         mcpDraftEditingServerID = server.id
+        mcpTestTransport = server.transport
         mcpDraftName = server.name
         mcpDraftEnabled = server.enabled
         mcpDraftAutoConnect = server.autoConnect
         mcpConnectionTestTargetServerID = nil
-        mcpConnectionTestState = .idle
+        let previous = mcpServerTestResults[server.id] ?? .idle
+        mcpConnectionTestState = previous == .testing ? .idle : previous
         switch server.transport {
         case let .stdio(config):
             mcpDraftTransportType = .stdio
@@ -1877,8 +1891,9 @@ final class StudioViewModel: ObservableObject {
             mcpServers[idx].transport = transport
             mcpServers[idx].enabled = mcpDraftEnabled
             mcpServers[idx].autoConnect = mcpDraftAutoConnect
-            // The saved result described the previous configuration.
-            mcpServerTestResults[editingID] = nil
+            // Retain feedback only for the transport that was actually tested.
+            mcpServerTestResults[editingID] = transport == mcpTestTransport && mcpConnectionTestState != .idle
+                ? mcpConnectionTestState : nil
         } else {
             let server = MCPServerConfig(
                 name: mcpDraftName.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -1887,6 +1902,7 @@ final class StudioViewModel: ObservableObject {
                 autoConnect: mcpDraftAutoConnect
             )
             mcpServers.append(server)
+            if mcpConnectionTestState != .idle { mcpServerTestResults[server.id] = mcpConnectionTestState }
         }
         settingsStore.mcpServers = mcpServers
     }
@@ -1906,6 +1922,7 @@ final class StudioViewModel: ObservableObject {
     }
 
     func testMCPConnection(for server: MCPServerConfig) {
+        guard mcpAuthorizingURL == nil else { return }
         mcpConnectionTestTargetServerID = server.id
         mcpServerTestResults[server.id] = .testing
         testMCPConnectionWithConfig(server.transport, serverID: server.id)
@@ -1936,10 +1953,30 @@ final class StudioViewModel: ObservableObject {
         guard mcpTestServerID == nil else { return }
         mcpTestTask?.cancel()
         mcpTestTask = nil
+        mcpAuthorizingURL = nil
         mcpConnectionTestState = .idle
     }
 
-    func testMCPDraftConnection() {
+    func cancelMCPAuthorization() {
+        guard mcpAuthorizingURL != nil else { return }
+        resetMCPDraftConnectionTest()
+        mcpConnectionTestState = mcpResultBeforeAuthorization
+    }
+
+    var mcpDraftResource: URL? {
+        guard mcpDraftTransportType == .http else { return nil }
+        return MCPHTTPTransportConfig(url: mcpDraftHTTPURL, headers: parseMCPEnvString(mcpDraftHTTPHeaders)).oauthResource
+    }
+
+    func inspectMCPAuthorization(_ url: URL?) {
+        guard let url else { return }
+        if mcpAuthorization[url] == nil, mcpCredentialStore.contains(url.absoluteString) {
+            mcpAuthorization[url] = .saved
+        }
+    }
+
+    func testMCPDraftConnection(authorize: Bool = false) {
+        guard mcpAuthorizingURL == nil else { return }
         mcpConnectionTestTargetServerID = nil
         let transport: MCPTransportConfig
         switch mcpDraftTransportType {
@@ -1957,7 +1994,7 @@ final class StudioViewModel: ObservableObject {
                 headers: headersDict
             ))
         }
-        testMCPConnectionWithConfig(transport)
+        testMCPConnectionWithConfig(transport, authorize: authorize)
     }
 
     func isTestingMCPServer(_ serverID: UUID) -> Bool {
@@ -1968,16 +2005,23 @@ final class StudioViewModel: ObservableObject {
         mcpConnectionTestTargetServerID == serverID && mcpConnectionTestState != .idle
     }
 
-    private func testMCPConnectionWithConfig(_ transport: MCPTransportConfig, serverID: UUID? = nil) {
+    private func testMCPConnectionWithConfig(_ transport: MCPTransportConfig, serverID: UUID? = nil, authorize: Bool = false) {
         mcpTestTask?.cancel()
+        if authorize { mcpResultBeforeAuthorization = mcpConnectionTestState }
+        mcpAuthorizingURL = authorize ? transport.oauthResource : nil
         // A replaced test of another server would otherwise stay "testing" forever.
         for (id, state) in mcpServerTestResults where state == .testing && id != serverID {
             mcpServerTestResults[id] = nil
         }
         mcpConnectionTestState = .testing
+        mcpTestTransport = transport
         mcpTestServerID = serverID
         mcpTestTask = Task {
             var testClient: (any MCPClient)?
+            var authorizer: MCPOAuthAuthorizer?
+            var candidate: MCPOAuthCredentials?
+            var connected = false
+            let resource = transport.oauthResource
             do {
                 let client: any MCPClient
                 switch transport {
@@ -1992,12 +2036,35 @@ final class StudioViewModel: ObservableObject {
                         }
                         return
                     }
-                    // Testing from Settings may open the browser to sign in; the token is reused afterwards.
-                    client = HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: config.headers,
-                                                                 authorizer: MCPOAuthAuthorizer(resource: url, interactive: true)))
+                    var headers = config.headers
+                    if let resource {
+                        let oauth = MCPOAuthAuthorizer(resource: resource, interactive: false, store: mcpCredentialStore,
+                                                      session: mcpSession ?? .shared, openBrowser: mcpOpenBrowser)
+                        authorizer = oauth
+                        if authorize {
+                            let credentials = try await oauth.signIn(challenge: mcpChallenges[resource], persist: false)
+                            candidate = credentials
+                            headers["Authorization"] = "Bearer " + credentials.accessToken
+                        }
+                    }
+                    client = HTTPMCPClient(config: MCPHTTPConfig(url: url, headers: headers, urlSession: mcpSession,
+                                                                 authorizer: authorizer))
                 }
                 testClient = client
                 try await client.connect()
+                try Task.checkCancellation()
+                connected = true
+                if let resource {
+                    if let candidate {
+                        mcpCredentialStore.save(candidate, key: resource.absoluteString)
+                        guard mcpCredentialStore.load(resource.absoluteString) == candidate else {
+                            await client.disconnect()
+                            if !Task.isCancelled { finishMCPTest(.failure(message: L("agent.mcp.authFailed")), serverID: serverID) }
+                            return
+                        }
+                    }
+                    mcpAuthorization[resource] = mcpCredentialStore.contains(resource.absoluteString) ? .authorized : nil
+                }
                 let tools = try await client.listTools()
                 await client.disconnect()
 
@@ -2013,16 +2080,46 @@ final class StudioViewModel: ObservableObject {
                 }
             } catch {
                 await testClient?.disconnect()
-                if !Task.isCancelled {
-                    finishMCPTest(.failure(message: error.localizedDescription), serverID: serverID)
+                guard !Task.isCancelled else { return }
+                if let resource, let authorizer, !authorize {
+                    if let state = await authorizationRequired(after: error, resource: resource, authorizer: authorizer) {
+                        guard !Task.isCancelled else { return }
+                        mcpAuthorization[resource] = state
+                        finishMCPTest(.idle, serverID: serverID)
+                        return
+                    }
                 }
+                guard !Task.isCancelled else { return }
+                let message: String
+                if connected { message = "agent.mcp.toolsFailed" }
+                else if authorize && candidate == nil { message = "agent.mcp.authFailed" }
+                else { message = "agent.mcp.status.failed" }
+                let state: MCPConnectionTestState = authorize && error is CancellationError ? mcpResultBeforeAuthorization : .failure(message: L(message))
+                finishMCPTest(state, serverID: serverID)
             }
         }
+    }
+
+    private func authorizationRequired(after error: Error, resource: URL,
+                                       authorizer: MCPOAuthAuthorizer) async -> MCPAuthorizationState? {
+        let stored = mcpCredentialStore.contains(resource.absoluteString)
+        if stored, await authorizer.rejectedRefreshedToken { return .expired }
+        guard (error as? MCPOAuthError) == .signInRequired else { return nil }
+        let challenge = await authorizer.lastChallenge
+        if !stored {
+            // A 401 alone may be a static API-key or Basic-auth endpoint.
+            guard let discovery = try? await authorizer.discover(challenge: challenge),
+                  discovery.metadata.registrationEndpoint != nil else { return nil }
+        }
+        guard !Task.isCancelled else { return nil }
+        mcpChallenges[resource] = challenge
+        return stored ? .expired : .required
     }
 
     private func finishMCPTest(_ state: MCPConnectionTestState, serverID: UUID?) {
         mcpTestTask = nil
         mcpTestServerID = nil
+        mcpAuthorizingURL = nil
         // A saved server's test may finish after the user opens an unrelated draft.
         if mcpConnectionTestTargetServerID == serverID { mcpConnectionTestState = state }
         if let serverID, mcpServers.contains(where: { $0.id == serverID }) {

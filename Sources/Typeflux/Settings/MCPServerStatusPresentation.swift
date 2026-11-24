@@ -5,7 +5,7 @@ struct MCPServerStatusPresentation: Equatable {
     enum State: Equatable { case disabled, untested, testing, connected, failed }
 
     let state: State
-    let label: String
+    private(set) var label: String
 
     init(enabled: Bool, result: MCPConnectionTestState?) {
         switch (enabled, result) {
@@ -16,11 +16,21 @@ struct MCPServerStatusPresentation: Equatable {
         case let (true, .success(tools)?):
             (state, label) = (.connected, L("agent.mcp.status.connected", tools.count))
         case (true, .failure?):
-            (state, label) = (.failed, L("agent.mcp.status.failed"))
+            (state, label) = (.failed, L("agent.mcp.testFailedShort"))
         case (true, .idle?), (true, nil):
             (state, label) = (.untested, L("agent.mcp.status.untested"))
         }
     }
+
+    init(enabled: Bool, result: MCPConnectionTestState?, authorization: MCPAuthorizationState?) {
+        self.init(enabled: enabled, result: result)
+        guard enabled, !isTesting, let authorization else { return }
+        label = state == .failed ? authorization.label + " · " + label : authorization.label
+        authorizationLevel = authorization.needsAuthorization || state == .failed ? .warning :
+            (authorization == .authorized ? .success : .neutral)
+    }
+
+    private var authorizationLevel: TFStatusDot.Level?
 
     var isTesting: Bool {
         state == .testing
@@ -28,7 +38,8 @@ struct MCPServerStatusPresentation: Equatable {
 
     /// The shared status color for this state.
     var level: TFStatusDot.Level {
-        switch state {
+        if let authorizationLevel { return authorizationLevel }
+        return switch state {
         case .connected: .success
         case .failed: .danger
         case .testing: .warning

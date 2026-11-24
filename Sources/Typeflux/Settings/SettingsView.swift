@@ -1192,7 +1192,7 @@ struct StudioView: View {
                 }
             }
         } else {
-            TFFormSection(footnote: L("agent.mcp.listHint")) {
+            TFFormSection {
                 ForEach(Array(viewModel.mcpServers.enumerated()), id: \.element.id) { index, server in
                     if index > 0 { TFDivider.formWithIcon }
                     mcpServerRow(server)
@@ -1202,42 +1202,41 @@ struct StudioView: View {
     }
 
     private func mcpServerRow(_ server: MCPServerConfig) -> some View {
-        let status = MCPServerStatusPresentation(enabled: server.enabled, result: viewModel.mcpServerTestResults[server.id])
-        let result = viewModel.mcpServerTestResults[server.id]
-        return VStack(alignment: .leading, spacing: 0) {
-            TFFormRow(
-                title: server.name.isEmpty ? L("agent.mcp.untitled") : server.name,
-                valueText: mcpTransportDetail(for: server),
-                icon: "server.rack",
-                valueLineLimit: 1,
-                badge: mcpTransportLabel(for: server)
-            ) {
-                if status.isTesting {
-                    TFSpinner()
-                }
+        let status = MCPServerStatusPresentation(enabled: server.enabled, result: viewModel.mcpServerTestResults[server.id],
+                                                 authorization: server.transport.oauthResource.flatMap { viewModel.mcpAuthorization[$0] })
+        return TFFormRow(
+            title: server.name.isEmpty ? L("agent.mcp.untitled") : server.name,
+            valueText: mcpTransportDetail(for: server),
+            icon: "server.rack",
+            valueLineLimit: 1,
+            badge: mcpTransportLabel(for: server)
+        ) {
+            if status.isTesting {
+                TFSpinner()
+            }
+            Button {
+                editMCPServer(server)
+            } label: {
                 TFStatusLabel(text: status.label, level: status.level)
-                TFSwitch(title: server.name, isOn: Binding(
-                    get: { server.enabled },
-                    set: { viewModel.updateMCPServerEnabled(id: server.id, enabled: $0) }
-                ))
-                TFMenuButton(title: L("agent.mcp.more"), systemImage: "ellipsis", kind: .plain, size: .small,
-                             iconOnly: true, actions: mcpServerActions(server))
             }
-            if case let .failure(message)? = result {
-                TFFieldMessage(text: message)
-                    .padding(.leading, TFListGroupInset.formWithIcon).padding(.trailing, 14).padding(.bottom, 12)
-            } else if case let .success(tools)? = result, !tools.isEmpty {
-                TFFieldMessage(text: L("agent.mcp.toolList", tools.map(\.name).joined(separator: ", ")), tone: .hint)
-                    .lineLimit(2)
-                    .padding(.leading, TFListGroupInset.formWithIcon).padding(.trailing, 14).padding(.bottom, 12)
-            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L("agent.mcp.edit") + " " + server.name)
+            TFSwitch(title: server.name, isOn: Binding(
+                get: { server.enabled },
+                set: { viewModel.updateMCPServerEnabled(id: server.id, enabled: $0) }
+            ))
+            TFMenuButton(title: L("agent.mcp.more"), systemImage: "ellipsis", kind: .plain, size: .small,
+                         iconOnly: true, actions: mcpServerActions(server))
         }
+        .task(id: server.transport.oauthResource) { viewModel.inspectMCPAuthorization(server.transport.oauthResource) }
         .contentShape(Rectangle())
-        .onTapGesture {
-            viewModel.beginEditMCPServer(server)
-            isMCPServerDialogPresented = true
-        }
+        .onTapGesture { editMCPServer(server) }
         .contextMenu { mcpServerMenuItems(server) }
+    }
+
+    private func editMCPServer(_ server: MCPServerConfig) {
+        viewModel.beginEditMCPServer(server)
+        isMCPServerDialogPresented = true
     }
 
     private func mcpServerActions(_ server: MCPServerConfig) -> [TFMenuAction] {
@@ -1343,7 +1342,7 @@ struct StudioView: View {
     private func mcpTransportDetail(for server: MCPServerConfig) -> String {
         switch server.transport {
         case let .stdio(config): ([config.command] + config.args).joined(separator: " ")
-        case let .http(config): config.url
+        case let .http(config): HTTPMCPClient.redactedDebugURL(URL(string: config.url))
         }
     }
 

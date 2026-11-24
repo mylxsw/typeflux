@@ -12,11 +12,13 @@ struct MCPOAuthCredentials: Codable, Equatable, Sendable {
     var tokenEndpoint: String
     var clientId: String
     var clientSecret: String?
+    var resourceMetadataURL: URL?
 
     func isUsable(now: Date) -> Bool { expiresAt.map { $0.timeIntervalSince(now) > 60 } ?? true }
 }
 
 protocol MCPOAuthTokenStore: Sendable {
+    func contains(_ key: String) -> Bool
     func load(_ key: String) -> MCPOAuthCredentials?
     func save(_ credentials: MCPOAuthCredentials, key: String)
     func delete(_ key: String)
@@ -30,6 +32,10 @@ struct MCPKeychainTokenStore: MCPOAuthTokenStore {
         [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: key]
     }
 
+    func contains(_ key: String) -> Bool {
+        SecItemCopyMatching(query(key) as CFDictionary, nil) == errSecSuccess
+    }
+
     func load(_ key: String) -> MCPOAuthCredentials? {
         var item: CFTypeRef?
         var request = query(key)
@@ -40,7 +46,8 @@ struct MCPKeychainTokenStore: MCPOAuthTokenStore {
 
     func save(_ credentials: MCPOAuthCredentials, key: String) {
         guard let data = try? JSONEncoder().encode(credentials) else { return }
-        SecItemDelete(query(key) as CFDictionary)
+        let update = [kSecValueData as String: data]
+        guard SecItemUpdate(query(key) as CFDictionary, update as CFDictionary) == errSecItemNotFound else { return }
         var item = query(key)
         item[kSecValueData as String] = data
         item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
@@ -58,7 +65,7 @@ enum MCPOAuthError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .signInRequired: "This MCP server needs you to sign in. Use Test Connection in Settings → Agent → MCP servers."
+        case .signInRequired: "This MCP server needs you to sign in. Open the server in Settings → Agent to authorize it."
         case let .discoveryFailed(detail): "MCP sign-in is not available: \(detail)"
         case let .authorizationFailed(detail): "MCP sign-in failed: \(detail)"
         case let .tokenFailed(detail): "MCP sign-in token request failed: \(detail)"
@@ -91,19 +98,28 @@ actor MCPOAuthAuthorizer {
         self.openBrowser = openBrowser
     }
 
+    private(set) var lastChallenge: String?
+    private(set) var rejectedRefreshedToken = false
+
+    func recordRejectedRetry() { rejectedRefreshedToken = true }
+
     private var key: String { resource.absoluteString }
 
     /// A stored token that is still valid, refreshed when possible.
-    func accessToken() async -> String? {
+    func accessToken() async throws -> String? {
         guard let stored = store.load(key) else { return nil }
-        if stored.isUsable(now: now()) { return stored.accessToken }
-        return try? await refresh(stored).accessToken
+        let date = now()
+        if stored.isUsable(now: date) || (stored.refreshToken == nil && (stored.expiresAt ?? .distantFuture) > date) {
+            return stored.accessToken
+        }
+        return try await refresh(stored).accessToken
     }
 
     /// Called after a 401: refresh, or sign in when interactive.
     func authorize(challenge: String?) async throws -> String {
-        if let stored = store.load(key), stored.refreshToken != nil, let refreshed = try? await refresh(stored) {
-            return refreshed.accessToken
+        lastChallenge = challenge
+        if let stored = store.load(key), stored.refreshToken != nil {
+            return try await refresh(stored).accessToken
         }
         guard interactive else { throw MCPOAuthError.signInRequired }
         return try await signIn(challenge: challenge).accessToken
@@ -146,7 +162,7 @@ actor MCPOAuthAuthorizer {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         let (data, response) = try await session.data(for: request)
         guard (response as? HTTPURLResponse).map({ (200 ..< 300).contains($0.statusCode) }) == true else {
-            throw MCPOAuthError.discoveryFailed(url.absoluteString)
+            throw MCPOAuthError.discoveryFailed("metadata request failed")
         }
         return data
     }
@@ -177,7 +193,7 @@ actor MCPOAuthAuthorizer {
                 return (issuer, metadata, scopes)
             }
         }
-        throw MCPOAuthError.discoveryFailed("no authorization server metadata at \(issuer.absoluteString)")
+        throw MCPOAuthError.discoveryFailed("no authorization server metadata")
     }
 
     // MARK: - Sign in
@@ -213,8 +229,9 @@ actor MCPOAuthAuthorizer {
         return (id, body["client_secret"] as? String)
     }
 
-    func signIn(challenge: String?) async throws -> MCPOAuthCredentials {
-        let (_, metadata, scopes) = try await discover(challenge: challenge)
+    func signIn(challenge: String?, persist: Bool = true) async throws -> MCPOAuthCredentials {
+        let hint = challenge ?? store.load(key)?.resourceMetadataURL.map { "Bearer resource_metadata=\"\($0.absoluteString)\"" }
+        let (_, metadata, scopes) = try await discover(challenge: hint)
         guard let authorizeURL = URL(string: metadata.authorizationEndpoint) else { throw MCPOAuthError.discoveryFailed("invalid authorization endpoint") }
         let listener = try MCPLoopbackListener()
         defer { listener.cancel() }
@@ -231,31 +248,32 @@ actor MCPOAuthAuthorizer {
             .init(name: "resource", value: resource.absoluteString)
         ] + (scopes.isEmpty ? [] : [.init(name: "scope", value: scopes.joined(separator: " "))])
         guard let url = components.url else { throw MCPOAuthError.authorizationFailed("invalid authorization URL") }
+        try Task.checkCancellation()
         await openBrowser(url)
         let callback = try await listener.waitForCallback(timeout: callbackTimeout)
         guard callback["state"] == state else { throw MCPOAuthError.authorizationFailed("state mismatch") }
-        if let error = callback["error"] { throw MCPOAuthError.authorizationFailed(error) }
+        if callback["error"] == "access_denied" { throw CancellationError() }
+        if callback["error"] != nil { throw MCPOAuthError.authorizationFailed("authorization rejected") }
         guard let code = callback["code"] else { throw MCPOAuthError.authorizationFailed("no authorization code") }
-        let credentials = try await requestToken(endpoint: metadata.tokenEndpoint, clientId: client.id, clientSecret: client.secret, form: [
+        var credentials = try await requestToken(endpoint: metadata.tokenEndpoint, clientId: client.id, clientSecret: client.secret, form: [
             "grant_type": "authorization_code", "code": code, "redirect_uri": redirect,
             "code_verifier": pkce.verifier, "resource": resource.absoluteString
         ], previousRefresh: nil)
-        store.save(credentials, key: key)
+        try Task.checkCancellation()
+        credentials.resourceMetadataURL = Self.resourceMetadataURL(from: hint)
+        if persist { store.save(credentials, key: key) }
         return credentials
     }
 
     func refresh(_ stored: MCPOAuthCredentials) async throws -> MCPOAuthCredentials {
         guard let refreshToken = stored.refreshToken else { throw MCPOAuthError.signInRequired }
-        do {
-            let credentials = try await requestToken(endpoint: stored.tokenEndpoint, clientId: stored.clientId, clientSecret: stored.clientSecret, form: [
-                "grant_type": "refresh_token", "refresh_token": refreshToken, "resource": resource.absoluteString
-            ], previousRefresh: refreshToken)
-            store.save(credentials, key: key)
-            return credentials
-        } catch {
-            store.delete(key)
-            throw error
-        }
+        var credentials = try await requestToken(endpoint: stored.tokenEndpoint, clientId: stored.clientId, clientSecret: stored.clientSecret, form: [
+            "grant_type": "refresh_token", "refresh_token": refreshToken, "resource": resource.absoluteString
+        ], previousRefresh: refreshToken)
+        try Task.checkCancellation()
+        credentials.resourceMetadataURL = stored.resourceMetadataURL
+        if store.load(key) == stored { store.save(credentials, key: key) }
+        return credentials
     }
 
     static func formBody(_ form: [String: String]) -> Data {
@@ -279,6 +297,10 @@ actor MCPOAuthAuthorizer {
         request.httpBody = Self.formBody(form)
         let (data, response) = try await session.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        struct TokenError: Decodable { let error: String }
+        if status == 400, (try? JSONDecoder().decode(TokenError.self, from: data))?.error == "invalid_grant" {
+            throw MCPOAuthError.signInRequired
+        }
         guard (200 ..< 300).contains(status), let body = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let access = body["access_token"] as? String else {
             throw MCPOAuthError.tokenFailed("HTTP \(status)")

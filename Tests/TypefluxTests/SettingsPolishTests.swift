@@ -161,6 +161,148 @@ final class SettingsPolishTests: XCTestCase {
         }
     }
 
+    func testOAuthFromAgentSettingsThroughBrowserReturnAndReopen() async throws {
+        let previous = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previous) }
+        settings.appLanguage = .simplifiedChinese
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        let model = viewModel()
+        let store = MemoryTokenStore()
+        let resource = URL(string: "https://fixture.example/mcp")!
+        let key = resource.absoluteString
+        let session = OAuthStubProtocol.session()
+        model.mcpSession = session
+        model.mcpCredentialStore = store
+        let authRoutes = "fixture.example"
+        OAuthStubProtocol.routes = [
+            authRoutes + "/.well-known/oauth-authorization-server": { _, _ in
+                (200, [:], #"{"authorization_endpoint":"https://fixture.example/auth","token_endpoint":"https://fixture.example/token","registration_endpoint":"https://fixture.example/register"}"#)
+            },
+            authRoutes + "/register": { _, _ in (201, [:], #"{"client_id":"test"}"#) },
+            authRoutes + "/token": { _, _ in (200, [:], #"{"access_token":"test-only"}"#) },
+            authRoutes + "/mcp": { request, body in
+                guard request.value(forHTTPHeaderField: "Authorization") != nil else { return (401, ["WWW-Authenticate": "Bearer"], "{}") }
+                let message = try? JSONDecoder().decode(MCPJsonRPCMessage.self, from: body ?? Data())
+                guard let id = message?.id?.stringValue else { return (202, [:], "") }
+                let result = message?.method == "tools/list"
+                    ? #"{"tools":[{"name":"search_notes","description":"","inputSchema":{"type":"object"}}]}"#
+                    : #"{"protocolVersion":"2025-06-18","capabilities":{},"serverInfo":{"name":"Fixture","version":"1"}}"#
+                return (200, [:], #"{"jsonrpc":"2.0","id":"\#(id)","result":\#(result)}"#)
+            }
+        ]
+        defer { OAuthStubProtocol.routes = [:]; OAuthStubProtocol.requests = []; session.invalidateAndCancel() }
+        model.mcpOpenBrowser = { url in
+            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems
+            guard let redirect = items?.first(where: { $0.name == "redirect_uri" })?.value,
+                  var callback = URLComponents(string: redirect) else { return }
+            callback.queryItems = [items?.first { $0.name == "state" }, .init(name: "code", value: "test")].compactMap { $0 }
+            if let url = callback.url { _ = try? await URLSession.shared.data(from: url) }
+        }
+        func settle() async throws {
+            for _ in 0 ..< 400 where model.mcpConnectionTestState == .testing { try await Task.sleep(for: .milliseconds(10)) }
+            XCTAssertNotEqual(model.mcpConnectionTestState, .testing)
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        func press(_ label: String, in window: NSWindow) throws {
+            let element = try XCTUnwrap(elements(in: window.contentView!).first {
+                $0.accessibilityRole() == .button && $0.accessibilityLabel() == L(label)
+            }, "Missing button " + label)
+            try click(element, in: window)
+        }
+        try await withWindow(StudioView(viewModel: model), width: 1100, height: 800) { window, hosting in
+            let tab = try XCTUnwrap(self.elements(in: hosting).first {
+                $0.accessibilityRole() == .button && ($0.accessibilityLabel() ?? "").hasPrefix(AgentSettingsPane.mcpServers.title)
+            })
+            try self.click(tab, in: window)
+            try await Task.sleep(for: .milliseconds(100))
+            try press("agent.mcp.addServer", in: window)
+            try await Task.sleep(for: .milliseconds(150))
+            let sheet = try XCTUnwrap(window.attachedSheet)
+            model.mcpDraftName = "Notebook"
+            model.mcpDraftTransportType = .http
+            model.mcpDraftHTTPURL = key
+            try await Task.sleep(for: .milliseconds(100))
+            try press("agent.mcp.testConnection", in: sheet)
+            try await settle()
+            XCTAssertEqual(model.mcpAuthorization[resource], .required)
+            XCTAssertNil(store.load(key))
+            try self.capture(sheet.contentView!, name: "01-first-authorization")
+            try press("agent.mcp.oauth.signIn", in: sheet)
+            try await settle()
+            XCTAssertEqual(model.mcpAuthorization[resource], .authorized)
+            guard case let .success(tools) = model.mcpConnectionTestState else { return XCTFail("Expected loaded tools") }
+            XCTAssertEqual(tools.map(\.name), ["search_notes"])
+            try press("common.save", in: sheet)
+            try await Task.sleep(for: .milliseconds(250))
+            try self.capture(hosting, name: "02-server-list")
+            let row = try XCTUnwrap(self.elements(in: hosting).first {
+                $0.accessibilityRole() == .button && $0.accessibilityLabel() == L("agent.mcp.edit") + " Notebook"
+            })
+            window.makeKeyAndOrderFront(nil)
+            try self.click(row, in: window)
+            try await Task.sleep(for: .milliseconds(200))
+            let reopened = try XCTUnwrap(window.attachedSheet)
+            try self.capture(reopened.contentView!, name: "03-authorized")
+            try press("agent.mcp.oauth.again", in: reopened)
+            try await settle()
+            XCTAssertEqual(model.mcpAuthorization[resource], .authorized)
+            let existing = store.load(key)
+            let successfulRoute = try XCTUnwrap(OAuthStubProtocol.routes[authRoutes + "/mcp"])
+            OAuthStubProtocol.routes[authRoutes + "/mcp"] = { request, body in
+                let message = try? JSONDecoder().decode(MCPJsonRPCMessage.self, from: body ?? Data())
+                if message?.method == "tools/list" { return (503, [:], "{}") }
+                return successfulRoute(request, body)
+            }
+            model.testMCPDraftConnection()
+            try await settle()
+            XCTAssertEqual(model.mcpConnectionTestState, .failure(message: L("agent.mcp.toolsFailed")))
+            XCTAssertEqual(model.mcpAuthorization[resource], .authorized)
+            OAuthStubProtocol.routes[authRoutes + "/mcp"] = successfulRoute
+            model.mcpOpenBrowser = { _ in }
+            try press("agent.mcp.oauth.again", in: reopened)
+            try await Task.sleep(for: .milliseconds(120))
+            XCTAssertEqual(model.mcpAuthorizingURL, resource)
+            try self.capture(reopened.contentView!, name: "04-waiting")
+            try press("agent.mcp.oauth.cancel", in: reopened)
+            XCTAssertEqual(store.load(key), existing)
+            OAuthStubProtocol.routes[authRoutes + "/mcp"] = { _, _ in (503, [:], "{}") }
+            model.testMCPDraftConnection()
+            try await settle()
+            XCTAssertEqual(model.mcpAuthorization[resource], .authorized)
+            try self.capture(reopened.contentView!, name: "05-offline")
+            OAuthStubProtocol.routes[authRoutes + "/mcp"] = { _, _ in (401, ["WWW-Authenticate": "Bearer"], "{}") }
+            model.testMCPDraftConnection()
+            try await settle()
+            XCTAssertEqual(model.mcpAuthorization[resource], .expired)
+            try self.capture(reopened.contentView!, name: "06-expired")
+            let relaunched = self.viewModel()
+            relaunched.mcpCredentialStore = store
+            relaunched.beginEditMCPServer(try XCTUnwrap(relaunched.mcpServers.first))
+            relaunched.inspectMCPAuthorization(relaunched.mcpDraftResource)
+            XCTAssertEqual(relaunched.mcpAuthorization[resource], .saved)
+            AppLocalization.shared.setLanguage(.english)
+            try await self.render(MCPServerEditorView(viewModel: relaunched, onClose: {}),
+                                  name: "07-reopened", language: .english, appearance: .darkAqua, width: 520, height: 640)
+            relaunched.mcpDraftHTTPHeaders = "Authorization=fixture"
+            XCTAssertNil(relaunched.mcpDraftResource)
+            relaunched.mcpDraftTransportType = .stdio
+            XCTAssertNil(relaunched.mcpDraftResource)
+        }
+    }
+
+    private func capture(_ view: NSView, name: String) throws {
+        view.layoutSubtreeIfNeeded()
+        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+        XCTAssertGreaterThan(png.count, 4000)
+        if let output = ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_POLISH_SNAPSHOTS"] {
+            let directory = URL(fileURLWithPath: output)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try png.write(to: directory.appendingPathComponent(name + ".png"))
+        }
+    }
+
     func testMCPTestAndCancelActionsUseCurrentDraft() async throws {
         let model = viewModel()
         model.beginAddMCPServer()
