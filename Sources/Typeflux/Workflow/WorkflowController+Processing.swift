@@ -1375,9 +1375,11 @@ extension WorkflowController {
                 return
             }
 
-            let msg = "Processing failed: \(error.localizedDescription)"
-            ErrorLogStore.shared.log(msg)
-            markFailure(&record, message: msg)
+            let technicalMessage = "Processing failed: \(error.localizedDescription)"
+            ErrorLogStore.shared.log(technicalMessage)
+            let transcriptionFailed = record.transcriptionStatus == .running
+            let historyMessage = transcriptionFailed ? L("workflow.transcription.failureTitle") : technicalMessage
+            markFailure(&record, message: historyMessage)
             saveHistoryRecord(record)
             logPipelineEvent("pipeline-failed", for: record)
             UsageStatsStore.shared.recordSession(record: record)
@@ -1399,29 +1401,72 @@ extension WorkflowController {
                 }
                 return
             }
-            let retryableFailureRecord = record.audioFilePath == nil ? nil : record
-
+            let canRetry = transcriptionFailed
+                ? HistoryRetryPlanner.plan(for: record).isAvailable
+                : record.audioFilePath != nil
+            let retryableFailureRecord = canRetry ? record : nil
+            let hasConnectionFailure = ServerConnectivityFailure.matches(error)
             await MainActor.run {
-                if self.processingSessionID == sessionID {
-                    self.lastRetryableFailureRecord = retryableFailureRecord
-                    if ServerConnectivityFailure.matches(error) {
-                        self.soundEffectPlayer.play(.tip)
-                        self.appState.setStatus(.idle)
-                        self.overlayController.showPassiveNotice(
-                            message: L("workflow.transcription.serverUnavailableNotice")
-                        )
-                    } else {
-                        self.soundEffectPlayer.play(.error)
-                        self.appState.setStatus(.failed(message: L("workflow.processing.failed")))
-                        if retryableFailureRecord == nil {
-                            self.overlayController.showFailure(message: msg)
-                            self.overlayController.dismiss(after: 3.0)
-                        } else {
-                            self.overlayController.showRetryableFailure(message: msg)
-                        }
-                    }
+                guard self.processingSessionID == sessionID else { return }
+                self.lastRetryableFailureRecord = retryableFailureRecord
+                if hasConnectionFailure, !transcriptionFailed || canRetry {
+                    self.soundEffectPlayer.play(.tip)
+                    self.appState.setStatus(.idle)
+                    self.overlayController.showPassiveNotice(
+                        message: L("workflow.transcription.serverUnavailableNotice")
+                    )
+                    return
+                }
+
+                self.soundEffectPlayer.play(.error)
+                self.appState.setStatus(.failed(message: L(transcriptionFailed
+                    ? "workflow.transcription.failureTitle" : "workflow.processing.failed")))
+                if transcriptionFailed {
+                    self.showTranscriptionFailure(retryableRecord: retryableFailureRecord, intent: recordingIntent)
+                } else if retryableFailureRecord == nil {
+                    self.overlayController.showFailure(message: historyMessage)
+                    self.overlayController.dismiss(after: 3.0)
+                } else {
+                    self.overlayController.showRetryableFailure(message: historyMessage)
                 }
             }
+        }
+    }
+
+    @MainActor
+    private func showTranscriptionFailure(retryableRecord: HistoryRecord?, intent: RecordingIntent) {
+        var message = L("workflow.transcription.recordAgain")
+        var actions: [OverlayFailureAction] = []
+        if let retryableRecord {
+            message = L("workflow.transcription.recordingKept")
+            actions.append(OverlayFailureAction(title: L("common.retry"), isRetry: true) { [weak self] in
+                self?.retry(record: retryableRecord)
+            })
+        } else if intent == .dictation {
+            if let activationHotkey = settingsStore.activationHotkey, (activationHotkey.pressCount ?? 1) == 1 {
+                message = L("workflow.transcription.recordAgainShortcut", HotkeyFormat.display(activationHotkey))
+            } else {
+                message = L("workflow.transcription.recordingUnavailable")
+                actions.append(OverlayFailureAction(title: L("workflow.transcription.setRecordingShortcut"),
+                                                    isRetry: false) { [weak self] in
+                    self?.openVoiceShortcutSettings()
+                })
+            }
+        }
+        overlayController.showFailureWithActions(
+            title: L("workflow.transcription.failureTitle"), message: message,
+            staysUntilDismissed: true, actions: actions
+        )
+    }
+
+    @MainActor
+    private func openVoiceShortcutSettings() {
+        if FeatureProcess.enabled {
+            guard let data = try? JSONEncoder().encode(HelpSettingsDestination.shortcuts) else { return }
+            FeatureProcess.send(.init(destination: .host, action: "helpSettings", payload: data))
+        } else {
+            SettingsWindowController.shared.show(settingsStore: settingsStore, historyStore: historyStore)
+            SettingsWindowController.shared.requestSettingsPane(.hotkeys)
         }
     }
 

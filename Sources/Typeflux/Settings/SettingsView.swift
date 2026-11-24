@@ -1612,6 +1612,8 @@ struct StudioView: View {
                 title: focusedProviderTitle,
                 icon: viewModel.focusedModelProvider,
                 connected: focusedProviderConnected,
+                statusText: viewModel.focusedModelProvider == .typefluxOfficial && authState.isLoggedIn
+                    ? L("settings.models.account.signedIn") : nil,
                 backTitle: ModelPageTab.speech.title,
                 onBack: { viewModel.isShowingSpeechProviderDetail = false }
             )
@@ -2046,7 +2048,13 @@ struct StudioView: View {
                     Spacer(minLength: 8)
                     speechConnectionTestButton
                 }
-                connectionTestResultView(viewModel.sttConnectionTestState)
+                if authState.settledCloudASRAccess == false {
+                    TFNotice(text: L("settings.models.cloudSpeechAccessUnavailable"))
+                } else if authState.isCheckingCloudASRAccess {
+                    TFNotice(text: L("settings.models.cloudSpeechAccessChecking"))
+                } else {
+                    connectionTestResultView(viewModel.sttConnectionTestState)
+                }
             }
         } else {
             typefluxLoginRequiredForm(message: L("settings.models.typefluxOfficial.loginRequired"))

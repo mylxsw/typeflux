@@ -426,6 +426,9 @@ extension AppCoordinator {
             if let pane = AppSettingsPane(rawValue: String(decoding: command.payload, as: UTF8.self)) {
                 SettingsWindowController.shared.requestSettingsPane(pane)
             }
+        case "cloudAccountModelDefaultsApplied":
+            di.settingsStore.defaults.synchronize()
+            NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: di.settingsStore)
         case "refreshAuth", "refreshProfile", "refreshSubscription", "syncSubscription":
             guard FeatureProcess.role == .host,
                   try JSONDecoder().decode(Int.self, from: command.payload) == AuthState.shared.sessionGeneration

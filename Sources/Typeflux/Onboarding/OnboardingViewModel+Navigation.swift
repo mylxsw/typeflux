@@ -59,6 +59,12 @@ extension OnboardingViewModel {
             skipConfirmation = .allModels
             return
         }
+        if currentStep == .cloud, cloudModel.canContinue == true {
+            // Recheck before committing the setup the footer offered. An account
+            // refresh may have started before the new footer state was rendered.
+            cloudModel.updateReadiness()
+            guard cloudModel.canContinue == true else { return }
+        }
         let cloudSetupDeferred = currentStep == .cloud && (cloudModel.isBusy || cloudModel.canContinue != true)
         reportCurrentStepCompleted(skipped: cloudSetupDeferred)
         if currentStep == .cloud, !cloudSetupDeferred {

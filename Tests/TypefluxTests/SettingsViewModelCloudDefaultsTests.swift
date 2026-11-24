@@ -1,9 +1,14 @@
 @testable import Typeflux
+import Combine
+import SwiftUI
 import XCTest
 
 @MainActor
 final class SettingsViewModelCloudDefaultsTests: XCTestCase {
     func testCloudDefaultsNotificationSyncsModelSelectionState() async throws {
+        let originalLanguage = AppLocalization.shared.language
+        if CloudSpeechAcceptanceCapture.enabled { AppLocalization.shared.setLanguage(.simplifiedChinese) }
+        defer { AppLocalization.shared.setLanguage(originalLanguage) }
         let suiteName = "SettingsViewModelCloudDefaultsTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -24,13 +29,173 @@ final class SettingsViewModelCloudDefaultsTests: XCTestCase {
         settingsStore.sttProvider = .typefluxOfficial
         settingsStore.llmProvider = .openAICompatible
         settingsStore.llmRemoteProvider = .typefluxCloud
+        settingsStore.defaults.set("cloud:default", forKey: "llm.profile.reference")
         NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: settingsStore)
         try await Task.sleep(nanoseconds: 50_000_000)
 
         XCTAssertEqual(viewModel.sttProvider, .typefluxOfficial)
         XCTAssertEqual(viewModel.llmProvider, .openAICompatible)
         XCTAssertEqual(viewModel.llmRemoteProvider, .typefluxCloud)
+        XCTAssertEqual(viewModel.modelLibrary.rewriteReference, "cloud:default")
         XCTAssertEqual(viewModel.focusedModelProvider, .typefluxCloud)
+        XCTAssertEqual(viewModel.toastMessage, L("cloud.subscriptionSwitch.successBody"))
+    }
+
+    func testCloudSpeechTestDistinguishesCheckingFailureAndConfirmedDenial() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            settings.appLanguage = .simplifiedChinese
+            AppLocalization.shared.setLanguage(.simplifiedChinese)
+            settings.interfaceStyle = .classic
+            settings.appearanceMode = .light
+            let library = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
+            let profile = AskModelProfile(name: "DeepSeek", baseURL: "https://example.test/v1", model: "DeepSeek Flash")
+            try library.save(profile, key: "fixture")
+            library.defaultReference = profile.reference
+            library.rewriteReference = "cloud:default"
+            settings.sttProvider = .typefluxOfficial
+            let model = StudioViewModel(settingsStore: settings, historyStore: EmptyHistoryStore(),
+                                        initialSection: .models, modelManager: NoopOllamaModelManager(),
+                                        localModelManager: FixtureLocalModels(), modelLibrary: library)
+            model.selectModelPageTab(.scenes)
+            let auth = AuthState.shared
+            let priorSessionGeneration = auth.sessionGeneration
+            let priorGeneration = auth.subscriptionSnapshotGeneration
+            let priorSubscription = auth.subscription
+            let priorError = auth.subscriptionError
+            let priorLoading = auth.isLoadingSubscription
+            let priorLoadGeneration = auth.subscriptionLoadGeneration
+            let priorSyncGeneration = auth.subscriptionSyncGeneration
+            let priorProfile = auth.userProfile
+            let priorSessionToken = auth.inMemorySessionToken
+            let priorStoredToken = auth.cachedStoredToken
+            let priorRefreshToken = auth.cachedRefreshToken
+            // These windows can refresh account details on appearance. Keep them
+            // on the fixture even if another suite initialized shared auth.
+            auth.sessionGeneration += 1
+            auth.inMemorySessionToken = nil
+            auth.cachedStoredToken = nil
+            auth.cachedRefreshToken = nil
+            auth.isLoggedIn = true
+            auth.userProfile = UserProfile(id: "design-fixture", email: "preview@example.test", name: "示例账号",
+                                           status: 1, provider: "password", createdAt: "", updatedAt: "")
+            defer {
+                auth.isLoggedIn = false
+                auth.userProfile = priorProfile
+                auth.sessionGeneration = priorSessionGeneration
+                auth.subscriptionSnapshotGeneration = priorGeneration
+                auth.subscription = priorSubscription
+                auth.subscriptionError = priorError
+                auth.isLoadingSubscription = priorLoading
+                auth.subscriptionLoadGeneration = priorLoadGeneration
+                auth.subscriptionSyncGeneration = priorSyncGeneration
+                auth.inMemorySessionToken = priorSessionToken
+                auth.cachedStoredToken = priorStoredToken
+                auth.cachedRefreshToken = priorRefreshToken
+            }
+
+            if CloudSpeechAcceptanceCapture.enabled {
+                try await SettingsBehaviorTestSupport.withWindow(StudioView(viewModel: model),
+                                                                 width: 980, height: 555) { _, host in
+                    NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: settings)
+                    try await SettingsBehaviorTestSupport.wait { model.toastMessage != nil }
+                    try await Task.sleep(for: .milliseconds(250))
+                    try CloudSpeechAcceptanceCapture.save(host, name: "02-model-settings")
+                }
+            }
+
+            model.toastMessage = nil
+            model.selectModelPageTab(.speech)
+            model.focusModelProvider(.typefluxOfficial)
+            model.isShowingSpeechProviderDetail = true
+            let failedCheck = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil },
+                loadStoredUserProfile: { nil }, fetchSubscription: { _ in throw URLError(.timedOut) })
+            failedCheck.isLoggedIn = true
+            failedCheck.inMemorySessionToken = ("fixture-token", Int(Date().timeIntervalSince1970) + 3600)
+            failedCheck.subscriptionLoadGeneration = failedCheck.sessionGeneration
+            model.testSTTConnection(auth: failedCheck)
+            try await SettingsBehaviorTestSupport.wait { model.sttConnectionTestState == .idle }
+            XCTAssertTrue(failedCheck.isCheckingCloudASRAccess)
+            XCTAssertNil(failedCheck.settledCloudASRAccess)
+
+            failedCheck.subscriptionLoadGeneration = nil
+            auth.subscriptionSnapshotGeneration = nil
+            model.testSTTConnection(auth: failedCheck)
+            try await SettingsBehaviorTestSupport.wait {
+                if case let .notice(message) = model.sttConnectionTestState {
+                    return message == L("settings.models.cloudSpeechAccessCheckFailed")
+                }
+                return false
+            }
+            if CloudSpeechAcceptanceCapture.enabled {
+                try await SettingsBehaviorTestSupport.withWindow(StudioView(viewModel: model),
+                                                                 width: 980, height: 500) { _, host in
+                    try CloudSpeechAcceptanceCapture.save(host, name: "03b-permission-check-failed")
+                }
+            }
+
+            auth.subscription = .none
+            auth.subscriptionSnapshotGeneration = auth.sessionGeneration
+            auth.subscriptionError = nil
+            auth.isLoadingSubscription = false
+            auth.subscriptionLoadGeneration = nil
+            auth.subscriptionSyncGeneration = nil
+            XCTAssertEqual(FeatureAuth.capture().hasConfirmedSubscription, true)
+            model.testSTTConnection()
+            try await SettingsBehaviorTestSupport.wait {
+                if case let .notice(message) = model.sttConnectionTestState {
+                    return message == L("settings.models.cloudSpeechAccessUnavailable")
+                }
+                return false
+            }
+            if CloudSpeechAcceptanceCapture.enabled {
+                try await SettingsBehaviorTestSupport.withWindow(StudioView(viewModel: model),
+                                                                 width: 980, height: 500) { _, host in
+                    try CloudSpeechAcceptanceCapture.save(host, name: "03-speech-detail")
+                }
+            }
+        }
+    }
+
+    func testCloudRewriteSelectionShowsSavedSpeechProviderUntilSpeechIsSwitched() async throws {
+        let suiteName = "SettingsViewModelCloudDefaultsTests.rewriteOnly.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.sttProvider = .aliCloud
+        settingsStore.llmProvider = .openAICompatible
+        settingsStore.llmRemoteProvider = .openAI
+        let viewModel = StudioViewModel(
+            settingsStore: settingsStore,
+            historyStore: EmptyHistoryStore(),
+            initialSection: .models,
+            modelManager: NoopOllamaModelManager(),
+            localModelManager: NoopLocalSTTModelManager()
+        )
+        viewModel.setModelDomain(.stt)
+
+        let refreshed = expectation(description: "Cloud rewrite selection received")
+        let rewriteSelection = viewModel.$llmRemoteProvider.dropFirst().first().sink { provider in
+            XCTAssertEqual(provider, .typefluxCloud)
+            refreshed.fulfill()
+        }
+        defer { rewriteSelection.cancel() }
+        settingsStore.llmRemoteProvider = .typefluxCloud
+        NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: settingsStore)
+        await fulfillment(of: [refreshed], timeout: 2)
+
+        XCTAssertEqual(viewModel.sttProvider, .aliCloud)
+        XCTAssertEqual(viewModel.focusedModelProvider, .aliCloud)
+        XCTAssertEqual(settingsStore.sttProvider, .aliCloud)
+
+        let speechSelection = viewModel.$sttProvider.dropFirst().first().sink { provider in
+            XCTAssertEqual(provider, .typefluxOfficial)
+            XCTAssertEqual(settingsStore.sttProvider, provider)
+        }
+        defer { speechSelection.cancel() }
+        viewModel.setSTTProvider(.typefluxOfficial)
+        XCTAssertEqual(viewModel.sttProvider, .typefluxOfficial)
+        XCTAssertEqual(settingsStore.sttProvider, .typefluxOfficial)
+        XCTAssertEqual(viewModel.focusedModelProvider, .typefluxOfficial)
     }
 
     func testAliCloudModelConfigurationCanBeSelectedAndSaved() throws {

@@ -157,7 +157,8 @@ enum FeatureProcess {
                     }
                 }
             }
-            for name in [Notification.Name.authDidLogin, .authDidLogout, .authTokenDidRefresh, .authSubscriptionDidChange] {
+            for name in [Notification.Name.authDidLogin, .authDidLogout, .authTokenDidRefresh,
+                         .authSubscriptionDidChange, .authSubscriptionCheckDidFinish] {
                 observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
                     MainActor.assumeIsolated {
                         let snapshot = FeatureAuth.capture()

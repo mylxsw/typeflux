@@ -162,6 +162,12 @@ final class OverlayController {
         model.presentation == .resultDialog
     }
 
+    var failureMessageForTesting: String? {
+        model.presentation == .failure ? model.detailText : nil
+    }
+
+    var failureActionsForTesting: [OverlayFailureAction] { model.failureActions }
+
     var processingProgressForTesting: CGFloat {
         model.processingProgress
     }
@@ -608,6 +614,7 @@ final class OverlayController {
         title: String = L("overlay.failure.title"),
         message: String,
         tone: OverlayFailureTone = .error,
+        staysUntilDismissed: Bool = false,
         actions: [OverlayFailureAction]
     ) {
         if !Thread.isMainThread {
@@ -616,6 +623,7 @@ final class OverlayController {
                     title: title,
                     message: message,
                     tone: tone,
+                    staysUntilDismissed: staysUntilDismissed,
                     actions: actions
                 )
             }
@@ -629,7 +637,11 @@ final class OverlayController {
         model.detailText = message
         model.failureTone = tone
         model.failureActions = wrapFailureActions(actions)
-        startFailureCountdown()
+        if staysUntilDismissed {
+            cancelFailureCountdown()
+        } else {
+            startFailureCountdown()
+        }
         refreshWindow()
     }
 
@@ -1510,11 +1522,11 @@ final class OverlayController {
     private func installNSEventMonitorFallback() {
         guard eventTap == nil, runLoopSource == nil else { return }
         let globalMon = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            _ = self?.handleKeyCode(Int(event.keyCode))
+            _ = self?.handleKeyCode(Int(event.keyCode), modifiers: event.modifierFlags)
         }
         let localMon = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self else { return event }
-            return handleKeyCode(Int(event.keyCode)) ? nil : event
+            return handleKeyCode(Int(event.keyCode), modifiers: event.modifierFlags) ? nil : event
         }
         // Store monitors in the eventTap/runLoopSource slots is not possible,
         // so we use associated-object-free approach: keep them as "Any" via a side channel.
@@ -1579,13 +1591,13 @@ final class OverlayController {
         guard type == .keyDown else { return Unmanaged.passUnretained(event) }
 
         let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
-        if handleKeyCode(keyCode) {
+        if handleKeyCode(keyCode, modifiers: NSEvent.ModifierFlags(rawValue: UInt(event.flags.rawValue))) {
             return nil // consume the event
         }
         return Unmanaged.passUnretained(event)
     }
 
-    private func handleKeyCode(_ keyCode: Int) -> Bool {
+    private func handleKeyCode(_ keyCode: Int, modifiers: NSEvent.ModifierFlags = []) -> Bool {
         guard !keyboardCaptureSuspended else { return false }
         if model.presentation == .recordingHold || model.presentation == .recordingHoldPreview || model
             .presentation == .recordingLocked || model.presentation == .recordingLockedPreview {
@@ -1604,6 +1616,8 @@ final class OverlayController {
             }
             return false
         case .failure:
+            // Leave the user's recording chord available while the error card is open.
+            guard modifiers.intersection([.command, .option, .control, .shift, .function]).isEmpty else { return false }
             if keyCode == 53 {
                 model.requestDismiss()
                 return true

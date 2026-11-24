@@ -86,6 +86,14 @@ struct OnboardingRouteCloudTests {
             state.subscriptionError = nil
             session.cloudModel.retry()
             try await TestUI.wait { session.cloudModel.canContinue == true }
+            state.isLoadingSubscription = true
+            // The footer still has its previous render when the refresh starts.
+            #expect(session.cloudModel.canContinue == true)
+            session.advance()
+            #expect(session.currentStep == .cloud)
+            #expect(settings.sttProvider != .typefluxOfficial)
+            state.isLoadingSubscription = false
+            try await TestUI.wait { session.cloudModel.canContinue == true }
             session.advance()
             #expect(session.currentStep == .permissions)
             #expect(settings.sttProvider == .typefluxOfficial)
@@ -422,18 +430,22 @@ extension OnboardingRouteCloudTests {
             settings.sttProvider = .whisperAPI
             settings.llmProvider = .openAICompatible
             settings.llmRemoteProvider = .openAI
-            let session = session(settings, auth: auth())
+            let state = auth()
+            await state.refreshSubscription()
+            let session = session(settings, auth: state)
             session.resumeDeferredSetup()
             let prompt = CloudFixturePrompt()
-            let sync = CloudLoginSyncCoordinator(settingsStore: settings, promptPresenter: prompt,
-                                                 hasPaidCloudSubscription: { true })
+            let sync = CloudLoginSyncCoordinator(settingsStore: settings, authState: state, promptPresenter: prompt)
             defer { session.cloudModel.endSession() }
-            sync.offerCloudDefaultsIfNeeded()
+            NotificationCenter.default.post(name: .authDidLogin, object: state)
+            await Task.yield()
             #expect(prompt.calls == 0 && !LoginWindowController.shouldPresentWebLoginAlerts)
             session.cloudModel.endSession()
-            sync.offerCloudDefaultsIfNeeded()
+            NotificationCenter.default.post(name: .authDidLogin, object: state)
+            try await TestUI.wait { prompt.calls == 1 }
             #expect(prompt.calls == 1 && LoginWindowController.shouldPresentWebLoginAlerts)
             #expect(settings.sttProvider == .whisperAPI && settings.llmRemoteProvider == .openAI)
+            withExtendedLifetime(sync) {}
         }
     }
 
@@ -885,15 +897,4 @@ private final class CloudFixturePrompt: CloudModelDefaultsPrompting {
         calls += 1; return false
     }
 
-    func showCloudDefaultsApplied() {
-        calls += 1
-    }
-
-    func confirmSwitchToCloudLLMDefault() -> Bool {
-        calls += 1; return false
-    }
-
-    func showCloudLLMDefaultApplied() {
-        calls += 1
-    }
 }

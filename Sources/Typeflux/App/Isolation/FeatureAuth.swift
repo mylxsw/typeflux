@@ -8,11 +8,13 @@ struct FeatureAuth: Codable, Sendable {
     let expiresAt: Int?
     let profile: UserProfile?
     let subscription: BillingSubscriptionSnapshot
+    var hasConfirmedSubscription: Bool? = nil
 
     @MainActor static func capture() -> Self {
         let state = AuthState.shared
         return .init(generation: state.sessionGeneration, token: state.accessToken,
-            expiresAt: state.accessTokenExpiresAt, profile: state.userProfile, subscription: state.subscription)
+            expiresAt: state.accessTokenExpiresAt, profile: state.userProfile, subscription: state.subscription,
+            hasConfirmedSubscription: state.settledCloudASRAccess != nil)
     }
 
     /// A reconnected channel may still be draining cancelled work. Bootstrap is
@@ -44,6 +46,8 @@ struct FeatureAuth: Codable, Sendable {
         state.userProfile = profile
         state.isLoggedIn = profile != nil && token != nil
         state.subscription = subscription
+        state.subscriptionSnapshotGeneration = hasConfirmedSubscription == true ? generation : nil
+        if changedSession || hasConfirmedSubscription == true { state.subscriptionError = nil }
         if changedSession || previous != profile?.id {
             NotificationCenter.default.post(name: .authDidLogout, object: state)
             if profile != nil { NotificationCenter.default.post(name: .authDidLogin, object: state) }

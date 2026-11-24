@@ -13,16 +13,20 @@ extension Notification.Name {
 @MainActor
 protocol CloudModelDefaultsPrompting: AnyObject {
     func confirmSwitchToCloudDefaults() -> Bool
-    func showCloudDefaultsApplied()
-    func confirmSwitchToCloudLLMDefault() -> Bool
-    func showCloudLLMDefaultApplied()
 }
 
 @MainActor
 final class CloudModelDefaultsAlertPresenter: CloudModelDefaultsPrompting {
+    private let settingsStore: SettingsStore
+
+    init(settingsStore: SettingsStore) {
+        self.settingsStore = settingsStore
+    }
+
     func confirmSwitchToCloudDefaults() -> Bool {
         let alert = NSAlert()
         alert.alertStyle = .informational
+        alert.icon = AppIconController.image(for: settingsStore.appIconStyle)
         alert.messageText = L("cloud.subscriptionSwitch.title")
         alert.informativeText = L("cloud.subscriptionSwitch.body")
         alert.addButton(withTitle: L("cloud.subscriptionSwitch.confirm"))
@@ -30,84 +34,56 @@ final class CloudModelDefaultsAlertPresenter: CloudModelDefaultsPrompting {
         NSApp.activate(ignoringOtherApps: true)
         return alert.runModal() == .alertFirstButtonReturn
     }
-
-    func showCloudDefaultsApplied() {
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = L("cloud.subscriptionSwitch.successTitle")
-        alert.informativeText = L("cloud.subscriptionSwitch.successBody")
-        alert.addButton(withTitle: L("common.ok"))
-        NSApp.activate(ignoringOtherApps: true)
-        _ = alert.runModal()
-    }
-
-    func confirmSwitchToCloudLLMDefault() -> Bool {
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = L("cloud.freeLLMSwitch.title")
-        alert.informativeText = L("cloud.freeLLMSwitch.body")
-        alert.addButton(withTitle: L("cloud.freeLLMSwitch.confirm"))
-        alert.addButton(withTitle: L("cloud.subscriptionSwitch.keepCurrent"))
-        NSApp.activate(ignoringOtherApps: true)
-        return alert.runModal() == .alertFirstButtonReturn
-    }
-
-    func showCloudLLMDefaultApplied() {
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = L("cloud.subscriptionSwitch.successTitle")
-        alert.informativeText = L("cloud.freeLLMSwitch.successBody")
-        alert.addButton(withTitle: L("common.ok"))
-        NSApp.activate(ignoringOtherApps: true)
-        _ = alert.runModal()
-    }
 }
 
-/// Offers to switch STT and LLM selections to the Typeflux Cloud providers
-/// after explicit login, or after checkout confirms a paid Cloud subscription.
-///
-/// Listens for `.authDidLogin` and `.authCheckoutSubscriptionDidBecomeEntitled`,
-/// and is intentionally silent when both providers already point at Cloud.
+/// Offers Cloud defaults after explicit login or checkout once the current
+/// account's subscription check has settled.
 @MainActor
 final class CloudLoginSyncCoordinator {
+    private struct Offer: Equatable {
+        let generation: Int
+        let speech: STTProvider
+        let language: LLMProvider
+        let languageRemote: LLMRemoteProvider
+        let rewriteReference: String
+    }
+
     private let settingsStore: SettingsStore
+    private let authState: AuthState
     private let promptPresenter: CloudModelDefaultsPrompting
-    private let hasPaidCloudSubscription: @MainActor () -> Bool
     private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "CloudLoginSyncCoordinator")
     private var observers: [NSObjectProtocol] = []
+    private var pendingOffer: Offer?
+    private var presentingGeneration: Int?
 
     init(
         settingsStore: SettingsStore,
-        promptPresenter: CloudModelDefaultsPrompting? = nil,
-        hasPaidCloudSubscription: @escaping @MainActor () -> Bool = {
-            AuthState.shared.canUseCloudASR
-        }
+        authState: AuthState? = nil,
+        promptPresenter: CloudModelDefaultsPrompting? = nil
     ) {
         self.settingsStore = settingsStore
-        self.promptPresenter = promptPresenter ?? CloudModelDefaultsAlertPresenter()
-        self.hasPaidCloudSubscription = hasPaidCloudSubscription
-        observers.append(NotificationCenter.default.addObserver(
-            forName: .authDidLogin,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            Task { @MainActor [weak self] in
-                guard notification.object is AuthState else {
-                    self?.logger.debug("Login notification missing AuthState; skipping cloud defaults prompt")
-                    return
+        self.authState = authState ?? AuthState.shared
+        self.promptPresenter = promptPresenter ?? CloudModelDefaultsAlertPresenter(settingsStore: settingsStore)
+        let notifications: [Notification.Name] = [
+            .authDidLogin, .authCheckoutSubscriptionDidBecomeEntitled, .authSubscriptionCheckDidFinish, .authDidLogout
+        ]
+        for name in notifications {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) {
+                [weak self] notification in
+                MainActor.assumeIsolated {
+                    guard let self, (notification.object as? AuthState) === self.authState else { return }
+                    if name == .authDidLogout {
+                        self.pendingOffer = nil
+                        return
+                    }
+                    if name != .authSubscriptionCheckDidFinish {
+                        self.queueOffer()
+                    }
+                    guard self.pendingOffer != nil else { return }
+                    Task { @MainActor [weak self] in self?.presentPendingOffer() }
                 }
-                self?.offerCloudDefaultsIfNeeded()
-            }
-        })
-        observers.append(NotificationCenter.default.addObserver(
-            forName: .authCheckoutSubscriptionDidBecomeEntitled,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.offerCloudDefaultsIfNeeded()
-            }
-        })
+            })
+        }
     }
 
     deinit {
@@ -116,65 +92,65 @@ final class CloudLoginSyncCoordinator {
         }
     }
 
-    /// Exposed for tests; in production triggered after login, or after checkout
-    /// confirms a newly entitled or newly paid subscription.
-    func offerCloudDefaultsIfNeeded() {
-        // Onboarding applies its chosen route explicitly, including resumed setup.
-        // Account notifications must not open a second modal during that session.
-        guard settingsStore.isOnboardingCompleted, OnboardingCloudModel.activeSession == nil else { return }
-        guard hasPaidCloudSubscription() else {
-            offerCloudLLMDefaultIfNeeded()
-            return
-        }
-        let alreadySTTCloud = settingsStore.sttProvider == .typefluxOfficial
-        let alreadyLLMCloud = settingsStore.llmProvider == .openAICompatible
-            && settingsStore.llmRemoteProvider == .typefluxCloud
-
-        guard !(alreadySTTCloud && alreadyLLMCloud) else {
-            logger.debug("Cloud providers already selected; skipping cloud defaults prompt")
-            return
-        }
-
-        guard promptPresenter.confirmSwitchToCloudDefaults() else {
-            logger.debug("User kept existing model providers after subscription")
-            return
-        }
-
-        applyCloudDefaults()
-        promptPresenter.showCloudDefaultsApplied()
+    private var currentOffer: Offer? {
+        guard authState.isLoggedIn, settingsStore.isOnboardingCompleted,
+              OnboardingCloudModel.activeSession == nil else { return nil }
+        return Offer(generation: authState.sessionGeneration, speech: settingsStore.sttProvider,
+                     language: settingsStore.llmProvider, languageRemote: settingsStore.llmRemoteProvider,
+                     rewriteReference: settingsStore.rewriteModelReference)
     }
 
-    private func applyCloudDefaults() {
+    private func queueOffer() {
+        guard let offer = currentOffer, offer.generation != presentingGeneration else { return }
+        pendingOffer = offer
+    }
+
+    private func presentPendingOffer() {
+        guard presentingGeneration == nil, let offer = pendingOffer else { return }
+        // A different account, onboarding, or a new model choice supersedes a queued offer.
+        guard currentOffer == offer else {
+            pendingOffer = nil
+            return
+        }
+        guard let canUseSpeech = authState.settledCloudASRAccess else { return }
+        pendingOffer = nil
+        guard canUseSpeech else { return }
+        let alreadyUsesCloudRewrite = settingsStore.effectiveLLMProvider == .openAICompatible
+            && settingsStore.textLLMConfiguration().provider == .typefluxCloud
+        guard !alreadyUsesCloudRewrite || offer.speech != .typefluxOfficial else { return }
+
+        presentingGeneration = offer.generation
+        defer {
+            presentingGeneration = nil
+            if pendingOffer != nil {
+                Task { @MainActor [weak self] in self?.presentPendingOffer() }
+            }
+        }
+        logger.debug("Offering Cloud defaults for speech and rewrite")
+        guard promptPresenter.confirmSwitchToCloudDefaults(), currentOffer == offer else { return }
+        guard authState.settledCloudASRAccess == true else {
+            pendingOffer = offer
+            return
+        }
+
         settingsStore.sttProvider = .typefluxOfficial
         settingsStore.localOptimizationEnabled = false
         settingsStore.onboardingSpeechDeferred = false
-        applyCloudLanguageModel()
+        if !alreadyUsesCloudRewrite {
+            applyCloudLanguageModel()
+        }
         NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: settingsStore)
+        if FeatureProcess.enabled {
+            settingsStore.defaults.synchronize()
+            FeatureProcess.send(.init(destination: .settings, action: "cloudAccountModelDefaultsApplied"))
+        }
     }
 
     private func applyCloudLanguageModel() {
         settingsStore.llmProvider = .openAICompatible
         settingsStore.llmRemoteProvider = .typefluxCloud
-        settingsStore.defaults.set("cloud:default", forKey: "ask.model.default")
         settingsStore.defaults.set("cloud:default", forKey: "llm.profile.reference")
         settingsStore.onboardingAIDeferred = false
         settingsStore.applyDefaultPersonaIfLLMConfigured()
-    }
-
-    private func offerCloudLLMDefaultIfNeeded() {
-        let alreadyLLMCloud = settingsStore.llmProvider == .openAICompatible
-            && settingsStore.llmRemoteProvider == .typefluxCloud
-        guard !alreadyLLMCloud else {
-            logger.debug("Typeflux Cloud LLM is already selected; skipping free-plan prompt")
-            return
-        }
-        guard promptPresenter.confirmSwitchToCloudLLMDefault() else {
-            logger.debug("User kept the existing LLM provider after login")
-            return
-        }
-
-        applyCloudLanguageModel()
-        NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: settingsStore)
-        promptPresenter.showCloudLLMDefaultApplied()
     }
 }

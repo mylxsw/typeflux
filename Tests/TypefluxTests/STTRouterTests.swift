@@ -92,8 +92,12 @@ private final class MockRecordingPrewarmingTranscriber: RecordingPrewarmingTrans
 
 private final class MockRealtimeFactory: RealtimeTranscriptionSessionFactory {
     var sessionCount = 0
+    var transcribeCallCount = 0
 
-    func transcribe(audioFile _: AudioFile) async throws -> String { "transcribed" }
+    func transcribe(audioFile _: AudioFile) async throws -> String {
+        transcribeCallCount += 1
+        return "transcribed"
+    }
 
     func makeRealtimeTranscriptionSession(
         scenario _: TypefluxCloudScenario,
@@ -1125,6 +1129,29 @@ final class STTRouterTests: XCTestCase {
 
         XCTAssertNotNil(session)
         XCTAssertEqual(factory.sessionCount, 1)
+    }
+
+    func testNextRecordingUsesCloudAfterChangingTheSavedSpeechProvider() async throws {
+        let alibaba = MockRealtimeFactory()
+        let cloud = MockRealtimeFactory()
+        settings.sttProvider = .aliCloud
+        let router = makeRouter(aliCloudOverride: alibaba, typefluxOfficialOverride: cloud)
+
+        let firstSession = await router.makeRealtimeTranscriptionSession { _ in }
+        XCTAssertNotNil(firstSession)
+        XCTAssertEqual(alibaba.sessionCount, 1)
+        XCTAssertEqual(cloud.sessionCount, 0)
+
+        let settingsPaneStore = SettingsStore(defaults: try XCTUnwrap(UserDefaults(suiteName: suiteName)))
+        settingsPaneStore.sttProvider = .typefluxOfficial
+
+        let nextSession = await router.makeRealtimeTranscriptionSession { _ in }
+        XCTAssertNotNil(nextSession)
+        _ = try await router.transcribeStream(audioFile: dummyAudioFile()) { _ in }
+        XCTAssertEqual(cloud.sessionCount, 1)
+        XCTAssertEqual(cloud.transcribeCallCount, 1)
+        XCTAssertEqual(alibaba.sessionCount, 1)
+        XCTAssertEqual(alibaba.transcribeCallCount, 0)
     }
 
     func testRoutesTypefluxOfficialWithProvidedBusinessScenario() async throws {

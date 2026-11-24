@@ -5,9 +5,26 @@ extension AuthState {
     // MARK: - Subscription
 
     var canUseCloudASR: Bool {
-        !isLoadingSubscription
+        !isCheckingCloudASRAccess
             && subscriptionError == nil
             && subscription.cloudASRAllowed
+    }
+
+    var confirmedCloudASRAccess: Bool? {
+        guard isLoggedIn, subscriptionSnapshotGeneration == sessionGeneration else { return nil }
+        return subscription.cloudASRAllowed
+    }
+
+    var isCheckingCloudASRAccess: Bool {
+        if !FeatureProcess.owns(.host) {
+            return isLoadingSubscription || isSyncingSubscription
+        }
+        return subscriptionLoadGeneration == sessionGeneration || subscriptionSyncGeneration == sessionGeneration
+    }
+
+    var settledCloudASRAccess: Bool? {
+        guard !isCheckingCloudASRAccess, subscriptionError == nil else { return nil }
+        return confirmedCloudASRAccess
     }
 
     func refreshSubscriptionIfNeeded() {
@@ -41,6 +58,9 @@ extension AuthState {
             if subscriptionLoadGeneration == generation {
                 subscriptionLoadGeneration = nil
                 isLoadingSubscription = false
+                if sessionGeneration == generation {
+                    NotificationCenter.default.post(name: .authSubscriptionCheckDidFinish, object: self)
+                }
             }
         }
 
@@ -84,6 +104,9 @@ extension AuthState {
             if subscriptionSyncGeneration == generation {
                 subscriptionSyncGeneration = nil
                 isSyncingSubscription = false
+                if sessionGeneration == generation {
+                    NotificationCenter.default.post(name: .authSubscriptionCheckDidFinish, object: self)
+                }
             }
         }
 
@@ -275,6 +298,7 @@ extension AuthState {
         let hadPaidSubscription = subscription.hasPaidSubscription
         let subscriptionChanged = subscription != snapshot
         subscription = snapshot
+        subscriptionSnapshotGeneration = sessionGeneration
         subscriptionError = nil
         if subscriptionChanged {
             NotificationCenter.default.post(name: .authSubscriptionDidChange, object: self)

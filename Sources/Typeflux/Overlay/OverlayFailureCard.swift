@@ -164,10 +164,13 @@ struct OverlayFailureFooter: View {
                 }
                 .buttonStyle(.plain)
             } else if onClose == nil, let hint = layout.hint {
-                Text(hint)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(Color.white.opacity(0.38))
-                    .lineLimit(1)
+                ViewThatFits(in: .horizontal) {
+                    Text(hint).fixedSize(horizontal: true, vertical: false)
+                    Text(L("overlay.failure.hint.dismiss")).fixedSize(horizontal: true, vertical: false)
+                    EmptyView()
+                }
+                .font(.system(size: 11.5))
+                .foregroundStyle(Color.white.opacity(0.55))
             }
             Spacer(minLength: 8)
             if let onClose {

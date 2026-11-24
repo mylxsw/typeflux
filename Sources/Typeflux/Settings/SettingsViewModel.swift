@@ -586,6 +586,7 @@ final class StudioViewModel: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.syncCloudAccountModelsFromStore()
+                self?.showToast(L("cloud.subscriptionSwitch.successBody"))
             }
         }
         localModelDownloadProgressObserver = NotificationCenter.default.addObserver(
@@ -1285,9 +1286,9 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setSTTProvider(_ provider: STTProvider) {
-        sttProvider = provider
         settingsStore.sttProvider = provider
         settingsStore.onboardingSpeechDeferred = false
+        sttProvider = settingsStore.sttProvider
         switch provider {
         case .freeModel:
             focusedModelProvider = .freeSTT
@@ -1450,10 +1451,11 @@ final class StudioViewModel: ObservableObject {
     }
 
     private func syncCloudAccountModelsFromStore() {
-        sttProvider = .typefluxOfficial
-        llmProvider = .openAICompatible
-        llmRemoteProvider = .typefluxCloud
-        loadLLMConfiguration(for: .typefluxCloud)
+        sttProvider = settingsStore.sttProvider
+        llmProvider = settingsStore.llmProvider
+        llmRemoteProvider = settingsStore.llmRemoteProvider
+        loadLLMConfiguration(for: llmRemoteProvider)
+        modelLibrary.reloadFeaturePreferences()
         focusedModelProvider = activeProvider(for: modelDomain)
         sttConnectionTestState = .idle
         llmConnectionTestState = .idle
@@ -2948,16 +2950,8 @@ final class StudioViewModel: ObservableObject {
         }
     }
 
-    func testSTTConnection() {
+    func testSTTConnection(auth: AuthState = .shared) {
         sttTestTask?.cancel()
-
-        if focusedModelProvider == .typefluxOfficial, !AuthState.shared.canUseCloudASR {
-            sttConnectionTestState = .notice(
-                message: TypefluxCloudASRDirectiveError().localizedDescription
-            )
-            return
-        }
-
         sttConnectionTestState = .testing
 
         let capturedProvider = focusedModelProvider
@@ -2983,6 +2977,27 @@ final class StudioViewModel: ObservableObject {
         let capturedSonioxModel = sonioxModel
 
         sttTestTask = Task {
+            if capturedProvider == .typefluxOfficial {
+                let generation = auth.sessionGeneration
+                if auth.isLoggedIn, auth.settledCloudASRAccess == nil, !auth.isCheckingCloudASRAccess {
+                    await auth.refreshSubscription()
+                }
+                guard !Task.isCancelled else { return }
+                guard generation == auth.sessionGeneration, auth.isLoggedIn else {
+                    sttConnectionTestState = .idle
+                    return
+                }
+                switch auth.settledCloudASRAccess {
+                case true?: break
+                case false?:
+                    sttConnectionTestState = .notice(message: L("settings.models.cloudSpeechAccessUnavailable"))
+                    return
+                case nil:
+                    sttConnectionTestState = auth.isCheckingCloudASRAccess
+                        ? .idle : .notice(message: L("settings.models.cloudSpeechAccessCheckFailed"))
+                    return
+                }
+            }
             let startDate = Date()
 
             do {

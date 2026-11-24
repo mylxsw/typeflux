@@ -18,6 +18,9 @@ extension Notification.Name {
     /// Posted after the server-backed subscription snapshot is refreshed.
     static let authSubscriptionDidChange = Notification.Name("AuthState.authSubscriptionDidChange")
 
+    /// Posted when a subscription read or sync finishes for the current session.
+    static let authSubscriptionCheckDidFinish = Notification.Name("AuthState.authSubscriptionCheckDidFinish")
+
     /// Posted on the main actor when a checkout-started subscription refresh
     /// observes that the account has become entitled to Typeflux Cloud or has
     /// upgraded from a free/non-paid plan to a paid Cloud subscription.
@@ -111,6 +114,8 @@ final class AuthState: ObservableObject {
     var sessionGeneration = 0
     /// Profile refreshes that are running; `isLoading` is true while any is.
     var profileRefreshesInFlight = 0
+    /// The session that supplied the last subscription response from the server.
+    var subscriptionSnapshotGeneration: Int?
     /// The session whose subscription, usage or usage breakdown load is
     /// running, if any. The matching `isLoading…` flag belongs to that load.
     var subscriptionLoadGeneration: Int?
@@ -258,6 +263,7 @@ final class AuthState: ObservableObject {
         isLoggedIn = false
         userProfile = nil
         subscription = .none
+        subscriptionSnapshotGeneration = nil
         subscriptionError = nil
         subscriptionSyncGeneration = nil
         isSyncingSubscription = false

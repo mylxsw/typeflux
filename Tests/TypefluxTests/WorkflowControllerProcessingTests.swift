@@ -1555,9 +1555,13 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(historyStore.list().last?.applyStatus, .skipped)
     }
 
-    func testConnectivityFailureKeepsRecordingRetryableAndShowsPassiveNotice() async {
+    func testConnectivityFailureKeepsRecordingRetryableAndShowsPassiveNotice() async throws {
         let historyStore = MockProcessingHistoryStore()
-        let audioPath = "/tmp/connectivity-fallback.wav"
+        let audioURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("connectivity-fallback-\(UUID().uuidString).wav")
+        try Data().write(to: audioURL)
+        defer { try? FileManager.default.removeItem(at: audioURL) }
+        let audioPath = audioURL.path
         let controller = makeWorkflowController(
             sttTranscriber: MockProcessingTranscriber(error: URLError(.cannotConnectToHost)),
             historyStore: historyStore,
@@ -1586,6 +1590,70 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(controller.lastRetryableFailureRecord?.audioFilePath, audioPath)
         XCTAssertTrue(controller.overlayController.isShowingPassiveNotice)
         XCTAssertEqual(historyStore.list().last?.transcriptionStatus, .failed)
+    }
+
+    @MainActor
+    func testSpeechServiceBadResponseOffersRetryOnlyWhenTheRecordingCanBeRetried() async throws {
+        let previousLanguage = AppLocalization.shared.language
+        if CloudSpeechAcceptanceCapture.enabled { AppLocalization.shared.setLanguage(.simplifiedChinese) }
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        let audioURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("speech-service-failure-\(UUID().uuidString).wav")
+        defer { try? FileManager.default.removeItem(at: audioURL) }
+
+        let cases: [(Bool, HotkeyBinding?, String, String)] = [
+            (false, .defaultActivation, L("workflow.transcription.recordAgainShortcut", "Fn"), "04-default-shortcut"),
+            (false, .rightCommandActivation, L("workflow.transcription.recordAgainShortcut", "⌘(R)"), "05-custom-shortcut"),
+            (false, nil, L("workflow.transcription.recordingUnavailable"), "06-no-shortcut"),
+            (true, .defaultActivation, L("workflow.transcription.recordingKept"), "07-retry")
+        ]
+        for (hasRecording, shortcut, expectedMessage, name) in cases {
+            if hasRecording { try Data().write(to: audioURL) }
+            let historyStore = MockProcessingHistoryStore()
+            let controller = makeWorkflowController(
+                sttTranscriber: MockProcessingTranscriber(error: URLError(.badServerResponse)),
+                historyStore: historyStore,
+                configureSettings: {
+                    $0.sttProvider = .aliCloud
+                    $0.activationHotkey = shortcut
+                }
+            )
+
+            await controller.process(
+                audioFile: AudioFile(fileURL: audioURL, duration: 1),
+                record: HistoryRecord(
+                    date: Date(),
+                    audioFilePath: audioURL.path,
+                    recordingStatus: .succeeded,
+                    transcriptionStatus: .running
+                ),
+                selectionSnapshot: TextSelectionSnapshot(),
+                selectedText: nil,
+                askContextText: nil,
+                inputContext: nil,
+                personaPrompt: nil,
+                recordingIntent: .dictation,
+                sessionID: controller.processingSessionID
+            )
+
+            XCTAssertEqual(historyStore.list().last?.transcriptionStatus, .failed)
+            XCTAssertEqual(historyStore.list().last?.errorMessage, L("workflow.transcription.failureTitle"))
+            XCTAssertEqual(controller.lastRetryableFailureRecord?.audioFilePath, hasRecording ? audioURL.path : nil)
+            XCTAssertEqual(controller.overlayController.failureMessageForTesting, expectedMessage)
+            XCTAssertNil(controller.overlayController.failureCountdownForTesting)
+            let actions = controller.overlayController.failureActionsForTesting
+            XCTAssertEqual(actions.map(\.isRetry), hasRecording ? [true] : shortcut == nil ? [false] : [])
+            if shortcut == nil {
+                XCTAssertEqual(actions.first?.title, L("workflow.transcription.setRecordingShortcut"))
+            }
+            if CloudSpeechAcceptanceCapture.enabled {
+                try await Task.sleep(for: .milliseconds(500))
+                try CloudSpeechAcceptanceCapture.save(
+                    XCTUnwrap(controller.overlayController.presentedWindow?.contentView), name: name
+                )
+                controller.overlayController.dismissImmediately()
+            }
+        }
     }
 
     func testDecideAskSelectionThrowsConfigurationErrorWhenLLMIsNotConfigured() async {
@@ -3090,7 +3158,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let settingsStore = settingsStoreOverride ?? makeTestSettingsStore()
         configureSettings?(settingsStore)
         let appState = AppStateStore()
-        let overlayController = OverlayController(appState: appState)
+        let overlayController = OverlayController(appState: appState, settingsStore: settingsStore)
 
         let controller = WorkflowController(
             appState: appState,

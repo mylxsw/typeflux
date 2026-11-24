@@ -108,6 +108,7 @@ struct ModelDetailHeader: View {
     let title: String
     let icon: StudioModelProviderID
     let connected: Bool
+    var statusText: String?
     var backTitle: String?
     var onBack: (() -> Void)?
 
@@ -122,8 +123,8 @@ struct ModelDetailHeader: View {
                     .foregroundStyle(TFColors.textPrimary)
                     .accessibilityIdentifier("models.provider.title")
                 Spacer(minLength: 12)
-                TFStatusLabel(text: L(connected ? "models.configured" : "models.notConfigured"),
-                              level: connected ? .success : .neutral)
+                TFStatusLabel(text: statusText ?? L(connected ? "models.configured" : "models.notConfigured"),
+                              level: statusText == nil && connected ? .success : .neutral)
             }
         }
     }
