@@ -2412,7 +2412,10 @@
 "ask.reasoning.snapped" = "이 모델은 “%@”을(를) 지원하지 않아 “%@”(으)로 바꿨습니다";
 
 "models.protocol" = "프로토콜";
-"models.protocolHint" = "제공업체가 지원하는 API 프로토콜을 선택하세요.";
+"models.addEndpointHint" = "연결을 저장한 후 제공업체 상세 화면에서 모델을 추가할 수 있습니다.";
+"models.awaitingModels" = "모델 추가 필요";
+"models.addFirstModelsHint" = "제공업체에서 모델을 불러오거나 모델 ID를 직접 입력하세요.";
+"models.invalidConnection" = "이름과 유효한 HTTPS API URL을 입력하세요(로컬 호스트에는 HTTP를 사용할 수 있습니다).";
 "models.protocolUnsupported" = "지원하지 않는 프로토콜입니다. 다른 프로토콜을 선택하거나 Typeflux를 업데이트하세요.";
 "ask.tool.automationUnavailable" = "화면과 페이지 조회만 사용할 수 있습니다. 클릭, 입력 등의 조작은 사용할 수 없습니다.";
 "ask.tool.observationExpired" = "대상이 변경되었거나 관찰 정보가 만료되었습니다. 화면을 캡처하거나 대상을 다시 읽은 후 조작하세요.";

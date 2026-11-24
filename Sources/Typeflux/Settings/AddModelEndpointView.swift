@@ -3,17 +3,17 @@ import SwiftUI
 /// Sheet for registering a model endpoint and its wire protocol.
 struct AddModelEndpointView: View {
     @ObservedObject var library: AskModelLibrary
+    let onCreated: (String) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var endpoint = "https://"
     @State private var key = ""
-    @State private var model = ""
     @State private var apiStyle = LLMRemoteAPIStyle.openAICompatible
     @State private var showsKey = false
     @State private var error: String?
 
     private var canSave: Bool {
-        ModelSettingsPresentation.canAddEndpoint(name: name, baseURL: endpoint, model: model)
+        RegisteredProvider.connectionURL(name: name, baseURL: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)) != nil
     }
 
     var body: some View {
@@ -25,7 +25,7 @@ struct AddModelEndpointView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L("models.addEndpoint")).font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text(L("models.protocolHint")).font(.system(size: 12.5))
+                    Text(L("models.addEndpointHint")).font(.system(size: 12.5))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -37,6 +37,7 @@ struct AddModelEndpointView: View {
                     formRow(L("ask.models.name")) {
                         TextField(L("ask.models.name"), text: $name)
                             .textFieldStyle(ModelFieldStyle(monospaced: false))
+                            .accessibilityIdentifier("models.addProvider.name")
                     }
                     ModelRowDivider()
                     formRow(L("models.protocol")) {
@@ -51,14 +52,10 @@ struct AddModelEndpointView: View {
                     formRow(L("ask.models.url")) {
                         TextField("https://api.example.com/v1", text: $endpoint)
                             .textFieldStyle(ModelFieldStyle())
+                            .accessibilityIdentifier("models.addProvider.endpoint")
                     }
                     ModelRowDivider()
                     formRow("API Key") { keyField }
-                    ModelRowDivider()
-                    formRow(L("ask.models.modelID")) {
-                        TextField("gpt-5-sol", text: $model)
-                            .textFieldStyle(ModelFieldStyle())
-                    }
                 }
             }
 
@@ -119,12 +116,8 @@ struct AddModelEndpointView: View {
     private func save() {
         guard canSave else { return }
         do {
-            // Pasted values often carry stray whitespace that would fail URL validation.
-            let trim: (String) -> String = { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            try library.save(
-                .init(name: trim(name), baseURL: trim(endpoint), model: trim(model), apiStyle: apiStyle),
-                key: trim(key)
-            )
+            let providerID = try library.addCustomProvider(name: name, baseURL: endpoint, key: key, apiStyle: apiStyle)
+            onCreated(providerID)
             dismiss()
         } catch { self.error = error.localizedDescription }
     }

@@ -7,6 +7,7 @@ struct ModelProviderRowData: Identifiable {
     let detail: String
     let icon: StudioModelProviderID
     let available: Bool
+    var statusText: String?
 }
 
 /// Grouped-list provider row: logo, name, detail line, connection state and disclosure chevron.
@@ -19,7 +20,7 @@ struct ModelProviderRow: View {
             TFLogoTile { ModelProviderIcon(provider: row.icon, size: 20) }
                 .opacity(row.available ? 1 : 0.55)
         } accessory: {
-            TFStatusLabel(text: L(row.available ? "models.configured" : "models.notConfigured"),
+            TFStatusLabel(text: row.statusText ?? L(row.available ? "models.configured" : "models.notConfigured"),
                           level: row.available ? .success : .neutral)
             TFChevron()
         }

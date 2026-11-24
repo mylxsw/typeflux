@@ -48,6 +48,7 @@ struct RegisteredProvider: Codable, Equatable, Identifiable, Sendable {
     var apiStyle: LLMRemoteAPIStyle?
     var effectiveAPIStyle: LLMRemoteAPIStyle { apiStyle ?? remote?.apiStyle ?? .openAICompatible }
     var supportsProtocolSelection: Bool { !isOllama && (remote == nil || remote == .custom) }
+    var isAwaitingModels: Bool { id.hasPrefix("endpoint:") && !baseURL.isEmpty && models.isEmpty }
     var isOllama: Bool {
         id == "ollama"
     }
@@ -59,6 +60,15 @@ struct RegisteredProvider: Codable, Equatable, Identifiable, Sendable {
 
     var isCloud: Bool {
         remote == .typefluxCloud
+    }
+
+    static func connectionURL(name: String, baseURL: String) -> URL? {
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let url = URL(string: baseURL), let host = url.host, !host.isEmpty,
+              url.user == nil, url.password == nil, url.query == nil, url.fragment == nil else { return nil }
+        let scheme = url.scheme?.lowercased()
+        let isLocal = ["localhost", "127.0.0.1", "::1", "[::1]"].contains(host)
+        return scheme == "https" || (scheme == "http" && isLocal) ? url : nil
     }
 }
 

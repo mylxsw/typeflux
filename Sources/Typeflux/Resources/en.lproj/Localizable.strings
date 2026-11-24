@@ -2422,7 +2422,10 @@
 "ask.reasoning.snapped" = "This model does not offer “%@”; using “%@”";
 
 "models.protocol" = "Protocol";
-"models.protocolHint" = "Choose the API protocol supported by this provider.";
+"models.addEndpointHint" = "Add the connection here, then choose the models you want to use.";
+"models.awaitingModels" = "Awaiting models";
+"models.addFirstModelsHint" = "Load models from the provider, or enter a model ID manually.";
+"models.invalidConnection" = "Enter a name and a valid HTTPS API URL (HTTP is allowed for localhost).";
 "models.protocolUnsupported" = "This protocol is not supported. Select another protocol or update Typeflux.";
 "ask.tool.automationUnavailable" = "Only screen and page observation is available. Clicking, typing and other control actions are unavailable.";
 "ask.tool.observationExpired" = "The target changed or its observation expired. Capture the screen or read the target again before acting.";

@@ -2412,7 +2412,10 @@
 "ask.reasoning.snapped" = "このモデルは「%@」に対応していないため、「%@」にしました";
 
 "models.protocol" = "プロトコル";
-"models.protocolHint" = "プロバイダーが対応する API プロトコルを選択してください。";
+"models.addEndpointHint" = "接続を保存したあと、プロバイダーの詳細画面でモデルを追加できます。";
+"models.awaitingModels" = "モデル未追加";
+"models.addFirstModelsHint" = "プロバイダーからモデルを読み込むか、モデル ID を手入力してください。";
+"models.invalidConnection" = "名前と有効な HTTPS API URL を入力してください（ローカルホストでは HTTP も使用できます）。";
 "models.protocolUnsupported" = "このプロトコルには対応していません。別のプロトコルを選択するか、Typeflux を更新してください。";
 "ask.tool.automationUnavailable" = "画面やページの表示のみ利用できます。クリック、入力などの操作は利用できません。";
 "ask.tool.observationExpired" = "対象が変わったか、観察情報の有効期限が切れました。画面を撮影するか対象を読み直してから操作してください。";

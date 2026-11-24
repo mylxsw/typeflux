@@ -66,11 +66,11 @@ enum SettingsBehaviorTestSupport {
         elements(in: root).contains { $0.text == text || $0.label == text }
     }
 
-    static func wait(_ condition: () -> Bool) async throws {
+    static func wait(_ description: String = "the expected UI state", _ condition: () -> Bool) async throws {
         let deadline = ContinuousClock.now + .seconds(3)
         while !condition() {
             guard ContinuousClock.now < deadline else {
-                Issue.record("The expected UI state did not become ready within three seconds")
+                Issue.record("Timed out waiting for \(description)")
                 throw ReadinessTimeout()
             }
             try await Task.sleep(for: .milliseconds(10))

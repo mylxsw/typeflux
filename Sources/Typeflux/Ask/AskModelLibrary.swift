@@ -29,11 +29,8 @@ struct AskModelProfile: Codable, Equatable, Identifiable, Sendable {
     }
 
     func validate() throws {
-        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let url = URL(string: baseURL), let host = url.host,
-              url.user == nil, url.password == nil, url.query == nil, url.fragment == nil,
-              url.scheme == "https" || (url.scheme == "http" && ["localhost", "127.0.0.1", "::1"].contains(host)) else {
+        guard !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              RegisteredProvider.connectionURL(name: name, baseURL: baseURL) != nil else {
             throw AskLocalError.message(L("ask.models.invalid"))
         }
     }
@@ -176,6 +173,31 @@ final class AskModelLibrary: ObservableObject {
         }
         try next.write(defaults)
         registry = next
+    }
+
+    func addCustomProvider(name: String, baseURL: String, key: String, apiStyle: LLMRemoteAPIStyle) throws -> String {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let baseURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard RegisteredProvider.connectionURL(name: name, baseURL: baseURL) != nil else {
+            throw AskLocalError.message(L("models.invalidConnection"))
+        }
+        let id = UUID().uuidString.lowercased()
+        let account = "ask-model-" + id
+        let key = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard KeychainTokenStore.setKeychainValue(key, account: account) else {
+            throw AskLocalError.message(L("ask.models.keychainError"))
+        }
+        let provider = RegisteredProvider(id: "endpoint:" + id, name: name, baseURL: baseURL, credentialAccount: account,
+                                          apiStyle: apiStyle)
+        var next = registry
+        next.providers.append(provider)
+        do {
+            try commit(next)
+        } catch {
+            KeychainTokenStore.deleteKeychainItem(account: account)
+            throw error
+        }
+        return provider.id
     }
 
     func save(_ profile: AskModelProfile, key: String) throws {

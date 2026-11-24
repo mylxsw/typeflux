@@ -2419,7 +2419,10 @@
 "ask.reasoning.snapped" = "目前的模型不支援「%@」，已調整為「%@」";
 
 "models.protocol" = "協定";
-"models.protocolHint" = "選擇此服務商支援的 API 協定。";
+"models.addEndpointHint" = "儲存連線後，可在服務商詳細資料頁面新增模型。";
+"models.awaitingModels" = "待新增模型";
+"models.addFirstModelsHint" = "從服務商載入模型，或手動輸入模型 ID。";
+"models.invalidConnection" = "請輸入名稱和有效的 HTTPS API 網址（本機服務可使用 HTTP）。";
 "models.protocolUnsupported" = "暫不支援此協定，請選擇其他協定或更新 Typeflux。";
 "ask.tool.automationUnavailable" = "目前僅支援查看螢幕或網頁，無法執行點擊、輸入等操作。";
 "ask.tool.observationExpired" = "操作目標已變更或觀察記錄已過期，請重新截圖或讀取目標後再操作。";

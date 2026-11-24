@@ -59,7 +59,7 @@ final class ModelRegistryTests: XCTestCase {
         XCTAssertEqual(settings.effectiveLLMProvider, .ollama)
         XCTAssertEqual(settings.resolvedOllamaModel, "old-ollama")
         try library.addModels([.init(id: "new-ollama", name: "New")], providerID: "ollama")
-        let model = try XCTUnwrap(library.providers.first { $0.isOllama }?.models.last)
+        let model = try XCTUnwrap(library.providers.first { $0.isOllama }?.models.first { $0.id == "new-ollama" })
         library.rewriteReference = model.reference
         XCTAssertEqual(settings.resolvedOllamaModel, "new-ollama")
         try library.removeModel(model.reference, providerID: "ollama")
@@ -83,6 +83,97 @@ final class ModelRegistryTests: XCTestCase {
         XCTAssertEqual(library.profiles, [first, second])
         XCTAssertEqual(library.defaultReference, second.reference)
         XCTAssertEqual(library.rewriteReference, first.reference)
+    }
+
+    func testCustomProviderPersistsBeforeModelsAndBecomesSelectableAfterAddingThem() async throws {
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        defer { KeychainTokenStore.useInMemoryStoreForTesting = false }
+        let catalog = RegistryCatalogStub()
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false, catalog: catalog)
+        let legacy = AskModelProfile(name: "Existing", baseURL: "https://example.invalid/v1", model: "existing")
+        try library.save(legacy, key: "existing-key")
+        defer { KeychainTokenStore.deleteKeychainItem(account: "ask-model-" + legacy.id) }
+        library.defaultReference = legacy.reference
+        library.rewriteReference = legacy.reference
+
+        let id = try library.addCustomProvider(
+            name: " New gateway ", baseURL: " https://example.invalid/v1 ", key: " new-key ", apiStyle: .responses
+        )
+        let restored = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false, catalog: catalog)
+        let saved = try XCTUnwrap(restored.configurationProviders.first { $0.id == id })
+        let account = try XCTUnwrap(saved.credentialAccount)
+        defer { KeychainTokenStore.deleteKeychainItem(account: account) }
+        XCTAssertEqual(saved.name, "New gateway")
+        XCTAssertTrue(saved.isAwaitingModels)
+        XCTAssertTrue(saved.models.isEmpty)
+        XCTAssertEqual(restored.connection(saved).baseURL, legacy.baseURL)
+        XCTAssertEqual(restored.connection(saved).apiKey, "new-key")
+        XCTAssertEqual(restored.connection(saved).effectiveAPIStyle, .responses)
+        XCTAssertEqual(restored.profiles, [legacy])
+        let data = try XCTUnwrap(defaults.data(forKey: ModelRegistry.storageKey))
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("new-key"))
+
+        func choices(_ scenario: String, hasImage: Bool = false) -> [RegisteredModel]? {
+            restored.selectableProviders(loggedIn: false, hasImage: hasImage, scenario: scenario)
+                .first { $0.id == id }?.models
+        }
+        XCTAssertNil(choices("ask"))
+        XCTAssertNil(choices("ask", hasImage: true))
+        XCTAssertNil(choices("rewrite"))
+        XCTAssertFalse(restored.imageRecoveryProviders(loggedIn: false).contains { $0.id == id })
+        XCTAssertEqual(restored.defaultReference, legacy.reference)
+        XCTAssertEqual(restored.rewriteReference, legacy.reference)
+        XCTAssertEqual(restored.settings.textLLMConfiguration().apiKey, "existing-key")
+
+        let loaded = try await restored.loadModels(provider: saved)
+        let vision = RegisteredModel(id: "vision", name: "Vision", vision: true, scenarios: ["ask"])
+        try restored.addModels(loaded + [vision], providerID: id)
+        XCTAssertEqual(choices("ask")?.map(\.id), ["loaded", "vision"])
+        XCTAssertEqual(choices("rewrite")?.map(\.id), ["loaded"])
+        XCTAssertEqual(restored.imageRecoveryProviders(loggedIn: false).first { $0.id == id }?.models, [vision])
+        XCTAssertEqual(restored.defaultReference, legacy.reference)
+        XCTAssertEqual(restored.rewriteReference, legacy.reference)
+        let rewrite = try XCTUnwrap(loaded.first)
+        restored.rewriteReference = rewrite.reference
+        let connection = restored.settings.textLLMConfiguration()
+        XCTAssertEqual(connection.model, rewrite.id)
+        XCTAssertEqual(connection.apiKey, "new-key")
+        XCTAssertEqual(connection.effectiveAPIStyle, .responses)
+
+        try restored.removeModel(vision.reference, providerID: id)
+        try restored.removeModel(rewrite.reference, providerID: id)
+        XCTAssertNil(choices("ask"))
+        XCTAssertNil(choices("rewrite"))
+        XCTAssertEqual(restored.rewriteReference, rewrite.reference)
+        XCTAssertFalse(restored.settings.isLLMConfigured)
+        XCTAssertTrue(restored.configurationProviders.contains { $0.id == id && $0.isAwaitingModels })
+    }
+
+    func testProviderConnectionValidationDoesNotRequireAModel() {
+        for url in ["https://example.invalid/v1", "HTTP://localhost:11434", "http://127.0.0.1:8080", "http://[::1]:8080"] {
+            XCTAssertNotNil(RegisteredProvider.connectionURL(name: "Gateway", baseURL: url))
+        }
+        for url in ["https://", "http://example.invalid", "ftp://example.invalid", "example.invalid",
+                    "https://user@example.invalid", "https://example.invalid?token=x", "https://example.invalid#models"] {
+            XCTAssertNil(RegisteredProvider.connectionURL(name: "Gateway", baseURL: url))
+        }
+        XCTAssertNil(RegisteredProvider.connectionURL(name: " ", baseURL: "https://example.invalid"))
+        XCTAssertThrowsError(try AskModelProfile(name: "Gateway", baseURL: "https://example.invalid", model: "").validate())
+    }
+
+    func testCustomProviderCreationRollsBackKeyWhenRegistryCannotBeSaved() {
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        defer { KeychainTokenStore.useInMemoryStoreForTesting = false }
+        let data = Data("broken".utf8)
+        defaults.set(data, forKey: ModelRegistry.storageKey)
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let previousKeys = KeychainTokenStore.inMemoryLock.withLock { KeychainTokenStore.inMemoryValues }
+        XCTAssertThrowsError(try library.addCustomProvider(
+            name: "Gateway", baseURL: "https://example.invalid", key: "fixture", apiStyle: .openAICompatible
+        ))
+        XCTAssertTrue(library.providers.isEmpty)
+        XCTAssertEqual(defaults.data(forKey: ModelRegistry.storageKey), data)
+        XCTAssertEqual(KeychainTokenStore.inMemoryLock.withLock { KeychainTokenStore.inMemoryValues }, previousKeys)
     }
 
     func testAddDeduplicatesWithinProviderAndRemovalPreservesReferences() throws {

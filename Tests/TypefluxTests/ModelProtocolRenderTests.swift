@@ -24,7 +24,7 @@ final class ModelProtocolRenderTests: XCTestCase {
         try ModelRegistry(providers: [provider]).write(defaults)
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
-            try await render(AddModelEndpointView(library: library), size: NSSize(width: 520, height: 460),
+            try await render(AddModelEndpointView(library: library, onCreated: { _ in }), size: NSSize(width: 520, height: 460),
                              appearance: appearance, file: root.appendingPathComponent("add-protocol-\(name).png"))
             try await render(
                 ProviderModelsView(library: library, providerID: provider.id).padding(24).background(ModelVisualStyle.canvas),

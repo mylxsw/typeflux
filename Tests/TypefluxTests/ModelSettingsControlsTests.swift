@@ -221,6 +221,86 @@ struct ModelSettingsControlsTests {
         }
     }
 
+    @Test func customProviderCanBeCreatedBeforeAddingModels() async throws {
+        try await withModel(catalog: CustomProviderCatalogFixture()) { _, model in
+            let providerName = "Fixture gateway"
+            let library = model.modelLibrary
+            model.selectModelPageTab(.language)
+            try await UI.withWindow(StudioView(viewModel: model), width: 1100, height: 800) { window, host in
+                model.modelSearchQuery = "different provider"
+                model.isAddingModelEndpoint = true
+                try await UI.wait("the custom provider sheet") { window.attachedSheet?.contentView != nil }
+                let sheetWindow = try #require(window.attachedSheet)
+                let sheet = try #require(sheetWindow.contentView)
+                #expect(!UI.contains(L("ask.models.modelID"), in: sheet))
+                #expect(try UI.button(L("ask.models.save"), in: sheet).value("isAccessibilityEnabled") as? Bool == false)
+
+                for (identifier, text) in [
+                    ("models.addProvider.name", providerName),
+                    ("models.addProvider.endpoint", "https://fixture.invalid/v1"),
+                ] {
+                    let field = try #require(UI.elements(in: sheet).first {
+                        $0.value("accessibilityIdentifier") as? String == identifier
+                    })
+                    try click(field, in: sheetWindow)
+                    let editor = try #require(sheetWindow.firstResponder as? NSTextView)
+                    editor.selectAll(nil)
+                    editor.insertText(text, replacementRange: editor.selectedRange())
+                }
+                try await UI.wait("the custom provider save button to enable") {
+                    (try? UI.button(L("ask.models.save"), in: sheet).value("isAccessibilityEnabled") as? Bool) == true
+                }
+                try UI.button(L("ask.models.save"), in: sheet).press()
+                try await UI.wait("the new provider detail") {
+                    window.attachedSheet == nil && UI.contains(L("models.awaitingModels"), in: host)
+                }
+                let providerID = try #require(model.selectedLanguageProviderID)
+                let provider = try #require(library.configurationProviders.first { $0.id == providerID })
+                #expect(provider.name == providerName)
+                #expect(provider.models.isEmpty)
+                #expect(model.modelSearchQuery.isEmpty)
+                #expect(UI.contains(L("models.addFirstModelsHint"), in: host))
+                #expect(try UI.button(L("ask.models.test"), in: host).value("isAccessibilityEnabled") as? Bool == false)
+
+                let chooser = AskModelChoices(library: library, reference: .constant("cloud:default"),
+                                              loggedIn: true, composerStyle: true)
+                try await UI.withWindow(chooser) { _, chooserHost in
+                    try await UI.wait("the chat model chooser") { UI.contains("Typeflux Cloud", in: chooserHost) }
+                    #expect(!UI.contains(providerName, in: chooserHost))
+                }
+
+                try UI.button(L("models.load"), in: host).press()
+                try await UI.wait("the loaded model catalog") { window.attachedSheet?.contentView != nil }
+                let catalogWindow = try #require(window.attachedSheet)
+                let catalogSheet = try #require(catalogWindow.contentView)
+                for modelID in ["fixture-model-a", "fixture-model-b"] {
+                    try await UI.wait("catalog row \(modelID)") {
+                        UI.elements(in: catalogSheet).contains { $0.label.contains(modelID) || $0.text == modelID }
+                    }
+                    let row = try #require(UI.elements(in: catalogSheet).first {
+                        !$0.frame.isEmpty && ($0.label.contains(modelID) || $0.text == modelID)
+                    })
+                    try click(row, in: catalogWindow)
+                }
+                try await UI.wait("the catalog to select both models") {
+                    UI.contains(L("models.add") + " 2", in: catalogSheet)
+                }
+                try UI.button(L("models.add") + " 2", in: catalogSheet).press()
+                try await UI.wait("the configured provider detail") {
+                    window.attachedSheet == nil && UI.contains(L("models.configured"), in: host)
+                }
+                #expect(try UI.button(L("ask.models.test"), in: host).value("isAccessibilityEnabled") as? Bool == true)
+                try await UI.withWindow(chooser) { _, chooserHost in
+                    try await UI.wait("the new provider in the chat model chooser") { UI.contains(providerName, in: chooserHost) }
+                    let chooserRows = UI.elements(in: chooserHost)
+                    for modelID in ["fixture-model-a", "fixture-model-b"] {
+                        #expect(chooserRows.contains { $0.label.contains(modelID) || $0.text == modelID })
+                    }
+                }
+            }
+        }
+    }
+
     @Test func `header actions do not overlap tabs at narrow widths`() async throws {
         try await withModel { _, model in
             model.selectModelPageTab(.language)
@@ -404,7 +484,7 @@ struct ModelSettingsControlsTests {
         }
     }
 
-    private func withModel(googleAuthorized: Bool = false,
+    private func withModel(googleAuthorized: Bool = false, catalog: any ProviderModelCatalog = HTTPProviderModelCatalog(),
                            _ check: (SettingsStore, StudioViewModel) async throws -> Void) async throws {
         try await UI.withFixture { store in
             let previousGoogleToken = GoogleCloudSpeechOAuthTokenStore.load()
@@ -427,7 +507,8 @@ struct ModelSettingsControlsTests {
                                         initialSection: .models, localModelManager: FixtureLocalModels(),
                                         modelLibrary: AskModelLibrary(
                                             defaults: store.defaults,
-                                            automaticallyLoadsCatalog: false
+                                            automaticallyLoadsCatalog: false,
+                                            catalog: catalog
                                         ))
             try await check(store, model)
         }
@@ -435,6 +516,30 @@ struct ModelSettingsControlsTests {
 
     private func descendants(_ view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap(descendants)
+    }
+
+    private func click(_ element: UI.Element, in window: NSWindow) throws {
+        let point = window.convertPoint(fromScreen: NSPoint(x: element.frame.midX, y: element.frame.midY))
+        func event(_ type: NSEvent.EventType) throws -> NSEvent {
+            try #require(NSEvent.mouseEvent(
+                with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1,
+                pressure: type == .leftMouseDown ? 1 : 0
+            ))
+        }
+        // A native text field can wait for mouse-up while dispatching mouse-down.
+        try NSApp.postEvent(event(.leftMouseUp), atStart: true)
+        try window.sendEvent(event(.leftMouseDown))
+        if let release = NSApp.nextEvent(matching: .leftMouseUp, until: Date(), inMode: .default, dequeue: true) {
+            window.sendEvent(release)
+        }
+    }
+}
+
+private struct CustomProviderCatalogFixture: ProviderModelCatalog {
+    func models(provider _: RegisteredProvider,
+                connection _: SettingsStore.TextLLMConfiguration) async throws -> [RegisteredModel] {
+        ["fixture-model-a", "fixture-model-b"].map { .init(id: $0, name: $0) }
     }
 }
 

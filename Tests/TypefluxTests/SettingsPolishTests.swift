@@ -404,7 +404,7 @@ final class SettingsPolishTests: XCTestCase {
                     try await render(AskImageSettingsView(model: images).padding(24), name: "image-draft-\(Int(width))",
                                      language: language, appearance: appearance, width: width, height: 700)
                 }
-                try await render(AddModelEndpointView(library: library), name: "add-provider",
+                try await render(AddModelEndpointView(library: library, onCreated: { _ in }), name: "add-provider",
                                  language: language, appearance: appearance, width: 520, height: 460)
                 try await render(
                     ModelSettingsPage(viewModel: viewModel(), library: library, speechDetail: { EmptyView() })

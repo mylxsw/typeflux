@@ -25,7 +25,12 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                     await library.probeOllama()
                 }
             }
-            .sheet(isPresented: $viewModel.isAddingModelEndpoint) { AddModelEndpointView(library: library) }
+            .sheet(isPresented: $viewModel.isAddingModelEndpoint) {
+                AddModelEndpointView(library: library) { providerID in
+                    viewModel.modelSearchQuery = ""
+                    selectedProvider = providerID
+                }
+            }
     }
 
     private var content: some View {
@@ -128,17 +133,23 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
         let rows: ([RegisteredProvider]) -> [ModelProviderRowData] = { items in
             items.map { provider in
                 let reason = library.unavailableReason(provider, loggedIn: auth.isLoggedIn)
-                return ModelProviderRowData(
-                    id: provider.id,
-                    name: provider.name,
-                    detail: reason ?? ModelSettingsPresentation.languageProviderDetail(
+                let detail = if provider.isAwaitingModels {
+                    ModelSettingsPresentation.endpointLabel(provider.baseURL)
+                } else {
+                    reason ?? ModelSettingsPresentation.languageProviderDetail(
                         modelCount: provider.configurationModels.count,
                         baseURL: endpoint(of: provider),
                         countFormat: L("models.count"),
                         managedLabel: provider.isCloud ? L("models.cloud.managedShort") : nil
-                    ),
+                    )
+                }
+                return ModelProviderRowData(
+                    id: provider.id,
+                    name: provider.name,
+                    detail: detail,
                     icon: provider.studioProviderID,
-                    available: reason == nil
+                    available: reason == nil,
+                    statusText: provider.isAwaitingModels ? L("models.awaitingModels") : nil
                 )
             }
         }

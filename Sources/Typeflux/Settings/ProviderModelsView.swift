@@ -41,6 +41,7 @@ struct ProviderModelsView: View {
                     title: provider.name,
                     icon: provider.studioProviderID,
                     connected: library.unavailableReason(provider, loggedIn: auth.isLoggedIn) == nil,
+                    statusText: provider.isAwaitingModels ? L("models.awaitingModels") : nil,
                     onBack: onBack
                 )
                 if provider.remote == .freeModel {
@@ -110,7 +111,8 @@ struct ProviderModelsView: View {
                 HStack(spacing: TFMetrics.toolbarSpacing) {
                     if loading { TFSpinner() }
                     Spacer(minLength: 8)
-                    TFButton(title: L("ask.models.test")) { testConnection(provider) }.disabled(loading)
+                    TFButton(title: L("ask.models.test")) { testConnection(provider) }
+                        .disabled(loading || provider.models.isEmpty)
                     TFButton(title: L("ask.models.save"), kind: .primary) { save(provider) }
                         .disabled(loading || !ModelSettingsPresentation.connectionChanged(
                             savedBaseURL: savedBaseURL, savedKey: savedKey, baseURL: baseURL, key: key,
@@ -134,7 +136,8 @@ struct ProviderModelsView: View {
         return TFFormSection(title: L("common.model"), count: provider.models.count,
                              footnote: showsHint ? L("models.usageHint") : nil) {
             TFButton(title: L("models.manual"), systemImage: "plus") { manual = true }
-            TFButton(title: L("models.load"), systemImage: "arrow.clockwise") { load(provider) }
+            TFButton(title: L("models.load"), systemImage: "arrow.clockwise",
+                     kind: provider.isAwaitingModels ? .primary : .secondary) { load(provider) }
                 .disabled(loading)
         } content: {
             if manual {
@@ -155,7 +158,7 @@ struct ProviderModelsView: View {
                          canAsk: askReferences.contains(model.reference))
             }
             if provider.models.isEmpty, !manual {
-                TFCardNote(text: L("models.noModels"))
+                TFCardNote(text: L(provider.isAwaitingModels ? "models.addFirstModelsHint" : "models.noModels"))
             }
         }
     }

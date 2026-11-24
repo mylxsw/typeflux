@@ -17,8 +17,9 @@ struct HTTPProviderModelCatalog: ProviderModelCatalog {
     func models(provider: RegisteredProvider,
                 connection: SettingsStore.TextLLMConfiguration) async throws -> [RegisteredModel] {
         guard connection.effectiveAPIStyle != .unsupported else { throw AskStreamError.invalidResponse }
-        try AskModelProfile(name: provider.name, baseURL: connection.baseURL, model: "catalog").validate()
-        guard let base = URL(string: connection.baseURL) else { throw AskLocalError.message(L("ask.models.invalid")) }
+        guard let base = RegisteredProvider.connectionURL(name: provider.name, baseURL: connection.baseURL) else {
+            throw AskLocalError.message(L("models.invalidConnection"))
+        }
         let path = provider.isOllama ? "api/tags" : "models"
         let endpoint = provider.isOllama ? base.appendingPathComponent(path) : OpenAIEndpointResolver.resolve(
             from: base,
