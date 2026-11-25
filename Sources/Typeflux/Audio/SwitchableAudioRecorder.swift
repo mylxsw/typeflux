@@ -14,7 +14,6 @@ final class SwitchableAudioRecorder: AudioRecorder {
     convenience init(settingsStore: SettingsStore, audioDeviceManager: AudioDeviceManaging) {
         self.init(
             useCoreAudio: {
-                // The legacy path owns the optional warm microphone / pre-roll behavior.
                 Self.usesCoreAudio(
                     instantVoiceInputEnabled: InstantVoiceInputPolicy.isEffective(
                         settings: settingsStore, devices: audioDeviceManager
@@ -27,11 +26,12 @@ final class SwitchableAudioRecorder: AudioRecorder {
             },
             makeLegacy: {
                 AVFoundationAudioRecorder(settingsStore: settingsStore, audioDeviceManager: audioDeviceManager)
-            })
+            }
+        )
     }
 
-    static func usesCoreAudio(instantVoiceInputEnabled: Bool, override: String?) -> Bool {
-        !instantVoiceInputEnabled && override != "legacy"
+    static func usesCoreAudio(instantVoiceInputEnabled _: Bool, override: String?) -> Bool {
+        override != "legacy"
     }
 
     init(
@@ -41,7 +41,11 @@ final class SwitchableAudioRecorder: AudioRecorder {
         self.useCoreAudio = useCoreAudio
         self.makeCoreAudio = makeCoreAudio
         self.makeLegacy = makeLegacy
-        if useCoreAudio() { coreAudio = makeCoreAudio() } else { legacy = makeLegacy() }
+        if useCoreAudio() {
+            coreAudio = makeCoreAudio()
+        } else {
+            legacy = makeLegacy()
+        }
     }
 
     func start(
