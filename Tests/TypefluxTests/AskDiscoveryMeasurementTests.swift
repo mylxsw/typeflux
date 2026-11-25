@@ -25,11 +25,10 @@ final class AskDiscoveryMeasurementTests: XCTestCase {
                 await client.setMockTools(schemas)
                 let tools = AskLocalTools(registry: registry)
                 tools.runningBundleIdentifiers = { [] }
-                let disconnected = await tools.definitions(conversationId: nil)
+                let disconnected = await tools.definitions(conversationId: nil, includeMCP: false)
                 XCTAssertFalse(disconnected.contains { $0.name.hasPrefix("mcp_") })
                 let connectionStart = Date()
-                // Explicit selection uses the same enabled-server entry point.
-                await registry.connectEnabledServers([server])
+                _ = await tools.definitions(conversationId: nil)
                 let connectionMS = Date().timeIntervalSince(connectionStart) * 1000
                 var assemblyMS = 0.0, serializationMS = 0.0, schemaSortMS = 0.0, registryMS = 0.0, promptBytes = 0, schemaBytes = 0
                 for _ in 0..<20 {

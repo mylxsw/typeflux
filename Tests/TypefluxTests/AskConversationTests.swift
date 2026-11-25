@@ -340,7 +340,7 @@ final class AskTestTools: AskToolExecuting {
     func risk(of call: AskToolCall) -> AskToolRisk {
         riskOverride ?? (call.function.name.hasPrefix("danger") ? .destructive : AskLocalTools.builtinRisk(call))
     }
-    func definitions(conversationId: String?) async -> [AskToolDefinition] {
+    func definitions(conversationId: String?, includeMCP _: Bool) async -> [AskToolDefinition] {
         definitionRequests.append(conversationId)
         await beforeDefinitions?()
         return AskLocalTools.builtins + additionalDefinitions

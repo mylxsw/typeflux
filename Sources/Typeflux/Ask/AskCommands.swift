@@ -213,7 +213,7 @@ enum AskCommandCatalog {
                                      badge: L(skill.builtin ? "ask.command.badge.builtin" : "ask.command.badge.installed"),
                                      selected: context.chosenSkills.contains(skill.name)))
         }
-        for server in context.mcpServers {
+        for server in context.mcpServers where context.conversationKind == .work {
             result.append(AskCommand(action: .mcpServer(server.name), name: server.name, title: "",
                                      detail: L("ask.command.mcp.detail"), symbol: "powerplug", group: .mcp, kind: .token,
                                      disabledReason: server.enabled ? nil : L("ask.command.disabled.mcpOff"),

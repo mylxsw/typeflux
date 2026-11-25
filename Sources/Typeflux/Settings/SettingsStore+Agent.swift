@@ -25,18 +25,9 @@ extension SettingsStore {
     var askAgentRequestedMaxSteps: Int? { askAgentExecutionMode == .bounded ? askAgentMaxSteps : nil }
 
     var mcpServers: [MCPServerConfig] {
-        get {
-            guard let data = defaults.data(forKey: "agent.mcpServers"),
-                  let servers = try? JSONDecoder().decode([MCPServerConfig].self, from: data)
-            else {
-                return []
-            }
-            return servers
-        }
+        get { MCPSettingsStore(defaults: defaults).servers }
         set {
-            if let data = try? JSONEncoder().encode(newValue) {
-                defaults.set(data, forKey: "agent.mcpServers")
-            }
+            MCPSettingsStore(defaults: defaults).servers = newValue
             NotificationCenter.default.post(name: .agentConfigurationDidChange, object: self)
         }
     }

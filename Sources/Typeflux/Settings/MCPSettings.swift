@@ -29,7 +29,7 @@ struct MCPHTTPTransportConfig: Codable, Equatable {
 }
 
 /// MCP 服务器配置
-struct MCPServerConfig: Codable, Identifiable {
+struct MCPServerConfig: Codable, Equatable, Identifiable {
     let id: UUID
     var name: String
     var transport: MCPTransportConfig
@@ -54,7 +54,7 @@ struct MCPServerConfig: Codable, Identifiable {
 /// MCP 设置存储
 final class MCPSettingsStore: @unchecked Sendable {
     private let defaults: UserDefaults
-    private let serversKey = "mcp.servers"
+    private let serversKey = "agent.mcpServers"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -62,7 +62,8 @@ final class MCPSettingsStore: @unchecked Sendable {
 
     var servers: [MCPServerConfig] {
         get {
-            guard let data = defaults.data(forKey: serversKey),
+            // An explicitly saved empty list supersedes the legacy store too.
+            guard let data = defaults.data(forKey: serversKey) ?? defaults.data(forKey: "mcp.servers"),
                   let configs = try? JSONDecoder().decode([MCPServerConfig].self, from: data)
             else {
                 return []

@@ -5,6 +5,7 @@ actor MCPRegistry {
     private var stopped = false
     private var servers: [UUID: any MCPClient] = [:]
     private var serverConfigs: [UUID: MCPServerConfig] = [:]
+    private var savedConnections: Set<UUID> = []
     /// Keyed by server and tool name: two servers may expose tools with the same name.
     private var cachedTools: [ToolKey: MCPToolAdapter] = [:]
     /// Invalidate approvals on every accepted tools/list, including changes to
@@ -32,14 +33,31 @@ actor MCPRegistry {
     }
 
     /// Registers or reconnects a server; concurrent callers share one attempt.
-    func addServer(_ config: MCPServerConfig) async throws {
-        try Task.checkCancellation()
-        guard !stopped else { throw MCPClientError.notConnected }
-        if let task = connecting[config.id] {
-            try await task.value
-            return
-        }
+    func addServer(_ config: MCPServerConfig, fromSettings: Bool = false) async throws {
         let serverId = config.id
+        while true {
+            try Task.checkCancellation()
+            guard !stopped, !fromSettings || (config.enabled && settingsStore.servers.contains(config)) else {
+                throw MCPClientError.notConnected
+            }
+            guard let current = serverConfigs[serverId] else { break }
+            if current == config {
+                if fromSettings { savedConnections.insert(serverId) }
+                if let task = connecting[serverId] {
+                    try await task.value
+                    return
+                }
+                if let client = servers[serverId] {
+                    let generation = generations[serverId]
+                    let connected = await client.isConnected
+                    guard generations[serverId] == generation else { continue }
+                    if connected && connectionErrors[serverId] == nil { return }
+                }
+            }
+            await removeServer(id: serverId)
+        }
+        if fromSettings { savedConnections.insert(serverId) }
+        serverConfigs[serverId] = config
         let generation = UUID()
         generations[serverId] = generation
         let task = Task { try await self.establish(config, generation: generation) }
@@ -63,21 +81,10 @@ actor MCPRegistry {
 
     private func establish(_ config: MCPServerConfig, generation: UUID) async throws {
         let serverId = config.id
-        if let existing = servers[serverId] {
-            if await existing.isConnected {
-                await existing.setToolsChangedHandler { [weak self] in
-                    try? await self?.refreshTools(for: serverId, generation: generation)
-                }
-                return
-            }
-            cachedTools = cachedTools.filter { $0.key.serverId != serverId }
-            await existing.disconnect()
-        }
         try Task.checkCancellation()
         guard generations[serverId] == generation else { throw MCPClientError.notConnected }
         let client = clientFactory(config)
         servers[serverId] = client
-        serverConfigs[serverId] = config
         do {
             try await client.connect()
             try Task.checkCancellation()
@@ -102,6 +109,7 @@ actor MCPRegistry {
         generations[id] = nil
         connecting.removeValue(forKey: id)?.cancel()
         serverConfigs.removeValue(forKey: id)
+        savedConnections.remove(id)
         connectionErrors[id] = nil
         cachedTools = cachedTools.filter { $0.key.serverId != id }
         toolRevisions = toolRevisions.filter { $0.key.serverId != id }
@@ -122,8 +130,10 @@ actor MCPRegistry {
 
     /// Returns every tool with its owning server, ordered by server name then tool name.
     func registeredTools() -> [MCPRegisteredTool] {
-        cachedTools.map { key, tool in
-            MCPRegisteredTool(serverId: key.serverId, serverName: serverConfigs[key.serverId]?.name ?? "", tool: tool)
+        let eligible = Set(settingsStore.servers.filter { $0.enabled && serverConfigs[$0.id] == $0 }.map(\.id))
+        return cachedTools.compactMap { key, tool -> MCPRegisteredTool? in
+            guard !savedConnections.contains(key.serverId) || eligible.contains(key.serverId) else { return nil }
+            return MCPRegisteredTool(serverId: key.serverId, serverName: serverConfigs[key.serverId]?.name ?? "", tool: tool)
         }.sorted {
             ($0.serverName, $0.serverId.uuidString, $0.tool.toolDef.name) < (
                 $1.serverName,
@@ -143,12 +153,7 @@ actor MCPRegistry {
 
     private func publishAuthorizationInventory() async {
         guard let onToolsChanged else { return }
-        let definitions = AskLocalTools.mcpToolNames(registeredTools()).compactMap { name, entry -> AskToolDefinition? in
-            guard let data = try? JSONSerialization.data(withJSONObject: entry.tool.definition.inputSchema.jsonObject,
-                                                        options: .sortedKeys) else { return nil }
-            return .init(name: name, description: String(entry.tool.definition.description.prefix(2000)),
-                         parameters: JSONValue(data: data))
-        }
+        let definitions = AskLocalTools.mcpToolNames(registeredTools()).compactMap { $0.1.askDefinition(named: $0.0) }
         await onToolsChanged(definitions, authorizationIdentities())
     }
 
@@ -174,7 +179,8 @@ actor MCPRegistry {
     /// and server-provided read-only annotations cannot transfer an approval.
     func approvalBinding(serverId: UUID, toolName: String) throws -> AskToolBinding {
         guard let generation = generations[serverId], let revision = toolRevisions[ToolKey(serverId: serverId, name: toolName)],
-              let tool = cachedTools[ToolKey(serverId: serverId, name: toolName)] else {
+              let tool = cachedTools[ToolKey(serverId: serverId, name: toolName)],
+              !savedConnections.contains(serverId) || hasCurrentConfig(serverId) else {
             throw MCPClientError.notConnected
         }
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
@@ -197,9 +203,22 @@ actor MCPRegistry {
 
     /// Reconnects all servers with autoConnect enabled.
     func connectAutoConnectServers() async {
-        for config in settingsStore.servers where config.enabled && config.autoConnect {
-            try? await addServer(config)
+        await connectSavedServers(automaticOnly: true)
+    }
+
+    /// Work discovers tools on demand, including servers that do not connect at startup.
+    func connectSavedServers(automaticOnly: Bool = false) async {
+        for id in savedConnections where !hasCurrentConfig(id) {
+            await removeServer(id: id)
         }
+        for config in settingsStore.servers where config.enabled && (!automaticOnly || config.autoConnect) {
+            try? await addServer(config, fromSettings: true)
+        }
+    }
+
+    private func hasCurrentConfig(_ id: UUID) -> Bool {
+        guard let config = serverConfigs[id], config.enabled else { return false }
+        return settingsStore.servers.contains(config)
     }
 
     /// Connects all enabled servers in the given list (skips already-connected ones).
@@ -283,6 +302,14 @@ struct MCPRegisteredTool {
     let serverId: UUID
     let serverName: String
     let tool: MCPToolAdapter
+
+    func askDefinition(named name: String) -> AskToolDefinition? {
+        let definition = tool.definition
+        guard let data = try? JSONSerialization.data(withJSONObject: definition.inputSchema.jsonObject,
+                                                     options: .sortedKeys) else { return nil }
+        let description = "MCP server: \(serverName.prefix(200)). \(definition.description)"
+        return .init(name: name, description: String(description.prefix(2000)), parameters: JSONValue(data: data))
+    }
 }
 
 /// An MCP tool exposed under a server-qualified name.

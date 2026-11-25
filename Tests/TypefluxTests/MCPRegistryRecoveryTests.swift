@@ -64,6 +64,48 @@ final class MCPRegistryRecoveryTests: XCTestCase {
         await registry.removeServer(id: automatic.id)
     }
 
+    func testSavedServerEditsRevokeBindingsAndReplaceTheConnection() async throws {
+        let settings = store()
+        let server = config()
+        var edited = server
+        edited.transport = .http(.init(url: "https://example.invalid/new"))
+        let original = RegistryRecoveryClient(), replacement = RegistryRecoveryClient()
+        await replacement.setTools(["new"])
+        let registry = MCPRegistry(settingsStore: settings, clientFactory: {
+            $0.transport == server.transport ? original : replacement
+        })
+        settings.servers = [server]
+        await registry.connectSavedServers()
+        let binding = try await registry.approvalBinding(serverId: server.id, toolName: "old")
+        await registry.connectSavedServers()
+        let reused = try await registry.approvalBinding(serverId: server.id, toolName: "old")
+        XCTAssertEqual(reused, binding)
+
+        settings.servers = [edited]
+        do {
+            _ = try await registry.callApproved(serverId: server.id, toolName: "old", arguments: "{}", binding: binding)
+            XCTFail("Edited server still accepts the old approval")
+        } catch {}
+        let stale = await registry.registeredTools()
+        XCTAssertTrue(stale.isEmpty)
+
+        await registry.connectSavedServers()
+        let names = await registry.registeredTools().map(\.tool.toolDef.name)
+        let oldConnections = await original.connects
+        let oldDisconnects = await original.disconnects
+        XCTAssertEqual(names, ["new"])
+        XCTAssertEqual(oldConnections, 1)
+        XCTAssertEqual(oldDisconnects, 1)
+
+        edited.enabled = false
+        settings.servers = [edited]
+        await registry.connectSavedServers()
+        let remaining = await registry.registeredTools()
+        let newDisconnects = await replacement.disconnects
+        XCTAssertTrue(remaining.isEmpty)
+        XCTAssertEqual(newDisconnects, 1)
+    }
+
     func testFailuresRetainReasonAndCleanClientAndStaleTools() async throws {
         let server = config()
         let client = RegistryRecoveryClient()

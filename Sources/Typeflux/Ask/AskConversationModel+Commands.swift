@@ -176,6 +176,7 @@ extension AskConversationModel {
                 toggleSkill(name, launcher: launcher)
             }
         case let .mcpServer(name):
+            guard conversationKind(launcher: launcher) == .work else { return }
             toggleChoice(name, keyPath: \.mcpServers, limit: Self.maximumChosenServers, launcher: launcher)
         case let .keyword(id):
             // What is left in the editor becomes the keyword's text.

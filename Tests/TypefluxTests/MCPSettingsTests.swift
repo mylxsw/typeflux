@@ -2,6 +2,23 @@
 import XCTest
 
 final class MCPSettingsTests: XCTestCase {
+    func testSettingsAndRuntimeShareStorageAndAnEmptyListOverridesLegacy() throws {
+        let domain = "mcp-shared-settings-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let settings = SettingsStore(defaults: defaults)
+        let runtime = MCPSettingsStore(defaults: defaults)
+        let legacy = MCPServerConfig(name: "Legacy", transport: .stdio(.init(command: "/usr/bin/echo")))
+        defaults.set(try JSONEncoder().encode([legacy]), forKey: "mcp.servers")
+        XCTAssertEqual(settings.mcpServers, [legacy])
+
+        let current = MCPServerConfig(name: "Current", transport: .http(.init(url: "https://example.invalid")))
+        settings.mcpServers = [current]
+        XCTAssertEqual(runtime.servers, [current])
+        settings.mcpServers = []
+        XCTAssertEqual(runtime.servers, [])
+    }
+
     private func makeStore() -> MCPSettingsStore {
         let suiteName = "test.mcp.settings.\(UUID())"
         return MCPSettingsStore(defaults: UserDefaults(suiteName: suiteName)!)

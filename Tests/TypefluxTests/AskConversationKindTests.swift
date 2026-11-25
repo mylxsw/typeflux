@@ -154,6 +154,55 @@ struct AskConversationKindTests {
         #expect(await f.api.sends.last?.tools.map(\.name) == AskLocalTools.builtins.map(\.name))
     }
 
+    @Test func aSavedMCPIsDiscoveredAndCalledFromWork() async throws {
+        let domain = "ask-saved-mcp-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let server = MCPServerConfig(name: "Inventory", transport: .http(.init(url: "https://example.invalid/mcp")))
+        let disabled = MCPServerConfig(name: "Disabled", transport: server.transport, enabled: false)
+        library.settings.mcpServers = [server, disabled]
+        let client = MockMCPClient(), disabledClient = MockMCPClient()
+        await client.setMockTools([.init(name: "lookup", description: "Look up an item",
+                                         inputSchema: .init(type: "object", properties: ["query": AnyCodable(["type": "string"])],
+                                                            required: ["query"], description: nil, additionalProperties: nil))])
+        let registry = MCPRegistry(settingsStore: MCPSettingsStore(defaults: defaults),
+                                   clientFactory: { $0.id == server.id ? client : disabledClient })
+        let tools = AskLocalTools(registry: registry, settings: library.settings, owner: { "owner" })
+        let f = try AskTestFixture(modelLibrary: library, defaults: defaults, toolsOverride: tools)
+        defer { f.model.resetSession() }
+
+        f.model.newConversation()
+        f.model.setConversationKind(.chat, launcher: false)
+        f.model.draft.text = "Help me with inventory"
+        try #require(f.model.submitDraft())
+        try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.run?.status == "completed" }
+        #expect(await client.connectCallCount == 0)
+        #expect(await f.api.sends.last?.tools.contains { $0.name == "mcp_lookup" } == false)
+
+        await f.api.setTool(.init(id: "inventory-lookup", function: .init(name: "mcp_lookup", arguments: #"{"query":"sample"}"#)))
+        f.model.newConversation()
+        f.model.setConversationKind(.work, launcher: false)
+        f.model.setPermissionMode(.standard, launcher: false)
+        f.model.draft.text = "Look up sample in Inventory"
+        try #require(f.model.submitDraft())
+        try await f.wait { !f.model.pendingApprovals.isEmpty }
+        let request = try #require(await f.api.sends.last)
+        let definition = try #require(request.tools.first { $0.name == "mcp_lookup" })
+        #expect(definition.description.contains("Inventory"))
+        #expect(String(decoding: definition.parameters.data, as: UTF8.self).contains(#""required":["query"]"#))
+        #expect(await client.connectCallCount == 1)
+        #expect(await disabledClient.connectCallCount == 0)
+        #expect(await client.callToolCallCount == 0)
+
+        let id = try #require(f.model.selectedId)
+        f.model.approve(conversationId: id, allowed: true)
+        try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.run?.status == "completed" }
+        #expect(await client.callToolCallCount == 1)
+        #expect(await f.api.results.last?.content.contains("mock result") == true)
+        await registry.shutdown()
+    }
+
     @Test func launcherQuestionCarriesItsOwnKind() async throws {
         let f = try AskTestFixture()
         f.model.lastConversationKind = .work

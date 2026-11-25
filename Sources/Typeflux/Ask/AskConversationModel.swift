@@ -1741,7 +1741,8 @@ final class AskConversationModel: ObservableObject {
             defer { monitor.cancel() }
             do {
                 try checkOperation(id, operationId: operationId, account: current.account)
-                _ = await tools.definitions(conversationId: id)
+                let toolKind = value.run == nil ? value.resolvedKind : value.dispatchKind
+                let definitions = await tools.definitions(conversationId: id, includeMCP: toolKind == .work)
                 let response: AskConversation
                 if let request = pendingSends[id] {
                     response = try await resumePendingSend(request, conversation: value, route: current, operationId: operationId)
@@ -1756,7 +1757,7 @@ final class AskConversationModel: ObservableObject {
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     var request = AskSendRequest(clientToolApproval: true, id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
-                                                 tools: modelLibrary.imageCapability(value.modelRef ?? "cloud:default").observationTools(value.resolvedKind.offered(await tools.definitions(conversationId: id))), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
+                                                 tools: modelLibrary.imageCapability(value.modelRef ?? "cloud:default").observationTools(value.resolvedKind.offered(definitions)), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
                                                  attachments: message.attachments)
                     request.executionMode = modelLibrary.settings.askAgentExecutionMode
                     request.maxSteps = modelLibrary.settings.askAgentRequestedMaxSteps
@@ -1858,8 +1859,9 @@ final class AskConversationModel: ObservableObject {
             defer { monitor.cancel() }
             do {
                 try checkOperation(id, operationId: operationId, account: current.account)
+                let available = await tools.definitions(conversationId: id, includeMCP: value.resolvedKind == .work)
                 let definitions = modelLibrary.imageCapability(modelRef).observationTools(AskSkillCatalog.applying(value.messages.last(where: { $0.role == "user" })?.skillCatalog,
-                    to: value.resolvedKind.offered(await tools.definitions(conversationId: id))))
+                    to: value.resolvedKind.offered(available)))
                 try await validateModel(
                     modelRef, token: current.token,
                     hasImage: value.messages.contains(where: { $0.hasImage })
@@ -3124,8 +3126,9 @@ extension AskConversationModel {
                 try await cache.save(value, owner: current.owner)
                 if inline, quickAsk?.conversationId == id { quickAsk?.persisted = true }
                 var request = request
-                let offered = inline ? [] : Self.offeredTools(await tools.definitions(conversationId: id),
-                                                             temporary: temporaryRun, kind: value.resolvedKind)
+                let kind = value.resolvedKind
+                let definitions = inline ? [] : await tools.definitions(conversationId: id, includeMCP: kind == .work && !recoveryCheck)
+                let offered = inline ? [] : Self.offeredTools(definitions, temporary: temporaryRun, kind: kind)
                 let scoped = AskSkillCatalog.applying(request.skillCatalog, to: offered)
                 request.tools = modelLibrary.imageCapability(request.modelRef ?? "cloud:default").observationTools(
                     inline ? [] : recoveryCheck ? Self.recoveryObservationTools(scoped) : scoped)

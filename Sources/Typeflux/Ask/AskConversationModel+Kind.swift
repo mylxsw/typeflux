@@ -38,6 +38,7 @@ extension AskConversationModel {
         guard canChangeConversationKind(launcher: launcher), conversationKind(launcher: launcher) != kind else { return }
         var current = launcher ? launcherDraft : draft
         current.kind = kind.rawValue
+        if kind == .chat { current.mcpServers = nil }
         if kind == .chat, current.attachments?.contains(where: { $0.kind == .folder }) == true {
             current.attachments?.removeAll { $0.kind == .folder }
             if current.attachments?.isEmpty == true { current.attachments = nil }

@@ -39,7 +39,7 @@ protocol AskToolExecuting {
     func allowsConcurrentRead(_ call: AskToolCall) async -> Bool
     func risk(of call: AskToolCall) -> AskToolRisk
     /// Tools usable from this conversation; tools that need an unavailable target are omitted.
-    func definitions(conversationId: String?) async -> [AskToolDefinition]
+    func definitions(conversationId: String?, includeMCP: Bool) async -> [AskToolDefinition]
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput
     func approvalBinding(for call: AskToolCall, conversationId: String) async throws -> AskToolBinding
     func executeApproved(_ call: AskToolCall, conversationId: String, binding: AskToolBinding,
@@ -60,6 +60,9 @@ protocol AskToolExecuting {
 }
 
 extension AskToolExecuting {
+    func definitions(conversationId: String?) async -> [AskToolDefinition] {
+        await definitions(conversationId: conversationId, includeMCP: true)
+    }
     func allowsConcurrentRead(_: AskToolCall) async -> Bool { false }
     func bindExecution(ownerId: String, conversationId: String, runId: String, deviceId: String, persistent: Bool) {
         bindExecution(ownerId: ownerId, conversationId: conversationId, runId: runId)
@@ -239,8 +242,8 @@ final class AskLocalTools: AskToolExecuting {
         return ["com.apple.Safari", "com.google.Chrome"].first(where: running.contains)
     }
 
-    func definitions(conversationId: String?) async -> [AskToolDefinition] {
-        await registry.connectAutoConnectServers()
+    func definitions(conversationId: String?, includeMCP: Bool) async -> [AskToolDefinition] {
+        if includeMCP { await registry.connectSavedServers() }
         var result = automationDefinitions
             .filter { $0.name != "browser" || browserBundle(conversationId: conversationId) != nil }
         // Publish one stable workspace before exposing relative file or command paths.
@@ -280,23 +283,25 @@ final class AskLocalTools: AskToolExecuting {
         if embeddedBrowser != nil { result.append(AskEmbeddedBrowserTool.definition) }
         if notebookAvailable { result.append(AskNotebookTool.definition) }
         if imageConfiguration != nil { result.append(Self.imageGenerationDefinition) }
-        mcpTools = [:]
-        mcpServers = [:]
-        mcpIdentities = [:]
-        var schemaBytes = result.reduce(0) { $0 + $1.parameters.data.count }
-        for (name, entry) in Self.mcpToolNames(await registry.registeredTools()) {
-            let tool = entry.tool
-            guard mcpTools[name] == nil,
-                  let schema = try? JSONSerialization.data(withJSONObject: tool.definition.inputSchema.jsonObject, options: .sortedKeys),
-                  schema.count <= 32000, schemaBytes + schema.count <= 500000 else { continue }
-            schemaBytes += schema.count
-            mcpTools[name] = tool
-            mcpServers[name] = entry.serverName
-            mcpIdentities[name] = entry.serverId
-            result.append(.init(name: name, description: String(tool.definition.description.prefix(2000)), parameters: JSONValue(data: schema)))
-            if result.count == 64 { break }
+        if includeMCP {
+            let entries = Self.mcpToolNames(await registry.registeredTools())
+            mcpTools = [:]
+            mcpServers = [:]
+            mcpIdentities = [:]
+            var schemaBytes = result.reduce(0) { $0 + $1.parameters.data.count }
+            for (name, entry) in entries {
+                guard result.count < 64 else { break }
+                guard let definition = entry.askDefinition(named: name),
+                      definition.parameters.data.count <= 32000,
+                      schemaBytes + definition.parameters.data.count <= 500000 else { continue }
+                schemaBytes += definition.parameters.data.count
+                mcpTools[name] = entry.tool
+                mcpServers[name] = entry.serverName
+                mcpIdentities[name] = entry.serverId
+                result.append(definition)
+            }
         }
-        settings?.registerToolPermissions(result, identities: await registry.authorizationIdentities())
+        settings?.registerToolPermissions(result, identities: includeMCP ? await registry.authorizationIdentities() : [:])
         return result
     }
 

@@ -61,6 +61,9 @@ final class AppCoordinator {
                     cloudEndpointProbeScheduler.start()
                 }
                 if FeatureProcess.role == .voice { asrPublicConfigRefreshScheduler.start() }
+                if FeatureProcess.role == .chat, !FeatureIsolationProbe.enabled {
+                    Task { [di] in await di.mcpRegistry.connectAutoConnectServers() }
+                }
                 startFeature()
                 return
             }

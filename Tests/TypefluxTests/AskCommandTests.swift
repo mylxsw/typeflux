@@ -92,6 +92,7 @@ struct AskCommandCatalogTests {
 
     private var context: AskCommandContext {
         var context = AskCommandContext()
+        context.conversationKind = .work
         context.models = [.init(reference: "cloud:a", name: "Model A", vision: true), .init(reference: "custom:b", name: "Model B", vision: false)]
         context.currentModel = "cloud:a"
         context.reasoningAvailable = true
@@ -114,6 +115,13 @@ struct AskCommandCatalogTests {
         #expect(groups == [.conversation, .model, .context, .prompts, .skills, .mcp, .other])
         #expect(Set(commands.map(\.id)).count == commands.count)
         for group in AskCommand.Group.allCases { #expect(!group.title.isEmpty) }
+    }
+
+    @Test func mcpChoicesAreAvailableOnlyInWork() {
+        var value = context
+        #expect(command("github", in: value)?.action == .mcpServer("github"))
+        value.conversationKind = .chat
+        #expect(command("github", in: value) == nil)
     }
 
     @Test func availabilityFollowsTheContext() {

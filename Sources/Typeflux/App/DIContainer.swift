@@ -235,7 +235,8 @@ final class DIContainer {
         )
         clipboardPanelController = ClipboardPanelController(settingsStore: settingsStore)
         let permissionSettings = settingsStore
-        mcpRegistry = MCPRegistry(onToolsChanged: { definitions, identities in
+        mcpRegistry = MCPRegistry(settingsStore: MCPSettingsStore(defaults: permissionSettings.defaults),
+                                  onToolsChanged: { definitions, identities in
             await MainActor.run { permissionSettings.registerToolPermissions(definitions, identities: identities) }
         })
         analyticsReporter = FeatureProcess.enabled && FeatureProcess.role != .host

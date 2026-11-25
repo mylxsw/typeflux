@@ -284,7 +284,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         )
         model.commandSources = AskCommandSources(
             skills: { tools.enabledSkills },
-            mcpServers: { MCPSettingsStore().servers.map { AskMCPServerSummary(name: $0.name, enabled: $0.enabled) } },
+            mcpServers: { settings.mcpServers.map { AskMCPServerSummary(name: $0.name, enabled: $0.enabled) } },
             remember: { text in try AskMemoryNoteStore.shared.add(text, owner: GlobalSoulOwner.currentID) },
             privateByDefault: { settings.askNewConversationsStayLocal }
         )
