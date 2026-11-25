@@ -4264,7 +4264,7 @@
 "screenshot.scroll.status.scrolling" = "自動スクロール中 · マウスを動かすと手動に切り替わります";
 "screenshot.scroll.status.paused" = "一時停止中 · 手動でスクロールするか、スペースで再開";
 "screenshot.scroll.status.pausedByMouse" = "マウス操作を検出したため一時停止 · 手動でスクロールするか、スペースで再開";
-"screenshot.scroll.status.misaligned" = "ページを揃えられませんでした · 手動でスクロールするか、スペースで再試行";
+"screenshot.scroll.status.misaligned" = "画面がつながりません。撮影済みの位置まで戻してください";
 "screenshot.scroll.status.needsAccessibility" = "手動でスクロールしてください · アクセシビリティを許可すると自動スクロールできます";
 "screenshot.scroll.status.suspicious" = "この部分はずれている可能性があります · ⌫ で取り消し";
 "screenshot.scroll.allow" = "許可";

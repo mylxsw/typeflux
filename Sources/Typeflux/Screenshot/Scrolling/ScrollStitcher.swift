@@ -21,6 +21,8 @@ struct ScrollStitcher: @unchecked Sendable {
     static let defaultMaxPixels = 40_000_000
     /// At least this share of the compared rows must match for a shift to count as aligned.
     static let confidentMatchRatio = 0.9
+    /// A strong row vote may skip the broad search if the overlap verifies this well.
+    private static let decisiveMatchRatio = 0.97
     /// Below `confidentMatchRatio` but at least this, the shift is used and its segment flagged.
     static let acceptableMatchRatio = 0.6
     /// A pinned header or bottom bar takes at most this share of the frame.
@@ -79,6 +81,11 @@ struct ScrollStitcher: @unchecked Sendable {
         var isAmbiguous: Bool
     }
 
+    struct ShiftVote {
+        let shift: Int
+        let isDecisive: Bool
+    }
+
     let maxPixels: Int
     private let estimator: (any ScrollOffsetEstimating)?
     private var records: [Record] = []
@@ -117,12 +124,22 @@ struct ScrollStitcher: @unchecked Sendable {
         let fixed = fixedRowsKnown ? (header: headerHeight, footer: footerHeight)
             : Self.fixedRows(previous, current)
         let middle = fixed.header ..< frameHeight - fixed.footer
-        let shifts = Array(proposedShifts.prefix(2)) + candidateShifts(previous: previous, current: current, frame: frame, middle: middle)
-            + (expectedShift.map { [$0] } ?? [])
-        // Before the bars are known both may widen; after, only the top, for this comparison alone:
-        // a header that follows the content (an editor's sticky scroll) changes from frame to frame.
-        guard let (best, bars) = Self.best(of: shifts, fixed: fixed, widening: fixedRowsKnown ? .header : .both,
-                                           previous: previous, current: current),
+        let voted = Self.votedShift(previous: previous, current: current, middle: middle)
+        // Once bars are known, only the header is widened for an individual comparison.
+        let widening: Widening = fixedRowsKnown ? .header : .both
+        let alignment: (candidate: Candidate, fixed: (header: Int, footer: Int))?
+        if estimator == nil, proposedShifts.isEmpty, let voted, voted.isDecisive, voted.shift != 0,
+           let verified = Self.verifyDecisiveShift(voted.shift, fixed: fixed, widening: widening,
+                                                  previous: previous, current: current, middle: middle) {
+            alignment = verified
+        } else {
+            let shifts = Array(proposedShifts.prefix(2))
+                + candidateShifts(previous: previous, current: current, frame: frame, middle: middle)
+                + [voted?.shift, expectedShift].compactMap { $0 }
+            alignment = Self.best(of: shifts, fixed: fixed, widening: widening,
+                                  previous: previous, current: current)
+        }
+        guard let (best, bars) = alignment,
               best.ratio >= Self.acceptableMatchRatio else { return .unaligned }
         if best.shift == 0 { return .unchanged }
         if best.shift < 0 { return .scrolledBack }
@@ -254,7 +271,7 @@ struct ScrollStitcher: @unchecked Sendable {
         return (header, footer)
     }
 
-    /// The shifts worth checking: the estimator's, the hash vote's and the row-distance search's.
+    /// The estimator's and row-distance search's candidates for frames without an exact overlap.
     private func candidateShifts(previous: ScrollFrameSignature, current: ScrollFrameSignature, frame: ScrollFrame,
                                  middle: Range<Int>) -> [Int] {
         var shifts: [Int] = []
@@ -264,7 +281,6 @@ struct ScrollStitcher: @unchecked Sendable {
                 shifts += estimator.verticalShifts(from: before, to: after)
             }
         }
-        if let voted = Self.votedShift(previous: previous, current: current, middle: middle) { shifts.append(voted) }
         // Redrawn content seldom matches hash for hash, and repeating layouts (lists, tables) can make
         // a wrong shift look right row by row; the search by row distance covers both.
         shifts += Self.searchedShifts(previous: previous, current: current, middle: middle)
@@ -362,9 +378,9 @@ struct ScrollStitcher: @unchecked Sendable {
         return best
     }
 
-    /// The shift most matching detailed rows agree on.
+    /// Matching detailed rows vote for their shift. Strongly repeated rows never vote.
     static func votedShift(previous: ScrollFrameSignature, current: ScrollFrameSignature,
-                           middle: Range<Int>) -> Int? {
+                           middle: Range<Int>) -> ShiftVote? {
         var rowsByHash: [UInt64: [Int]] = [:]
         for row in middle where previous.isDetailed[row] {
             rowsByHash[previous.hashes[row], default: []].append(row)
@@ -374,10 +390,27 @@ struct ScrollStitcher: @unchecked Sendable {
             guard let matches = rowsByHash[current.hashes[row]], matches.count <= maxVotesPerHash else { continue }
             for match in matches { votes[match - row, default: 0] += 1 }
         }
-        let best = votes.max { lhs, rhs in
+        guard let best = votes.max(by: { lhs, rhs in
             lhs.value == rhs.value ? abs(lhs.key) > abs(rhs.key) : lhs.value < rhs.value
+        }) else { return nil }
+        let decisive = best.value >= bandEndRun && votes.allSatisfy { $0.key == best.key || $0.value * 2 < best.value }
+        return ShiftVote(shift: best.key, isDecisive: decisive)
+    }
+
+    /// Exact matches avoid a full comparison. Redrawn text can still pass the tolerance check.
+    private static func verifyDecisiveShift(_ shift: Int, fixed: (header: Int, footer: Int), widening: Widening,
+                                             previous: ScrollFrameSignature, current: ScrollFrameSignature,
+                                             middle: Range<Int>) -> (candidate: Candidate, fixed: (header: Int, footer: Int))? {
+        let overlap = middle.count - abs(shift)
+        guard overlap >= (middle.count + 2) / 3 else { return nil }
+        let start = middle.lowerBound + max(0, -shift)
+        if (start ..< start + overlap).allSatisfy({ current.hashes[$0] == previous.hashes[$0 + shift] }) {
+            return (Candidate(shift: shift, ratio: 1, distance: 0, isAmbiguous: false), fixed)
         }
-        return best.map(\.key)
+        guard let match = best(of: [shift], fixed: fixed, widening: widening, previous: previous, current: current),
+              match.candidate.ratio >= decisiveMatchRatio, match.candidate.distance == 0,
+              !match.candidate.isAmbiguous else { return nil }
+        return match
     }
 
     /// How well the frames line up at `shift`: the share of overlapping detailed rows that match,

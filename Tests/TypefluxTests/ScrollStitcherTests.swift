@@ -526,8 +526,10 @@ final class ScrollStitcherTests: XCTestCase {
         let first = page.frame(offset: 0, scrollingHeight: scrolling).signature
         let second = page.frame(offset: 90, scrollingHeight: scrolling).signature
 
-        XCTAssertEqual(ScrollStitcher.votedShift(previous: first, current: second, middle: 0 ..< scrolling), 90)
-        XCTAssertEqual(ScrollStitcher.votedShift(previous: second, current: first, middle: 0 ..< scrolling), -90)
+        let forward = ScrollStitcher.votedShift(previous: first, current: second, middle: 0 ..< scrolling)
+        XCTAssertEqual(forward?.shift, 90)
+        XCTAssertEqual(forward?.isDecisive, true)
+        XCTAssertEqual(ScrollStitcher.votedShift(previous: second, current: first, middle: 0 ..< scrolling)?.shift, -90)
         let blank = ScrollFrame(image: Fixtures.solid(width: 96, height: scrolling, gray: 200))!.signature
         XCTAssertNil(ScrollStitcher.votedShift(previous: blank, current: blank, middle: 0 ..< scrolling))
     }

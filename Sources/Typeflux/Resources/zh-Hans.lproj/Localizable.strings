@@ -4285,7 +4285,7 @@
 "screenshot.scroll.status.scrolling" = "正在自动滚动 · 动鼠标即可接管";
 "screenshot.scroll.status.paused" = "已暂停 · 可以手动滚动，按空格继续";
 "screenshot.scroll.status.pausedByMouse" = "你动了鼠标，已暂停 · 可以手动滚动，按空格继续";
-"screenshot.scroll.status.misaligned" = "页面没对齐 · 可以手动滚动，按空格重试";
+"screenshot.scroll.status.misaligned" = "画面接不上，请滚回已截图的位置";
 "screenshot.scroll.status.needsAccessibility" = "请手动滚动 · 授权辅助功能后可自动滚动";
 "screenshot.scroll.status.suspicious" = "这一段可能没对齐 · 按 ⌫ 撤销";
 "screenshot.scroll.allow" = "授权";

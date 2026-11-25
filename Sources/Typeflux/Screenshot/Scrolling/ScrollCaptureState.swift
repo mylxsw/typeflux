@@ -17,6 +17,8 @@ enum ScrollCaptureEnding: Equatable {
 enum ScrollCaptureResult {
     case finished(CGImage, ScrollCaptureEnding)
     case cancelled
+    /// The system did not deliver a usable first frame in time.
+    case timedOut
     /// Nothing was captured.
     case failed
 }

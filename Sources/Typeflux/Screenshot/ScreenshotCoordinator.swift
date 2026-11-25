@@ -464,6 +464,10 @@ final class ScreenshotCoordinator {
             if let notice = Self.toast(for: ending) { toast.show(notice) }
         case .cancelled:
             teardown()
+        case .timedOut:
+            analyticsRun?.finish(.failed, properties: ["error_kind": "scroll_capture_timeout"])
+            teardown()
+            toast.show(.captureTimedOut)
         case .failed:
             analyticsRun?.finish(.failed, properties: ["error_kind": "scroll_capture_failed"])
             teardown()

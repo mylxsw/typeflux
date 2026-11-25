@@ -10,10 +10,14 @@ import TypefluxMediaProtocol
 final class ScrollCaptureSession: ScrollCapturing {
     /// Each automatic step scrolls this share of the scrolling part of the region.
     static let stepShare: CGFloat = 0.6
-    static let quietInterval: TimeInterval = 0.25
-    static let maxWait: TimeInterval = 1.2
+    static let startupTimeout: TimeInterval = 3
+    static let quietInterval: TimeInterval = 0.125
+    static let maxWait: TimeInterval = 0.45
     /// Retain overlapping intermediate frames while the user keeps scrolling.
-    static let manualSampleInterval: TimeInterval = 0.25
+    static let manualSampleInterval: TimeInterval = 0.125
+    /// Keep a few overlapping frames when scrolling outruns analysis, under a byte limit.
+    private static let manualFrameBudget = 64_000_000
+    private static let maxManualFrames = 5
     /// After a step, nothing at all arriving for this long means nothing moved.
     static let stepTimeout: TimeInterval = 0.7
     /// This many steps in a row without change end the capture.
@@ -33,6 +37,7 @@ final class ScrollCaptureSession: ScrollCapturing {
     private struct PendingFrame {
         let image: CGImage
         let arrived: Date
+        var earlierImages: [CGImage]
         let since: Date
     }
 
@@ -66,6 +71,7 @@ final class ScrollCaptureSession: ScrollCapturing {
     private let analyze: @Sendable (CGImage) -> ScrollFrame?
 
     private var onFinish: ((ScrollCaptureResult) -> Void)?
+    private var startupDeadline: Date?
     private var stopTicking: (() -> Void)?
     /// The newest image not joined yet, when it arrived, and when the first unjoined one arrived.
     private var pending: PendingFrame?
@@ -123,6 +129,7 @@ final class ScrollCaptureSession: ScrollCapturing {
         started = true
         isActive = true
         self.onFinish = onFinish
+        startupDeadline = now().addingTimeInterval(Self.startupTimeout)
         presenter.present(region, actions: ScrollCaptureActions(
             togglePause: { [weak self] in self?.togglePause() },
             undo: { [weak self] in self?.undo() },
@@ -163,26 +170,47 @@ final class ScrollCaptureSession: ScrollCapturing {
     func receive(_ image: CGImage) {
         guard isActive, !finishing, !awaitingScrollAfterUndo, Self.accepts(image) else { return }
         let time = now()
-        pending = PendingFrame(image: image, arrived: time, since: pending?.since ?? time)
+        var earlierImages: [CGImage] = []
+        if !state.isAutomatic, !stitcher.isEmpty, let pending {
+            earlierImages = pending.earlierImages
+            let frameBytes = image.width * image.height * 4
+            let capacity = min(Self.maxManualFrames, Self.manualFrameBudget / frameBytes)
+            if earlierImages.count + 1 < capacity {
+                earlierImages.append(pending.image)
+            }
+        }
+        pending = PendingFrame(image: image, arrived: time, earlierImages: earlierImages, since: pending?.since ?? time)
     }
 
     /// Joins a frame once the picture holds still, and sends the next automatic step.
     func tick() {
-        guard isActive, !finishing, analysis == nil else { return }
+        guard isActive, !finishing else { return }
+        let time = now()
+        if let startupDeadline, time >= startupDeadline {
+            stop()
+            deliver(.timedOut)
+            return
+        }
+        guard analysis == nil else { return }
         if stitcher.isEmpty, let pending {
-            self.pending = nil
             startAnalysis(of: pending.image)
             return
         }
-        let time = now()
         let wait = state.isAutomatic ? Self.maxWait : Self.manualSampleInterval
-        if let pending, (time.timeIntervalSince(pending.arrived) >= Self.quietInterval
-            && lastScroll.map { time.timeIntervalSince($0) >= Self.quietInterval } != false)
-            || time.timeIntervalSince(pending.since) >= wait {
-            self.pending = nil
-            startAnalysis(of: pending.image)
-            return
-        } else if pending == nil, let step, time.timeIntervalSince(step.sent) >= Self.stepTimeout {
+        if var pending {
+            let settled = time.timeIntervalSince(pending.arrived) >= Self.quietInterval
+                && lastScroll.map { time.timeIntervalSince($0) >= Self.quietInterval } != false
+            if settled || time.timeIntervalSince(pending.since) >= wait {
+                if !state.isAutomatic, !pending.earlierImages.isEmpty {
+                    // The newest frame may be past the overlap even after the scrolling has stopped.
+                    let first = pending.earlierImages.removeFirst()
+                    startAnalysis(of: first, keeping: pending)
+                } else {
+                    startAnalysis(of: pending.image)
+                }
+                return
+            }
+        } else if let step, time.timeIntervalSince(step.sent) >= Self.stepTimeout {
             // The step moved nothing on screen, so no frame came.
             self.step = nil
             if step.kind == .forward {
@@ -202,8 +230,9 @@ final class ScrollCaptureSession: ScrollCapturing {
 
     /// Reduces the image to a frame and joins it, both off the main thread, on a copy of the
     /// stitcher. The result is dropped when the stitcher changed in the meantime (an undo).
-    private func startAnalysis(of image: CGImage) {
+    private func startAnalysis(of image: CGImage, keeping latest: PendingFrame? = nil) {
         guard let slot = try? Self.analysisAdmission.acquire(bytes: 1) else { return }
+        pending = latest
         analyzing = image
         let analyze = analyze, copy = stitcher, version = stitcherVersion, registration = registration
         // In pixels; the step's own distance is usually exactly how far the content moved.
@@ -239,6 +268,7 @@ final class ScrollCaptureSession: ScrollCapturing {
         step = nil
         switch outcome {
         case .started:
+            startupDeadline = nil
             state.status = .manual
             if stitcher.isFull {
                 finish(.reachedLimit)
@@ -247,20 +277,25 @@ final class ScrollCaptureSession: ScrollCapturing {
         case let .appended(_, suspicious):
             unchangedSteps = 0
             failures = suspicious ? failures + 1 : 0
+            if state.status == .misaligned { state.status = .manual }
         case .unchanged:
             if finishedStep?.kind == .forward {
                 countUnchangedStep()
             }
+            return
         case .scrolledBack:
-            break
+            return
         case .unaligned:
             failures += 1
+            if state.status == .manual, pending == nil {
+                state.status = .misaligned
+            }
         case .reachedLimit:
             finish(.reachedLimit)
             return
         }
         guard isActive else { return }
-        if failures >= Self.failuresToPause, state.status == .scrolling {
+        if failures >= Self.failuresToPause, state.status == .scrolling || state.status == .manual {
             state.status = .misaligned
         }
         publish()
@@ -375,7 +410,8 @@ final class ScrollCaptureSession: ScrollCapturing {
         guard isActive, !finishing else { return }
         finishing = true
         stopInputs()
-        let existing = analysis, final = ending == .user ? pending?.image : nil
+        let existing = analysis
+        let final = ending == .user ? pending.map { $0.earlierImages + [$0.image] } ?? [] : []
         pending = nil
         if ending != .user { analysis?.cancel(); stitcherVersion += 1 }
         finishTask = Task { [weak self] in
@@ -385,7 +421,9 @@ final class ScrollCaptureSession: ScrollCapturing {
             let work = Task.detached(priority: .userInitiated) { () -> CGImage? in
                 defer { withExtendedLifetime(slot) {} }
                 var value = copy
-                if !Task.isCancelled, let final, !value.isFull, let frame = analyze(final) {
+                for image in final {
+                    guard !Task.isCancelled, !value.isFull else { break }
+                    guard let frame = analyze(image) else { continue }
                     _ = try? await value.addPreparingOffsets(frame, registration: registration)
                 }
                 guard !Task.isCancelled else { return nil }

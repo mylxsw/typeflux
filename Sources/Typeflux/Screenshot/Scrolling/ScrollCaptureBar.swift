@@ -42,11 +42,15 @@ struct ScrollCaptureBar: View {
                 Text(size)
                     .font(.system(size: 11.5).monospacedDigit())
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
             if state.status == .needsAccessibility {
                 Button(L("screenshot.scroll.allow"), action: actions.openAccessibilitySettings)
                     .buttonStyle(.link)
                     .font(.system(size: 12.5, weight: .medium))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
             Rectangle().fill(AskTheme.border).frame(width: 1, height: 18).padding(.horizontal, 4)
             button(state.isAutomatic ? "pause.fill" : "play.fill",
@@ -58,7 +62,10 @@ struct ScrollCaptureBar: View {
             Button(action: actions.finish) {
                 HStack(spacing: 5) {
                     Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
-                    Text(L("screenshot.scroll.done")).font(.system(size: 12.5, weight: .semibold))
+                    Text(L("screenshot.scroll.done"))
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                     Text("↩").font(.system(size: 11)).opacity(0.75)
                 }
                 .foregroundStyle(.white)
@@ -81,7 +88,10 @@ struct ScrollCaptureBar: View {
             HStack(spacing: 4) {
                 Image(systemName: symbol).font(.system(size: 12, weight: .medium))
                 if showsTitle {
-                    Text(title).font(.system(size: 12, weight: .medium))
+                    Text(title)
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
                 Text(key).font(.system(size: 11)).foregroundStyle(.secondary)
             }

@@ -959,6 +959,13 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         XCTAssertEqual(toasts.shown, [.failed])
     }
 
+    func testACaptureThatNeverGetsItsFirstFrameShowsTheTimeoutNotice() async {
+        let sut = await scrolling()
+        scrollCaptures.last?.onFinish?(.timedOut)
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(toasts.shown, [.captureTimedOut])
+    }
+
     func testCancellingTheScreenshotStopsTheScrollingCaptureOnce() async {
         let sut = await scrolling()
 

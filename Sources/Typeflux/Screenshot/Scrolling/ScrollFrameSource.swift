@@ -45,6 +45,7 @@ final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStrea
     private var stream: SCStream?
     private var onFrame: (@Sendable (CGImage) -> Void)?
     private var onError: (@Sendable (Error) -> Void)?
+    private var lastFrame: PixelFrame?
 
     init(ownProcessID: pid_t = ProcessInfo.processInfo.processIdentifier,
          captureControlWindowIDs: @escaping @MainActor () -> [CGWindowID] = ScreenshotCaptureWindowPolicy.excludedWindowIDs) {
@@ -61,6 +62,7 @@ final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStrea
             throw ScreenCaptureError.unavailable
         }
         let controls = Set(await captureControlWindowIDs())
+        try Task.checkCancellation()
         let excluded = content.windows.filter {
             $0.owningApplication?.processID == ownProcessID && controls.contains($0.windowID)
         }
@@ -71,24 +73,37 @@ final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStrea
             self.stream = stream
             self.onFrame = onFrame
             self.onError = onError
+            lastFrame = nil
         }
-        try await stream.startCapture()
-        // Cancellation can happen while the native start operation is in flight.
-        if Task.isCancelled {
-            stop()
+        do {
+            try Task.checkCancellation()
+            try await stream.startCapture()
+        } catch {
+            _ = detach(stream)
+            throw error
+        }
+        // stop() can detach the stream before its native start has finished.
+        if Task.isCancelled || lock.withLock({ self.stream !== stream }) {
+            _ = detach(stream)
+            try? await stream.stopCapture()
         }
     }
 
     func stop() {
-        let stream = lock.withLock {
+        detach()?.stopCapture { _ in }
+    }
+
+    private func detach(_ expected: SCStream? = nil) -> SCStream? {
+        lock.withLock {
+            if let expected, stream !== expected { return nil }
             defer {
-                self.stream = nil
+                stream = nil
                 onFrame = nil
                 onError = nil
+                lastFrame = nil
             }
-            return self.stream
+            return stream
         }
-        stream?.stopCapture { _ in }
     }
 
     static func configuration(for region: ScrollCaptureRegion) -> SCStreamConfiguration {
@@ -107,45 +122,71 @@ final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStrea
 
     // MARK: SCStreamOutput
 
-    func stream(_: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
-        guard type == .screen, Self.isComplete(sampleBuffer),
-              let buffer = sampleBuffer.imageBuffer,
-              let image = Self.copyImage(of: buffer) else { return }
-        let handler = lock.withLock { onFrame }
+    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+        guard type == .screen, Self.carriesPixels(sampleBuffer), let buffer = sampleBuffer.imageBuffer,
+              let current = lock.withLock({ self.stream === stream ? (lastFrame, onFrame) : nil }),
+              let frame = PixelFrame.copy(of: buffer, differentFrom: current.0),
+              let image = frame.makeImage() else { return }
+        let handler: (@Sendable (CGImage) -> Void)? = lock.withLock {
+            guard self.stream === stream else { return nil }
+            lastFrame = frame
+            return current.1
+        }
         handler?(image)
     }
 
-    func stream(_: SCStream, didStopWithError error: Error) {
-        let handler = lock.withLock { onError }
+    func stream(_ stream: SCStream, didStopWithError error: Error) {
+        let handler = lock.withLock { self.stream === stream ? onError : nil }
         handler?(error)
     }
 
     /// Frames that carry new pixels; idle and blank frames have none.
-    private static func isComplete(_ sampleBuffer: CMSampleBuffer) -> Bool {
+    private static func carriesPixels(_ sampleBuffer: CMSampleBuffer) -> Bool {
         guard let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false)
             as? [[SCStreamFrameInfo: Any]],
             let raw = attachments.first?[.status] as? Int,
             let status = SCFrameStatus(rawValue: raw) else { return false }
-        return status == .complete
+        return status == .complete || status == .started
     }
 
     /// A copy of the pixels, so the stream's buffer goes back to its pool at once.
     static func copyImage(of buffer: CVPixelBuffer) -> CGImage? {
-        CVPixelBufferLockBaseAddress(buffer, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
-        guard let base = CVPixelBufferGetBaseAddress(buffer) else { return nil }
-        let width = CVPixelBufferGetWidth(buffer), height = CVPixelBufferGetHeight(buffer)
-        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
-        let space = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-        let info = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
-        guard let source = CGContext(data: base, width: width, height: height, bitsPerComponent: 8,
-                                     bytesPerRow: bytesPerRow, space: space, bitmapInfo: info),
-            let view = source.makeImage() else { return nil }
-        // That image may still share the buffer, which the stream reuses: draw it into memory of our own.
-        guard let copy = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
-                                   space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
-        else { return nil }
-        copy.draw(view, in: CGRect(x: 0, y: 0, width: width, height: height))
-        return copy.makeImage()
+        PixelFrame.copy(of: buffer)?.makeImage()
+    }
+
+    struct PixelFrame {
+        let width: Int
+        let height: Int
+        let bytesPerRow: Int
+        let data: CFData
+
+        /// Complete frames can contain identical pixels when only an excluded window changes.
+        /// Compare visible pixels before copying so those updates never reset the settling timer.
+        static func copy(of buffer: CVPixelBuffer, differentFrom previous: PixelFrame? = nil) -> PixelFrame? {
+            guard CVPixelBufferGetPixelFormatType(buffer) == kCVPixelFormatType_32BGRA,
+                  CVPixelBufferLockBaseAddress(buffer, .readOnly) == kCVReturnSuccess else { return nil }
+            defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+            guard let base = CVPixelBufferGetBaseAddress(buffer)?.assumingMemoryBound(to: UInt8.self) else { return nil }
+            let width = CVPixelBufferGetWidth(buffer), height = CVPixelBufferGetHeight(buffer)
+            let stride = CVPixelBufferGetBytesPerRow(buffer)
+            if let previous, previous.width == width, previous.height == height,
+               let old = CFDataGetBytePtr(previous.data),
+               (0 ..< height).allSatisfy({
+                   memcmp(base + $0 * stride, old + $0 * previous.bytesPerRow, width * 4) == 0
+               }) {
+                return nil
+            }
+            guard let data = CFDataCreate(nil, base, stride * height) else { return nil }
+            return PixelFrame(width: width, height: height, bytesPerRow: stride, data: data)
+        }
+
+        func makeImage() -> CGImage? {
+            guard let provider = CGDataProvider(data: data) else { return nil }
+            let space = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+            let info = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
+            return CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32,
+                           bytesPerRow: bytesPerRow, space: space, bitmapInfo: CGBitmapInfo(rawValue: info),
+                           provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+        }
     }
 }

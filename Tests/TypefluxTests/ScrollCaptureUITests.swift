@@ -474,11 +474,14 @@ final class ScrollCaptureUITests: XCTestCase {
         }
         CVPixelBufferUnlockBaseAddress(pixels, [])
 
+        let copied = try XCTUnwrap(ScreenCaptureStreamFrameSource.PixelFrame.copy(of: pixels))
+        XCTAssertNil(ScreenCaptureStreamFrameSource.PixelFrame.copy(of: pixels, differentFrom: copied))
         let image = try XCTUnwrap(ScreenCaptureStreamFrameSource.copyImage(of: pixels))
         // Overwriting the buffer afterwards does not change the copy.
         CVPixelBufferLockBaseAddress(pixels, [])
         memset(CVPixelBufferGetBaseAddress(pixels), 0, bytesPerRow * 3)
         CVPixelBufferUnlockBaseAddress(pixels, [])
+        XCTAssertNotNil(ScreenCaptureStreamFrameSource.PixelFrame.copy(of: pixels, differentFrom: copied))
 
         XCTAssertEqual(image.width, 4)
         XCTAssertEqual(image.height, 3)

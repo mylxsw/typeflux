@@ -121,7 +121,7 @@ struct ScrollFrameSignature: Equatable, Sendable {
 
     /// The average difference between two rows' fine boxes; 255 when they cannot be compared.
     func distance(_ row: Int, to otherRow: Int, of other: ScrollFrameSignature) -> Int {
-        fineDifference(row, otherRow, other).mean
+        hashes[row] == other.hashes[otherRow] ? 0 : fineDifference(row, otherRow, other).mean
     }
 
     /// The average difference between two rows' coarse profiles, for a quick search; 255 when they

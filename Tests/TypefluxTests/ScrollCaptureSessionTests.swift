@@ -423,24 +423,36 @@ final class ScrollCaptureSessionTests: XCTestCase {
         await start(session)
         await settle(session, 0)
         monitor.handler?(.scrolled)
-        session.receive(frame(40))
-        advance(0.1)
-        monitor.handler?(.scrolled)
-        session.receive(frame(80))
-        await tick(session)
-        XCTAssertEqual(session.stitcher.segments.count, 1)
-        advance(0.1)
-        monitor.handler?(.scrolled)
         session.receive(frame(120))
+        advance(ScrollCaptureSession.manualSampleInterval / 2)
         await tick(session)
         XCTAssertEqual(session.stitcher.segments.count, 1)
-        advance(0.1)
         monitor.handler?(.scrolled)
-        session.receive(frame(150))
+        // The latest viewport has already scrolled past the first one.
+        session.receive(frame(270))
+        advance(ScrollCaptureSession.manualSampleInterval / 2)
         await tick(session)
-        XCTAssertEqual(session.state.pixelSize.height, 400, "Intermediate sample retains overlap during a gesture")
-        XCTAssertEqual(session.stitcher.segments.count, 2)
+        XCTAssertEqual(session.state.pixelSize.height, 370, "Keeps the earlier overlapping frame")
+        advance(ScrollCaptureSession.quietInterval)
+        await tick(session)
+        XCTAssertEqual(session.state.pixelSize.height, 520, "Also joins the latest frame")
+        XCTAssertEqual(session.stitcher.segments.count, 3)
         XCTAssertTrue(driver.scrolls.isEmpty)
+    }
+
+    func testManualCaptureKeepsOverlappingFramesEvenAfterAFastGestureStops() async {
+        let session = makeSession()
+        await start(session)
+        await settle(session, 0)
+        for offset in [120, 250, 370] {
+            session.receive(frame(offset))
+        }
+        advance(ScrollCaptureSession.quietInterval)
+        for height in [370, 500, 620] {
+            await tick(session)
+            XCTAssertEqual(session.state.pixelSize.height, height)
+        }
+        XCTAssertEqual(session.state.status, .manual)
     }
 
     func testManualHorizontalCaptureCanFinishOrOptIntoHorizontalAutomaticAndUndo() async throws {
@@ -651,6 +663,37 @@ final class ScrollCaptureSessionTests: XCTestCase {
 
         guard case .failed? = results.last else { return XCTFail("Expected a failure, got \(results)") }
         XCTAssertFalse(session.isActive)
+    }
+
+    func testPreparingTimesOutWithoutAFirstFrame() async {
+        let session = makeSession()
+        await start(session)
+        advance(ScrollCaptureSession.startupTimeout - 0.125)
+        await tick(session)
+        XCTAssertTrue(session.isActive)
+        XCTAssertEqual(session.state.status, .starting)
+        advance(0.125)
+        await tick(session)
+        guard case .timedOut? = results.last else { return XCTFail("Expected a timeout") }
+        XCTAssertEqual(source.stops, 1)
+        XCTAssertEqual(presenter.dismissals, 1)
+        session.receive(frame(0))
+        await tick(session)
+        XCTAssertFalse(session.isActive)
+        XCTAssertEqual(results.count, 1)
+    }
+
+    func testManualCaptureReportsLostOverlapAndRecoversWhenContentReturns() async {
+        let session = makeSession()
+        await start(session)
+        await settle(session, 0)
+        session.receive(Fixtures.noise(width: page.width, height: 250, seed: 1))
+        advance(ScrollCaptureSession.quietInterval)
+        await tick(session)
+        XCTAssertEqual(session.state.status, .misaligned)
+        await settle(session, 120)
+        XCTAssertEqual(session.state.status, .manual)
+        XCTAssertEqual(session.state.pixelSize.height, 370)
     }
 
     func testCancellingStopsEverything() async {
