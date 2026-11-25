@@ -1802,7 +1802,9 @@
 "ask.usage.contextPercentUsed" = "약 %@ 사용 중";
 "ask.usage.contextUsed" = "사용 %@";
 "ask.usage.contextFree" = "남음 %@";
-"ask.usage.contextHelp" = "저장된 대화를 기준으로 추정하며 초안은 제외합니다. 지침, 기록, 도구, 첨부를 포함하며 누적 사용량과 다릅니다。";
+"ask.usage.reportedInput" = "최근 실제 입력 %@";
+"ask.usage.estimatedInput" = "예상 입력 %@";
+"ask.usage.contextHelp" = "위에는 모델 요청 한 건의 입력이 표시됩니다. 아래에는 선택한 범위에 속한 모든 호출의 합계가 표시됩니다.";
 "ask.usage.output" = "출력 tokens";
 "ask.usage.input" = "입력 tokens";
 "ask.usage.cachedInput" = "캐시 입력 tokens";

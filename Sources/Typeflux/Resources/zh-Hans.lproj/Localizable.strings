@@ -1812,7 +1812,9 @@
 "ask.usage.contextPercentUsed" = "已占用约 %@";
 "ask.usage.contextUsed" = "对话占用 %@";
 "ask.usage.contextFree" = "剩余 %@";
-"ask.usage.contextHelp" = "按已保存对话估算，未含草稿。包含系统提示、历史、工具与附件，不等于累计消耗。";
+"ask.usage.reportedInput" = "最近一次实际输入 %@";
+"ask.usage.estimatedInput" = "预计输入 %@";
+"ask.usage.contextHelp" = "上面显示一次模型请求的输入。下面把所选范围内的各次调用加在一起。";
 "ask.usage.output" = "输出 tokens";
 "ask.usage.input" = "输入 tokens";
 "ask.usage.cachedInput" = "缓存输入 tokens";

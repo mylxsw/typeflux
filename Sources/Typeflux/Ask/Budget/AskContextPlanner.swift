@@ -32,7 +32,8 @@ enum AskContextPlanner {
         return AskLocalPrompt.json(projected)
     }
 
-    static func plan(_ payload: [String: Any], limits: AskContextLimits) throws -> AskContextPlan {
+    static func plan(_ payload: [String: Any], limits: AskContextLimits,
+                     report: (AskContextPlan) -> Void = { _ in }) throws -> AskContextPlan {
         guard (512 ... 10_000_000).contains(limits.window), (1 ... limits.window).contains(limits.maxOutput),
               (1 ... 1_000_000).contains(limits.imageTokens),
               JSONSerialization.isValidJSONObject(payload) else { throw AskBudgetError.invalid }
@@ -47,6 +48,8 @@ enum AskContextPlanner {
             capacity: limits.window,
             trimmed: Self.weight(copy, imageTokens: limits.imageTokens) < Self.weight(payload, imageTokens: limits.imageTokens)
         )
+        // Even a rejected request has a known window and a final input estimate.
+        defer { report(plan) }
         func fit() -> Bool {
             plan.inputTokens = weight(copy, imageTokens: limits.imageTokens)
             let remaining = limits.window - plan.inputTokens - 256

@@ -419,7 +419,7 @@ extension AskConversationModel {
             plugins.comparing.toggle()
             return .stay
         case let .askAI(prompt):
-            askAIFromPlugin(prompt)
+            askAIFromPlugin(prompt, wordCard: action.wordCardQuestion)
             return .close
         case let .focusBrowserTab(target):
             Task { await focusBrowserTab(target) }
@@ -577,14 +577,15 @@ extension AskConversationModel {
 
     /// ⌘↩ in keyword mode: the AI gets the plugin's prompt about its result, or
     /// the typed text (the selection rides along with the draft as always).
-    func askAIFromPlugin(_ prompt: String? = nil) {
+    func askAIFromPlugin(_ prompt: String? = nil, wordCard: Bool = false) {
         guard !isTerminalCommandMode else { return }
         let argument = launcherDraft.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let text = prompt ??
             (argument.isEmpty ? plugins.plugin.map { L("ask.plugin.askAI.selection", $0.title) } ?? "" : argument)
         recordLauncherInput(destination: .askAI)
         plugins.deactivate()
-        launcherDraft.text = text
+        if wordCard { launcherDraft = launcherDraft.askingAboutWord(text) }
+        else { launcherDraft.text = text }
         // A failed submission must not save a generated prompt as abandoned input.
         launcherExecutedInput = AskLauncherInputHistory.identity(text)
         submitLauncher(recordInput: false)

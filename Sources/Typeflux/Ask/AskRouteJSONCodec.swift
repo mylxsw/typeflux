@@ -82,8 +82,8 @@ struct AskRouteNumber: Equatable, Sendable, ExpressibleByIntegerLiteral {
 
 extension AskRouteJSON {
     /// Only this scoped codec is used at private snapshot evidence boundaries.
-    static func decodeRaw(_ data: Data) throws -> Self {
-        var parser = AskRouteJSONParser(bytes: Array(data))
+    static func decodeRaw(_ data: Data, rejectDuplicateKeys: Bool = false) throws -> Self {
+        var parser = AskRouteJSONParser(bytes: Array(data), rejectDuplicateKeys: rejectDuplicateKeys)
         let value = try parser.value(depth: 0)
         parser.whitespace()
         guard parser.index == parser.bytes.count else { throw CocoaError(.coderReadCorrupt) }
@@ -124,6 +124,7 @@ extension AskRouteJSON {
 
 private struct AskRouteJSONParser {
     let bytes: [UInt8]
+    let rejectDuplicateKeys: Bool
     var index = 0
     mutating func whitespace() {
         while index < bytes.count, [9, 10, 13, 32].contains(bytes[index]) {
@@ -176,6 +177,7 @@ private struct AskRouteJSONParser {
         }
         repeat {
             let key = try string()
+            guard !rejectDuplicateKeys || fields[key] == nil else { throw CocoaError(.coderReadCorrupt) }
             guard consume(58) else { throw CocoaError(.coderReadCorrupt) }
             fields[key] = try value(depth: depth + 1)
             if consume(125) {

@@ -116,7 +116,7 @@ extension AskTranslatePlugin {
             title: L("ask.plugin.action.speak"), symbol: "speaker.wave.2"),
             AskPluginAction(kind: .copy(card.markdown), title: L("ask.plugin.action.copyCard"),
                             symbol: "doc.on.clipboard", shortcut: .shiftCommandC),
-            AskPluginAction(kind: .askAI(L("ask.plugin.translate.askAI.word", card.markdown)),
+            AskPluginAction(wordCardQuestion: true, kind: .askAI(L("ask.plugin.translate.askAI.word", card.markdown)),
                             title: L("ask.quick.askAI"), symbol: "bubble.left")
         ]
         var output = AskPluginOutput(body: text, original: request.text, meta: plan.meta, source: source,

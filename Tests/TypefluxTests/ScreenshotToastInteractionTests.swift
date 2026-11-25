@@ -52,10 +52,16 @@ struct ScreenshotToastInteractionTests {
         })
         let frame = try #require(button.value("accessibilityFrame") as? NSRect)
         let point = panel.convertPoint(fromScreen: NSPoint(x: frame.midX, y: frame.midY))
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+        func event(_ type: NSEvent.EventType) throws -> NSEvent {
+            try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
                 timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: panel.windowNumber,
-                context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)))
+                context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
+        }
+        // AppKit tracks native buttons synchronously until mouse-up.
+        try NSApp.postEvent(event(.leftMouseUp), atStart: true)
+        try NSApp.sendEvent(event(.leftMouseDown))
+        if let release = NSApp.nextEvent(matching: .leftMouseUp, until: Date(), inMode: .default, dequeue: true) {
+            NSApp.sendEvent(release)
         }
         #expect(NSApp.keyWindow === keyWindow)
     }

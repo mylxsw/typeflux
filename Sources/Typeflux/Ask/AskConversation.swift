@@ -5,6 +5,7 @@ struct AskToolDefinition: Codable, Equatable, Sendable {
     var name: String
     var description: String
     var parameters: JSONValue
+    var mcpServer: String? = nil
 }
 
 typealias AskToolCall = ChatToolCall
@@ -21,6 +22,7 @@ struct AskGeneratedImage: Codable, Equatable, Sendable {
 }
 
 struct AskMessage: Codable, Identifiable, Equatable, Sendable {
+    var answerOnly: Bool? = nil
     var id: String
     var role: String
     var text: String
@@ -194,6 +196,7 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
 typealias AskConversationSummary = ChatConversationSummary
 
 struct AskSendRequest: Codable, Equatable, Sendable {
+    var answerOnly: Bool? = nil
     /// Host-created identity; distinguishes a new offline conversation from a
     /// missing local execution snapshot of an existing synchronized conversation.
     var deviceCreate: Bool? = nil
@@ -291,6 +294,7 @@ struct AskToolResultRequest: Codable, Equatable, Sendable {
 }
 
 struct AskDraft: Codable, Equatable, Sendable {
+    var answerOnly: Bool? = nil
     var reasoningEffort: String? = nil
     var text = ""
     var includeScreenshot = true
@@ -334,7 +338,7 @@ struct AskDraft: Codable, Equatable, Sendable {
     var kind: String? = nil
 
     private enum CodingKeys: String, CodingKey {
-        case text, includeScreenshot, screenshot, selection, source, sourceOff, capturedAt, modelRef
+        case answerOnly, text, includeScreenshot, screenshot, selection, source, sourceOff, capturedAt, modelRef
         case references, memory, memoryOff, selectionOff, attachments, skills, mcpServers,
              storesLocally,
              temporary, kind
@@ -380,11 +384,25 @@ struct AskDraft: Codable, Equatable, Sendable {
             return copy
         }
         return AskSendRequest(
+            answerOnly: answerOnly,
             id: id, deviceId: deviceId, text: text.trimmingCharacters(in: .whitespacesAndNewlines),
             selection: sentSelection, source: sentSource,
             image: includeScreenshot ? screenshot : nil, tools: tools, modelRef: modelRef, references: references,
             attachments: sentAttachments, mcpServers: mcpServers
         )
+    }
+
+    /// A card supplies the question itself. Keep deliberate image attachments and model/storage choices.
+    func askingAboutWord(_ prompt: String) -> Self {
+        var card = Self(answerOnly: true, text: prompt, includeScreenshot: false, modelRef: modelRef)
+        card.attachments = attachments?.filter { $0.kind == .image }
+        card.memoryOff = true
+        card.skills = []
+        card.storesLocally = storesLocally
+        card.temporary = temporary
+        card.kind = kind
+        card.reasoningEffort = reasoningEffort
+        return card
     }
 
     static var followUp: AskDraft { AskDraft(includeScreenshot: false) }

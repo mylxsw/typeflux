@@ -119,6 +119,10 @@ struct AskContextUsage: Codable, Equatable, Sendable {
     var summarized: Bool
     var estimated: Bool? = nil
     var trimmed: Bool? = nil
+    var inputLabel: String {
+        let count = AccountUsageDisplayFormatter.count(Int64(max(0, inputTokens)))
+        return estimated == false ? L("ask.usage.reportedInput", count) : L("ask.usage.estimatedInput", count)
+    }
     var remaining: Int? { capacity.flatMap { $0 > 0 ? max(0, $0 - max(0, inputTokens)) : nil } }
     var fraction: Double? { capacity.flatMap { $0 > 0 ? Double(inputTokens) / Double($0) : nil } }
     var isHigh: Bool { fraction.map { $0 >= 0.9 } ?? false }
@@ -152,11 +156,35 @@ struct AskUsagePage: Codable, Sendable {
 }
 
 extension AskConversation {
+    private var contextAnswerID: String? {
+        guard let run else { return nil }
+        return run.assistantId ?? messages.last(where: { $0.role == "assistant" && $0.runId == run.id })?.id
+    }
+
+    private func reportsInput(for other: Self) -> Bool {
+        guard let answer = contextAnswerID, let context = contextUsage else { return false }
+        return context.estimated == false && run?.id == other.run?.id && answer == other.contextAnswerID
+            && context.modelRef == other.contextUsage?.modelRef
+    }
+
+    // Reading an old snapshot can recover the provider count without a new billing or content event.
+    private func correctsEstimate(in other: Self) -> Bool {
+        revision == other.revision && usage?.version == other.usage?.version
+            && other.contextUsage?.estimated != false && reportsInput(for: other)
+    }
+
     // Content and metering advance independently, including after cancellation.
     func mergingUsage(from older: Self?) -> Self {
         guard let older, older.id == id else { return self }
         var result = self
-        if (older.usage?.version ?? 0) > (usage?.version ?? 0) { result.usage = older.usage }
+        if (older.usage?.version ?? 0) > (usage?.version ?? 0) {
+            result.usage = older.usage
+            if older.reportsInput(for: self) {
+                result.contextUsage = older.contextUsage
+            }
+        } else if older.correctsEstimate(in: self) {
+            result.contextUsage = older.contextUsage
+        }
         if older.run?.id == run?.id, (older.run?.budget?.version ?? 0) > (run?.budget?.version ?? 0) {
             result.run?.budget = older.run?.budget
         }
@@ -192,7 +220,7 @@ extension AskConversation {
         return result
     }
     func isNewer(than older: Self) -> Bool {
-        revision > older.revision || (usage?.version ?? 0) > (older.usage?.version ?? 0)
+        revision > older.revision || correctsEstimate(in: older) || (usage?.version ?? 0) > (older.usage?.version ?? 0)
             || (run?.id == older.run?.id && run?.recovery?.version == 1
                 && (run?.recovery?.sequence ?? -1) > (older.run?.recovery?.sequence ?? -1))
             || (run?.id == older.run?.id && (run?.budget?.version ?? 0) > (older.run?.budget?.version ?? 0))

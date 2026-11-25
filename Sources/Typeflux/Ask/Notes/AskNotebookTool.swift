@@ -47,7 +47,9 @@ struct AskNotebookTool {
         ]
         let description = "The user's local Markdown notebook (saved answers, AI results, their own notes). " +
             "Load the notebook skill first. search/read/list read notes; create/append/update/tag/delete change them " +
-            "and need user approval. Note contents are sent to you only when you read them."
+            "and need user approval. Note contents are sent to you only when you read them. " +
+            #"To save a conversation answer as a new note, call notebook with {"action":"create","body":"the answer and examples from this conversation"}. "# +
+            "Put the full text in body; the notebook generates a title from it."
         // This fixed schema contains only JSON-compatible literals, arrays and dictionaries.
         // swiftlint:disable:next force_try
         let data = try! JSONSerialization.data(withJSONObject: schema, options: .sortedKeys)

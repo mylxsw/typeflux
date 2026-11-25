@@ -210,7 +210,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             store: wordBook, dictionary: model.translationAI as? any AskWordLookingUp, settings: settings,
             askAI: { [weak model] prompt in
                 // A new conversation about the word, without the launcher's selection or screenshot.
-                model?.launcherDraft = AskDraft(text: prompt, includeScreenshot: false, selection: nil)
+                model?.launcherDraft = AskDraft().askingAboutWord(prompt)
                 model?.submitLauncher()
             }
         ) { [weak settings] in AskPluginRegistry.translationModelName(settings) }

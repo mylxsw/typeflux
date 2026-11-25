@@ -34,6 +34,7 @@ final class AskConversationModel: ObservableObject {
         guard var context = selected?.contextUsage else { return nil }
         let ref = modelReference(launcher: false)
         let entry = modelLibrary.registry.resolve(ref)?.1
+        if ref != context.modelRef, context.estimated == false { return nil }
         if ref != context.modelRef {
             context.modelRef = ref
             context.capacity = entry?.effectiveContextWindowTokens
@@ -1587,7 +1588,7 @@ final class AskConversationModel: ObservableObject {
             if !inline { lastConversationKind = kind }
         }
         request.clientToolApproval = true
-        request.skillCatalog = skillCatalog(submitted.skills)
+        request.skillCatalog = submitted.answerOnly == true ? nil : skillCatalog(submitted.skills)
         request.modelRef = modelRef
         request.reasoningEffort = (submitted.reasoningEffort.flatMap(AskReasoningEffort.init(rawValue:))
             ?? chosenReasoningEffort(launcher: launcher)).requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
@@ -1607,7 +1608,7 @@ final class AskConversationModel: ObservableObject {
             pendingDraftHandoff = nil
         }
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
-        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments, skills: request.skills, skillCatalog: request.skillCatalog, mcpServers: request.mcpServers))
+        value.messages.append(.init(answerOnly: request.answerOnly, id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments, skills: request.skills, skillCatalog: request.skillCatalog, mcpServers: request.mcpServers))
         if launcher { persistDrafts() }
         if !inline {
             selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID()
@@ -1742,7 +1743,8 @@ final class AskConversationModel: ObservableObject {
             do {
                 try checkOperation(id, operationId: operationId, account: current.account)
                 let toolKind = value.run == nil ? value.resolvedKind : value.dispatchKind
-                let definitions = await tools.definitions(conversationId: id, includeMCP: toolKind == .work)
+                let answerOnly = pendingSends[id]?.answerOnly ?? value.messages.last(where: { $0.role == "user" })?.answerOnly
+                let definitions = answerOnly == true ? [] : await tools.definitions(conversationId: id, includeMCP: toolKind == .work)
                 let response: AskConversation
                 if let request = pendingSends[id] {
                     response = try await resumePendingSend(request, conversation: value, route: current, operationId: operationId)
@@ -1755,7 +1757,7 @@ final class AskConversationModel: ObservableObject {
                         throw AskLocalError.message(L("ask.recovery.readOnlyUnavailable"))
                     }
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
-                    var request = AskSendRequest(clientToolApproval: true, id: message.id, deviceId: deviceId, text: message.text,
+                    var request = AskSendRequest(answerOnly: message.answerOnly, clientToolApproval: true, id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
                                                  tools: modelLibrary.imageCapability(value.modelRef ?? "cloud:default").observationTools(value.resolvedKind.offered(definitions)), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
                                                  attachments: message.attachments)
@@ -1859,7 +1861,8 @@ final class AskConversationModel: ObservableObject {
             defer { monitor.cancel() }
             do {
                 try checkOperation(id, operationId: operationId, account: current.account)
-                let available = await tools.definitions(conversationId: id, includeMCP: value.resolvedKind == .work)
+                let answerOnly = value.messages.last(where: { $0.role == "user" })?.answerOnly == true
+                let available = answerOnly ? [] : await tools.definitions(conversationId: id, includeMCP: value.resolvedKind == .work)
                 let definitions = modelLibrary.imageCapability(modelRef).observationTools(AskSkillCatalog.applying(value.messages.last(where: { $0.role == "user" })?.skillCatalog,
                     to: value.resolvedKind.offered(available)))
                 try await validateModel(
@@ -1914,7 +1917,8 @@ final class AskConversationModel: ObservableObject {
         if snapshots[value.id]?.title != value.title || snapshots[value.id]?.titleGeneration != value.titleGeneration
             || snapshots[value.id]?.titleSource != value.titleSource || snapshots[value.id]?.titlePolicy != value.titlePolicy
             || snapshots[value.id]?.messages != value.messages || snapshots[value.id]?.run?.status != value.run?.status
-            || snapshots[value.id]?.usage != value.usage {
+            || snapshots[value.id]?.usage != value.usage
+            || (value.contextUsage?.estimated == false && snapshots[value.id]?.contextUsage != value.contextUsage) {
             try await cache.save(value, owner: route.owner)
             if let workspaces {
                 do { try await workspaces.saveConversation(value, owner: route.account) }
@@ -3127,11 +3131,12 @@ extension AskConversationModel {
                 if inline, quickAsk?.conversationId == id { quickAsk?.persisted = true }
                 var request = request
                 let kind = value.resolvedKind
-                let definitions = inline ? [] : await tools.definitions(conversationId: id, includeMCP: kind == .work && !recoveryCheck)
+                let withoutTools = inline || request.answerOnly == true
+                let definitions = withoutTools ? [] : await tools.definitions(conversationId: id, includeMCP: kind == .work && !recoveryCheck)
                 let offered = inline ? [] : Self.offeredTools(definitions, temporary: temporaryRun, kind: kind)
                 let scoped = AskSkillCatalog.applying(request.skillCatalog, to: offered)
                 request.tools = modelLibrary.imageCapability(request.modelRef ?? "cloud:default").observationTools(
-                    inline ? [] : recoveryCheck ? Self.recoveryObservationTools(scoped) : scoped)
+                    withoutTools ? [] : recoveryCheck ? Self.recoveryObservationTools(scoped) : scoped)
                 try checkOperation(id, operationId: operationId, account: current.account)
                 request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
                 pendingSends[id] = request
@@ -3153,7 +3158,7 @@ extension AskConversationModel {
                     }
                     throw AskLocalError.message(L("ask.recovery.readOnlyUnavailable"))
                 }
-                try await drive(response, current: current, operationId: operationId, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil, allowsTools: !inline)
+                try await drive(response, current: current, operationId: operationId, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil, allowsTools: !withoutTools)
             } catch is CancellationError {} catch {
                 guard !Task.isCancelled, operationIds[id] == operationId else { return }
                 if let claim = queueClaim, !accepted || queuedSubmissions[id] != nil {

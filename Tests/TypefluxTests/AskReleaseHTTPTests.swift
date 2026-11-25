@@ -63,6 +63,29 @@ final class AskReleaseHTTPTests: XCTestCase {
         try await verify(finished, fixture: fixture, id: id, run: run.id)
     }
 
+    func testWordCardAndFollowUpReportActualInputAcrossHTTP() async throws {
+        let fixture = try client()
+        let id = UUID().uuidString, device = UUID().uuidString, model = "custom:" + UUID().uuidString
+        for card in [true, false] {
+            let input = card ? 300 : 530
+            let request = AskSendRequest(answerOnly: card ? true : nil, id: UUID().uuidString, deviceId: device,
+                                         text: card ? "Explain hello" : "Follow up", tools: [], modelRef: model)
+            _ = try await fixture.api.send(conversationId: id, request: request, token: fixture.token)
+            let value = try await wait(fixture.api, id: id, token: fixture.token, status: "waiting_inference")
+            let run = try XCTUnwrap(value.run), inference = try XCTUnwrap(run.inference)
+            let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(inference.payload.utf8)) as? [String: Any])
+            XCTAssertEqual((payload["tools"] as? [Any] ?? []).isEmpty, card)
+            _ = try await fixture.api.inferenceResult(conversationId: id, request: .init(
+                runId: run.id, deviceId: device, inferenceId: inference.id, content: "Hello.",
+                usage: .init(promptTokens: input, completionTokens: 2, totalTokens: input + 2)
+            ), token: fixture.token)
+            let completed = try await wait(fixture.api, id: id, token: fixture.token, status: "completed")
+            XCTAssertEqual(completed.contextUsage?.estimated, false)
+            XCTAssertEqual(completed.contextUsage?.inputTokens, input)
+            XCTAssertEqual(completed.usage?.total.inputTokens, card ? 300 : 830)
+        }
+    }
+
     private func client() throws -> Fixture {
         let env = ProcessInfo.processInfo.environment
         guard let address = env["TYPEFLUX_RELEASE_HTTP_URL"] else {

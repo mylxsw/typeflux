@@ -199,6 +199,7 @@ struct AskPluginAction: Equatable, Sendable {
         }
     }
 
+    var wordCardQuestion = false
     var kind: Kind
     var title: String
     var symbol: String

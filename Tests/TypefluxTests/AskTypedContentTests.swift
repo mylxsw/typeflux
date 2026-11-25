@@ -3,6 +3,23 @@ import AppKit
 import XCTest
 
 final class AskTypedContentTests: XCTestCase {
+    func testMatchingJSONIsShownOnceAndBothOriginalBlocksAreRetained() {
+        let text = #"{"b":true,"id":9007199254740993}"#
+        let original = AskTypedContent.json(["type": "text", "text": text])
+        for (json, duplicate) in [
+            (#"{"id":9007199254740993,"b":true}"#, true),
+            (#"{"id":9007199254740992,"b":true}"#, false),
+            (#"{"id":9007199254740993,"b":1}"#, false),
+        ] {
+            let structured = JSONValue(data: Data((#"{"type":"structured_content","value":"# + json + "}").utf8))
+            let receipt = AskExecutionOutcome(status: "ok", content: [structured, original])
+            let projection = AskTypedContent.project(receipt)
+            XCTAssertEqual(projection.text.contains("Structured content:"), !duplicate)
+            XCTAssertTrue(projection.text.contains(text))
+            XCTAssertEqual(receipt.content?.count, 2)
+        }
+    }
+
     static func image() throws -> String {
         let bitmap = NSBitmapImageRep(bitmapDataPlanes:nil,pixelsWide:2,pixelsHigh:2,bitsPerSample:8,samplesPerPixel:3,hasAlpha:false,isPlanar:false,colorSpaceName:.deviceRGB,bytesPerRow:0,bitsPerPixel:0)!
         return try XCTUnwrap(bitmap.representation(using:.jpeg,properties:[:])).base64EncodedString()

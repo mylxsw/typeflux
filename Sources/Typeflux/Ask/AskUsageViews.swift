@@ -29,7 +29,7 @@ struct AskContextUsageButton: View {
                         .rotationEffect(.degrees(-90))
                 }
                 .frame(width: 16, height: 16)
-                Text(Self.percentText(context.fraction))
+                Text((context.estimated == false ? "" : "≈") + Self.percentText(context.fraction))
                     .font(.system(size: 12)).monospacedDigit()
             }
             .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
@@ -47,7 +47,7 @@ struct AskContextUsageButton: View {
     }
 
     private var summary: String {
-        L("ask.usage.context") + " ≈" + AccountUsageDisplayFormatter.count(Int64(context.inputTokens))
+        context.inputLabel
             + " · " + L("ask.usage.contextHelp")
     }
 }
@@ -179,7 +179,7 @@ struct AskUsagePanel: View {
                 .foregroundStyle(context.isHigh ? StudioTheme.warning : StudioTheme.textPrimary)
             budgetBar(context)
             HStack {
-                Text(L("ask.usage.contextUsed", AccountUsageDisplayFormatter.count(Int64(max(0, context.inputTokens)))))
+                Text(context.inputLabel)
                 Spacer()
                 Text(L("ask.usage.contextFree", AccountUsageDisplayFormatter.count(Int64(remaining))))
             }

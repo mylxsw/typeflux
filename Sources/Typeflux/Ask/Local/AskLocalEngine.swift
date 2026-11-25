@@ -16,6 +16,7 @@ struct AskLocalRecord: Codable, Equatable, Sendable {
     var localDate: String?
     /// Built-in tools of the current run, executed by the engine instead of the device.
     var builtinTools: [AskToolDefinition] = []
+    var discoveredMCP: [String]?
     var lastInferenceId: String?
     /// Optional so conversations saved before local metering still load.
     var localUsage: AskLocalUsage?
@@ -141,6 +142,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
                 if (try? resolveTurn(record)) != nil, record.conversation.run?.status == "running" {
                     record.conversation.run?.recovery = .init(state: "unknown_outcome", sequence: record.conversation.revision)
                 }
+                record.applyReportedContext()
                 records[record.conversation.id] = record
             }
         }
@@ -310,7 +312,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
         guard token.isEmpty else { throw conflict() }
-        let availableTools = await builtinTools.availableDefinitions()
+        let availableTools = request.answerOnly == true ? [] : await builtinTools.availableDefinitions()
         try Task.checkCancellation()
         try loadAll()
         let id = AskConversationID.canonical(conversationId)
@@ -335,7 +337,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         c.memoryOff = c.memory != nil && request.memoryOff == true ? true : nil
         if let zone = request.timeZone, TimeZone(identifier: zone) != nil { record.timeZone = zone }
         if let locale = request.locale, !locale.isEmpty, locale.count <= 35 { record.locale = locale }
-        c.messages.append(AskMessage(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source,
+        c.messages.append(AskMessage(answerOnly: request.answerOnly, id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source,
                                      image: request.image, createdAt: now(), reasoningEffort: request.reasoningEffort, references: request.references,
                                      attachments: request.attachments, skills: request.skills, skillCatalog: request.skillCatalog, mcpServers: request.mcpServers))
         c.titlePolicy = request.titlePolicy ?? c.titlePolicy
@@ -702,9 +704,17 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.summaryUnavailable = nil
         record.summaryFallback = nil
         record.steering = nil
-        record.builtinTools = availableTools
+        if record.conversation.messages.last(where: { $0.role == "user" })?.answerOnly == true {
+            record.builtinTools = []
+            record.conversation.run?.tools = []
+        } else {
+            record.builtinTools = availableTools
+        }
         let deviceNames = Set(record.conversation.run?.tools.map(\.name) ?? [])
         record.conversation.run?.cloudTools = record.builtinTools.filter { !deviceNames.contains($0.name) }
+        let catalog = record.conversation.run?.tools.filter(AskMCPDiscovery.external) ?? []
+        record.discoveredMCP = catalog.count > 8 && !deviceNames.contains(AskMCPDiscovery.name)
+            && record.conversation.run?.recoveryCheck != true ? [] : nil
         record.approvedCloudCallId = nil
         record.cloudCalls = 0
         let zone = record.timeZone.flatMap(TimeZone.init(identifier:)) ?? TimeZone(identifier: "UTC")!
@@ -820,7 +830,12 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     private func allTools(_ record: AskLocalRecord) -> [AskToolDefinition] {
         let device = record.conversation.run?.tools ?? []
         let deviceNames = Set(device.map(\.name))
-        let offered = device + record.builtinTools.filter { !deviceNames.contains($0.name) }
+        var visible = device
+        if let active = record.discoveredMCP {
+            visible = device.filter { !AskMCPDiscovery.external($0) || active.contains($0.name) }
+            visible.append(AskMCPDiscovery.directory(device.filter(AskMCPDiscovery.external)))
+        }
+        let offered = visible + record.builtinTools.filter { !deviceNames.contains($0.name) }
         return record.conversation.run?.internalRecovery?.tools(offered, step: record.conversation.run?.steps ?? 0) ?? offered
     }
 
@@ -857,7 +872,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.conversation.memory = record.conversation.memory?.usable(at: now())
         guard let run = record.conversation.run else { return record.conversation }
         guard !run.reachedStepLimit else { return try fail(&record, L("ask.local.stepLimit")) }
-        if record.conversation.summary != nil, !record.builtinTools.contains(where: { $0.name == AskSemanticCompaction.historyTool.name }) {
+        if record.conversation.messages.last(where: { $0.role == "user" })?.answerOnly != true, record.conversation.summary != nil, !record.builtinTools.contains(where: { $0.name == AskSemanticCompaction.historyTool.name }) {
             record.builtinTools.append(AskSemanticCompaction.historyTool)
             let deviceNames = Set(record.conversation.run?.tools.map(\.name) ?? [])
             record.conversation.run?.cloudTools = record.builtinTools.filter { !deviceNames.contains($0.name) }
@@ -908,17 +923,20 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         var bounded = summaryThrough != nil ? payload : AskContextCompaction.compact(payload, window: limits.window)
         if record.conversation.run?.budgetEnabled == true {
             do {
-                let plan = try AskContextPlanner.plan(payload, limits: limits)
+                let plan = try AskContextPlanner.plan(payload, limits: limits) { projection in
+                    guard summaryThrough == nil else { return }
+                    record.conversation.contextUsage = .init(modelRef: record.conversation.run?.modelRef ?? "",
+                        inputTokens: projection.inputTokens, outputReserve: projection.outputReserve, capacity: projection.capacity,
+                        summarized: record.conversation.summary != nil, estimated: true, trimmed: projection.trimmed)
+                }
                 bounded = plan.payload
                 try reserveBudget(record, operationId: id, callId: id, kind: "model",
                                   resources: .init(tokens: Int64(plan.inputTokens + plan.outputReserve), operations: 1))
                 bounded["typeflux_budget"] = true
                 bounded["typeflux_deadline"] = record.conversation.run?.budgetDeadline?.timeIntervalSince1970
-                record.conversation.contextUsage = .init(modelRef: record.conversation.run?.modelRef ?? "", inputTokens: plan.inputTokens,
-                    outputReserve: plan.outputReserve, capacity: plan.capacity, summarized: record.conversation.summary != nil, estimated: true, trimmed: plan.trimmed)
             } catch { return try stopBudget(&record, error: error) }
         }
-        if record.conversation.run?.budgetEnabled != true {
+        if summaryThrough == nil, record.conversation.run?.budgetEnabled != true {
             record.conversation.contextUsage = .init(modelRef: record.conversation.run?.modelRef ?? "",
                 inputTokens: AskContextCompaction.weight(bounded), outputReserve: bounded["max_tokens"] as? Int ?? 0,
                 capacity: limits.known ? limits.window : nil, summarized: record.conversation.summary != nil || AskContextCompaction.weight(bounded) < AskContextCompaction.weight(payload),
@@ -1053,7 +1071,19 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             }
             if record.conversation.run?.internalRecovery != nil, record.conversation.run?.recoveryCheck == true,
                !AskInternalRecovery.permits(first) {
-                appendRecoveryControlResult(&record, call: first, text: "Inspect current state before changing it. Use complete_recovery after verifying the interrupted operation, then continue the original task.", failed: true)
+                appendControlResult(&record, call: first, text: "Inspect current state before changing it. Use complete_recovery after verifying the interrupted operation, then continue the original task.", failed: true)
+                try save(&record)
+                continue
+            }
+            if first.function.name == AskMCPDiscovery.name, let active = record.discoveredMCP {
+                do {
+                    try reserveBudgetTool(record, call: first)
+                    try settleBudgetTool(record, callId: first.id)
+                } catch { return try stopBudget(&record, error: error) }
+                let catalog = record.conversation.run?.tools.filter(AskMCPDiscovery.external) ?? []
+                let page = AskMCPDiscovery.search(first.function.arguments, catalog: catalog)
+                record.discoveredMCP = Array((active.filter { !page.names.contains($0) } + page.names).suffix(8))
+                appendControlResult(&record, call: first, text: page.text, failed: page.names.isEmpty)
                 try save(&record)
                 continue
             }
@@ -1401,7 +1431,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 extension AskLocalRecord {
     private enum CodingKeys: String, CodingKey {
         case agentRoutes, agentState, summaryFallback, summaryUnavailable, contextLimits, typedContentEnabled, conversation
-        case timeZone, locale, localDate, builtinTools, lastInferenceId, localUsage, cloudCalls, approvedCloudCallId, steering
+        case timeZone, locale, localDate, builtinTools, discoveredMCP, lastInferenceId, localUsage, cloudCalls, approvedCloudCallId, steering
     }
 
     init(from decoder: Decoder) throws {
@@ -1417,6 +1447,7 @@ extension AskLocalRecord {
         locale = try values.decodeIfPresent(String.self, forKey: .locale)
         localDate = try values.decodeIfPresent(String.self, forKey: .localDate)
         builtinTools = try values.decode([AskToolDefinition].self, forKey: .builtinTools)
+        discoveredMCP = try values.decodeIfPresent([String].self, forKey: .discoveredMCP)
         lastInferenceId = try values.decodeIfPresent(String.self, forKey: .lastInferenceId)
         localUsage = try values.decodeIfPresent(AskLocalUsage.self, forKey: .localUsage)
         cloudCalls = try values.decode(Int.self, forKey: .cloudCalls)

@@ -1802,7 +1802,9 @@
 "ask.usage.contextPercentUsed" = "約 %@ 使用中";
 "ask.usage.contextUsed" = "使用 %@";
 "ask.usage.contextFree" = "残り %@";
-"ask.usage.contextHelp" = "保存済みの会話から推定。下書きは含みません。指示、履歴、ツール、添付を含み、累計使用量とは異なります。";
+"ask.usage.reportedInput" = "直近の実入力 %@";
+"ask.usage.estimatedInput" = "推定入力 %@";
+"ask.usage.contextHelp" = "上段はモデルへの1回分の入力です。下段には選択した範囲の呼び出しの合計が表示されます。";
 "ask.usage.output" = "出力 tokens";
 "ask.usage.input" = "入力 tokens";
 "ask.usage.cachedInput" = "キャッシュ入力 tokens";

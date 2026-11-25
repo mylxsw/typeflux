@@ -95,10 +95,10 @@ extension AskLocalEngine {
             ? (recovery.phase == .continued ? "Inspection recorded. Continue the original user task from verified progress. Do not repeat completed effects or ask the user to resend the task."
                 : "Explain the concrete missing information or access and the smallest useful user action. Do not repeat the uncertain operation.")
             : "Inspection is not complete. Call this tool alone with a nonempty explanation and actual fresh successful observation call IDs. If the outcome cannot be established, use blocked and identify the concrete missing fact."
-        appendRecoveryControlResult(&record, call: call, text: text, failed: !accepted)
+        appendControlResult(&record, call: call, text: text, failed: !accepted)
     }
 
-    func appendRecoveryControlResult(_ record: inout AskLocalRecord, call: AskToolCall, text: String, failed: Bool) {
+    func appendControlResult(_ record: inout AskLocalRecord, call: AskToolCall, text: String, failed: Bool) {
         record.conversation.messages.append(.init(id: UUID().uuidString, role: "tool", text: text,
             toolCallId: call.id, isError: failed, createdAt: now(), runId: record.conversation.run?.id,
             harness: .init(version: 1, outcome: .init(status: failed ? "invalid" : "ok", eventDispatched: false))))

@@ -144,8 +144,22 @@ extension AskLocalRecord {
         localUsage?.version += 1
         item.version = localUsage?.version ?? 0
         localUsage?.invocations[index].usage = item
+        applyReportedContext()
         conversation.usage = localUsage?.summary
         return true
+    }
+
+    /// Only the newest answer request in this run owns the displayed input.
+    mutating func applyReportedContext() {
+        guard let run = conversation.run, let context = conversation.contextUsage,
+              run.modelRef == context.modelRef,
+              let item = localUsage?.invocations.last(where: { $0.usage.purpose == "answer" })?.usage,
+              item.runId == run.id, item.modelRef == context.modelRef,
+              run.inference?.summaryThrough != nil || run.inference == nil || run.inference?.id == item.id,
+              item.source == "client" || item.source == "provider",
+              let tokens = item.tokens, tokens.isValid, tokens.incomplete != true, tokens.promptTokens > 0 else { return }
+        conversation.contextUsage?.inputTokens = tokens.promptTokens
+        conversation.contextUsage?.estimated = false
     }
 
     mutating func closeUsage() {

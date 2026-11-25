@@ -131,6 +131,31 @@ struct AskUsageTests {
         #expect(context.remaining == nil && context.fraction == nil && !context.isHigh)
     }
 
+    @Test func reportedInputReplacesAnOldCachedEstimateWithoutChangingTheLedger() async throws {
+        let now = Date()
+        let answer = AskMessage(id: "answer", role: "assistant", text: "hello", createdAt: now, runId: "run")
+        var cached = AskConversation(id: UUID().uuidString, title: "History", revision: 10, updatedAt: now, messages: [answer])
+        cached.run = .init(id: "run", deviceId: "local", status: "completed", steps: 1, updatedAt: now, tools: [], pending: [])
+        cached.contextUsage = .init(modelRef: "model", inputTokens: 52845, outputReserve: 0, capacity: 204800, summarized: false)
+        var reported = cached
+        reported.contextUsage?.inputTokens = 9220
+        reported.contextUsage?.estimated = false
+
+        #expect(reported.isNewer(than: cached))
+        #expect(!cached.isNewer(than: reported))
+        #expect(cached.reconciling(reported, preservingEqualRevisionContent: true).contextUsage == reported.contextUsage)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let cache = try AskConversationCache(url: root.appendingPathComponent("usage.sqlite"))
+        try await cache.save(reported, owner: "owner")
+        try await cache.save(cached, owner: "owner")
+        #expect(try await cache.load(id: cached.id, owner: "owner")?.contextUsage == reported.contextUsage)
+
+        cached.messages[0].id = "another-answer"
+        #expect(!reported.isNewer(than: cached))
+        #expect(cached.mergingUsage(from: reported).contextUsage?.inputTokens == 52845)
+    }
+
     @Test func usageOnlyUpdatesSurviveSSEAndCache() async throws {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         var conversation = AskConversation(id: UUID().uuidString, title: "Test", revision: 10, updatedAt: date, messages: [])

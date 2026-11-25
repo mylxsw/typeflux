@@ -308,7 +308,7 @@ struct MCPRegisteredTool {
         guard let data = try? JSONSerialization.data(withJSONObject: definition.inputSchema.jsonObject,
                                                      options: .sortedKeys) else { return nil }
         let description = "MCP server: \(serverName.prefix(200)). \(definition.description)"
-        return .init(name: name, description: String(description.prefix(2000)), parameters: JSONValue(data: data))
+        return .init(name: name, description: String(description.prefix(2000)), parameters: JSONValue(data: data), mcpServer: String(serverName.prefix(200)))
     }
 }
 

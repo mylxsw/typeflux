@@ -1812,7 +1812,9 @@
 "ask.usage.contextPercentUsed" = "About %@ used";
 "ask.usage.contextUsed" = "Used %@";
 "ask.usage.contextFree" = "Free %@";
-"ask.usage.contextHelp" = "Estimated from the saved conversation, excluding the draft. Includes instructions, history, tools and attachments; not cumulative usage.";
+"ask.usage.reportedInput" = "Latest reported input %@";
+"ask.usage.estimatedInput" = "Estimated input %@";
+"ask.usage.contextHelp" = "The top card shows one model request. Usage below adds up the calls in the selected period.";
 "ask.usage.output" = "Output tokens";
 "ask.usage.input" = "Input tokens";
 "ask.usage.cachedInput" = "Cached input tokens";

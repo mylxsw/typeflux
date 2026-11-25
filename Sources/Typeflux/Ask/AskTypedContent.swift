@@ -177,6 +177,14 @@ enum AskTypedContent {
         var imageBytes = 0
         var texts: [String] = [], images: [String] = []
         var incomplete = outcome.truncated == true
+        let blocks = outcome.content ?? []
+        let hasStructured = blocks.contains { object($0)["type"] as? String == "structured_content" }
+        let textValues: [AskRouteJSON] = hasStructured ? blocks.compactMap { raw in
+            let block = object(raw)
+            guard block["type"] as? String == "text", let text = block["text"] as? String,
+                  text.utf8.count <= maxTextBytes else { return nil }
+            return try? AskRouteJSON.decodeRaw(Data(text.utf8), rejectDuplicateKeys: true)
+        } : []
         for raw in outcome.content ?? [] {
             let block = object(raw)
             switch block["type"] as? String {
@@ -189,6 +197,8 @@ enum AskTypedContent {
                 }
                 else { texts.append("[Image retained; projection unavailable or invalid]"); incomplete = true }
             case "structured_content":
+                if !textValues.isEmpty, case let .object(fields)? = try? AskRouteJSON.decodeRaw(raw.data, rejectDuplicateKeys: true),
+                   let value = fields["value"], textValues.contains(value) { continue }
                 if let value = block["value"], let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys, .fragmentsAllowed]) {
                     texts.append("Structured content: " + String(decoding: data, as: UTF8.self))
                 } else { texts.append("[Invalid structured content]"); incomplete = true }

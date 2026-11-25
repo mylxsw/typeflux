@@ -290,7 +290,8 @@ final class AskLocalTools: AskToolExecuting {
             mcpIdentities = [:]
             var schemaBytes = result.reduce(0) { $0 + $1.parameters.data.count }
             for (name, entry) in entries {
-                guard result.count < 64 else { break }
+                // Work runs on the device. Its directory can page beyond one model tool list.
+                guard result.count < 512 else { break }
                 guard let definition = entry.askDefinition(named: name),
                       definition.parameters.data.count <= 32000,
                       schemaBytes + definition.parameters.data.count <= 500000 else { continue }
