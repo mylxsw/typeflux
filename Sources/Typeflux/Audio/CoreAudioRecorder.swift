@@ -1,37 +1,55 @@
-import AVFoundation
 import AppKit
+import AVFoundation
 import CoreAudio
 import Foundation
 
-/// Ordinary push-to-talk capture. Prepared Audio Units never run while idle.
+/// Push-to-talk and Instant Voice Input capture on Core Audio HAL inputs.
+/// Prepared Audio Units never run while idle unless an Instant Voice Input warm window is active.
 /// Session state, input ownership, disk writes and callbacks are serialized on queue.
 final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
-    private let queue = DispatchQueue(label: "typeflux.audio.hal-recorder", qos: .userInitiated)
-    private let settings: SettingsStore
-    private let devices: AudioDeviceManaging
-    private let outputMuter: SystemAudioOutputMuting
-    private let makeInput: (AudioDeviceID) throws -> CoreAudioInputCapturing
+    static let instantVoiceInputPreRollDuration: TimeInterval = CoreAudioPreRollBuffer.defaultDuration
+    static let instantVoiceInputIdleTimeout: TimeInterval = 15 * 60
+
+    let queue = DispatchQueue(label: "typeflux.audio.hal-recorder", qos: .userInitiated)
+    let settings: SettingsStore
+    let devices: AudioDeviceManaging
+    let outputMuter: SystemAudioOutputMuting
+    let makeInput: (AudioDeviceID) throws -> CoreAudioInputCapturing
     private let outputDirectory: URL
-    private let automaticallyPrepare: Bool
-    private let observeChanges: Bool
+    let automaticallyPrepare: Bool
+    let observeChanges: Bool
     private let startupTimeout: TimeInterval
-    private var prepared: (id: AudioDeviceID, input: CoreAudioInputCapturing)?
-    private var session: Session?
+    let preRollDuration: TimeInterval
+    let instantVoiceInputIdleTimeout: TimeInterval
+    var prepared: (id: AudioDeviceID, input: CoreAudioInputCapturing)?
+    var warm: WarmSession?
+    var warmTimer: DispatchSourceTimer?
+    var warmIdleWorkItem: DispatchWorkItem?
+    var warmWindowIsActive = false
+    var warmWindowGeneration: UInt64 = 0
+    var session: Session?
     private var timer: DispatchSourceTimer?
-    private var observers: [NSObjectProtocol] = []
-    private var workspaceObservers: [NSObjectProtocol] = []
-    private var defaultInputObservation: AudioInputDeviceChangeObservation?
-    private var deviceObservation: CoreAudioDeviceObservation?
-    private var deviceObservationID = UUID()
-    private var suspended = false
-    private let activeInputLock = NSLock()
-    private var activeInputBluetooth = false
+    var observers: [NSObjectProtocol] = []
+    var workspaceObservers: [NSObjectProtocol] = []
+    var defaultInputObservation: AudioInputDeviceChangeObservation?
+    var deviceObservation: CoreAudioDeviceObservation?
+    var deviceObservationID = UUID()
+    var suspended = false
+    let activeInputLock = NSLock()
+    var activeInputBluetooth = false
 
     var activeInputIsBluetooth: Bool {
         activeInputLock.withLock { activeInputBluetooth }
     }
 
-    private final class Session {
+    struct AcquiredInput {
+        let deviceID: AudioDeviceID
+        let input: CoreAudioInputCapturing
+        let preRoll: [CoreAudioInputPacket]
+        let alreadyRunning: Bool
+    }
+
+    final class Session {
         let id: UUID
         var input: CoreAudioInputCapturing
         var deviceID: AudioDeviceID
@@ -72,6 +90,8 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         outputMuter: SystemAudioOutputMuting = SystemAudioOutputMuter(),
         outputDirectory: URL? = nil, prepareImmediately: Bool = true, observeChanges: Bool = true,
         startupTimeout: TimeInterval = 5,
+        preRollDuration: TimeInterval = CoreAudioRecorder.instantVoiceInputPreRollDuration,
+        instantVoiceInputIdleTimeout: TimeInterval = CoreAudioRecorder.instantVoiceInputIdleTimeout,
         makeInput: @escaping (AudioDeviceID) throws -> CoreAudioInputCapturing = { try CoreAudioInput(deviceID: $0) }
     ) {
         settings = settingsStore
@@ -81,15 +101,24 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         automaticallyPrepare = prepareImmediately
         self.observeChanges = observeChanges
         self.startupTimeout = startupTimeout
+        self.preRollDuration = preRollDuration
+        self.instantVoiceInputIdleTimeout = instantVoiceInputIdleTimeout
         self.outputDirectory =
             outputDirectory
-            ?? TypefluxDataDirectories.data.appendingPathComponent("audio", isDirectory: true)
-        if observeChanges { observeLifecycle() }
-        if prepareImmediately { prepareIfAuthorized() }
+                ?? TypefluxDataDirectories.data.appendingPathComponent("audio", isDirectory: true)
+        if observeChanges {
+            observeLifecycle()
+        }
+        if prepareImmediately {
+            prepareIfAuthorized()
+        }
     }
 
     deinit {
         timer?.cancel()
+        warmTimer?.cancel()
+        warmIdleWorkItem?.cancel()
+        warm?.input.stop()
         session?.input.stop()
         outputMuter.endMutedSession()
         observers.forEach(NotificationCenter.default.removeObserver)
@@ -107,19 +136,17 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
             let result = Result {
                 try startSession(attempt: attempt, levelHandler: levelHandler, audioBufferHandler: audioBufferHandler)
             }
-            if !attempt.complete(result) {
+            if !attempt.complete(result), session?.id == attempt.id {
                 // A driver may finish after the caller timed out. Never leave that stale
                 // attempt recording, and never publish its buffers to the next session.
-                if session?.id == attempt.id {
-                    session?.input.stop()
-                    session = nil
-                    setActiveInput(nil)
-                    timer?.cancel()
-                    timer = nil
-                    invalidateDeviceObservation()
-                    prepared = nil
-                    outputMuter.endMutedSession()
-                }
+                session?.input.stop()
+                session = nil
+                setActiveInput(nil)
+                timer?.cancel()
+                timer = nil
+                invalidateDeviceObservation()
+                prepared = nil
+                outputMuter.endMutedSession()
             }
         }
         try attempt.wait(timeout: startupTimeout)
@@ -132,32 +159,39 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         guard session == nil, !suspended else {
             throw AVFoundationAudioRecorder.RecorderError.inputDeviceUnavailable
         }
-        let (deviceID, input) = try takeInput()
+        let acquired = try takeInputForStart()
         guard !attempt.isCancelled else {
+            if acquired.alreadyRunning {
+                acquired.input.stop()
+            }
             invalidateDeviceObservation()
             throw AVFoundationAudioRecorder.RecorderError.inputStartupTimedOut
         }
-        let date = Date()
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         let day = String(format: "%04d/%02d/%02d", components.year!, components.month!, components.day!)
         let url = outputDirectory.appendingPathComponent(day).appendingPathComponent(UUID().uuidString + ".wav")
         let current = Session(
-            id: attempt.id, input: input, deviceID: deviceID, url: url, levelHandler: levelHandler,
-            bufferHandler: audioBufferHandler)
+            id: attempt.id, input: acquired.input, deviceID: acquired.deviceID, url: url,
+            levelHandler: levelHandler, bufferHandler: audioBufferHandler
+        )
         // Publish the session before starting hardware. Early input stays in the C ring
         // until this queue returns, even if file creation or UI work is delayed.
         session = current
-        do {
-            try input.start()
-        } catch {
-            input.stop()
-            session = nil
-            invalidateDeviceObservation()
-            throw error
+        if !acquired.alreadyRunning {
+            do {
+                try acquired.input.start()
+            } catch {
+                acquired.input.stop()
+                session = nil
+                invalidateDeviceObservation()
+                throw error
+            }
         }
-        setActiveInput(deviceID)
+        setActiveInput(acquired.deviceID)
         RecordingStartupLatencyTrace.shared.mark("audio.hal_start_return")
+        for (index, packet) in acquired.preRoll.enumerated() {
+            writePacket(packet, to: current, isPreRoll: true, emitPreRollLevel: index == acquired.preRoll.count - 1)
+        }
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now(), repeating: .milliseconds(4), leeway: .milliseconds(1))
         timer.setEventHandler { [weak self] in self?.consumeInput() }
@@ -175,24 +209,34 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
     func stop() throws -> AudioFile {
         try queue.sync {
             guard let current = session else { throw NSError(domain: "AudioRecorder", code: 1) }
-            // Stop hardware first, then drain every accepted packet before closing the file.
-            current.input.stop()
             timer?.cancel()
             timer = nil
+            let wantsWarmInput = !suspended
+                && InstantVoiceInputPolicy.isEffective(settings: settings, devices: devices)
+                && (try? resolvedDeviceID()) == current.deviceID
+            if !wantsWarmInput {
+                // Stop hardware first, then drain every accepted packet before closing the file.
+                current.input.stop()
+            }
             consumeInput(checkHealth: false)
             session = nil
             setActiveInput(nil)
-            invalidateDeviceObservation()
             outputMuter.endMutedSession()
-            defer { prepareIfAuthorized() }
-            let error = current.error ?? current.input.captureError
-            if let error {
-                current.file = nil
-                try? FileManager.default.removeItem(at: current.url)
+
+            if let error = current.error ?? current.input.captureError {
+                cleanupFailedStop(for: current)
                 throw error
             }
             guard let file = current.file, let firstCallbackDate = current.firstCallbackDate else {
+                cleanupFailedStop(for: current)
                 throw AVFoundationAudioRecorder.RecorderError.inputStartupTimedOut
+            }
+            if wantsWarmInput {
+                beginWarmSession(id: current.deviceID, input: current.input)
+            } else {
+                invalidateDeviceObservation()
+                cancelWarmWindow()
+                prepareIfAuthorized()
             }
             let duration = Double(file.length) / file.processingFormat.sampleRate
             current.file = nil
@@ -202,213 +246,137 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
                     audioEngineStartedAt: current.startDate, firstAudioBufferAt: firstCallbackDate,
                     firstAudioSignalAt: current.signalTracker.firstSignalAt,
                     leadingZeroDuration: current.signalTracker.leadingZeroDuration
-                ))
+                )
+            )
         }
     }
+}
 
-    private func consumeInput(checkHealth: Bool = true) {
+extension CoreAudioRecorder {
+    fileprivate func cleanupFailedStop(for current: Session) {
+        current.input.stop()
+        invalidateDeviceObservation()
+        cancelWarmWindow()
+        current.file = nil
+        try? FileManager.default.removeItem(at: current.url)
+        prepareIfAuthorized()
+    }
+
+    func consumeInput(checkHealth: Bool = true) {
         guard let current = session else { return }
         while let packet = current.input.read() {
-            current.lastCallbackHostTime = packet.callbackHostTime
-            let hadSignal = current.signalTracker.firstSignalAt != nil
-            current.signalTracker.observe(packet.buffer, receivedAt: current.startDate.addingTimeInterval(
-                Self.seconds(from: current.startHostTime, to: packet.callbackHostTime)))
-            if !hadSignal, let signalAt = current.signalTracker.firstSignalAt {
-                NetworkDebugLogger.logMessage(
-                    "[Audio Input Signal] firstSignalMs=\(signalAt.timeIntervalSince(current.startDate) * 1000) "
-                    + "leadingZeroMs=\(current.signalTracker.leadingZeroDuration * 1000)"
-                )
-            }
-            if current.firstCallbackDate == nil {
-                let callbackDelta = Self.seconds(from: current.startHostTime, to: packet.callbackHostTime)
-                current.firstCallbackDate = current.startDate.addingTimeInterval(callbackDelta)
-                let sampleDelta =
-                    packet.sampleHostTime == 0
-                    ? "unknown"
-                    : String(
-                        format: "%.1f",
-                        Self.seconds(from: current.startHostTime, to: packet.sampleHostTime) * 1000)
-                NetworkDebugLogger.logMessage(
-                    "[Core Audio Startup] callbackMs=\(String(format: "%.1f", callbackDelta * 1000)) "
-                        + "sampleMs=\(sampleDelta) frames=\(packet.buffer.frameLength) "
-                        + "sampleRate=\(packet.buffer.format.sampleRate) deviceBufferFrames=\(current.input.deviceBufferFrames)"
-                )
-                RecordingStartupLatencyTrace.shared.markFirstAudioBuffer()
-            }
-            guard current.error == nil else { continue }
-            do {
-                if current.file == nil {
-                    try FileManager.default.createDirectory(
-                        at: current.url.deletingLastPathComponent(),
-                        withIntermediateDirectories: true)
-                    current.file = try AVAudioFile(
-                        forWriting: current.url,
-                        settings: [
-                            AVFormatIDKey: kAudioFormatLinearPCM,
-                            AVSampleRateKey: current.outputFormat.sampleRate,
-                            AVNumberOfChannelsKey: 1,
-                            AVLinearPCMBitDepthKey: 16,
-                            AVLinearPCMIsFloatKey: false,
-                            AVLinearPCMIsBigEndianKey: false,
-                        ])
-                }
-                let mono = try current.converter.convert(packet.buffer)
-                try current.file?.write(from: mono)
-                current.bufferHandler?(mono)
-                if Self.seconds(from: current.lastMeterHostTime, to: packet.callbackHostTime) >= 0.03 {
-                    current.lastMeterHostTime = packet.callbackHostTime
-                    current.levelHandler(Self.level(of: mono))
-                }
-            } catch {
-                current.error = error
-            }
+            writePacket(packet, to: current, isPreRoll: false, emitPreRollLevel: false)
         }
-        if let error = current.input.captureError { current.error = error }
+        if let error = current.input.captureError {
+            current.error = error
+        }
         // Silence is valid audio. Only missing callbacks or explicit device changes
         // indicate a broken input; never rebuild merely because the user is quiet.
         if checkHealth, !suspended, current.error == nil,
-            Self.seconds(from: current.lastCallbackHostTime, to: mach_absolute_time()) > 2
-        {
+           Self.seconds(from: current.lastCallbackHostTime, to: mach_absolute_time()) > 2 {
             current.error = AVFoundationAudioRecorder.RecorderError.inputStartupTimedOut
             current.input.stop()
         }
     }
 
-    private func takeInput() throws -> (AudioDeviceID, CoreAudioInputCapturing) {
+    fileprivate func takeInputForStart() throws -> AcquiredInput {
         let id = try resolvedDeviceID()
-        let input: CoreAudioInputCapturing
-        if let prepared, prepared.id == id {
-            input = prepared.input
+        if let warmMatch = takeWarmSessionForRecording(matching: id) {
+            prepared = nil
+            observeDevice(id)
+            return AcquiredInput(
+                deviceID: id, input: warmMatch.input, preRoll: warmMatch.preRoll, alreadyRunning: true
+            )
+        }
+        let (coldID, coldInput) = try takeColdInput(resolvedID: id)
+        return AcquiredInput(deviceID: coldID, input: coldInput, preRoll: [], alreadyRunning: false)
+    }
+
+    func takeInput() throws -> (AudioDeviceID, CoreAudioInputCapturing) {
+        stopWarmSession()
+        return try takeColdInput(resolvedID: resolvedDeviceID())
+    }
+
+    private func takeColdInput(resolvedID id: AudioDeviceID) throws -> (AudioDeviceID, CoreAudioInputCapturing) {
+        let input: CoreAudioInputCapturing = if let prepared, prepared.id == id {
+            prepared.input
         } else {
-            input = try makeInput(id)
+            try makeInput(id)
         }
         prepared = nil
         observeDevice(id)
         return (id, input)
     }
 
-    private func resolvedDeviceID() throws -> AudioDeviceID {
+    func resolvedDeviceID() throws -> AudioDeviceID {
         // An explicitly selected microphone always wins, Bluetooth included.
         let preferred = settings.preferredMicrophoneID
-        if !preferred.isEmpty, let id = devices.resolveInputDeviceID(for: preferred) { return id }
+        if !preferred.isEmpty, let id = devices.resolveInputDeviceID(for: preferred) {
+            return id
+        }
         return try AVFoundationAudioRecorder.requireInputDeviceID(devices.automaticRecordingInputDeviceID())
     }
 
-    private func setActiveInput(_ deviceID: AudioDeviceID?) {
+    func setActiveInput(_ deviceID: AudioDeviceID?) {
         let bluetooth = deviceID.map(devices.isBluetoothInputDevice) ?? false
         activeInputLock.withLock { activeInputBluetooth = bluetooth }
     }
 
-    private func prepareIfAuthorized() {
-        guard automaticallyPrepare, AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else { return }
-        queue.async { [weak self] in
-            guard let self, self.session == nil, !self.suspended, self.prepared == nil else { return }
-            do {
-                let id = try self.resolvedDeviceID()
-                let input = try self.makeInput(id)
-                self.prepared = (id, input)
-                self.observeDevice(id)
-            } catch {
-                // Start retries preparation and surfaces failures through the existing workflow.
-                self.prepared = nil
-            }
-        }
-    }
-
-    private func inputChanged() {
-        prepared = nil
-        invalidateDeviceObservation()
-        guard !suspended else { return }
-        guard let current = session else {
-            prepareIfAuthorized()
-            return
-        }
-        current.input.stop()
-        consumeInput(checkHealth: false)
-        do {
-            (current.deviceID, current.input) = try takeInput()
-            current.lastCallbackHostTime = mach_absolute_time()
-            try current.input.start()
-            setActiveInput(current.deviceID)
-            NetworkDebugLogger.logMessage("[Core Audio Recorder] Restarted input after a device change.")
-        } catch {
-            current.input.stop()
-            current.error = error
-        }
-    }
-
-    private func defaultInputChanged() {
-        guard settings.preferredMicrophoneID.isEmpty else { return }
-        // Connecting a headset changes the system default, yet Automatic may keep
-        // recording from the same wired input. Never interrupt that recording.
-        if let current = session, (try? resolvedDeviceID()) == current.deviceID { return }
-        inputChanged()
-    }
-
-    private func observeDevice(_ id: AudioDeviceID) {
-        invalidateDeviceObservation()
-        guard observeChanges else { return }
-        let observationID = deviceObservationID
-        deviceObservation = CoreAudioDeviceObservation(deviceID: id, queue: queue) { [weak self] in
-            guard let self, self.deviceObservationID == observationID else { return }
-            self.inputChanged()
-        }
-    }
-
-    private func invalidateDeviceObservation() {
-        deviceObservationID = UUID()
-        deviceObservation = nil
-    }
-
-    private func observeLifecycle() {
-        observers.append(
-            NotificationCenter.default.addObserver(
-                forName: .preferredMicrophoneDidChange, object: settings, queue: nil
-            ) { [weak self] _ in self?.queue.async { [weak self] in self?.inputChanged() } })
-        defaultInputObservation = devices.observeDefaultInputDeviceChanges { [weak self] in
-            self?.queue.async { [weak self] in self?.defaultInputChanged() }
-        }
-        let workspace = NSWorkspace.shared.notificationCenter
-        workspaceObservers.append(
-            workspace.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: nil) {
-                [weak self] _ in
-                self?.queue.async { [weak self] in
-                    guard let self else { return }
-                    self.suspended = true
-                    self.prepared = nil
-                    self.invalidateDeviceObservation()
-                    self.session?.input.stop()
-                    self.outputMuter.endMutedSession()
-                }
-            })
-        workspaceObservers.append(
-            workspace.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: nil) {
-                [weak self] _ in
-                self?.queue.async { [weak self] in
-                    guard let self else { return }
-                    self.suspended = false
-                    self.inputChanged()
-                }
-            })
-    }
-
     static func seconds(from start: UInt64, to end: UInt64) -> Double {
-        if end >= start { return AVAudioTime.seconds(forHostTime: end - start) }
-        return -AVAudioTime.seconds(forHostTime: start - end)
+        end >= start
+            ? AVAudioTime.seconds(forHostTime: end - start)
+            : -AVAudioTime.seconds(forHostTime: start - end)
     }
 
-    private static func level(of buffer: AVAudioPCMBuffer) -> Float {
+    static func level(of buffer: AVAudioPCMBuffer) -> Float {
         guard let samples = buffer.floatChannelData?[0], buffer.frameLength > 0 else { return 0 }
         var sum: Float = 0
-        for i in 0..<Int(buffer.frameLength) { sum += samples[i] * samples[i] }
+        for sampleIndex in 0 ..< Int(buffer.frameLength) {
+            sum += samples[sampleIndex] * samples[sampleIndex]
+        }
         let power = 20 * log10(max(sqrt(sum / Float(buffer.frameLength)), 0.000_001))
         return max(0, min(1, (power + 60) / 60))
     }
 
     #if DEBUG
-        func drainForTesting() { queue.sync {} }
-        func inputChangedForTesting() { queue.sync { inputChanged() } }
-        func defaultInputChangedForTesting() { queue.sync { defaultInputChanged() } }
+        func drainForTesting() {
+            queue.sync {}
+        }
+
+        func inputChangedForTesting() {
+            queue.sync { inputChanged() }
+        }
+
+        func defaultInputChangedForTesting() {
+            queue.sync { defaultInputChanged() }
+        }
+
+        func consumeWarmInputForTesting() {
+            queue.sync { consumeWarmInput() }
+        }
+
+        var isWarmWindowActiveForTesting: Bool {
+            queue.sync { warmWindowIsActive && warm != nil }
+        }
+
+        func suspendForTesting() {
+            queue.sync {
+                suspended = true
+                cancelWarmWindow()
+                prepared = nil
+                invalidateDeviceObservation()
+                session?.input.stop()
+                outputMuter.endMutedSession()
+            }
+        }
+
+        func resumeForTesting() {
+            queue.sync {
+                guard suspended else { return }
+                suspended = false
+                inputChanged()
+            }
+        }
     #endif
 }
 
@@ -444,35 +412,5 @@ private final class CoreAudioStartupAttempt: @unchecked Sendable {
             }
         }
         try result!.get()
-    }
-}
-
-private final class CoreAudioDeviceObservation {
-    private let deviceID: AudioDeviceID
-    private let queue: DispatchQueue
-    private let listener: AudioObjectPropertyListenerBlock
-    private var addresses: [AudioObjectPropertyAddress] = []
-
-    init(deviceID: AudioDeviceID, queue: DispatchQueue, onChange: @escaping () -> Void) {
-        self.deviceID = deviceID
-        self.queue = queue
-        listener = { _, _ in onChange() }
-        for selector in [
-            kAudioDevicePropertyDeviceIsAlive, kAudioDevicePropertyNominalSampleRate,
-            kAudioDevicePropertyStreamConfiguration, kAudioDevicePropertyBufferFrameSize,
-        ] {
-            var address = AudioObjectPropertyAddress(
-                mSelector: selector,
-                mScope: selector == kAudioDevicePropertyStreamConfiguration
-                    ? kAudioObjectPropertyScopeInput : kAudioObjectPropertyScopeGlobal,
-                mElement: kAudioObjectPropertyElementMain)
-            if AudioObjectAddPropertyListenerBlock(deviceID, &address, queue, listener) == noErr {
-                addresses.append(address)
-            }
-        }
-    }
-
-    deinit {
-        for var address in addresses { AudioObjectRemovePropertyListenerBlock(deviceID, &address, queue, listener) }
     }
 }
