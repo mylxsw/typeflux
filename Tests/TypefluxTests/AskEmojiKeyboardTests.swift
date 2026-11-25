@@ -16,11 +16,11 @@ struct AskEmojiKeyboardTests {
         launcher.editor.keyDown(with: event)
     }
 
-    private func launcher(query: String) async throws -> AskQuickResultsInteractionTests.Launcher {
+    private func launcher(query: String, catalog: EmojiCatalog? = nil) async throws -> AskQuickResultsInteractionTests.Launcher {
         let sequences = [
             "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗"
         ]
-        let catalog = EmojiCatalog(schema: 1, entries: sequences.enumerated().map { index, sequence in
+        let catalog = catalog ?? EmojiCatalog(schema: 1, entries: sequences.enumerated().map { index, sequence in
             EmojiSearchTests.entry(sequence, "grid \(index)", ["grid"])
         })
         let service = EmojiSearchService(load: { catalog }, supported: { _ in true })
@@ -33,10 +33,58 @@ struct AskEmojiKeyboardTests {
         )
         try await launcher.fixture.wait {
             launcher.fixture.model.plugins.isPlanCurrent
-                && launcher.fixture.model.plugins.output?.emoji?.results.count == sequences.count
+                && launcher.fixture.model.plugins.output?.emoji?.results.count == catalog.entries.count
         }
         #expect(launcher.window.makeFirstResponder(launcher.editor))
         return launcher
+    }
+
+    @Test func `arrows keep the selected row visible near the end of the full emoji catalog`() async throws {
+        let catalog = try EmojiCatalog.load()
+        let launcher = try await launcher(query: "", catalog: catalog)
+        defer { launcher.close() }
+        let session = launcher.fixture.model.plugins
+        let columns = EmojiResultsView.columns
+
+        func gridScrollView(in view: NSView) -> NSScrollView? {
+            if let scroll = view as? NSScrollView, (scroll.documentView?.bounds.height ?? 0) > 10_000 {
+                return scroll
+            }
+            return view.subviews.lazy.compactMap(gridScrollView(in:)).first
+        }
+
+        let content = try #require(launcher.window.contentView)
+        try await launcher.fixture.wait { gridScrollView(in: content) != nil }
+        let scroll = try #require(gridScrollView(in: content))
+        let initialTop = scroll.documentVisibleRect.minY
+        try await launcher.press(125)
+        #expect(session.output?.selectedItem == columns)
+        #expect(abs(scroll.documentVisibleRect.minY - initialTop) < 1, "A visible row needs no scroll")
+
+        func rowIsVisible(_ index: Int) -> Bool {
+            let top = CGFloat(index / columns) * 62
+            let visible = scroll.documentVisibleRect
+            return visible.minY <= top + 1 && visible.maxY >= top + 57 - 1
+        }
+
+        let last = catalog.entries.count - 1
+        let start = (last / columns - 4) * columns
+        #expect(session.selectItem(start))
+        try await launcher.fixture.wait { rowIsVisible(start) }
+        for index in stride(from: start + columns, through: last + columns, by: columns) {
+            try await launcher.press(125)
+            let selected = min(last, index)
+            #expect(session.output?.selectedItem == selected)
+            try await launcher.fixture.wait { rowIsVisible(selected) }
+        }
+
+        scroll.contentView.scroll(to: .zero)
+        scroll.reflectScrolledClipView(scroll.contentView)
+        #expect(!rowIsVisible(last), "Manual scrolling leaves the selection in place")
+        try await launcher.press(126)
+        #expect(session.output?.selectedItem == last - columns)
+        try await launcher.fixture.wait { rowIsVisible(last - columns) }
+        #expect(launcher.window.firstResponder === launcher.editor)
     }
 
     @Test(arguments: ["", "grid"])

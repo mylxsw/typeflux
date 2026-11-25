@@ -1,8 +1,11 @@
+import AppKit
 import SwiftUI
 
 struct EmojiResultsView: View {
     static let columns = 8
     static let height: CGFloat = 318
+    fileprivate static let tileHeight: CGFloat = 57
+    fileprivate static let gridSpacing: CGFloat = 5
     var output: AskPluginOutput
     var presentation: EmojiPresentation
     var contentHeight: CGFloat = Self.height
@@ -17,15 +20,11 @@ struct EmojiResultsView: View {
         return min(max(0, index + delta), count - 1)
     }
 
-    private var selected: EmojiResult? {
-        presentation.results.first { $0.id == output.selected?.id }
-    }
-
     private func action(_ kind: AskPluginAction.Kind) {
         onAction(AskPluginAction(kind: kind, title: "", symbol: ""))
     }
 
-    private func tile(_ result: EmojiResult) -> some View {
+    private func tile(_ result: EmojiResult, selected: Bool) -> some View {
         Button {
             if onSelect(result.id) {
                 focusedID = result.id
@@ -34,14 +33,13 @@ struct EmojiResultsView: View {
             VStack(spacing: 4) {
                 Text(result.sequence).font(.system(size: 27))
                 Text(result.name).font(.system(size: 9)).lineLimit(1)
-            }.frame(maxWidth: .infinity).frame(height: 57)
+            }.frame(maxWidth: .infinity).frame(height: Self.tileHeight)
                 .background(
-                    selected?.id == result.id ? AskTheme.accent.opacity(0.15) : AskTheme
-                        .hoverFill,
+                    selected ? AskTheme.accent.opacity(0.15) : AskTheme.hoverFill,
                     in: RoundedRectangle(cornerRadius: 8)
                 )
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(
-                    selected?.id == result.id ? AskTheme.accent : Color.clear
+                    selected ? AskTheme.accent : Color.clear
                 ))
         }
         .buttonStyle(.plain)
@@ -96,9 +94,8 @@ struct EmojiResultsView: View {
                 }
             })
         .accessibilityLabel(result.sequence + ", " + result.name + ", " + result.reason)
-        .accessibilityAddTraits(selected?.id == result.id ? .isSelected : [])
+        .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("emoji.item." + result.id)
-        .id(result.id)
     }
 
     var body: some View {
@@ -130,20 +127,21 @@ struct EmojiResultsView: View {
                     Text(L("emoji.empty.hint")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVGrid(
-                            columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: Self.columns),
-                            spacing: 5
-                        ) {
-                            ForEach(presentation.results) { result in
-                                tile(result)
-                            }
+                let selectedID = output.selected?.id
+                ScrollView {
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: Self.gridSpacing), count: Self.columns),
+                        spacing: Self.gridSpacing
+                    ) {
+                        ForEach(presentation.results) { result in
+                            tile(result, selected: result.id == selectedID)
                         }
                     }
-                    .onChange(of: output.selected?.id) { id in
-                        if let id {
-                            proxy.scrollTo(id, anchor: .center)
+                    .background(alignment: .topLeading) {
+                        if let selectedID {
+                            EmojiGridScrollAnchor(selection: .init(index: output.selectedItem, id: selectedID))
+                                .frame(width: 1, height: 1)
+                                .allowsHitTesting(false)
                         }
                     }
                 }
@@ -169,5 +167,60 @@ struct EmojiResultsView: View {
             }
         })
         .accessibilityIdentifier("emoji.results")
+    }
+}
+
+/// Reveals a fixed-height row directly, without asking the lazy grid to find an offscreen tile by ID.
+private struct EmojiGridScrollAnchor: NSViewRepresentable {
+    struct Selection: Equatable {
+        let index: Int
+        let id: String
+    }
+
+    var selection: Selection
+
+    func makeNSView(context _: Context) -> AnchorView { AnchorView() }
+
+    func updateNSView(_ view: AnchorView, context _: Context) {
+        view.updateSelection(selection)
+    }
+
+    final class AnchorView: NSView {
+        override var isFlipped: Bool { true }
+        private var selection: Selection?
+        private var scrollScheduled = false
+
+        func updateSelection(_ selection: Selection) {
+            guard self.selection != selection else { return }
+            self.selection = selection
+            scheduleScroll()
+        }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if window != nil { scheduleScroll() }
+        }
+
+        private func scheduleScroll() {
+            guard !scrollScheduled else { return }
+            scrollScheduled = true
+            // Wait for SwiftUI to place the grid and combine selection changes in this update.
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                scrollScheduled = false
+                revealSelection()
+            }
+        }
+
+        private func revealSelection() {
+            guard let selection, let scroll = enclosingScrollView, let document = scroll.documentView else { return }
+            let row = selection.index / EmojiResultsView.columns
+            let tileHeight = EmojiResultsView.tileHeight
+            let rowTop = CGFloat(row) * (tileHeight + EmojiResultsView.gridSpacing)
+            let target = document.convert(NSRect(x: 0, y: rowTop, width: 1, height: tileHeight), from: self)
+            if !scroll.documentVisibleRect.contains(target) {
+                document.scrollToVisible(target)
+            }
+        }
     }
 }
