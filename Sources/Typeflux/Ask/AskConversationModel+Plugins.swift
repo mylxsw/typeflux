@@ -216,7 +216,7 @@ extension AskConversationModel {
                 wordBook: wordBook?.store,
                 aiName: { [weak settings] in AskPluginRegistry.translationModelName(settings) },
                 serviceSettings: { [weak settings] in settings?.askTranslationSettings ?? AskTranslationSettings() },
-                service: { AskServiceTranslationEngine(client: AskServiceTranslationEngine.client(for: $0)) },
+                service: { AskServiceTranslationEngine(client: AskServiceTranslationEngine.client(for: $0), cache: .shared) },
                 fanout: translationFanout,
                 engines: translationEngineFactory.map { factory in { @Sendable service in factory.engine(for: service) } },
                 serviceName: translationEngineFactory.map { factory in { @Sendable service in factory.name(for: service) } },

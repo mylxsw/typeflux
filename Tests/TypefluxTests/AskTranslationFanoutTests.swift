@@ -300,6 +300,11 @@ struct AskTranslationFanoutTests {
             #expect(!failure.message.contains("sensitive-remote-body"))
             #expect((failure.action(for: service) == nil) == (recovery == .none))
         }
+        let limited = AskTranslationFailure.presenting(
+            AskTranslationServiceError.rateLimited, service: .provider(.youdao),
+            source: "en", target: "zh-Hans", interface: .english
+        )
+        #expect(limited.message == L("ask.translation.error.rateLimited") && limited.recovery == .retry)
         let local = AskTranslationFailure.presenting(
             URLError(.timedOut),
             service: .device,

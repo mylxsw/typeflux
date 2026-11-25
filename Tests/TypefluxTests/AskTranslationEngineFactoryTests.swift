@@ -37,6 +37,7 @@ struct AskTranslationEngineFactoryTests {
             #expect(factory.name(for: .provider(provider)) == provider.title)
             let engine = try #require(factory.engine(for: .provider(provider)) as? AskServiceTranslationEngine)
             #expect(!engine.isConfigured && engine.provider == provider)
+            #expect(engine.cache?.directory == AskTranslationCache.shared.directory)
         }
         #expect(await factory.engine(for: .device).canTranslate(from: nil, to: "en") == false)
         for index in 0 ..< 34 {

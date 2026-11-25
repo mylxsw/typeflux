@@ -80,6 +80,8 @@ struct AskTranslationFailure: Equatable, Sendable, Codable {
                 recovery: .configure
             )
         case AskTranslationServiceError.quota: return Self(message: L("ask.translation.error.quota"), recovery: .skip)
+        case AskTranslationServiceError.rateLimited:
+            return Self(message: L("ask.translation.error.rateLimited"), recovery: .retry)
         case AskTranslationServiceError.unsupportedLanguage:
             return Self(
                 message: L(

@@ -26,7 +26,8 @@ final class AskTranslationEngineFactory: @unchecked Sendable {
         case let .provider(provider):
             return AskServiceTranslationEngine(
                 client: AskServiceTranslationEngine.client(for: provider),
-                credentials: credentials
+                credentials: credentials,
+                cache: .shared
             )
         case let .ai(reference):
             lock.lock(); defer { lock.unlock() }

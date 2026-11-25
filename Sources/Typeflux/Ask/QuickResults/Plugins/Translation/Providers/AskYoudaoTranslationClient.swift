@@ -4,6 +4,9 @@ import Foundation
 struct AskYoudaoTranslationClient: AskTranslationProviderClient {
     let provider = AskTranslationProvider.youdao
     let limit = 5000
+    let limitUnit = AskTranslationTextChunker.Unit.unicodeScalars
+    let sendsBlankLines = true
+    let rateLimitRetryDelay: Duration? = .seconds(1)
 
     static let codes = [
         "zh-hans": "zh-CHS", "zh-hant": "zh-CHT", "en": "en", "ja": "ja", "ko": "ko", "fr": "fr", "de": "de",

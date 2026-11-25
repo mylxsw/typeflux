@@ -261,9 +261,18 @@ struct AskTranslationTextChunkerTests {
         let cut = AskTranslationTextChunker.split("你好世界", limit: 6, unit: .utf8Bytes)
         #expect(cut.map(\.text) == ["你好", "世界"])
     }
+
+    @Test func largerCharacterUnitsKeepEveryRequestWithinTheLimit() {
+        let text = "a.bcde👩‍💻f\n\nsecond"
+        let unit = AskTranslationTextChunker.Unit.unicodeScalars
+        let pieces = AskTranslationTextChunker.split(text, limit: 6, unit: unit, sendsBlankLines: true)
+        #expect(pieces.map(\.text) == ["a.bcde", "👩‍💻f", "", "second"])
+        #expect(pieces.filter(\.translates).allSatisfy { AskTranslationTextChunker.measure($0.text, unit) <= 6 })
+        #expect(AskTranslationTextChunker.join(pieces, pieces.map(\.text), joiner: "") == text)
+    }
 }
 
-@Suite("Ask translation services")
+@Suite("Ask translation services", .exclusiveUIState)
 struct AskTranslationServiceTests {
     @Test func signingPrimitives() {
         #expect(AskTranslationSigning.md5Hex("2015063000000001apple143566028812345678") == "f89f9594663708c1605f3d736d01d2d4")
