@@ -144,3 +144,10 @@ final class ClassicIntroCoordinatorTests: XCTestCase {
         XCTAssertEqual(presentations, 1)
     }
 }
+
+final class ClassicProductLinksTests: XCTestCase {
+    /// Shared with Typeflux Classic (GUL-717) and the website (GUL-725).
+    func testComparisonPageAddress() {
+        XCTAssertEqual(ClassicProductLinks.comparisonURL.absoluteString, "https://typeflux.app/compare")
+    }
+}

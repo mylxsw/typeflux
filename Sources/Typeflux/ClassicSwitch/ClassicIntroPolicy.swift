@@ -3,7 +3,7 @@ import Foundation
 /// Links shared by every Typeflux Classic entry point.
 enum ClassicProductLinks {
     /// Website page that compares Typeflux with Typeflux Classic.
-    static let comparisonURL = URL(string: "https://typeflux.app/classic")!
+    static let comparisonURL = URL(string: "https://typeflux.app/compare")!
 }
 
 /// What the one-time Typeflux Classic introduction should do on this launch.

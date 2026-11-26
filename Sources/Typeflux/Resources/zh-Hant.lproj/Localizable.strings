@@ -7727,7 +7727,6 @@
 "terminal.session.window.pin" = "保持最上層";
 "terminal.session.window.back" = "移回超級搜尋框 ⌘O";
 
-"terminal.session.move.launcher" = "移到啟動器";
 
 /* Typeflux Classic introduction and switch */
 "classic.intro.title" = "認識 Typeflux Classic";
