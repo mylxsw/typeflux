@@ -7,7 +7,7 @@
 "activation" = "語音輸入";
 "auxiliary" = "輔助語音輸入";
 "persona" = "人設切換";
-"ask" = "啟動器";
+"ask" = "超級搜尋";
 "ring" = "圓環";
 "history" = "剪貼簿";
 "screenshot" = "截圖";
@@ -15,7 +15,7 @@
 "activationHint" = "按住說話，放開寫入";
 "auxiliaryHint" = "用另一個人設輸入";
 "personaHint" = "切換目前人設";
-"askHint" = "開啟啟動器，可帶上選取文字";
+"askHint" = "開啟超級搜尋框，可帶上選取文字";
 "ringHint" = "按住開啟，放開執行";
 "historyHint" = "複製過的內容和語音記錄";
 "screenshotHint" = "框選區域截圖並編輯";

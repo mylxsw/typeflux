@@ -3,7 +3,7 @@
 "title" = "试一试";
 
 "feature.voice" = "语音输入";
-"feature.launcher" = "启动器";
+"feature.launcher" = "超级搜索";
 "feature.ring" = "圆环";
 "feature.chat" = "Agent 对话";
 
@@ -33,7 +33,7 @@
 "ring.sector.ocr" = "识字";
 "ring.sector.clipboard" = "剪贴板";
 
-"chat.instructionPrefix" = "在启动器里提问，按";
+"chat.instructionPrefix" = "在超级搜索框里提问，按";
 "chat.query" = "这张表哪个月增长最快？";
 "chat.result" = "7 月，环比 +32%";
 

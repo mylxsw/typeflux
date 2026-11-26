@@ -277,11 +277,11 @@ Go 服务端
 
 > Edit reference images only when requested by the user. Produces one image and spends the model's per-image credit price. Do not retry failed or uncertain generation automatically.
 
-## 启动器工作流
+## 超级搜索工作流
 
 ### workflow_list
 
-查找已安装的启动器工具。
+查找已安装的超级搜索工具。
 
 > Use only when the user asks to create or edit a reusable launcher tool. Find installed reusable launcher tools. Listing does not open a draft. To create or edit, call workflow_start next, then workflow_read. For a one-off request that needs this Mac in Chat, call continue_in_task if available.
 
@@ -329,7 +329,7 @@ Go 服务端
 
 ### workflow_save
 
-请用户在预览中确认保存到启动器。
+请用户在预览中确认保存到超级搜索。
 
 > Use only when the user asks to create or edit a reusable launcher tool. Request saving the current draft to the launcher. The user must explicitly choose Save in the preview panel; this tool never installs automatically.
 

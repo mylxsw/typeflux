@@ -25,7 +25,7 @@
 "camera.title" = "摄像头";
 "camera.summary" = "录屏时显示摄像头画面";
 "calendar.title" = "日历";
-"calendar.summary" = "在启动器和 Agent 中读取日程";
+"calendar.summary" = "在超级搜索和 Agent 中读取日程";
 "notifications.title" = "通知";
 "notifications.summary" = "后台任务完成提醒";
 "automation.title" = "自动化";

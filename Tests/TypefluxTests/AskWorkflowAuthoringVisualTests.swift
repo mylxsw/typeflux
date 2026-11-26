@@ -20,7 +20,7 @@ struct AskWorkflowAuthoringVisualTests {
         authoring.onChange = { [weak model = chat.model] in model?.objectWillChange.send() }
         let messages: [AskMessage] = [
             .init(id: "u", role: "user", text: "帮我做一个去除重复行的工具，保留原来的顺序。", createdAt: Date()),
-            .init(id: "a", role: "assistant", text: "草稿已准备好。输入一段文本试一试；你还可以让我忽略大小写或调整排序。满意后保存到启动器。", createdAt: Date())
+            .init(id: "a", role: "assistant", text: "草稿已准备好。输入一段文本试一试；你还可以让我忽略大小写或调整排序。满意后保存到超级搜索。", createdAt: Date())
         ]
         await chat.api.seed(.init(id: "workflow", title: "创建文本去重工具", revision: 1, updatedAt: Date(), messages: messages))
         await chat.model.refreshHistory(); await chat.model.select("workflow")

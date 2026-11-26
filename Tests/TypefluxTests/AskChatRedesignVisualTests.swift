@@ -150,7 +150,7 @@ struct AskChatRedesignVisualTests {
         ])
         if !unknown {
             value.messages.append(.init(id: "answer", role: "assistant",
-                text: "已生成 Weather 工作流：在启动器里输入 weather 或 tq 即可查询当前城市的实时天气。可以先在右侧试运行，确认结果后再保存到启动器。",
+                text: "已生成 Weather 工作流：在超级搜索框里输入 weather 或 tq 即可查询当前城市的实时天气。可以先在右侧试运行，确认结果后再保存到超级搜索。",
                 createdAt: Date(), runId: "run"))
         }
         value.run = .init(id: "run", deviceId: "device", status: unknown ? "waiting_tool" : "completed",

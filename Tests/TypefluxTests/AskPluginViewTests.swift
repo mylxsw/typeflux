@@ -345,13 +345,13 @@ extension AskPluginVisualTests {
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let generator = AskTestTextGenerator()
-        generator.pieces = ["这次更新修复了外接显示器上启动器位置偏移的问题，", "并让会议中的语音输入更加稳定。"]
+        generator.pieces = ["这次更新修复了外接显示器上超级搜索框位置偏移的问题，", "并让会议中的语音输入更加稳定。"]
         let plugins: [any AskLauncherPlugin] = [AskWebSearchPlugin(),
                                                 AskPromptPlugin(generator: generator, modelName: { "MiniMax M3" })]
         // name, editor text, run it, height
         let cases: [(String, String, Bool, CGFloat)] = [
-            ("web", "g swift actors", false, 300), ("prompt-ready", "rw 这次更新修好了外接显示器上启动器跑偏，会议时语音输入也更稳了", false, 300),
-            ("prompt-done", "rw 这次更新修好了外接显示器上启动器跑偏，会议时语音输入也更稳了", true, 380)
+            ("web", "g swift actors", false, 300), ("prompt-ready", "rw 这次更新修好了外接显示器上超级搜索框跑偏，会议时语音输入也更稳了", false, 300),
+            ("prompt-done", "rw 这次更新修好了外接显示器上超级搜索框跑偏，会议时语音输入也更稳了", true, 380)
         ]
         for (name, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
             for (file, text, run, height) in cases {
@@ -381,7 +381,7 @@ extension AskPluginVisualTests {
 private struct SnapshotEngine: AskTranslationEngine {
     func canTranslate(from source: String?, to target: String) async -> Bool { true }
     func translate(_ text: String, from source: String?, to target: String) async throws -> String {
-        if text.hasPrefix("This update") { return "这次更新修复了外接显示器上启动器位置偏移的问题，并让会议中的语音输入更加稳定。" }
+        if text.hasPrefix("This update") { return "这次更新修复了外接显示器上超级搜索框位置偏移的问题，并让会议中的语音输入更加稳定。" }
         return "There is a meeting at 3 p.m. tomorrow; remember to bring the weekly report."
     }
 }

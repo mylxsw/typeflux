@@ -617,8 +617,11 @@ extension LocalizationResourceTests {
             .english: "Chat", .simplifiedChinese: "对话", .traditionalChinese: "對話",
             .japanese: "チャット", .korean: "대화"
         ]
-        let keys = ["workflow.ask.answerTitle", "settings.shortcuts.ask.title",
-                    "studio.eyebrow.agent", "ask.models.ask", "ring.feature.ask.title"]
+        let keys = ["workflow.ask.answerTitle", "studio.eyebrow.agent", "ask.models.ask"]
+        let launcherEntryKeys = ["settings.shortcuts.ask.title", "ring.feature.ask.title"]
+        let chineseLauncherNames: [AppLanguage: String] = [
+            .simplifiedChinese: "超级搜索", .traditionalChinese: "超級搜尋"
+        ]
         let retiredNames = ["随便问", "隨便問", "Ask Anything", "何でも聞いてください",
                             "「何でも質問」", "「何でも聞く」", "なんでも質問", "무엇이든 묻기",
                             "무엇이든 질문", "when Ask starts"]
@@ -630,10 +633,34 @@ extension LocalizationResourceTests {
             for key in keys {
                 XCTAssertEqual(table[key], expected[language], "\(key) in \(language.rawValue)")
             }
+            for key in launcherEntryKeys {
+                XCTAssertEqual(table[key], chineseLauncherNames[language] ?? expected[language],
+                               "\(key) in \(language.rawValue)")
+            }
             for (key, value) in table {
                 for name in retiredNames {
                     XCTAssertFalse(value.contains(name), "Retired feature name in \(key) (\(language.rawValue))")
                 }
+            }
+        }
+    }
+
+    func testChineseLauncherNamesDistinguishTheFeatureFromTheSearchBox() throws {
+        let cases: [(AppLanguage, String, String)] = [
+            (.simplifiedChinese, "超级搜索", "超级搜索框"),
+            (.traditionalChinese, "超級搜尋", "超級搜尋框")
+        ]
+        for (language, feature, searchBox) in cases {
+            let bundle = try localizationBundle(for: language)
+            let url = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))
+            let table = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: url),
+                options: [], format: nil) as? [String: String])
+            XCTAssertEqual(table["studio.section.launcher"], feature)
+            XCTAssertEqual(table["hotkeys.builtIn.ask.title"], feature)
+            for key in ["ring.feature.ask.detail", "hotkeys.builtIn.ask.subtitle",
+                        "terminal.launcher.destination", "terminal.session.window.back"] {
+                let value = try XCTUnwrap(table[key], "Missing \(key) in \(language.rawValue)")
+                XCTAssertTrue(value.contains(searchBox), "\(key) in \(language.rawValue)")
             }
         }
     }

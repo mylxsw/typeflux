@@ -106,7 +106,7 @@ struct AskFloatingPanelStyleTests {
                                       subtitle: L("ask.notes.openWindow.detail"), icon: .symbol("macwindow"),
                                       actions: [AskPromptPlugin.openNotesAction.with(shortcut: .enter)])
             let noteRows = [notes, AskPluginItem(id: "meeting", title: "项目会议记录", subtitle: "整理讨论结论与下一步安排"),
-                            AskPluginItem(id: "ideas", title: "产品想法", subtitle: "启动器入口与搜索体验")]
+                            AskPluginItem(id: "ideas", title: "产品想法", subtitle: "超级搜索入口与搜索体验")]
             let noteOutput = AskPluginOutput(body: "", original: "", meta: [], source: L("ask.plugin.source.device"),
                                              actions: [], items: noteRows, selectedItem: 1)
             let noteDisplay = AskPluginDisplay(
