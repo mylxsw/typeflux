@@ -95,7 +95,7 @@ struct ClassicIntroView: View {
     private enum Cell { case header(String), included, missing }
 
     private var divider: some View {
-        Rectangle().fill(TFColors.border).frame(height: TFMetrics.borderWidth)
+        Divider().overlay(TFColors.border)
     }
 
     private func row(title: String?, symbol: String?, typeflux: Cell, classic: Cell) -> some View {
@@ -142,7 +142,7 @@ struct ClassicSwitchView: View {
             content
         }
         .padding(ClassicDialogMetrics.padding)
-        .frame(width: 440, alignment: .leading)
+        .frame(width: 480, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("classic.switch")
     }
@@ -194,8 +194,12 @@ struct ClassicSwitchView: View {
             LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)],
                       alignment: .leading, spacing: 8) {
                 ForEach(ClassicFeatureComparison.missingInClassic) { feature in
-                    Label(feature.title, systemImage: feature.symbol)
-                        .font(.system(size: 13)).foregroundStyle(TFColors.textPrimary)
+                    HStack(spacing: 8) {
+                        Image(systemName: feature.symbol).font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(TFColors.textSecondary).frame(width: 18)
+                        Text(feature.title).font(.system(size: 13)).foregroundStyle(TFColors.textPrimary)
+                            .lineLimit(1).fixedSize()
+                    }
                 }
             }
         }
