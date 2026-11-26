@@ -1,8 +1,8 @@
 /* Onboarding v3: OnboardingSpeech */
-"eyebrow" = "Voice Recognition";
+"eyebrow" = "음성 인식";
 "title" = "음성 인식";
 "subtitle" = "서비스를 선택하고 설정하세요. 테스트는 선택 사항입니다.";
-"configEyebrow" = "Configuration";
+"configEyebrow" = "구성";
 
 "provider.local.title" = "로컬 모델";
 "provider.local.detail" = "이 Mac에서 실행, 오프라인 및 무료";

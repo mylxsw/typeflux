@@ -22,7 +22,7 @@
 "settings.appIcon.title" = "应用图标";
 "settings.appIcon.note" = "切换后立即显示在程序坞；访达中的应用文件仍显示默认图标。";
 "interfaceStyle.frosted" = "磨砂";
-"interfaceStyle.liquidGlass" = "Liquid Glass";
+"interfaceStyle.liquidGlass" = "液态玻璃";
 "interfaceStyle.classic" = "经典";
 
 "window.voiceStudio" = "Typeflux";
@@ -223,7 +223,7 @@
 "appMenu.selectAll" = "全选";
 
 "about.appName" = "Typeflux";
-"about.subtitle" = "The voice-native typing experience";
+"about.subtitle" = "以语音为核心的输入体验";
 "about.details" = "详情";
 "about.developer" = "开发者";
 "about.developer.subtitle" = "独立开发者";
@@ -2297,19 +2297,19 @@
 "ask.terminal.exit" = "退出码：%@";
 "ask.terminal.lost" = "丢失的输出字节：%@";
 "ask.terminal.logFailed" = "无法保存进程日志。";
-"ask.terminal.error.disabled" = "Project execution is disabled.";
-"ask.terminal.error.unavailable" = "The required project runtime is unavailable.";
-"ask.terminal.error.invalidRequest" = "The project execution request is invalid.";
-"ask.terminal.error.approvalRequired" = "A new approval is required.";
-"ask.terminal.error.denied" = "Project access was revoked or denied.";
-"ask.terminal.error.unknownLease" = "This process belongs to a different run or app session.";
-"ask.terminal.error.installationUnavailable" = "Dependency installation is not supported.";
-"ask.terminal.error.capacity" = "The project runtime limit has been reached.";
-"ask.terminal.error.closed" = "The process has stopped.";
-"ask.terminal.error.inputFull" = "The input exceeds the supported buffer or line limit.";
-"ask.terminal.error.invalidCursor" = "The output cursor is invalid.";
-"ask.terminal.error.portUnavailable" = "The requested listener port is unavailable.";
-"ask.terminal.truncated" = "Output is truncated; the retained log may also be incomplete.";
+"ask.terminal.error.disabled" = "项目执行功能已停用。";
+"ask.terminal.error.unavailable" = "项目所需的运行环境不可用。";
+"ask.terminal.error.invalidRequest" = "项目执行请求无效。";
+"ask.terminal.error.approvalRequired" = "需要重新批准。";
+"ask.terminal.error.denied" = "项目访问权限已撤销或被拒绝。";
+"ask.terminal.error.unknownLease" = "此进程属于另一轮运行或另一个应用会话。";
+"ask.terminal.error.installationUnavailable" = "不支持安装依赖。";
+"ask.terminal.error.capacity" = "已达到项目运行环境上限。";
+"ask.terminal.error.closed" = "进程已停止。";
+"ask.terminal.error.inputFull" = "输入超出支持的缓冲区或行数上限。";
+"ask.terminal.error.invalidCursor" = "输出游标无效。";
+"ask.terminal.error.portUnavailable" = "请求的监听端口不可用。";
+"ask.terminal.truncated" = "输出已截断，保留的日志也可能不完整。";
 
 // Memory provenance and retention
 "memory.search" = "搜索源记忆";

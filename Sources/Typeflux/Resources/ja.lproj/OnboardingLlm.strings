@@ -1,9 +1,9 @@
 /* Onboarding v3: OnboardingLlm */
-"eyebrow" = "Language Model";
+"eyebrow" = "言語モデル";
 "title" = "AI モデル";
 "titleBadge" = "任意";
 "subtitle" = "AI リライト、翻訳、Agent 対話に使用します。";
-"configEyebrow" = "Configuration";
+"configEyebrow" = "設定";
 
 "provider.free.title" = "無料モデル";
 "provider.free.detail" = "設定不要";

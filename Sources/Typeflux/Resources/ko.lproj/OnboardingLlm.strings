@@ -1,9 +1,9 @@
 /* Onboarding v3: OnboardingLlm */
-"eyebrow" = "Language Model";
+"eyebrow" = "언어 모델";
 "title" = "AI 모델";
 "titleBadge" = "선택 사항";
 "subtitle" = "AI 재작성, 번역 및 Agent 대화에 사용됩니다.";
-"configEyebrow" = "Configuration";
+"configEyebrow" = "구성";
 
 "provider.free.title" = "무료 모델";
 "provider.free.detail" = "설정 불필요";
