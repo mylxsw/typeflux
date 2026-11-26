@@ -261,7 +261,9 @@ struct ClassicSwitchEntry<Content: View>: View {
 
 extension View {
     /// Re-checks Classic availability (cached for a while) when the containing page appears.
-    func refreshesClassicAvailability(_ controller: ClassicSwitchController = .shared) -> some View {
-        task { await controller.refreshAvailability() }
+    @MainActor
+    func refreshesClassicAvailability(_ controller: ClassicSwitchController? = nil) -> some View {
+        let controller = controller ?? .shared
+        return task { await controller.refreshAvailability() }
     }
 }
