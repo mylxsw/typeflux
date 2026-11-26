@@ -174,46 +174,12 @@ struct AskAccountBadge: View {
             .font(.system(size: 10.5, weight: .semibold))
             .lineLimit(1)
             .fixedSize()
-            .foregroundStyle(AskAccountTone.foreground(tone))
+            .foregroundStyle(AccountTone.foreground(tone))
             .padding(.horizontal, 7)
             .frame(height: 18)
-            .background(Capsule().fill(AskAccountTone.fill(tone)))
+            .background(Capsule().fill(AccountTone.fill(tone)))
             .overlay {
                 if tone == .neutral { Capsule().strokeBorder(AskTheme.border) }
             }
-    }
-}
-
-enum AskAccountTone {
-    /// A faint wash for the card's blocks, readable on glass in both appearances.
-    static let chip = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0, alpha: 0.045),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.07)
-    )
-
-    static func foreground(_ tone: AccountStatusPresentation.Tone) -> Color {
-        switch tone {
-        case .neutral: StudioTheme.textSecondary
-        case .accent: AskTheme.accentText
-        case .warning: StudioTheme.warning
-        case .danger: StudioTheme.danger
-        }
-    }
-
-    static func fill(_ tone: AccountStatusPresentation.Tone) -> Color {
-        switch tone {
-        case .neutral: chip
-        case .accent: StudioTheme.accent.opacity(0.18)
-        case .warning: StudioTheme.warning.opacity(0.16)
-        case .danger: StudioTheme.danger.opacity(0.16)
-        }
-    }
-
-    static func bar(_ level: AccountStatusPresentation.QuotaLevel) -> Color {
-        switch level {
-        case .normal: StudioTheme.accent
-        case .low: StudioTheme.warning
-        case .exhausted: StudioTheme.danger
-        }
     }
 }

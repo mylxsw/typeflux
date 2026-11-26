@@ -109,12 +109,6 @@ struct AccountViewRenderingTests {
             try await poll { fixture.breakdownRequests >= 2 }
             #expect(fixture.breakdownRequests >= 2, "page \(name)")
 
-            let card = try await host(AskAccountCard(auth: auth, onOpenAccount: {}, onDismiss: {}),
-                                      width: AskAccountCard.width)
-            #expect(card.fittingSize.height > 150, "card \(name)")
-
-            let footer = try await host(AskAccountFooterIdentity(auth: auth, name: "Demir Von") {}, width: 230)
-            #expect(footer.fittingSize.height > 0)
         }
     }
 
@@ -130,8 +124,6 @@ struct AccountViewRenderingTests {
         #expect(!signedOut.isLoggedIn)
         let page = try await host(AccountView(authState: signedOut) {}, width: 560)
         #expect(page.fittingSize.height > 100)
-        let footer = try await host(AskAccountFooterIdentity(auth: signedOut, name: "Typeflux") {}, width: 230)
-        #expect(footer.fittingSize.height > 0)
     }
 
     @Test func helpSectionLinksAreWellFormed() {

@@ -65,12 +65,6 @@ actor RecordingRoutingClient: TypefluxOfficialASRRoutingClient {
     }
 }
 
-/// Why a test stopped waiting for its worker to reach a point.
-enum GateWaitError: Error, Equatable {
-    case timedOut
-    case workerFinished
-}
-
 /// A point where a worker parks until the test releases it. A release that
 /// arrives before the worker parks is kept, so the worker then passes
 /// straight through instead of needing a second release.

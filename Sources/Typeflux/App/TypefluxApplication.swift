@@ -46,6 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_: Notification) {
+        _ = RecentInputMemoryStore.accountObserver
         responsiveness.start()
         let settingsStore = self.settingsStore
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)

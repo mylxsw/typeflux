@@ -147,6 +147,7 @@ test-groups: ## Audit test discovery and show group sizes and suite assignments
 	python3 ./scripts/test_groups.py --list
 
 test-scripts: ## Test development scripts without building the app
+	python3 scripts/check_account_module_boundary.py
 	python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
 
 .PHONY: coverage

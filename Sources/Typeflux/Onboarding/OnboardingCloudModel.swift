@@ -62,6 +62,7 @@ final class OnboardingCloudModel: ObservableObject {
             }
         }.store(in: &subscriptions)
         Self.activeSession = session
+        AccountOnboarding.provider = Self.self
     }
 
     deinit {
@@ -235,5 +236,20 @@ final class OnboardingCloudModel: ObservableObject {
             .sessionGeneration && entitlementReady && !session.authState.isLoadingSubscription
             && session.authState.subscriptionError == nil && error == nil && (cloudSpeech || localReady)
         objectWillChange.send()
+    }
+}
+
+extension OnboardingCloudModel: AccountOnboardingProvider {
+    static var hasActiveSession: Bool { activeSession != nil }
+
+    static func presentInlineLogin() -> Bool {
+        guard let session = activeSession, session.currentStep == .cloud else { return false }
+        let model = session.cloudModel
+        if model.phase == .waiting {
+            model.reopen()
+        } else {
+            Task { await model.start() }
+        }
+        return true
     }
 }

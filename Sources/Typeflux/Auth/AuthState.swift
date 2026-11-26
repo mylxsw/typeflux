@@ -214,7 +214,7 @@ final class AuthState: ObservableObject {
 
     func handleLoginSuccess(token: String, expiresAt: Int, refreshToken: String? = nil,
                             sessionAlreadyPersisted: Bool = false) async {
-        RecentInputMemoryStore.shared.invalidateObservations()
+        NotificationCenter.default.post(name: .accountSessionWillChange, object: nil)
         let normalizedExpiresAt = normalizeLoginExpiry(expiresAt)
         sessionGeneration += 1
         accessTokenRefreshTask = nil
@@ -245,10 +245,8 @@ final class AuthState: ObservableObject {
             return
         }
         webLoginCoordinator.cancel()
-        RecentInputMemoryStore.shared.invalidateObservations()
-        if clearRecentInputMemory {
-            RecentInputMemoryStore.shared.clear(owner: userProfile?.id ?? loadStoredUserProfile()?.id ?? "local")
-        }
+        let owner = clearRecentInputMemory ? userProfile?.id ?? loadStoredUserProfile()?.id ?? "local" : nil
+        NotificationCenter.default.post(name: .accountSessionWillChange, object: owner)
         if let refreshToken = cachedRefreshToken {
             Task {
                 try? await AuthAPIService.logout(refreshToken: refreshToken)
@@ -328,4 +326,8 @@ final class AuthState: ObservableObject {
         guard let token = await validAccessToken() else { return nil }
         return TypefluxCloudSessionCredential(accessToken: token, session: sessionGeneration)
     }
+}
+
+extension Notification.Name {
+    static let accountSessionWillChange = Notification.Name("Typeflux.accountSessionWillChange")
 }

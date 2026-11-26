@@ -264,16 +264,6 @@ enum StudioTheme {
     static let contentMaxWidth = Layout.contentMaxWidth
     static let contentInset = Layout.contentInset
 
-    /// An sRGB colour from a 24-bit hex value, for the light palette's exact swatches.
-    static func rgb(_ hex: UInt32, alpha: CGFloat = 1) -> NSColor {
-        NSColor(
-            srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
-            green: CGFloat((hex >> 8) & 0xFF) / 255,
-            blue: CGFloat(hex & 0xFF) / 255,
-            alpha: alpha
-        )
-    }
-
     /// The selected sidebar row: a raised white block on the grey sidebar in light.
     static let sidebarSelection = dynamic(
         light: rgb(0xFFFFFF),
@@ -317,9 +307,6 @@ enum StudioTheme {
         light: rgb(0xA1A1A6),
         dark: NSColor(calibratedWhite: 0.40, alpha: 1)
     )
-    /// AI feature glyphs use gold; controls and text keep their interaction colors.
-    static let aiIcon = dynamic(light: rgb(0xA66C00), dark: rgb(0xF2C14E))
-
     static let accent = dynamic(
         light: rgb(0x2563EB),
         dark: NSColor(calibratedRed: 0.09, green: 0.55, blue: 1.00, alpha: 1)
@@ -472,17 +459,5 @@ extension Font {
 
     static func studioMono(_ size: CGFloat, weight: Weight = .regular) -> Font {
         .system(size: size, weight: weight, design: .monospaced)
-    }
-}
-
-/// Apply directly to the glyph, before inherited foreground and button styles.
-extension View {
-    @ViewBuilder
-    func aiSymbolTint(_ symbol: String) -> some View {
-        if symbol == "sparkles" || symbol == "sparkle" {
-            foregroundStyle(StudioTheme.aiIcon)
-        } else {
-            self
-        }
     }
 }

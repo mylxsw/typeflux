@@ -23,7 +23,7 @@ final class LoginWindowController {
     )
 
     static var shouldPresentWebLoginAlerts: Bool {
-        OnboardingCloudModel.activeSession == nil
+        !AccountOnboarding.hasActiveSession
     }
 
     static func makeLoginSuccessAlert() -> NSAlert {
@@ -40,15 +40,7 @@ final class LoginWindowController {
         guard FeatureProcess.owns(.host) else {
             FeatureProcess.send(.init(destination: .host, action: "login")); return
         }
-        if let session = OnboardingCloudModel.activeSession, session.currentStep == .cloud {
-            let model = session.cloudModel
-            if model.phase == .waiting {
-                model.reopen()
-            } else {
-                Task { await model.start() }
-            }
-            return
-        }
+        if AccountOnboarding.provider?.presentInlineLogin() == true { return }
         webEntry.show()
     }
 

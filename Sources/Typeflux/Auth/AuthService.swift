@@ -1,5 +1,4 @@
 import Foundation
-import TypefluxChat
 import os
 
 /// HTTP client for the Typeflux authentication API.
@@ -180,6 +179,10 @@ enum AuthAPIService {
 /// that may or may not include a trailing slash.
 enum AuthEndpointResolver {
     static func resolve(baseURL: URL, path: String) -> URL {
-        ChatRequest.resolve(baseURL: baseURL, path: path)
+        let trimmedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) ?? URLComponents()
+        let basePath = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        components.path = basePath.isEmpty ? "/" + trimmedPath : "/" + basePath + "/" + trimmedPath
+        return components.url ?? baseURL
     }
 }

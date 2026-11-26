@@ -85,7 +85,7 @@ struct AccountCreditBreakdownView: View {
             HStack(alignment: .bottom, spacing: 3) {
                 ForEach(Array(bars.enumerated()), id: \.offset) { _, bar in
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(bar.isFuture || bar.credits == 0 ? AnyShapeStyle(AskAccountTone.chip)
+                        .fill(bar.isFuture || bar.credits == 0 ? AnyShapeStyle(AccountTone.chip)
                             : AnyShapeStyle(StudioTheme.accent.opacity(bar.isToday ? 1 : 0.8)))
                         .frame(height: bar.isFuture || bar.credits == 0
                             ? 3 : max(4, 86 * CGFloat(bar.credits) / CGFloat(peak)))
@@ -142,7 +142,7 @@ struct AccountCreditBreakdownView: View {
                             .foregroundStyle(StudioTheme.textSecondary)
                             .lineLimit(1)
                             .frame(width: 74, alignment: .leading)
-                        AskAccountProgressBar(progress: share.fraction, color: Self.color(share.feature))
+                        AccountProgressBar(progress: share.fraction, color: Self.color(share.feature))
                             .frame(height: 8)
                         Text(AccountStatusText.percent(share.fraction))
                             .font(.studioBody(StudioTheme.Typography.bodySmall))

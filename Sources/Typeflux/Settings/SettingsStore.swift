@@ -854,8 +854,6 @@ final class SettingsStore {
         }
     }
 
-    var rewriteModelReference: String { defaults.string(forKey: "llm.profile.reference") ?? "" }
-
     /// The merged protocol cannot carry feature routing or a priced model snapshot yet.
     var canUseIntegratedCloudRewrite: Bool {
         false

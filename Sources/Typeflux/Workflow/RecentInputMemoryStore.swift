@@ -21,6 +21,20 @@ final class RecentInputMemoryStore: @unchecked Sendable {
         return store
     }()
 
+    /// Install at startup, but only open the memory store on an account transition.
+    static let accountObserver = observeAccountChanges(in: .default) { .shared }
+
+    static func observeAccountChanges(in center: NotificationCenter,
+                                      store: @escaping @Sendable () -> RecentInputMemoryStore) -> NSObjectProtocol {
+        center.addObserver(forName: .accountSessionWillChange, object: nil, queue: nil) { notification in
+            let memory = store()
+            memory.invalidateObservations()
+            if let owner = notification.object as? String {
+                memory.clear(owner: owner)
+            }
+        }
+    }
+
     static let lifetime: TimeInterval = 24 * 60 * 60
     static let maximumPerApp = 20
     static let maximumExcerptLength = 700

@@ -62,3 +62,12 @@ A stable code-signing identity prevents macOS from re-prompting for microphone/a
 Overrides are available via environment variables:
 - `TYPEFLUX_DEV_CODESIGN_IDENTITY` — force a specific signing identity (e.g., "Apple Development: user@example.com (...)")
 - `TYPEFLUX_DEV_PROVISIONING_PROFILE` — path to a macOS provisioning profile for Sign In with Apple support
+
+## Classic account module
+
+Classic copies the paths in `scripts/account_module_files.txt` byte for byte.
+Add shared account sources and their portable tests there. Keep product-specific
+presentation and onboarding adapters outside the manifest. Run
+`python3 scripts/check_account_module_boundary.py` or `make test-scripts`
+with the v0.4.0 Git history available. New project types must belong to Classic
+v0.4.0 or to the manifest. The checker lists the exact IPC members Classic shims.

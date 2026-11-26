@@ -21,6 +21,7 @@ PROFILES = {
             "ExclusiveUIStateTrait.swift",
             "HotkeyRecorderTests.swift",
             "CloudLoginSyncCoordinatorTests.swift",
+            "CloudLoginProductIntegrationTests.swift",
             "PermissionGuidanceServiceTests.swift",
             "PermissionsSettingsTests.swift",
             "ProductAnalyticsTests.swift",

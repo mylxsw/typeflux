@@ -169,3 +169,12 @@ Follow this policy for the entire requested task, including tasks with multiple 
 - Prefer protocol-backed services with dependency injection through `DIContainer` over singletons.
 - SwiftLint is configured; use `// swiftlint:disable file_length` at the top of intentionally large files.
 - Commit subjects should be short and imperative (e.g. `feat(ax): improve editable target detection`). PRs should note user-visible impact and include screenshots when changing overlay, settings, or menu bar UI.
+
+## Classic account module
+
+Classic copies the paths in `scripts/account_module_files.txt` byte for byte.
+Add shared account sources and their portable tests there. Keep product-specific
+presentation and onboarding adapters outside the manifest. Run
+`python3 scripts/check_account_module_boundary.py` or `make test-scripts`
+with the v0.4.0 Git history available. New project types must belong to Classic
+v0.4.0 or to the manifest. The checker lists the exact IPC members Classic shims.
