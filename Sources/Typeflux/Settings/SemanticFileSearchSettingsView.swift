@@ -50,9 +50,6 @@ struct SemanticFileSearchSettingsView: View {
                 .accessibilityIdentifier("semantic.enabled")
             }
             detail
-            if enabled && filesEnabled {
-                Self.caption(L("semantic.index.schedule"))
-            }
         }
         .padding(.horizontal, 14).padding(.vertical, 14)
         .onHover { isHovering = $0 }
@@ -100,8 +97,8 @@ struct SemanticFileSearchSettingsView: View {
         let status = service.status(filesEnabled: filesEnabled)
         let storage = service.storage()
         return VStack(alignment: .leading, spacing: 12) {
-            if !status.isPassiveWaiting {
-                SemanticStatusLine(status: status)
+            if let text = status.text, !status.isPassiveWaiting {
+                SemanticStatusLine(text: text)
                 TFDivider(inset: 0)
             }
             if let reason = service.resourceWaitReason {
@@ -142,9 +139,6 @@ struct SemanticFileSearchSettingsView: View {
                     .disabled(!service.modelReady)
             }
             .tfControlSize(.small)
-            if status.action == .permission {
-                permissionHelp
-            }
             if let confirmation {
                 TFInlineConfirmation(
                     title: L(confirmation == .model ? "semantic.remove.title" : "semantic.clear.title"),
@@ -159,18 +153,6 @@ struct SemanticFileSearchSettingsView: View {
                 }
                 .accessibilityIdentifier("file.index.confirmation")
             }
-        }
-    }
-
-    private var permissionHelp: some View {
-        let folders = service.blocked.map { AskLauncherSearchSettings.abbreviate($0) }.joined(separator: ", ")
-        return VStack(alignment: .leading, spacing: 8) {
-            Self.caption(L("semantic.permission.message", folders))
-            HStack(spacing: TFMetrics.toolbarSpacing) {
-                Self.link(L("semantic.permission.open")) { PermissionGuidanceService.shared.show(.fullDiskAccess) }
-                Self.link(L("semantic.permission.recheck")) { service.start(force: true) }
-            }
-            .tfControlSize(.small)
         }
     }
 
@@ -237,12 +219,12 @@ struct SemanticFileSearchSettingsView: View {
     }
 }
 
-/// A colored dot and the current content-index state.
+/// The current content-index status shown beneath the header.
 struct SemanticStatusLine: View {
-    let status: SemanticFileSearchStatus
+    let text: String
 
     var body: some View {
-        Text(status.text).font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
+        Text(text).font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("semantic.status")

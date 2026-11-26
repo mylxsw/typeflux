@@ -106,7 +106,10 @@ struct SemanticContentSearchProgressTests {
         let download = SemanticFileSearchStatus.of(.init(phase: .indexing, enabled: true, filesEnabled: true,
             modelReady: true, mediaDownload: 0.5))
         #expect(download.progress == .mediaDownload(0.5))
-        var summary = SemanticFileIndexer.Summary(); summary.waitingForIdle = true; summary.priority = .image
+        var summary = SemanticFileIndexer.Summary()
+        summary.stage = .processing
+        summary.waitingForIdle = true
+        summary.priority = .image
         let waiting = SemanticFileSearchStatus.of(.init(phase: .indexing, enabled: true, filesEnabled: true,
             modelReady: true, indexProgress: summary))
         #expect(waiting.tone == .ready && waiting.progress == nil)

@@ -5035,7 +5035,6 @@
 "semantic.paused" = "索引を一時停止中 · %@ 件";
 "semantic.failed.download" = "モデルのダウンロードに失敗しました";
 "semantic.failed.index" = "内容の索引に失敗しました";
-"semantic.permissionNeeded" = "アクセス許可が必要です";
 "semantic.setup" = "セマンティックファイル検索をオンにする";
 "semantic.setup.subtitle" = "ひとことで、ファイルに書かれた内容を見つけます。";
 "semantic.privacy" = "内容索引はこの Mac で作成・検索されます。ファイル名検索のフォルダと除外設定を使い、内容はアップロードされません。";
@@ -5084,11 +5083,6 @@
 "semantic.remove.title" = "ローカルモデルを削除しますか？";
 "semantic.remove.message" = "約 310 MB を解放し、依存する内容索引も消去します。再度オンにするとダウンロードし直します。ファイル名索引と元のファイルは削除されません。";
 "semantic.remove.confirm" = "削除してオフ";
-"semantic.permission.title" = "ファイル名検索のフォルダへのアクセスを許可";
-"semantic.permission.message" = "Typeflux は現在 %@ を読み取れません。「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で Typeflux を許可してから、もう一度確認してください。ファイル名検索は引き続き使えます。";
-"semantic.permission.later" = "後で";
-"semantic.permission.open" = "システム設定を開く";
-"semantic.permission.recheck" = "許可しました。再確認";
 "semantic.about" = "モデルとライセンスについて";
 "semantic.result" = "内容一致";
 "semantic.page" = "%d ページ";
@@ -5312,7 +5306,6 @@
 "semantic.media.downloading" = "メディアエンコーダーをダウンロード中…";
 
 "semantic.media.waiting" = "文書は検索可能 · アイドル時にメディアを索引";
-"semantic.index.schedule" = "自動更新は 3 時間以上の間隔で行われ、バッテリー駆動中は一時停止します。メディアの索引作成は 10 分間操作がないと再開します。";
 
 "semantic.media.failed" = "メディアの索引に失敗しました。文書は検索できます";
 

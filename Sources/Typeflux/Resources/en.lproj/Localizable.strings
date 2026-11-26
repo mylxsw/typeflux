@@ -5083,7 +5083,6 @@
 "semantic.paused" = "Indexing paused · %@ files";
 "semantic.failed.download" = "Model download failed";
 "semantic.failed.index" = "Content indexing failed";
-"semantic.permissionNeeded" = "Access needed";
 "semantic.setup" = "Turn on semantic file search";
 "semantic.setup.subtitle" = "Describe it in a sentence and find the file that mentions it.";
 "semantic.privacy" = "The content index is built and searched on this Mac. It follows your file search folders and exclusions; contents are never uploaded.";
@@ -5132,11 +5131,6 @@
 "semantic.remove.title" = "Delete the local model?";
 "semantic.remove.message" = "Frees about 310 MB and clears the content index that depends on it. Turning it on again downloads the model again. The file name index and your files are not deleted.";
 "semantic.remove.confirm" = "Delete and Turn Off";
-"semantic.permission.title" = "Allow access to your file search folders";
-"semantic.permission.message" = "Typeflux can't read %@ right now. In System Settings → Privacy & Security → Full Disk Access, allow Typeflux, then check again. File name search keeps working.";
-"semantic.permission.later" = "Later";
-"semantic.permission.open" = "Open System Settings";
-"semantic.permission.recheck" = "I've Allowed It, Check Again";
 "semantic.about" = "About the model & license";
 "semantic.result" = "Content match";
 "semantic.page" = "Page %d";
@@ -5424,7 +5418,6 @@
 "semantic.media.downloading" = "Downloading media encoders…";
 
 "semantic.media.waiting" = "Documents searchable · Media indexing waits for idle time";
-"semantic.index.schedule" = "Automatic updates are at least 3 hours apart and pause on battery power. Media indexing waits for 10 minutes of inactivity.";
 
 "semantic.media.failed" = "Media indexing failed; documents remain searchable";
 

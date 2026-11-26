@@ -44,7 +44,7 @@ struct SemanticFileSearchStatusTests {
 
     @Test func `finished and failed states offer the matching recovery`() {
         #expect(status(.ready) == .init(tone: .ready, text: L("semantic.ready")))
-        #expect(status(.ready, blocked: ["/Users/me/Documents"]).action == .permission)
+        #expect(status(.ready, blocked: ["/Users/me/Documents"]) == .init(tone: .ready, text: nil))
         #expect(status(.modelRequired, modelReady: false).action == .download)
         #expect(status(.failed, modelReady: false) == .init(tone: .warning, text: L("semantic.failed.download"),
                                                             action: .retryDownload))

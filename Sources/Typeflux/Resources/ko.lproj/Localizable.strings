@@ -5035,7 +5035,6 @@
 "semantic.paused" = "색인 일시 정지됨 · 파일 %@개";
 "semantic.failed.download" = "모델 다운로드 실패";
 "semantic.failed.index" = "내용 색인 실패";
-"semantic.permissionNeeded" = "접근 권한 필요";
 "semantic.setup" = "의미 기반 파일 검색 켜기";
 "semantic.setup.subtitle" = "한 문장으로 파일 속 내용을 찾으세요.";
 "semantic.privacy" = "내용 색인은 이 Mac에서 만들고 검색합니다. 파일 이름 검색의 폴더와 제외 설정을 사용하며 내용은 업로드되지 않습니다.";
@@ -5084,11 +5083,6 @@
 "semantic.remove.title" = "로컬 모델을 삭제할까요?";
 "semantic.remove.message" = "약 310 MB를 확보하고 이에 의존하는 내용 색인도 지웁니다. 다시 켜면 모델을 다시 다운로드합니다. 파일 이름 색인과 원본 파일은 삭제되지 않습니다.";
 "semantic.remove.confirm" = "삭제하고 끄기";
-"semantic.permission.title" = "파일 이름 검색 폴더에 대한 접근 허용";
-"semantic.permission.message" = "Typeflux가 지금 %@을(를) 읽을 수 없습니다. 시스템 설정 → 개인정보 보호 및 보안 → 전체 디스크 접근 권한에서 Typeflux를 허용한 뒤 다시 확인하세요. 파일 이름 검색은 계속 사용할 수 있습니다.";
-"semantic.permission.later" = "나중에";
-"semantic.permission.open" = "시스템 설정 열기";
-"semantic.permission.recheck" = "허용함, 다시 확인";
 "semantic.about" = "모델 및 라이선스 정보";
 "semantic.result" = "내용 일치";
 "semantic.page" = "%d페이지";
@@ -5312,7 +5306,6 @@
 "semantic.media.downloading" = "미디어 인코더 다운로드 중…";
 
 "semantic.media.waiting" = "문서 검색 가능 · 유휴 시간에 미디어 색인";
-"semantic.index.schedule" = "자동 업데이트는 최소 3시간 간격으로 실행되며 배터리 사용 중에는 일시 중지됩니다. 미디어 색인은 10분간 입력이 없을 때 계속됩니다.";
 
 "semantic.media.failed" = "미디어 색인 실패. 문서는 계속 검색할 수 있습니다";
 

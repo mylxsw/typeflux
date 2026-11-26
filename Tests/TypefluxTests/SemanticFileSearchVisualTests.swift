@@ -163,8 +163,9 @@ struct SemanticFileSearchVisualTests {
         ))
         #expect(status.progress == .pausedScanning(59000, 17262))
         let detail = try #require(status.progress)
+        let text = try #require(status.text)
         let view = VStack(alignment: .leading, spacing: 8) {
-            SemanticStatusLine(status: status)
+            SemanticStatusLine(text: text)
             SemanticProgressView(progress: detail, detailed: true)
         }
         .padding(20)

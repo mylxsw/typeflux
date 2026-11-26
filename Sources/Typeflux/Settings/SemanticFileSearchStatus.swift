@@ -7,10 +7,10 @@ struct SemanticFileSearchStatus: Equatable {
         case download(Double), mediaDownload(Double), scanning(Int, Int), indexing(Int, Int?)
         case pausedScanning(Int, Int), pausedIndexing(Int, Int?)
     }
-    enum Action: Equatable { case none, download, retryDownload, retry, permission }
+    enum Action: Equatable { case none, download, retryDownload, retry }
 
     var tone: Tone
-    var text: String
+    var text: String?
     var progress: Progress?
     var action: Action = .none
     var isPassiveWaiting = false
@@ -56,10 +56,8 @@ struct SemanticFileSearchStatus: Equatable {
                              }
                              return .pausedScanning(summary.scanned, summary.discovered)
                          })
-        case .ready where !input.blocked.isEmpty:
-            return .init(tone: .warning, text: L("semantic.permissionNeeded"), action: .permission)
         case .ready:
-            return .init(tone: .ready, text: L("semantic.ready"))
+            return .init(tone: .ready, text: input.blocked.isEmpty ? L("semantic.ready") : nil)
         case .failed where input.modelReady:
             return .init(tone: .warning, text: L(input.mediaFailed ? "semantic.media.failed" : "semantic.failed.index"),
                          action: .retry)
