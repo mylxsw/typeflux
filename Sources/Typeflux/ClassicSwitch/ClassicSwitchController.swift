@@ -50,7 +50,7 @@ final class ClassicSwitchController: ObservableObject {
         fetcher: any ClassicReleaseFetching = CloudClassicReleaseFetcher(),
         downloader: any ClassicPackageDownloading = URLSessionClassicPackageDownloader(),
         installer: any ClassicSwitchInstalling = AutoUpdaterClassicSwitchInstaller(),
-        terminate: @escaping @MainActor () -> Void = { NSApp.terminate(nil) },
+        terminate: @escaping @MainActor () -> Void = { NSApp.terminateFromTask() },
         now: @escaping () -> Date = Date.init,
         availabilityLifetime: TimeInterval = 15 * 60
     ) {

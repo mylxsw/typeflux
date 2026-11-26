@@ -208,7 +208,7 @@ final class AutoUpdater {
                 try AutoUpdater.performInstall(from: archiveURL, sourceURL: sourceURL, relaunch: relaunch)
             }.value
 
-            NSApp.terminate(nil)
+            NSApp.terminateFromTask()
         } catch {
             state = .idle
             showCheckFailedAlert(message: error.localizedDescription)
