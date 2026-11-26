@@ -683,6 +683,7 @@ extension FeedbackAPIServiceTests {
         let session = FeedbackStubSession()
         await session.setHandler { request in
             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token-2")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "x-client-product"), "typeflux")
             return (Data(), Self.httpResponse(url: request.url!, status: 204))
         }
 
@@ -737,6 +738,8 @@ extension FeedbackAPIServiceTests {
         await session.setHandler { request in
             XCTAssertEqual(request.url?.host, "s3.example")
             XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+            XCTAssertNil(request.value(forHTTPHeaderField: "x-client-product"))
+            XCTAssertNil(request.value(forHTTPHeaderField: "x-client-id"))
             return (Data(), Self.httpResponse(url: request.url!, status: 200))
         }
 

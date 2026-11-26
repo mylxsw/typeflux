@@ -417,6 +417,7 @@ struct WebLoginHTTPTests {
             #expect(request.url?.port == configuration.apiOrigin.port)
             #expect(request.httpMethod == "POST" && !request.httpShouldHandleCookies)
             #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
+            #expect(request.value(forHTTPHeaderField: "x-client-product") == "typeflux")
         }
         let create = try JSONDecoder().decode([String: String].self, from: #require(requests[0].httpBody))
         let exchange = try JSONDecoder().decode([String: String].self, from: #require(requests[1].httpBody))

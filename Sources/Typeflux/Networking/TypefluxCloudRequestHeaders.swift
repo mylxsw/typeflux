@@ -1,5 +1,10 @@
 import Foundation
 
+/// Tells the cloud which app is calling, so releases and analytics stay separate from Typeflux Classic.
+enum TypefluxProduct {
+    static let identifier = "typeflux"
+}
+
 struct TypefluxCloudClientInfo: Equatable, Sendable {
     let appName: String
     let appVersion: String
@@ -148,6 +153,7 @@ enum TypefluxCloudScenario: String, CaseIterable, Hashable, Sendable {
 enum TypefluxCloudRequestHeaders {
     static let featureField = "X-Typeflux-Feature"
     static let scenarioField = "x-scenario"
+    static let clientProductField = "x-client-product"
     static let clientIDField = "x-client-id"
     static let clientLocaleField = "x-client-locale"
     static let clientLanguagesField = "x-client-languages"
@@ -171,6 +177,7 @@ enum TypefluxCloudRequestHeaders {
         if !info.acceptLanguage.isEmpty {
             request.setValue(info.acceptLanguage, forHTTPHeaderField: "Accept-Language")
         }
+        request.setValue(TypefluxProduct.identifier, forHTTPHeaderField: clientProductField)
         request.setValue(info.clientID, forHTTPHeaderField: clientIDField)
         request.setValue(info.localeIdentifier, forHTTPHeaderField: clientLocaleField)
         request.setValue(info.preferredLanguages.joined(separator: ","), forHTTPHeaderField: clientLanguagesField)
@@ -215,6 +222,7 @@ enum TypefluxCloudRequestHeaders {
         if !info.acceptLanguage.isEmpty {
             merged["Accept-Language"] = info.acceptLanguage
         }
+        merged[clientProductField] = TypefluxProduct.identifier
         merged[clientIDField] = info.clientID
         merged[clientLocaleField] = info.localeIdentifier
         merged[clientLanguagesField] = info.preferredLanguages.joined(separator: ",")
