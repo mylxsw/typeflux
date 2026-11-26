@@ -140,9 +140,19 @@ private final class SemanticHealthReader: AskFileReading, @unchecked Sendable {
             defer { try? FileManager.default.removeItem(at: root) }
             try await module.module.start(); let scope = lane.scope(), generation = module.module.health.current?.generation
             XCTAssertThrowsError(try scope.read(request, isCancelled: { false }))
-            try await wait { !lane.isOccupied && module.module.health.current?.hasLifecycleWork == false }
-            clock.advance(); let response = await module.module.supervisor.requestRecovery(resetPersistentBudget: false)
-            XCTAssertEqual(response, .started); try await wait { module.module.health.current?.state == .ready }
+            try await wait {
+                !lane.isOccupied && module.module.health.current?.generation != generation
+                    && module.module.health.current?.hasLifecycleWork == false
+            }
+            clock.advance()
+            let deadline = ContinuousClock.now + .seconds(4)
+            var response = await module.module.supervisor.requestRecovery(resetPersistentBudget: false)
+            while response == .busy, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+                response = await module.module.supervisor.requestRecovery(resetPersistentBudget: false)
+            }
+            XCTAssertEqual(response, .started)
+            try await wait { module.module.health.current?.state == .ready }
             XCTAssertNotEqual(module.module.health.current?.generation, generation)
             XCTAssertFalse(lane.ownership.isOccupied, "Recovery cannot launch a read")
             XCTAssertThrowsError(try scope.read(request, isCancelled: { false }))
@@ -263,10 +273,13 @@ private final class SemanticHealthReader: AskFileReading, @unchecked Sendable {
         let cancelledStartup = Task { await service.startForApplication(using: registry) }
         cancelledStartup.cancel(); await cancelledStartup.value
         #expect(reader.directoryReads == firstScan)
-        watcher.change?([.init(path: reader.path, rescan: true, isDirectory: false)], 1)
+        let change = try #require(watcher.change)
+        let firstEvent = try #require(watcher.since) + 1
+        let subtreeChange = AskFileChange(path: root.path, rescan: true, isDirectory: true)
+        change([subtreeChange], firstEvent)
         try await SemanticFileServiceTests.wait { service.phase == .ready && reader.directoryReads > firstScan }
         let scans = reader.directoryReads
-        watcher.change?([.init(path: reader.path, rescan: true, isDirectory: false)], 2)
+        change([subtreeChange], firstEvent + 1)
         await Task.yield()
         await registry.disable(.semanticIndexReading)
         try await registry.start(.semanticIndexReading)

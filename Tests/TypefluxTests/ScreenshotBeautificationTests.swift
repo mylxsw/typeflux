@@ -195,8 +195,8 @@ final class ScreenshotBeautificationTests: XCTestCase {
         view.perform(.beautify)
         XCTAssertNotNil(view.beautificationPanel.panel?.sheetParent)
         let preview = try XCTUnwrap(view.beautificationPanel.panel?.contentView
-            as? NSHostingView<ScreenshotBeautificationView>)
-        preview.rootView.apply()
+            as? NSHostingView<ModifiedContent<ScreenshotBeautificationView, ScreenshotAppearanceRoot>>)
+        preview.rootView.content.apply()
         XCTAssertNil(view.beautificationPanel.panel)
         XCTAssertTrue(view.toolbarModel.state.isBeautified)
         view.finish(.copy)
@@ -215,8 +215,8 @@ final class ScreenshotBeautificationTests: XCTestCase {
         canvas.perform(.beautify)
         XCTAssertNotNil(canvas.beautificationPanel.panel)
         let longPreview = try XCTUnwrap(canvas.beautificationPanel.panel?.contentView
-            as? NSHostingView<ScreenshotBeautificationView>)
-        longPreview.rootView.apply()
+            as? NSHostingView<ModifiedContent<ScreenshotBeautificationView, ScreenshotAppearanceRoot>>)
+        longPreview.rootView.content.apply()
         XCTAssertNil(canvas.beautificationPanel.panel)
         canvas.perform(.copy)
         XCTAssertEqual(events.last, .finish(.copy, displayID: 2, rect: longDisplay.frame, beautification: settings))
@@ -259,8 +259,8 @@ extension ScreenshotBeautificationTests {
                                                               padding: 0, cornerRadius: 0, shadow: 0)))
         view.perform(.beautify)
         let host = try XCTUnwrap(view.beautificationPanel.panel?.contentView
-            as? NSHostingView<ScreenshotBeautificationView>)
-        let preview = try XCTUnwrap(host.rootView.model.image)
+            as? NSHostingView<ModifiedContent<ScreenshotBeautificationView, ScreenshotAppearanceRoot>>)
+        let preview = try XCTUnwrap(host.rootView.content.model.image)
         XCTAssertEqual(preview.width, 400)
         XCTAssertEqual(preview.height, 200)
         XCTAssertEqual(try pixel(preview, 30, 30), [255, 255, 255, 255],
@@ -277,18 +277,18 @@ extension ScreenshotBeautificationTests {
         var applied: [ScreenshotBeautification] = []
         controller.present(source: source(), scale: 1, settings: .init(), over: parent) { applied.append($0) }
         let panel = try XCTUnwrap(controller.panel)
-        let host = try XCTUnwrap(panel.contentView as? NSHostingView<ScreenshotBeautificationView>)
-        XCTAssertTrue(host.rootView.model.settings.isEnabled)
-        XCTAssertEqual(panel.appearance?.name, .darkAqua)
-        XCTAssertEqual(panel.contentLayoutRect.size, ScreenshotBeautificationView.size)
-        host.rootView.model.settings.padding = 80
-        host.rootView.cancel()
+        let host = try XCTUnwrap(panel.contentView as? NSHostingView<ModifiedContent<ScreenshotBeautificationView, ScreenshotAppearanceRoot>>)
+        XCTAssertTrue(host.rootView.content.model.settings.isEnabled)
+        let available = try XCTUnwrap(parent.screen ?? NSScreen.main).visibleFrame.size
+        XCTAssertEqual(panel.contentView?.frame.size, ScreenshotBeautificationView.size(for: available))
+        host.rootView.content.model.settings.padding = 80
+        host.rootView.content.cancel()
         XCTAssertTrue(applied.isEmpty)
         XCTAssertNil(controller.panel)
         controller.present(source: source(), scale: 1, settings: settings, over: parent) { applied.append($0) }
-        let next = try XCTUnwrap(controller.panel?.contentView as? NSHostingView<ScreenshotBeautificationView>)
-        XCTAssertEqual(next.rootView.model.settings, settings)
-        next.rootView.apply()
+        let next = try XCTUnwrap(controller.panel?.contentView as? NSHostingView<ModifiedContent<ScreenshotBeautificationView, ScreenshotAppearanceRoot>>)
+        XCTAssertEqual(next.rootView.content.model.settings, settings)
+        next.rootView.content.apply()
         XCTAssertEqual(applied, [settings])
         XCTAssertNil(controller.panel)
         controller.present(source: source(), scale: 1, settings: settings, over: parent) { applied.append($0) }

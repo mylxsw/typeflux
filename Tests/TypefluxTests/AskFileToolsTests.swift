@@ -186,10 +186,11 @@ final class AskCodeSandboxTests: XCTestCase {
         // A 1x1 PNG written without third-party packages.
         let code = """
         import base64
-        open("dot.png", "wb").write(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="))
+        open("dot.png", "wb").write(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="))
         print("x" * 40000)
         """
-        let result = try await sandbox.run(.python, code: code, conversationId: "c4")
+        let result = try await sandbox.run(.python, code: code, conversationId: "c4",
+            imageNormalizer: AskToolImageNormalizer(worker: MediaWorker()))
         XCTAssertEqual(result.exitCode, 0, result.stderr)
         XCTAssertNotNil(result.image)
         XCTAssertTrue(result.stdout.hasSuffix("more bytes omitted]"))

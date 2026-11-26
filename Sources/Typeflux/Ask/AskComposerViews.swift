@@ -1713,6 +1713,13 @@ struct AskComposer: View {
                 launcherHeader
             } else {
                 editorRow
+                if !active, let feedback = model.capturedContentFeedback(launcher: false) {
+                    AskCapturedContentFeedbackView(feedback: feedback) {
+                        model.undoCapturedContent(launcher: false)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, chrome.horizontalInset)
+                }
                 footer
             }
             if launcher && !launcherCollapsed {

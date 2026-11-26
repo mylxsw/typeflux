@@ -6808,6 +6808,7 @@
 "shortcutDiagnostics.stage.handlerFinished" = "기능 핸들러 반환";
 "shortcutDiagnostics.stage.dataStarted" = "기록 읽기 예약";
 "shortcutDiagnostics.stage.dataFinished" = "기록 읽기 완료";
+"shortcutDiagnostics.stage.directCaptureSelected" = "직접 화면 캡처 선택";
 "shortcutDiagnostics.stage.captureStarted" = "화면 캡처 시작";
 "shortcutDiagnostics.stage.captureFinished" = "화면 캡처 종료";
 "shortcutDiagnostics.stage.windowOrdered" = "창 표시 요청 제출";
@@ -7211,6 +7212,10 @@
 "agent.permissions.help.workflow_propose" = "Apply proposed changes to the workflow draft and preview. Installation still requires Save.";
 "agent.permissions.help.workflow_save" = "Show the draft's save prompt. This does not install the workflow automatically.";
 "agent.permissions.help.workflow_test" = "Run the workflow draft with test inputs. Its commands may have side effects.";
+"agent.permissions.tool.image_generate" = "이미지 생성";
+"agent.permissions.tool.image_edit" = "이미지 편집";
+"agent.permissions.help.image_generate" = "Typeflux 클라우드에서 이미지를 생성하며 크레딧이 사용될 수 있습니다.";
+"agent.permissions.help.image_edit" = "선택한 이미지를 편집하기 위해 Typeflux 클라우드에 전송하며 크레딧이 사용될 수 있습니다.";
 "agent.permissions.help.unknown" = "Controls calls to tool %@, operation %@. Its effects have not been classified; confirm the tool's behavior before allowing it automatically.";
 
 /* Complete usage-guide shortcut reference. */
@@ -7671,3 +7676,48 @@
 "terminal.session.close" = "세션 닫기";
 "terminal.session.close.others" = "다른 세션 닫기";
 "terminal.session.move.launcher" = "런처로 이동";
+
+"ask.image.creating" = "이미지 생성 중";
+"ask.image.elapsed" = "%d초 대기 중";
+"ask.image.waitHint" = "이 대화에서 나갔다가 나중에 다시 확인할 수 있습니다.";
+"ask.image.approval" = "승인 대기 중";
+"ask.image.approvalHint" = "아래 요청을 확인하면 이미지 생성이 시작됩니다.";
+"ask.image.interrupted" = "이미지 생성 결과를 아직 확인할 수 없습니다";
+"ask.image.interruptedHint" = "클라우드에서 이미지 생성이 완료될 수 있습니다. 다시 생성하기 전에 진행 상황을 확인하세요.";
+"ask.image.failed" = "이미지 요청이 완료되지 않았습니다";
+"ask.image.failedHint" = "진행 상황을 열어 자세한 내용을 확인하세요. 이미지 요청은 자동으로 다시 전송되지 않았습니다.";
+"ask.image.details" = "진행 상황 보기";
+"ask.image.save" = "이미지 저장";
+"ask.image.edit" = "이미지 편집";
+"ask.image.editPrompt" = "생성된 이미지 %d 편집: ";
+"ask.image.generatedLoadFailed" = "이미지를 생성했지만 불러오지 못했습니다";
+"ask.image.reloadHint" = "이미 생성된 이미지만 다운로드합니다.";
+"ask.image.reload" = "이미지 다시 불러오기";
+"ask.image.generatedLoading" = "이미지를 생성했습니다. 불러오는 중…";
+"ask.image.loadingHint" = "이미지가 여기에 표시됩니다.";
+"ask.image.stopWaiting" = "대기 중지";
+"ask.image.stopHint" = "이 응답을 중지합니다. 클라우드에서 이미지 생성이 완료되어 요금이 부과될 수 있습니다.";
+"terminal.launcher.label" = "터미널";
+"terminal.launcher.destination" = "런처";
+"terminal.launcher.windowDestination" = "독립 창";
+"terminal.launcher.window" = "창에서 실행";
+"terminal.launcher.open" = "터미널 열기";
+"terminal.launcher.notification" = "Typeflux 터미널";
+"terminal.launcher.new" = "새 세션";
+"terminal.launcher.move" = "창으로 이동";
+"terminal.launcher.interrupt" = "중단";
+"terminal.launcher.copy" = "출력 복사";
+"terminal.launcher.insertInto" = "%@에 삽입";
+"terminal.launcher.rerun" = "다시 실행";
+"terminal.launcher.collapse" = "접기";
+"terminal.launcher.expand" = "펼치기";
+"terminal.launcher.lines" = "⋯ %d줄";
+"terminal.launcher.password" = "암호";
+"terminal.launcher.ended" = "세션 종료 · ↩ 새 세션";
+"terminal.launcher.background" = "%@ 실행 중";
+"terminal.launcher.startFailed" = "터미널 세션을 시작하지 못했습니다.";
+"terminal.launcher.recent" = "최근 세션";
+"terminal.session.window.title" = "터미널";
+"terminal.session.window.new" = "새 세션 ⌘T";
+"terminal.session.window.pin" = "항상 위에 표시";
+"terminal.session.window.back" = "런처로 돌아가기 ⌘O";

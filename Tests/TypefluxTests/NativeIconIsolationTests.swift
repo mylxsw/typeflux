@@ -319,11 +319,12 @@ private actor RecoveringNativeIcon {
         let icons = (0..<60).map { MediaNativeIcon(kind: .file, value: "/Applications/Grid\($0).app") }
         let handles = cache.prefetch(icons, limit: AskLauncherHome.iconPrefetchCount)
         for handle in handles { await handle.value }
-        XCTAssertEqual(AskLauncherHome.iconPrefetchCount, 36)
-        XCTAssertTrue(icons.prefix(36).allSatisfy { cache.cached($0) != nil })
-        XCTAssertNil(cache.cached(icons[36]))
+        let viewport = AskApplicationGrid.columns * 6
+        XCTAssertEqual(AskLauncherHome.iconPrefetchCount, viewport)
+        XCTAssertTrue(icons.prefix(viewport).allSatisfy { cache.cached($0) != nil })
+        XCTAssertNil(cache.cached(icons[viewport]))
         let initialCalls = await calls.count
-        XCTAssertEqual(initialCalls, 36)
+        XCTAssertEqual(initialCalls, viewport)
         cache.cancelPrefetch()
         let repeated = cache.prefetch(icons, limit: AskLauncherHome.iconPrefetchCount)
         for handle in repeated { await handle.value }

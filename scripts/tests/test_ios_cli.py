@@ -114,13 +114,14 @@ class NativeDeviceSelectionTests(unittest.TestCase):
             with self.assertRaisesRegex(ios.CLIError, "cancelled"):
                 ios.select_ios_target(targets)
 
-    def test_http_exception_is_only_in_debug_plist(self):
+    def test_local_model_access_is_available_without_allowing_insecure_cloud_requests(self):
         root = SCRIPT.parents[1] / "Apps/iOS/TypefluxIOS"
         debug = plistlib.loads((root / "Info-Debug.plist").read_bytes())
         release = plistlib.loads((root / "Info.plist").read_bytes())
         self.assertTrue(debug["NSAppTransportSecurity"]["NSAllowsLocalNetworking"])
         self.assertIn("NSLocalNetworkUsageDescription", debug)
-        self.assertNotIn("NSAppTransportSecurity", release)
+        self.assertEqual(release["NSAppTransportSecurity"], {"NSAllowsLocalNetworking": True})
+        self.assertIn("NSLocalNetworkUsageDescription", release)
         self.assertNotIn("TYPEFLUX_ALLOW_INSECURE_HTTP", release)
 
 

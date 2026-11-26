@@ -18,7 +18,7 @@ extension AskQuickResultsInteractionTests {
         for _ in 0 ..< 600 where !condition() {
             try await Task.sleep(for: .milliseconds(5))
         }
-        #expect(condition(), "timed out")
+        try #require(condition(), "timed out")
     }
 
     private func launcher(_ workflows: AskWorkflowFixture, ids: [String],
@@ -149,6 +149,7 @@ extension AskQuickResultsInteractionTests {
             let launcher = try await launcher(workflows, ids: ["qr"])
             defer { launcher.close() }
             let model = launcher.fixture.model
+            workflows.installLauncherImageDecoder(in: model)
             try await enter("qr x", into: launcher)
             try await waitFor { model.plugins.isPlanCurrent }
             try await launcher.press(Self.returnKey)
@@ -156,6 +157,7 @@ extension AskQuickResultsInteractionTests {
             #expect(AskPluginResultsView.hint(for: AskPluginDisplay(title: "", symbol: "", phase: model.plugins.phase))
                 .contains(L("ask.plugin.action.copyImage")))
             try await launcher.press(Self.returnKey)
+            await model.workflowImageCopyTask?.value
             #expect(pasteboard.data(forType: .png) != nil && launcher.dismissed == 1)
             #expect(pasteboard.string(forType: .fileURL)?.hasSuffix("code.png") == true)
         }

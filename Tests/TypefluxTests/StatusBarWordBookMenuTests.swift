@@ -201,7 +201,7 @@ struct StatusBarWordBookMenuTests {
     }
 
     @Test(arguments: [false, true])
-    func `opens the translation word book and reuses its window`(hasWords: Bool) throws {
+    func `opens the translation word book and reuses its window`(hasWords: Bool) async throws {
         let originalLanguage = AppLocalization.shared.language
         defer { AppLocalization.shared.setLanguage(originalLanguage) }
         let suite = "WordBookMenuWindow-\(UUID().uuidString)"
@@ -218,6 +218,8 @@ struct StatusBarWordBookMenuTests {
             try store.setStarred(true, lookup: lookup, at: Date())
         }
         let wordBook = AskWordBookWindowController()
+        wordBook.frameAutosaveName = suite
+        defer { NSWindow.removeFrame(usingName: suite) }
         wordBook.configure(store: store, dictionary: nil, settings: settings, modelName: { "AI" })
         defer { wordBook.window?.close() }
         let controller = StatusBarController(
@@ -234,6 +236,7 @@ struct StatusBarWordBookMenuTests {
         let window = try #require(wordBook.window)
         #expect(window.isVisible)
         #expect(window.title == L("ask.wordBook.title"))
+        await wordBook.model?.waitForReload()
         #expect(wordBook.model?.entries.count == (hasWords ? 1 : 0))
         if hasWords {
             #expect(wordBook.model?.entries.first?.key == lookup.key)
@@ -244,6 +247,7 @@ struct StatusBarWordBookMenuTests {
         window.close()
         menu.performActionForItem(at: index)
         #expect(wordBook.window?.isVisible == true)
+        await wordBook.model?.waitForReload()
         #expect(wordBook.model?.entries.count == (hasWords ? 1 : 0))
     }
 }

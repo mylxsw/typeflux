@@ -41,7 +41,7 @@ struct AskLauncherKindShortcutTests {
         #expect(toggles == 4)
     }
 
-    @Test(arguments: ["", "An unsent question"])
+    @Test(arguments: ["", "Draft question about the weather"])
     func launcherRoutesModeKeysWithoutClosingOrSubmittingItsDraft(text: String) async throws {
         let launcher = try await AskQuickResultsInteractionTests.Launcher(text: text)
         defer { launcher.close() }
@@ -56,7 +56,7 @@ struct AskLauncherKindShortcutTests {
         #expect(await launcher.fixture.api.sends.isEmpty)
     }
 
-    @Test(arguments: ["", "An unsent question"])
+    @Test(arguments: ["", "Draft question about the weather"])
     func windowShortcutTogglesRepeatedlyWithAndWithoutEditorFocus(text: String) async throws {
         let launcher = try await AskQuickResultsInteractionTests.Launcher(text: text)
         defer { launcher.close() }

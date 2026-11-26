@@ -147,11 +147,15 @@ struct SemanticBudgetLifecycleTests {
             try await SemanticFileServiceTests.wait { service.phase == .paused }
             #expect(service.modelReady && encoder.calls == 0)
             service.pause(false)
-            try await SemanticFileServiceTests.wait { service.phase == .ready }
+            try await SemanticFileServiceTests.wait {
+                service.phase == .ready && service.diagnostics?.counters["encodingRequests"] == 1
+            }
             #expect(encoder.calls == 1)
             service.start(force: true)
-            try await SemanticFileServiceTests.wait { service.phase == .ready }
-            #expect(encoder.calls == 1 && service.diagnostics?.counters["encodingRequests"] == 0)
+            try await SemanticFileServiceTests.wait {
+                service.phase == .ready && service.diagnostics?.counters["encodingRequests"] == 0
+            }
+            #expect(encoder.calls == 1)
             await service.clear(removeModel: true)
         } catch { service.pause(false); await service.clear(removeModel: true); throw error }
     }

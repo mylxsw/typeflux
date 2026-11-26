@@ -362,7 +362,9 @@ struct AskWorkflowO4PluginTests {
         fixture.store.reload()
         fixture.store.trust("local.a")
         let workflow = try #require(fixture.store.workflow("local.a"))
-        let plugin = AskWorkflowPlugin(workflow: workflow, home: fixture.home.path)
+        let worker = MediaWorker()
+        let plugin = AskWorkflowPlugin(workflow: workflow, home: fixture.home.path,
+            resolveImage: { await AskWorkflowImage.resolve($0, folder: $1, cache: $2, home: $3, worker: worker) })
         var request = AskPluginRequest(text: "in", origin: .argument, keyword: plugin.defaultKeywords[0], options: [:],
                                        interfaceLanguage: .english)
         request.chain = chain

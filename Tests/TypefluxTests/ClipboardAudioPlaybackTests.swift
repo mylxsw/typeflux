@@ -121,10 +121,26 @@ private actor PlaybackOpening {
         for action in 0..<4 {
             model.reset(entries: [entry, second]); controller.present(model)
             let client = SilentPlayback(), playback = ClipboardAudioPlayback(open: { _ in client })
-            playback.load(url, access: controller.thumbnails.access(for: entry)); try await wait { playback.isLoaded }
+            let access = controller.thumbnails.access(for: entry)
+            let window = try XCTUnwrap(controller.presentedWindow)
+            let originalContent = window.contentView
+            defer { if action == 1 { window.contentView = originalContent } }
+            if action == 1 {
+                model.previewDelay = 0
+                model.showsPreview = true
+                window.contentView = NSHostingView(rootView: ClipboardPlaybackSelectionFixture(model: model, entryID: entry.id) {
+                    ClipboardAudioPlayerView(url: self.url, duration: nil, playback: playback)
+                        .environment(\.askContextImageAccess, access)
+                })
+            } else {
+                playback.load(url, access: access)
+            }
+            try await wait { playback.isLoaded }
             switch action {
             case 0: controller.presentedWindow?.orderOut(nil)
-            case 1: model.selectedIndex = model.selectedIndex == 0 ? 1 : 0
+            case 1:
+                model.selectedIndex = model.selectedIndex == 0 ? 1 : 0
+                try await wait { client.didStop }
             case 2: model.replaceEntries([])
             default: NotificationCenter.default.post(name: .authDidLogout, object: nil)
             }

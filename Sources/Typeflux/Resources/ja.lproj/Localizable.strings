@@ -6808,6 +6808,7 @@
 "shortcutDiagnostics.stage.handlerFinished" = "機能ハンドラー終了";
 "shortcutDiagnostics.stage.dataStarted" = "履歴読み取りを予約";
 "shortcutDiagnostics.stage.dataFinished" = "履歴読み取り完了";
+"shortcutDiagnostics.stage.directCaptureSelected" = "画面の直接キャプチャを選択";
 "shortcutDiagnostics.stage.captureStarted" = "画面キャプチャ開始";
 "shortcutDiagnostics.stage.captureFinished" = "画面キャプチャ終了";
 "shortcutDiagnostics.stage.windowOrdered" = "ウインドウ表示要求を送信";
@@ -7211,6 +7212,10 @@
 "agent.permissions.help.workflow_propose" = "Apply proposed changes to the workflow draft and preview. Installation still requires Save.";
 "agent.permissions.help.workflow_save" = "Show the draft's save prompt. This does not install the workflow automatically.";
 "agent.permissions.help.workflow_test" = "Run the workflow draft with test inputs. Its commands may have side effects.";
+"agent.permissions.tool.image_generate" = "画像を生成";
+"agent.permissions.tool.image_edit" = "画像を編集";
+"agent.permissions.help.image_generate" = "Typeflux クラウドで画像を生成します。クレジットを消費する場合があります。";
+"agent.permissions.help.image_edit" = "選択した画像を Typeflux クラウドに送信して編集します。クレジットを消費する場合があります。";
 "agent.permissions.help.unknown" = "Controls calls to tool %@, operation %@. Its effects have not been classified; confirm the tool's behavior before allowing it automatically.";
 
 /* Complete usage-guide shortcut reference. */
@@ -7671,3 +7676,48 @@
 "terminal.session.close" = "セッションを閉じる";
 "terminal.session.close.others" = "ほかのセッションを閉じる";
 "terminal.session.move.launcher" = "ランチャーに移動";
+
+"ask.image.creating" = "画像を生成しています";
+"ask.image.elapsed" = "%d 秒待機中";
+"ask.image.waitHint" = "この会話を離れても、後から確認できます。";
+"ask.image.approval" = "承認を待っています";
+"ask.image.approvalHint" = "下のリクエストを確認すると、画像の生成が始まります。";
+"ask.image.interrupted" = "画像の生成結果をまだ確認できません";
+"ask.image.interruptedHint" = "クラウドで画像の生成が完了する場合があります。再生成する前に進行状況を確認してください。";
+"ask.image.failed" = "画像のリクエストが完了しませんでした";
+"ask.image.failedHint" = "進行状況を開いて詳細を確認してください。画像のリクエストは自動で再送信されていません。";
+"ask.image.details" = "進行状況を表示";
+"ask.image.save" = "画像を保存";
+"ask.image.edit" = "画像を編集";
+"ask.image.editPrompt" = "生成した画像 %d を編集：";
+"ask.image.generatedLoadFailed" = "画像を生成しましたが、読み込めませんでした";
+"ask.image.reloadHint" = "生成済みの画像だけをダウンロードします。";
+"ask.image.reload" = "画像を再読み込み";
+"ask.image.generatedLoading" = "画像を生成しました。読み込み中…";
+"ask.image.loadingHint" = "ここに画像が表示されます。";
+"ask.image.stopWaiting" = "待機を停止";
+"ask.image.stopHint" = "この返信を停止します。クラウドで画像の生成が完了し、料金が発生する場合があります。";
+"terminal.launcher.label" = "ターミナル";
+"terminal.launcher.destination" = "ランチャー";
+"terminal.launcher.windowDestination" = "独立したウィンドウ";
+"terminal.launcher.window" = "ウィンドウで実行";
+"terminal.launcher.open" = "ターミナルを開く";
+"terminal.launcher.notification" = "Typeflux ターミナル";
+"terminal.launcher.new" = "新規セッション";
+"terminal.launcher.move" = "ウィンドウに移動";
+"terminal.launcher.interrupt" = "中断";
+"terminal.launcher.copy" = "出力をコピー";
+"terminal.launcher.insertInto" = "%@ に挿入";
+"terminal.launcher.rerun" = "再実行";
+"terminal.launcher.collapse" = "折りたたむ";
+"terminal.launcher.expand" = "展開する";
+"terminal.launcher.lines" = "⋯ %d 行";
+"terminal.launcher.password" = "パスワード";
+"terminal.launcher.ended" = "セッション終了 · ↩ 新規セッション";
+"terminal.launcher.background" = "%@ は実行中です";
+"terminal.launcher.startFailed" = "ターミナルセッションを開始できませんでした。";
+"terminal.launcher.recent" = "最近のセッション";
+"terminal.session.window.title" = "ターミナル";
+"terminal.session.window.new" = "新規セッション ⌘T";
+"terminal.session.window.pin" = "常に手前に表示";
+"terminal.session.window.back" = "ランチャーに戻す ⌘O";

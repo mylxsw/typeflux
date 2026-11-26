@@ -255,11 +255,11 @@ struct AskChatRedesignVisualTests {
         let presentation = chat.model.recoveryPresentation
         let recovery = try await render(AskRecoveryCard(presentation: presentation).padding(20),
                                         name: "recovery-card-light", dark: false, size: .init(width: 760, height: 170))
-        #expect(readable(recovery).contains(readable("还不能确认")))
-        for expected in [chinese("ask.recovery.checkAndContinue"),
-                         chinese("ask.recovery.end"), chinese("ask.recovery.details")] {
+        #expect(readable(recovery).contains(readable(chinese("ask.recovery.unknown"))))
+        for expected in [chinese("ask.recovery.checkAndContinue"), chinese("ask.recovery.end")] {
             #expect(readable(recovery).contains(readable(expected)), "Missing \(expected) on the recovery card")
         }
+        #expect(!readable(recovery).contains(readable(chinese("ask.recovery.details"))))
         #expect(!readable(recovery).contains(readable(chinese("ask.recovery.retransmit"))))
 
         let card = try await render(AskWorkflowAuthoringCard(session: session, selected: false, open: {}).padding(20),
@@ -267,16 +267,26 @@ struct AskChatRedesignVisualTests {
         #expect(readable(card).contains(readable(chinese("ask.workflow.chat.view"))))
         #expect(readable(card).contains(readable(chinese("ask.workflow.chat.status.missing", 2))))
 
+        #expect(!chat.model.recoveryDetails.hasUsefulDetails)
+        var timedOut = AskRecoveryFixture.conversation()
+        timedOut.run?.id = "timed-out"
+        let timedOutAudit = AskRecoveryFixture.audit(timedOut)
+        try #require(try await chat.cache.claimExecution(timedOutAudit, owner: "owner"))
+        try await chat.cache.saveReceipt(AskRecoveryFixture.timedOutReceipt(timedOut),
+                                         identity: timedOutAudit.identity, owner: "owner")
+        await chat.api.seed(timedOut)
+        await chat.model.select(timedOut.id)
+        try #require(chat.model.recoveryDetails.hasUsefulDetails)
+        #expect(chat.model.recoveryDetails.reason == .timedOut)
+        let timeoutSummary = try #require(chinese("ask.recovery.detail.reason.timeout").split(separator: "。").first)
         chat.model.inspectingRecovery = true
         for dark in [true, false] {
             let text = try await render(AskRecoveryInspector(model: chat.model).frame(width: 480),
                                         name: "inspector-unknown-\(dark ? "dark" : "light")",
                                         dark: dark, size: .init(width: 560, height: 700))
             let flat = readable(text)
-            for expected in [chinese("ask.recovery.option.check"),
-                             chinese("ask.recovery.option.self"), chinese("ask.recovery.option.stop"),
-                             chinese("ask.recovery.recommended"), chinese("ask.recovery.close"),
-                             chinese("ask.recovery.checkAndContinue")] {
+            for expected in [chinese("ask.recovery.detail.title"), chinese("ask.recovery.detail.why"),
+                             String(timeoutSummary), chinese("ask.recovery.close")] {
                 #expect(flat.contains(readable(expected)), "Missing \(expected)")
             }
         }

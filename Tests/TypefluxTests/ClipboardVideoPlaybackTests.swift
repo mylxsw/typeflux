@@ -172,10 +172,26 @@ private final class SyntheticVideoClient: ClipboardPlaybackClient, @unchecked Se
         for change in 0..<4 {
             panel.reset(entries: [entry, other]); controller.present(panel)
             let client = SyntheticVideoClient(), model = ClipboardAudioPlayback(video: true, open: { _ in client })
-            model.load(url, access: controller.thumbnails.access(for: entry)); try await wait { model.image != nil }
+            let access = controller.thumbnails.access(for: entry)
+            let window = try XCTUnwrap(controller.presentedWindow)
+            let originalContent = window.contentView
+            defer { if change == 1 { window.contentView = originalContent } }
+            if change == 1 {
+                panel.previewDelay = 0
+                panel.showsPreview = true
+                window.contentView = NSHostingView(rootView: ClipboardPlaybackSelectionFixture(model: panel, entryID: entry.id) {
+                    ClipboardMediaPlayer(url: self.url, playback: model)
+                        .environment(\.askContextImageAccess, access)
+                })
+            } else {
+                model.load(url, access: access)
+            }
+            try await wait { model.image != nil }
             switch change {
             case 0: controller.presentedWindow?.orderOut(nil)
-            case 1: panel.selectedIndex = panel.selectedIndex == 0 ? 1 : 0
+            case 1:
+                panel.selectedIndex = panel.selectedIndex == 0 ? 1 : 0
+                try await wait { client.stopped }
             case 2: panel.replaceEntries([])
             default: NotificationCenter.default.post(name: .authDidLogout, object: nil)
             }

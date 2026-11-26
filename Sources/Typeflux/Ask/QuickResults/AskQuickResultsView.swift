@@ -27,6 +27,7 @@ struct AskQuickResultsView: View {
     var calendarProvider: (any CalendarEventProviding)?
 
     @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
+    @State private var previousRowIDs = Set<String>()
     @State private var copied: Int?
     @State private var copiedReset: Task<Void, Never>?
 
@@ -76,6 +77,8 @@ struct AskQuickResultsView: View {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
             if !results.listRows.isEmpty || results.notice != nil {
                 let items = Self.listItems(for: results)
+                let rowIDs = items.map(\.id)
+                let replacesAllRows = previousRowIDs.isDisjoint(with: rowIDs)
                 let scrolls = Self.contentHeight(for: results) > visibleHeight
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: scrolls) {
@@ -100,21 +103,22 @@ struct AskQuickResultsView: View {
                         .padding(.top, Self.listPadding)
                         .padding(.bottom, Self.listPadding)
                         .id(Self.topID)
-                        // Keep matching rows in place and soften only insertions,
-                        // removals and moves. The editor never waits for this motion.
-                        .animation(reduceMotion ? nil : .easeOut(duration: 0.12),
-                                   value: items.map(\.id))
+                        // Animate changes within a list. A new list replaces the old
+                        // rows immediately so their labels cannot overlap.
+                        .animation(reduceMotion || replacesAllRows ? nil : .easeOut(duration: 0.12), value: rowIDs)
                     }
                     .scrollDisabled(!scrolls)
                     // SwiftUI may deliver the new value to an old render's closure.
                     // Carry both the target and list version in the new value itself.
                     .onChange(of: ScrollPosition(
-                        rows: items.map(\.id),
+                        rows: rowIDs,
                         target: results.chosen && results.highlightedRow != .askAI
                             ? results.identity(of: results.highlightedRow) : Self.topID
                     )) { position in
                         proxy.scrollTo(position.target, anchor: position.target == Self.topID ? .top : nil)
                     }
+                    .onAppear { previousRowIDs = Set(rowIDs) }
+                    .onChange(of: rowIDs) { ids in previousRowIDs = Set(ids) }
                 }
             } else {
                 Spacer(minLength: 0)

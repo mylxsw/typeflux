@@ -361,18 +361,21 @@ struct OnboardingViewModelTests {
             let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil },
                                  loadStoredUserProfile: { nil }, saveStoredToken: { _, _ in },
                                  saveStoredUserProfile: { _ in },
-                                 clearStoredSession: {}, fetchSubscription: { _ in .none })
+                                 clearStoredSession: {}, fetchSubscription: { _ in
+                BillingSubscriptionSnapshot(planCode: "pro", status: "active",
+                                            currentPeriodStart: nil, currentPeriodEnd: nil,
+                                            cancelAtPeriodEnd: false,
+                                            entitled: true, paid: true, cloudASRAllowed: true)
+            })
+            auth.inMemorySessionToken = ("fixture", Int(Date().timeIntervalSince1970) + 3600)
             auth.isLoggedIn = true
-            auth.subscription = BillingSubscriptionSnapshot(planCode: "pro", status: "active",
-                                                            currentPeriodStart: nil, currentPeriodEnd: nil,
-                                                            cancelAtPeriodEnd: false,
-                                                            entitled: true, paid: true, cloudASRAllowed: true)
             let library = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
             let model = OnboardingViewModel(settingsStore: settings, authState: auth, modelLibrary: library,
                                             localModelManager: manager, onComplete: {})
             model.currentStep = .cloud
             #expect(model.cloudModel.canContinue == false)
-            model.cloudModel.canContinue = true
+            model.cloudModel.refresh()
+            try await SettingsBehaviorTestSupport.wait { model.cloudModel.canContinue == true }
             #expect(model.canAdvance)
             model.advance()
             #expect(model.currentStep == .permissions)

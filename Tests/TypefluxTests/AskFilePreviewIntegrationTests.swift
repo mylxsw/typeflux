@@ -17,6 +17,7 @@ struct AskFilePreviewIntegrationTests {
         let defaults = try #require(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         let settings = SettingsStore(defaults: defaults)
+        settings.askQuickFileSearchEnabled = true
         let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(
             defaults: defaults, automaticallyLoadsCatalog: false
         ))
@@ -59,6 +60,7 @@ struct AskFilePreviewIntegrationTests {
         let defaults = try #require(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         let settings = SettingsStore(defaults: defaults)
+        settings.askQuickFileSearchEnabled = true
         let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(
             defaults: defaults,
             automaticallyLoadsCatalog: false
@@ -92,7 +94,8 @@ struct AskFilePreviewIntegrationTests {
         fixture.model.quickSearch.results?
             .highlight(fixture.model.quickSearch.results?.rows.firstIndex(of: .file(0)) ?? 0)
         try await AskQuickSearchSessionTests.wait { loader.requests.count == 1 }
-        loader.completions[0](.init(kind: .text, text: "let value = 1"))
+        let complete = try #require(loader.completions.first)
+        complete(.init(kind: .text, text: "let value = 1"))
         let panel = try #require(controller.filePreview.panel)
         #expect(panel.isVisible)
         let contentID = controller.filePreview.state.contentID
@@ -135,6 +138,7 @@ struct AskFilePreviewIntegrationTests {
         let defaults = try #require(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         let settings = SettingsStore(defaults: defaults)
+        settings.askQuickFileSearchEnabled = true
         let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(
             defaults: defaults,
             automaticallyLoadsCatalog: false

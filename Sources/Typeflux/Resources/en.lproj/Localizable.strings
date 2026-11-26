@@ -6807,6 +6807,7 @@
 "shortcutDiagnostics.stage.handlerFinished" = "Feature handler returned";
 "shortcutDiagnostics.stage.dataStarted" = "History read scheduled";
 "shortcutDiagnostics.stage.dataFinished" = "History read finished";
+"shortcutDiagnostics.stage.directCaptureSelected" = "Direct screen capture selected";
 "shortcutDiagnostics.stage.captureStarted" = "Screen capture started";
 "shortcutDiagnostics.stage.captureFinished" = "Screen capture finished";
 "shortcutDiagnostics.stage.windowOrdered" = "Window show request submitted";
@@ -7210,6 +7211,10 @@
 "agent.permissions.help.workflow_propose" = "Apply proposed changes to the workflow draft and preview. Installation still requires Save.";
 "agent.permissions.help.workflow_save" = "Show the draft's save prompt. This does not install the workflow automatically.";
 "agent.permissions.help.workflow_test" = "Run the workflow draft with test inputs. Its commands may have side effects.";
+"agent.permissions.tool.image_generate" = "Generate Image";
+"agent.permissions.tool.image_edit" = "Edit Image";
+"agent.permissions.help.image_generate" = "Creates an image in Typeflux Cloud and can use credits.";
+"agent.permissions.help.image_edit" = "Sends the selected image to Typeflux Cloud for editing and can use credits.";
 "agent.permissions.help.unknown" = "Controls calls to tool %@, operation %@. Its effects have not been classified; confirm the tool's behavior before allowing it automatically.";
 
 /* Complete usage-guide shortcut reference. */

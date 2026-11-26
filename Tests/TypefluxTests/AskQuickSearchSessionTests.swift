@@ -223,7 +223,7 @@ struct AskQuickSearchSessionTests {
             if condition() { return }
             try await Task.sleep(for: .milliseconds(2))
         }
-        #expect(condition(), "the search must finish within two seconds")
+        try #require(condition(), "The search must finish within two seconds")
     }
 
     private func update(_ session: AskQuickSearchSession, _ text: String = "note",

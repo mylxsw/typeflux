@@ -1317,13 +1317,14 @@ struct AskConversationView: View {
         }
     }
 
-    /// An interrupted run: either the request never started, or it is still
-    /// active on this conversation while no local operation is driving it.
+    /// A request that never started, a run without a local driver, or a settled
+    /// run whose plan still has work that can be continued.
     private var resumable: Bool {
         guard let selected = model.selected, !model.isBusy else { return false }
         if model.hasPendingSubmission { return true }
         if creditPaused { return false }
         if selected.run == nil, selected.messages.last?.role == "user" { return true }
+        if selected.run?.canContinueTask == true { return !model.recoveryBlocksResume(selected) }
         return selected.run?.isActive == true && !model.busyIds.contains(selected.id)
     }
 

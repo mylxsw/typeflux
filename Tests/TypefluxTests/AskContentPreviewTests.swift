@@ -70,13 +70,20 @@ struct AskContentPreviewTests {
         }
         writer.closePDF()
         let pixels = CGSize(width: 500, height: 600)
-        let matched = try AskFilePreviewPDF.render(url, pixels: pixels,
-            evidence: .init(text: "Project reimbursement policy", page: 4), cancellation: AskSearchCancellation(), worker: MediaWorker(timeout: 3))
-        let plain = try AskFilePreviewPDF.render(url, pixels: pixels,
-            evidence: .init(text: "", page: 4), cancellation: AskSearchCancellation(), worker: MediaWorker(timeout: 3))
+        var hit = previewHit("Expense policy.pdf")
+        hit.path = url.path
+        let metadata = try await AskFilePreviewRenderer.metadata(hit, readText: false)
+        let version = try #require(metadata.version)
+        let worker = MediaWorker(timeout: 3)
+        let matched = try MediaPreviewDisplay.render(url, pixels: pixels, pdf: true,
+            evidence: .init(text: "Project reimbursement policy", page: 4, version: version),
+            cancellation: AskSearchCancellation(), worker: worker, version: version)
+        let plain = try MediaPreviewDisplay.render(url, pixels: pixels, pdf: true,
+            evidence: .init(text: "", page: 4, version: version),
+            cancellation: AskSearchCancellation(), worker: worker, version: version)
         #expect(matched.numbers == [4] && matched.pages == 6 && matched.images.count == 1)
-        let highlightedData = try #require(matched.images[0].dataProvider?.data) as Data
-        let plainData = try #require(plain.images[0].dataProvider?.data) as Data
+        let highlightedData = try #require(matched.images.first?.dataProvider?.data) as Data
+        let plainData = try #require(plain.images.first?.dataProvider?.data) as Data
         #expect(highlightedData != plainData)
         #expect(try AskFilePreviewPDF.render(url, pixels: pixels, evidence: nil,
             cancellation: AskSearchCancellation(), worker: MediaWorker(timeout: 3)).numbers == [1, 2, 3])
@@ -96,8 +103,8 @@ struct AskContentPreviewTests {
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(language) }
         let state = AskFilePreviewState()
-        var hit = previewHit("Expense policy.pdf"); hit.path = url.path
-        hit.evidence = .init(text: "Project reimbursement policy", page: 4); state.hit = hit
+        hit.evidence = .init(text: "Project reimbursement policy", page: 4, version: version)
+        state.hit = hit
         state.content = .init(kind: .pdf, images: matched.images.map { NSImage(cgImage: $0, size: .zero) },
                               pageCount: 6, pageNumbers: [4], fileSize: 4096)
         state.detail = state.content?.detail
@@ -123,16 +130,21 @@ struct AskContentPreviewTests {
         let samples = [Float](repeating: 0.5, count: 31 * 16000)
         try samples.withUnsafeBytes { try SemanticMediaExtractor.wave(Data($0), to: audio) }
         var hit = previewHit("recording.wav"); hit.path = audio.path
-        hit.evidence = .init(text: "", page: nil, time: 30)
+        let audioInfo = try await AskFilePreviewRenderer.metadata(hit, readText: false)
+        let audioVersion = try #require(audioInfo.version)
+        hit.evidence = .init(text: "", time: 30, version: audioVersion, segmentKind: "audio-window")
         let content = try await AskFilePreviewRenderer.generate(hit, kind: .audio,
-            pixels: CGSize(width: 300, height: 200), info: .init(), worker: MediaWorker(timeout: 3))
+            pixels: CGSize(width: 300, height: 200), info: audioInfo, worker: MediaWorker(timeout: 3))
         #expect(content.startTime == 30 && content.duration == 31)
         #expect(content.waveform.contains { $0 > 0 })
         let movie = root.appendingPathComponent("clip.mov")
         try await semanticTestMovie(movie)
-        hit.path = movie.path; hit.evidence?.time = 1
+        hit.path = movie.path
+        let videoInfo = try await AskFilePreviewRenderer.metadata(hit, readText: false)
+        let videoVersion = try #require(videoInfo.version)
+        hit.evidence = .init(text: "", time: 1, version: videoVersion, segmentKind: "video-frame")
         let frame = try await AskFilePreviewRenderer.generate(hit, kind: .video,
-            pixels: CGSize(width: 300, height: 200), info: .init(), worker: MediaWorker(timeout: 3))
+            pixels: CGSize(width: 300, height: 200), info: videoInfo, worker: MediaWorker(timeout: 3))
         #expect(frame.startTime == 1 && frame.images.count == 1)
     }
 

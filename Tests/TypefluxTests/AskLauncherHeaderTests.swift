@@ -66,6 +66,7 @@ struct AskLauncherHeaderTests {
 
     @Test func capturedContextLeavesTheEditorClearAndMovesItsSwitchesIntoThePlusMenu() async throws {
         let fixture = try AskTestFixture()
+        fixture.model.appIndex = AskTestAppIndex(AskTestAppIndex.sample.entries)
         captured(fixture)
         let (window, reported) = host(fixture)
         defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
@@ -203,7 +204,8 @@ struct AskLauncherHeaderTests {
 
     @Test func headerSendsTheQuestionInsteadOfTransferringAnUnsentDraft() async throws {
         let fixture = try AskTestFixture()
-        fixture.model.launcherDraft.text = "Help me think"
+        let question = "Think this through with me"
+        fixture.model.launcherDraft.text = question
         var opens = 0
         fixture.model.onShowConversation = { opens += 1 }
         let (window, _) = host(fixture)
@@ -223,7 +225,7 @@ struct AskLauncherHeaderTests {
         #expect(fixture.model.launcherDraft.text.isEmpty)
         for _ in 0 ..< 100 where await fixture.api.sends.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
         #expect(await fixture.api.sends.count == 1)
-        #expect(await fixture.api.sends.first?.text == "Help me think")
+        #expect(await fixture.api.sends.first?.text == question)
     }
 
     @Test func emptyHeaderOpensChatAndTypingChangesTheSameButton() async throws {
@@ -318,7 +320,8 @@ struct AskLauncherHeaderTests {
         try await Task.sleep(for: .milliseconds(200))
         #expect(find("ask.notice.\(kind)", in: window) == nil)
         try saveSnapshot(window.contentView!, name: "warning-\(kind)-after-close")
-        #expect(reported.height < before)
+        #expect(before == AskLauncherWindowMode.expandedHeight)
+        #expect(reported.height == before)
         #expect(fixture.model.launcherDraft.text == "Keep this draft")
         #expect(await fixture.api.sends.isEmpty)
         if voiceWarning { fixture.model.voiceInput.error = "Sign in to use cloud models" }
@@ -475,7 +478,8 @@ struct AskLauncherHeaderTests {
 
     @Test func launcherCommandSlashDoesNotEditTheDraftAndEscapeStillDismisses() async throws {
         let fixture = try AskTestFixture()
-        fixture.model.launcherDraft.text = "an ordinary question"
+        let text = "Ordinary question about the weather"
+        fixture.model.launcherDraft.text = text
         var dismissed = false
         let (window, _) = host(fixture, onDismiss: { dismissed = true })
         defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
@@ -485,7 +489,8 @@ struct AskLauncherHeaderTests {
         window.makeFirstResponder(editor)
         #expect(!window.performKeyEquivalent(with: try key("/", code: 44, modifiers: .command, in: window)))
         try await Task.sleep(for: .milliseconds(200))
-        #expect(fixture.model.launcherDraft.text == "an ordinary question")
+        #expect(fixture.model.launcherDraft.text == text)
+        #expect(!fixture.model.plugins.isActive)
         #expect(find("ask.command.palette", in: window) == nil)
         editor.keyDown(with: try key("\u{1b}", code: 53, in: window))
         #expect(dismissed)

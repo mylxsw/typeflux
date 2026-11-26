@@ -251,9 +251,11 @@ private final class SmallIconBlocking: @unchecked Sendable {
         _ = NSApplication.shared
         let root = try AskAttachmentFixture.directory(); defer { try? FileManager.default.removeItem(at: root) }
         let file = root.appendingPathComponent("icon.png"); try png().write(to: file)
+        let worker = MediaWorker()
         let view = NSHostingView(rootView: AskLocalIconScope {
             AskSmallFileIcon(url: file, symbol: "doc")
-        }.frame(width: 64, height: 64).background(Color.white))
+        }.environment(\.askSmallIconDecoder, { try await AskSmallIconDecoder.decode(.file($0), worker: worker) })
+            .frame(width: 64, height: 64).background(Color.white))
         let window = NSWindow(contentRect: .init(x: 100, y: 100, width: 64, height: 64), styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false; window.contentView = view; window.orderFront(nil)
         defer { window.contentView = nil; window.close() }

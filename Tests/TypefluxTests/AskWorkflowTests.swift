@@ -27,6 +27,16 @@ final class AskWorkflowFixture {
         UserDefaults().removePersistentDomain(forName: suite)
     }
 
+    func installLauncherImageDecoder(in model: AskConversationModel) {
+        let worker = MediaWorker()
+        model.workflowImageWorker = worker
+        model.plugins.replacePlugins(model.makeLauncherPlugins().map { plugin in
+            guard var workflow = plugin as? AskWorkflowPlugin else { return plugin }
+            workflow.resolveImage = { await AskWorkflowImage.resolve($0, folder: $1, cache: $2, home: $3, worker: worker) }
+            return workflow
+        })
+    }
+
     /// Writes a workflow folder by hand, as an import or a copy would.
     @discardableResult
     func write(_ id: String, manifest: [String: Any], files: [String: String] = [:], executable: [String] = []) throws -> URL {

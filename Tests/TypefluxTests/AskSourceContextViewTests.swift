@@ -73,6 +73,8 @@ extension AskComposerInteractionTests {
 
     @Test(arguments: [AppLanguage.simplifiedChinese, .english])
     func narrowLauncherKeepsTheSelectionChipInTheFooter(_ language: AppLanguage) async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(language)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
@@ -86,41 +88,47 @@ extension AskComposerInteractionTests {
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         library.defaultReference = profile.reference
         let fixture = try AskTestFixture(localOnly: true, modelLibrary: library)
-        fixture.model.launcherDraft = AskDraft(text: "Explain this", includeScreenshot: false,
+        fixture.model.launcherDraft = AskDraft(text: "Please use the attached context", includeScreenshot: false,
                                                selection: "Selected words that need a separate row",
                                                source: "Safari — A long page title that must fit in this window",
                                                sourceBundleID: "com.apple.Safari")
         let memory = AskMemory(global: "Saved preferences")
         fixture.model.launcherDraft.memory = memory
-        let window = try await hostSourceContext(AskLauncherView(model: fixture.model, onDismiss: {}),
-                                                size: NSSize(width: width, height: 280))
+        let height = AskLauncherWindowMode.expandedHeight
+        let window = try await hostSourceContext(
+            AskLauncherView(model: fixture.model, onDismiss: {}).frame(width: width, height: height),
+            size: NSSize(width: width, height: height)
+        )
         defer { window.close(); fixture.model.resetSession() }
-        window.setContentSize(NSSize(width: width, height: window.contentView?.bounds.height ?? 280))
+        window.makeKeyAndOrderFront(nil)
         try await Task.sleep(for: .milliseconds(100))
         let host = try #require(window.contentView)
-        let anchors = sourceChipAnchors(host)
-        #expect(anchors.count >= 2, "The attachment menu and the selected text remain in the footer")
-        for anchor in anchors {
-            #expect(host.bounds.contains(anchor.convert(anchor.bounds, to: host)))
-        }
+        try #require(!fixture.model.plugins.isActive && !fixture.model.launcherIsCollapsed)
+        let bounds = host.convert(host.bounds, to: nil)
+        let attach = try AskWorkspaceTestAccessibility.frame(identifier: "ask.composer.attach", in: window)
+        let selection = try AskWorkspaceTestAccessibility.frame(identifier: "ask.context.selection.toggle", in: window)
+        #expect(bounds.contains(attach) && bounds.contains(selection) && !attach.intersects(selection))
         let voice = try #require(sourceVoiceButton(in: host))
         let voiceFrame = voice.convert(voice.bounds, to: host)
         let sendFrame = CGRect(x: voiceFrame.maxX + 4, y: voiceFrame.midY - AskSendButton.size / 2,
                                width: AskSendButton.size, height: AskSendButton.size)
         #expect(host.bounds.contains(sendFrame))
         #expect(abs(host.bounds.width - width) < 0.5)
-        #expect(!(try sourceContainsLabel(in: host, label: L("ask.context.details"))))
+        #expect(!SettingsBehaviorTestSupport.elements(in: window).contains {
+            $0.role == NSAccessibility.Role.button.rawValue && $0.label == L("ask.context.details")
+        })
         // The launcher footer draws content as icon chips; source and selection words live in
         // hover cards, so a long window title cannot crowd the footer at any width.
         #expect(try sourceText(in: host, matching: "Safari").isEmpty)
         #expect(try sourceText(in: host, matching: "Selected").isEmpty)
         #expect(fixture.model.launcherDraft.sentSource == "Safari — A long page title that must fit in this window")
         #expect(fixture.model.launcherDraft.sentSelection == "Selected words that need a separate row")
-        try clickSourceChip(try #require(anchors.last), in: window)
+        let selectionCenter = NSPoint(x: selection.midX, y: selection.midY)
+        try sendSourceClick(at: selectionCenter, in: window)
         try await fixture.wait { fixture.model.launcherDraft.selectionOff == true }
         #expect(fixture.model.launcherDraft.memory == memory)
         #expect(fixture.model.launcherDraft.sentSelection == nil)
-        try clickSourceChip(try #require(sourceChipAnchors(host).last), in: window)
+        try sendSourceClick(at: selectionCenter, in: window)
         try await fixture.wait { fixture.model.launcherDraft.selectionOff != true }
     }
 

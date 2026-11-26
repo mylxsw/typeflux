@@ -146,6 +146,7 @@ final class AskConversationModel: ObservableObject {
         AskWordBookWindowController.shared.show(lookingUp: text)
     }
     var workflowImageCopyTask: Task<Void, Never>?
+    var workflowImageWorker = MediaWorker.shared
     /// Private manual capture survives launcher dismissal in this process only.
     @Published var noteCapture = AskNoteCaptureState()
     var noteCaptureTask: Task<Void, Never>?

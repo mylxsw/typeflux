@@ -89,7 +89,10 @@ extension AskQuickResultsInteractionTests {
             defer { launcher.close() }
             let model = launcher.fixture.model
             let destinations = model.launcherNoMatchDestinations(query: "zqxv weekly")
-            guard let first = destinations.first else { return }
+            let first = try #require(destinations.first)
+            try await SettingsBehaviorTestSupport.wait("the no-match destinations") {
+                SettingsBehaviorTestSupport.contains(L("ask.launcher.noMatch.section"), in: launcher.window)
+            }
             try await send(Self.down, to: launcher)
             try await launcher.press(Self.returnKey)
             #expect(model.plugins.keyword?.keyword == first.keyword.keyword)

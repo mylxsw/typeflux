@@ -78,7 +78,9 @@ struct LauncherSettingsPolishTests {
             for width in [320.0, 574.0] {
                 for light in [false, true] {
                     model.setLauncherWindowMode(.complete)
-                    try await render(AppearanceSettingsView(viewModel: model),
+                    try await render(LauncherWindowModeSetting(selection: Binding(
+                        get: { model.launcherWindowMode }, set: model.setLauncherWindowMode
+                    )),
                                      size: NSSize(width: width, height: 600),
                                      name: "window-mode-\(language.rawValue)-\(Int(width))-\(light ? "light" : "dark")",
                                      light: light) { window in

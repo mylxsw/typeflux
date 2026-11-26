@@ -175,7 +175,7 @@ struct AskCodeSandbox: Sendable {
     }
 
     func run(_ language: Language, code: String, conversationId: String,
-             timeout: Int = defaultTimeout) async throws -> Execution {
+             timeout: Int = defaultTimeout, imageNormalizer: AskToolImageNormalizer = .shared) async throws -> Execution {
         guard code.utf8.count <= Self.maximumCodeBytes else { throw AskLocalError.message(L("ask.code.tooLarge")) }
         guard isSupported else {
             throw AskLocalError.message("Code execution is unavailable: " +
@@ -225,7 +225,7 @@ struct AskCodeSandbox: Sendable {
         }
         try Task.checkCancellation()
         let changed = Self.changes(before: before, after: workspace.snapshot())
-        let image = await Self.firstImage(changed, workspace: workspace)
+        let image = await Self.firstImage(changed, workspace: workspace, normalizer: imageNormalizer)
         let outcomeUnknown: Bool = switch result.termination {
         case .exited: false
         case .signalled, .timedOut, .cancelled, .outputLimit: true

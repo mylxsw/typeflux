@@ -180,9 +180,13 @@ final class AgentSettingsRedesignTests: XCTestCase {
                     }
                 }
             }
-            XCTAssertEqual(reported.count, AgentCapability.allCases.count, "\(tab) reports capability states")
-            XCTAssertEqual(reported.first { $0.capability == .webSearch }?.level, .attention,
-                           "Private conversations without search need attention")
+            if tab == .permissions {
+                XCTAssertTrue(reported.isEmpty, "The permissions pane reads its own tool registry")
+            } else {
+                XCTAssertEqual(reported.count, AgentCapability.allCases.count, "\(tab) reports capability states")
+                XCTAssertEqual(reported.first { $0.capability == .webSearch }?.level, .attention,
+                               "Private conversations without search need attention")
+            }
         }
     }
 

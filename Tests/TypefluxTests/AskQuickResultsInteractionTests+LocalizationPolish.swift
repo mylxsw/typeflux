@@ -6,10 +6,11 @@ import Testing
 extension AskQuickResultsInteractionTests {
     @Test func returnOnSignInFailureOpensLoginWithoutRerunningOrLosingTheDraft() async throws {
         try await withPasteboard { _ in
-            let cloudEngine = AskTestTranslationEngine(failure: TypefluxCloudLLMError.notLoggedIn)
-            let plugin = AskTranslatePlugin(onDevice: AskTestTranslationEngine(available: false), ai: cloudEngine,
-                                            detector: AskTestLanguageDetector(language: "en"))
-            let launcher = try await Launcher(text: "fy Hello world", prepare: { model in
+            let generator = AskTestTextGenerator()
+            generator.pieces = []
+            generator.failure = TypefluxCloudLLMError.notLoggedIn
+            let plugin = AskPromptPlugin(generator: generator, modelName: { "Typeflux Cloud" })
+            let launcher = try await Launcher(text: "rw Hello world", prepare: { model in
                 model.plugins = AskPluginSession(plugins: [plugin], keywords: { plugin.defaultKeywords })
             })
             defer { launcher.close() }
@@ -21,7 +22,7 @@ extension AskQuickResultsInteractionTests {
             model.onSignIn = { signIns += 1 }
             let draft = model.launcherDraft
             try await launcher.press(Self.returnKey)
-            #expect(signIns == 1 && cloudEngine.requests.count == 1)
+            #expect(signIns == 1 && generator.prompts.count == 1)
             #expect(model.launcherDraft == draft && launcher.dismissed == 0)
         }
     }

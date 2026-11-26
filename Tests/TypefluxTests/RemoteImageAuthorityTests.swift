@@ -160,12 +160,14 @@ private struct RemoteAuthorityTransport: AskImageTransport {
         await wait { gate.count == 2 }; a.cancel(); b.cancel()
         #expect(worker.activeCount == 2)
         do { _ = try await loader.load(asset); Issue.record("Occupied native loader released") } catch {}
-        #expect(state.counts == [2, 2, 0])
+        // Download and native decoding have separate limits. A new response
+        // can arrive, but it must not enter the occupied native worker.
+        #expect(state.counts == [2, 3, 0])
         gate.release()
         for task in [a, b] { do { _ = try await task.value; Issue.record("Late pixels") } catch {} }
         #expect(worker.activeCount == 0)
         _ = try await loader.load(asset)
-        #expect(state.counts == [3, 3, 0])
+        #expect(state.counts == [3, 4, 0])
         await registry.shutdown()
     }
 

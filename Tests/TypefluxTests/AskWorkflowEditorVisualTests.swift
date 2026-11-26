@@ -63,7 +63,8 @@ struct AskWorkflowEditorVisualTests {
     }
 
     private func editor(_ fixture: AskWorkflowFixture,
-                        api: any AskAPI = AskWorkflowScriptedAPI([])) throws -> AskWorkflowEditorModel {
+                        api: any AskAPI = AskWorkflowScriptedAPI([]),
+                        askBeforeTesting: Bool = false) throws -> AskWorkflowEditorModel {
         try fixture.write(
             "local.fx",
             manifest: manifest,
@@ -85,9 +86,14 @@ struct AskWorkflowEditorVisualTests {
         fixture.store.trust("local.fx")
         fixture.store.trust("md")
         let defaults = UserDefaults(suiteName: "wf-visual-\(UUID().uuidString)")!
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        for entry in AskToolAuthorization.builtins where AskWorkflowAuthorTools.names.contains(entry.tool) {
+            let permission: AskToolPermission = askBeforeTesting && entry.tool == AskWorkflowAuthorTools.test ? .ask : .allow
+            library.settings.setToolPermission(permission, entry: entry, mode: .standard)
+        }
         let assistant = AskWorkflowAssistant(dependencies: .init(
             api: api, session: { ("owner", "token") }, deviceId: "device",
-            modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false), defaults: defaults
+            modelLibrary: library, defaults: defaults
         ))
         let model = AskWorkflowEditorModel(store: fixture.store, settings: fixture.settings, assistant: assistant,
                                            tester: AskWorkflowTester(home: fixture.home.path))
@@ -158,24 +164,30 @@ struct AskWorkflowEditorVisualTests {
                 .tool("workflow_propose", ["summary": "加了关键字 rate，并把汇率保留两位小数。", "manifest": proposed,
                                            "files": [["path": "main.sh", "content": Self.script]]]),
                 .tool("workflow_test", ["inputs": [["query": "100 usd jpy"]]]),
-                .tool("workflow_propose", ["summary": "查不到时改查 open.er-api.com 的实时汇率。", "manifest": proposed,
+                .tool("workflow_propose", ["summary": "查不到时改查备用服务。", "manifest": proposed,
                                            "files": [[
                                                "path": "main.sh",
-                                               "content": Self.script + "curl -s https://open.er-api.com/v6/latest/USD\n"
+                                               "content": Self.script + "curl -s https://rates.example.invalid/latest/USD\n"
                                            ]]]),
-                .tool("workflow_test", ["inputs": [["query": "100 usd jpy"]]])
+                .reply("Review the revised proposal before running it.")
             ])
             let fixture = try AskWorkflowFixture()
             let model = try editor(fixture, api: api)
             model.assistant.send("再加一个 rate 关键字，汇率保留两位小数")
+            await waitFor { !model.assistant.isBusy }
+            try #require(model.proposals.count == 2)
+            let test = Task { await model.testLatestProposal([.init(query: "100 usd jpy")]) }
+            defer { test.cancel(); model.close() }
             await waitFor { model.pendingRun != nil }
+            try #require(model.pendingRun != nil)
             try await render(AskWorkflowEditorView(model: model, store: fixture.store),
                              size: NSSize(width: 1220, height: 720), name: "implemented-12-assistant-approval.png")
             model.previewingProposal = model.latestProposal?.id
             try await render(AskWorkflowEditorView(model: model, store: fixture.store),
                              size: NSSize(width: 1220, height: 720), name: "implemented-11-proposal.png")
-            #expect(model.fallbackProposal.map { model.proposalNumber($0.id) } == 1)
+            try #require(model.fallbackProposal.map { model.proposalNumber($0.id) } == 1)
             model.useFallbackProposal()
+            #expect(await test.value == nil)
             #expect(!model.assistant.isBusy && model.draft?.manifest?.keywords.count == 2)
         }
     }
@@ -243,25 +255,25 @@ struct AskWorkflowEditorVisualTests {
         try await chinese {
             var manifest = manifest
             manifest["id"] = "local.workflow"
-            manifest["keywords"] = [["keyword": "clean"]]
+            manifest["keywords"] = [["keyword": "endpoint"]]
             let api = AskWorkflowScriptedAPI([
-                .tool("workflow_propose", ["summary": "清理", "manifest": manifest,
-                                           "files": [["path": "main.sh", "content": "#!/bin/zsh\nrm -rf /tmp/old\n"]]]),
+                .tool("workflow_propose", ["summary": "检查服务", "manifest": manifest,
+                                           "files": [["path": "main.sh", "content": "#!/bin/zsh\ncurl --head https://endpoint.example.invalid\n"]]]),
                 .tool("workflow_test", ["inputs": [["query": "x"]]]),
                 .reply("好了。")
             ])
             let fixture = try AskWorkflowFixture()
-            let model = try editor(fixture, api: api)
+            let model = try editor(fixture, api: api, askBeforeTesting: true)
             let size = NSSize(width: 640, height: 420)
             try await render(AskWorkflowNewSheet(model: model, mode: .assistant, showsOptions: true) {}, size: size,
                              name: "extra-new-options.png")
-            #expect(model.generate(description: "清理临时文件", name: "", keyword: "", id: "local.workflow",
+            #expect(model.generate(description: "检查服务", name: "", keyword: "", id: "local.workflow",
                                    runtime: nil))
-            await waitFor { model.pendingRun != nil }
-            #expect(model.pendingRun != nil)
+            await waitFor { model.assistant.pendingPermission?.function.name == AskWorkflowAuthorTools.test }
+            try #require(model.assistant.pendingPermission?.function.name == AskWorkflowAuthorTools.test)
             try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {}, size: size,
                              name: "extra-new-approval.png")
-            model.resolvePendingRun(false)
+            model.assistant.resolveToolPermission(false)
             await waitFor { !model.assistant.isBusy }
             model.assistant.error = "网络断开了"
             try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {}, size: size,
@@ -507,20 +519,37 @@ extension AskWorkflowEditorVisualTests {
         var proposed = manifest
         proposed["id"] = "local.wc"
         proposed["keywords"] = [["keyword": "wc"]]
-        let api = AskWorkflowScriptedAPI([
+        var steps: [AskWorkflowScriptedAPI.Step] = [
             .tool("workflow_propose", ["summary": "Count words", "manifest": proposed,
-                                       "files": [["path": "main.sh", "content": "#!/bin/zsh\nprint hello\n"]]]),
-            .tool("workflow_test", ["inputs": [["query": "hello"]]]), .reply("Done")
-        ])
+                                       "files": [["path": "main.sh", "content": "#!/bin/zsh\nprint hello\n"]]])
+        ]
+        if action == "stop" { steps.append(.tool(AskWorkflowAuthorTools.test, ["inputs": [["query": "hello"]]])) }
+        steps.append(.reply("Done"))
+        let api = AskWorkflowScriptedAPI(steps)
         let fixture = try AskWorkflowFixture()
-        let model = try editor(fixture, api: api)
+        let model = try editor(fixture, api: api, askBeforeTesting: action == "stop")
         model.autoTest = false
         #expect(model.generate(description: "Count words", name: "", keyword: "wc", id: "local.wc", runtime: .zsh))
-        await waitFor { model.pendingRun != nil }
         let accessibility = AskWorkspaceTestAccessibility()
         defer { accessibility.restore(); model.close() }
+        if action == "stop" {
+            await waitFor { model.assistant.pendingPermission?.function.name == AskWorkflowAuthorTools.test }
+            try #require(model.assistant.pendingPermission?.function.name == AskWorkflowAuthorTools.test)
+            let window = generationWindow(model)
+            defer { window.close() }
+            try await Task.sleep(for: .milliseconds(300))
+            try clickSheet("ask.workflow.editor.new.stop", in: window)
+            try await SettingsBehaviorTestSupport.wait { !model.assistant.isBusy }
+            #expect(model.assistant.pendingPermission == nil && model.latestProposal?.tests.isEmpty == true)
+            return
+        }
+        await waitFor { !model.assistant.isBusy }
+        let proposalID = try #require(model.latestProposal?.id)
+        let test = Task { await model.testLatestProposal([.init(query: "hello")]) }
+        defer { test.cancel() }
+        await waitFor { model.pendingRun != nil }
+        try #require(model.pendingRun?.proposalID == proposalID)
         var dismissed = false
-        let proposalID = model.latestProposal?.id
         let window = generationWindow(model) { dismissed = true }
         defer { window.close() }
         try await Task.sleep(for: .milliseconds(300))
@@ -530,14 +559,13 @@ extension AskWorkflowEditorVisualTests {
             try await render(AskWorkflowNewSheet(model: model, mode: .assistant, generating: true) {},
                              size: NSSize(width: 640, height: 420), name: "gul-228-approval.png")
         }
-        let identifier = action == "stop" ? "ask.workflow.editor.new.stop" : "ask.workflow.assistant." + action
-        try clickSheet(identifier, in: window)
+        try clickSheet("ask.workflow.assistant." + action, in: window)
         if action == "preview" {
             #expect(dismissed && model.previewingProposal == proposalID)
             #expect(model.pendingRun != nil, "viewing changes never approves execution")
             return
         }
-        await waitFor { !model.assistant.isBusy }
+        _ = await test.value
         try await Task.sleep(for: .milliseconds(200))
         #expect(model.pendingRun == nil && model.pendingRunContinuation == nil)
         #expect(model.latestProposal?.tests.count == (action == "allow" ? 1 : 0))

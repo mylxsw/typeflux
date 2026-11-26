@@ -24,10 +24,10 @@ final class CloudModelAliasTests: XCTestCase {
     func testPickerShowsOnlyConfiguredModelsWithDeepSeekIcons() throws {
         let library = try library()
         let provider = try XCTUnwrap(library.selectableProviders(loggedIn: true, hasImage: false).first(where: \.isCloud))
-        XCTAssertEqual(provider.models.map(\.id), CloudModelAliasFixture.models.dropFirst().map(\.id))
+        XCTAssertEqual(provider.models.map(\.id), ["deployment-haiku", "deployment-sonnet", "deployment-flash", "deployment-pro", "deployment-minimax"])
         XCTAssertEqual(provider.models.count, 5)
         let deepSeek = provider.models.filter { $0.name.hasPrefix("DeepSeek") }
-        XCTAssertEqual(deepSeek.map(\.name), ["DeepSeek Pro", "DeepSeek Flash"])
+        XCTAssertEqual(deepSeek.map(\.name), ["DeepSeek Flash", "DeepSeek Pro"])
         for model in deepSeek {
             let icon = ModelIcon(model: model, provider: provider)
             XCTAssertEqual(icon.descriptor.resourceKey, "deepseek")
@@ -77,7 +77,7 @@ final class CloudModelAliasTests: XCTestCase {
     func testImageFilteringAndRewriteRemainIndependent() throws {
         let library = try library()
         let vision = try XCTUnwrap(library.selectableProviders(loggedIn: true, hasImage: true).first(where: \.isCloud))
-        XCTAssertEqual(vision.models.map(\.name), ["Claude Sonnet", "Claude Haiku", "MiniMax M3"])
+        XCTAssertEqual(vision.models.map(\.name), ["Claude Haiku", "Claude Sonnet", "MiniMax M3"])
         XCTAssertFalse(vision.models.contains { $0.reference == library.presentationReference(for: "cloud:default") })
         XCTAssertNil(library.selectableProviders(loggedIn: false, hasImage: false).first(where: \.isCloud))
         let rewrite = try XCTUnwrap(library.selectableProviders(loggedIn: true, hasImage: false, scenario: "rewrite").first(where: \.isCloud))

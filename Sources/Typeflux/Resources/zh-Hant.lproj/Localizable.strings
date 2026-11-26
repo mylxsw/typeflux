@@ -6809,6 +6809,7 @@
 "shortcutDiagnostics.stage.handlerFinished" = "功能處理函式傳回";
 "shortcutDiagnostics.stage.dataStarted" = "提交歷史讀取";
 "shortcutDiagnostics.stage.dataFinished" = "歷史讀取完成";
+"shortcutDiagnostics.stage.directCaptureSelected" = "已選擇直接擷取螢幕";
 "shortcutDiagnostics.stage.captureStarted" = "螢幕擷取開始";
 "shortcutDiagnostics.stage.captureFinished" = "螢幕擷取結束";
 "shortcutDiagnostics.stage.windowOrdered" = "視窗顯示請求已提交";
@@ -7212,6 +7213,10 @@
 "agent.permissions.help.workflow_propose" = "修改工作流草稿和预览；安装工作流仍需你点击保存。";
 "agent.permissions.help.workflow_save" = "展示草稿的保存提示，不会自动安装工作流。";
 "agent.permissions.help.workflow_test" = "使用测试输入运行工作流草稿，其中的命令可能产生副作用。";
+"agent.permissions.tool.image_generate" = "產生圖片";
+"agent.permissions.tool.image_edit" = "編輯圖片";
+"agent.permissions.help.image_generate" = "在 Typeflux 雲端產生圖片，可能會使用點數。";
+"agent.permissions.help.image_edit" = "將選取的圖片傳送到 Typeflux 雲端進行編輯，可能會使用點數。";
 "agent.permissions.help.unknown" = "控制工具 %@ 的 %@ 操作。其影响尚未分类，自动放行前请先了解该工具的行为。";
 
 /* Complete usage-guide shortcut reference. */
@@ -7696,3 +7701,28 @@
 "terminal.session.close" = "關閉工作階段";
 "terminal.session.close.others" = "關閉其他工作階段";
 "terminal.session.move.launcher" = "移到啟動器";
+
+"terminal.launcher.label" = "終端機";
+"terminal.launcher.destination" = "啟動器內";
+"terminal.launcher.windowDestination" = "獨立視窗";
+"terminal.launcher.window" = "在視窗中執行";
+"terminal.launcher.open" = "開啟終端機";
+"terminal.launcher.notification" = "Typeflux 終端機";
+"terminal.launcher.new" = "新增工作階段";
+"terminal.launcher.move" = "移到視窗";
+"terminal.launcher.interrupt" = "中斷";
+"terminal.launcher.copy" = "複製輸出";
+"terminal.launcher.insertInto" = "插入至 %@";
+"terminal.launcher.rerun" = "重新執行";
+"terminal.launcher.collapse" = "收合";
+"terminal.launcher.expand" = "展開";
+"terminal.launcher.lines" = "⋯ %d 行";
+"terminal.launcher.password" = "密碼";
+"terminal.launcher.ended" = "工作階段已結束 · ↩ 新增工作階段";
+"terminal.launcher.background" = "%@ 仍在執行";
+"terminal.launcher.startFailed" = "無法啟動終端機工作階段。";
+"terminal.launcher.recent" = "最近的工作階段";
+"terminal.session.window.title" = "終端機";
+"terminal.session.window.new" = "新增工作階段 ⌘T";
+"terminal.session.window.pin" = "保持最上層";
+"terminal.session.window.back" = "移回啟動器 ⌘O";

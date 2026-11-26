@@ -97,7 +97,7 @@ struct AskPrefixPluginTests {
         #expect(AskKeywordMatcher.match("/prefix", keywords: AskPrefixPlugin.keywords) == nil)
     }
 
-    @Test func `directory reflects renames presets and disabled workflows`() throws {
+    @Test func `directory reflects renames presets and disabled workflows`() async throws {
         let f = try AskTestFixture()
         let wf = try AskWorkflowFixture()
         try wf.write(
@@ -117,6 +117,7 @@ struct AskPrefixPluginTests {
         wf.store.trust("local.disabled")
         wf.store.setEnabled("local.disabled", false)
         f.model.workflows = wf.store
+        await f.model.refreshLauncherWorkflows()
         let custom = AskKeyword(keyword: "fyja", pluginID: AskTranslatePlugin.id, options: ["target": "ja"])
         f.model.modelLibrary.settings.saveAskLauncherKeywords([custom] + AskPrefixPlugin.keywords)
         let entries = f.model.launcherKeywordDirectory(language: .english)

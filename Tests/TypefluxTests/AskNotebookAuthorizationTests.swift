@@ -193,15 +193,15 @@ struct AskNotebookAuthorizationTests {
         #expect(try store.count(.all) == 0)
     }
 
-    @Test func everyPermissionModeRequiresNotebookConsentAndShowsModelDisclosure() async throws {
+    @Test func notebookFollowsToolPermissionModesAndShowsModelDisclosure() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         let read = try call("read", ["id": UUID().uuidString])
         let write = try call("create", ["body": "new"])
         for mode in AskPermissionMode.allCases {
             fixture.model.permissionModes["c"] = mode
-            #expect(!fixture.model.automaticallyApproves(read, risk: .read, conversationId: "c"))
-            #expect(!fixture.model.automaticallyApproves(write, risk: .write, conversationId: "c"))
+            #expect(fixture.model.automaticallyApproves(read, risk: .read, conversationId: "c") == (mode != .strict))
+            #expect(fixture.model.automaticallyApproves(write, risk: .write, conversationId: "c") == (mode == .yolo))
         }
         #expect(AskApprovalPresentation.disclosure(read) == L("ask.notes.agent.hint"))
         #expect(AskApprovalPresentation.disclosure(.init(id: "other", function: .init(name: "memory", arguments: "{}"))) == nil)

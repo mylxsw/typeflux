@@ -58,6 +58,7 @@ struct SemanticIndexFairnessServiceTests {
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = SettingsStore(defaults: defaults)
+        settings.askQuickFileSearchEnabled = true
         var names = AskLauncherSearchSettings(); names.fileRoots = [corpus.path]; names.excludedPaths = []
         settings.askLauncherSearchSettings = names
         let source = root.appendingPathComponent("fixture-model")

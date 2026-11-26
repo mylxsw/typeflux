@@ -99,7 +99,7 @@ struct AskLauncherPositionSettingsTests {
                 width: 900, height: 700
             ) { window, _ in
                 try await SettingsBehaviorTestSupport.wait {
-                    SettingsBehaviorTestSupport.contains(L("ask.settings.keywords.listFootnote"), in: window)
+                    SettingsBehaviorTestSupport.contains(LauncherSettingsPane.keywords.title, in: window)
                 }
                 #expect(probe.calls == 0)
             }

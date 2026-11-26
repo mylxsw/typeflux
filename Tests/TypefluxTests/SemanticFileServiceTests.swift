@@ -114,6 +114,7 @@ struct SemanticFileServiceTests {
             makeQuery: { _, _ in SemanticFixtureQuery() }
         )
         defaults.removePersistentDomain(forName: suite)
+        settings.askQuickFileSearchEnabled = true
         settings.askLauncherSearchSettings = names
         return (service, root, reader, models)
     }
@@ -123,7 +124,7 @@ struct SemanticFileServiceTests {
         while !condition(), ContinuousClock.now < deadline {
             try await Task.sleep(for: .milliseconds(10))
         }
-        #expect(condition())
+        try #require(condition(), "Timed out waiting for the semantic search state")
     }
 
     @Test func `default off and unsupported cannot be enabled`() async throws {

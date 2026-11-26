@@ -6807,6 +6807,7 @@
 "shortcutDiagnostics.stage.handlerFinished" = "功能处理函数返回";
 "shortcutDiagnostics.stage.dataStarted" = "提交历史读取";
 "shortcutDiagnostics.stage.dataFinished" = "历史读取完成";
+"shortcutDiagnostics.stage.directCaptureSelected" = "已选择直接截屏";
 "shortcutDiagnostics.stage.captureStarted" = "屏幕捕获开始";
 "shortcutDiagnostics.stage.captureFinished" = "屏幕捕获结束";
 "shortcutDiagnostics.stage.windowOrdered" = "窗口显示请求已提交";
@@ -7210,6 +7211,10 @@
 "agent.permissions.help.workflow_propose" = "修改工作流草稿和预览；安装工作流仍需你点击保存。";
 "agent.permissions.help.workflow_save" = "展示草稿的保存提示，不会自动安装工作流。";
 "agent.permissions.help.workflow_test" = "使用测试输入运行工作流草稿，其中的命令可能产生副作用。";
+"agent.permissions.tool.image_generate" = "生成图片";
+"agent.permissions.tool.image_edit" = "编辑图片";
+"agent.permissions.help.image_generate" = "在 Typeflux 云端生成图片，可能消耗额度。";
+"agent.permissions.help.image_edit" = "将选中的图片发送到 Typeflux 云端进行编辑，可能消耗额度。";
 "agent.permissions.help.unknown" = "控制工具 %@ 的 %@ 操作。其影响尚未分类，自动放行前请先了解该工具的行为。";
 
 /* Complete usage-guide shortcut reference. */

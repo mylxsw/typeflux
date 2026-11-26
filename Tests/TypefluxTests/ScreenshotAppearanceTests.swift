@@ -69,7 +69,12 @@ struct ScreenshotAppearanceTests {
                     case .frosted:
                         #expect(blur.contains { $0.material == .hudWindow }, "\(name) lacks the frosted material")
                     case .liquidGlass:
-                        #expect(blur.isEmpty && !glass.isEmpty, "\(name) does not use native Liquid Glass")
+                        #expect(!glass.isEmpty, "\(name) does not use native Liquid Glass")
+                        if name == "beautification" {
+                            #expect(blur.map(\.material) == [.underWindowBackground])
+                        } else {
+                            #expect(blur.isEmpty, "\(name) contains an unexpected backdrop")
+                        }
                     }
                 }
             }

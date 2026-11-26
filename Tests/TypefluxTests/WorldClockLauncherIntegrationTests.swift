@@ -209,7 +209,7 @@ struct WorldClockLauncherVisualTests {
                        WorldClockPreferences.labelsOption: #"{"newyork":"Maya"}"#]
         let binding = Binding(get: { options }, set: { options = $0 })
         let host = NSHostingView(rootView: WorldClockKeywordSettingsView(options: binding)
-            .frame(width: 520).padding().background(StudioTheme.surfaceMuted))
+            .frame(width: 520).padding(20).background(StudioTheme.surfaceMuted))
         host.frame = NSRect(x: 0, y: 0, width: 560, height: 560)
         let window = NSWindow(contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false

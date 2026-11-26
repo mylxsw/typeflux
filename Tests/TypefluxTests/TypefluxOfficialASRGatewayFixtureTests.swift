@@ -21,9 +21,8 @@ final class TypefluxOfficialASRGatewayFixtureTests: XCTestCase {
                 onUpdate: { await updates.record($0.text) }
             )
             XCTFail("Expected the gateway error")
-        } catch let error as TypefluxOfficialASRError {
-            let expected = TypefluxOfficialASRError.serverError("PROVIDER_FAILED")
-            XCTAssertEqual(error.errorDescription, expected.errorDescription)
+        } catch {
+            assertProtectedGatewayError(error, code: "PROVIDER_FAILED")
         }
 
         let texts = await updates.texts
@@ -73,8 +72,8 @@ final class TypefluxOfficialASRGatewayFixtureTests: XCTestCase {
                 onLLMChunk: { await chunks.record($0) }
             )
             XCTFail("Expected the LLM error")
-        } catch let error as TypefluxOfficialASRError {
-            XCTAssertEqual(error.errorDescription, TypefluxOfficialASRError.serverError("LLM_FAILED").errorDescription)
+        } catch {
+            assertProtectedGatewayError(error, code: "LLM_FAILED")
         }
 
         let received = await chunks.texts
@@ -82,6 +81,14 @@ final class TypefluxOfficialASRGatewayFixtureTests: XCTestCase {
         let fetches = await routing.accessTokens.count
         XCTAssertEqual(fetches, 1)
         XCTAssertEqual(gatewayB.connectionCount, 0)
+    }
+
+    private func assertProtectedGatewayError(_ error: Error, code: String, file: StaticString = #filePath, line: UInt = #line) {
+        let protected = error as NSError
+        let underlying = protected.userInfo[NSUnderlyingErrorKey] as? TypefluxOfficialASRError
+        XCTAssertEqual(protected.userInfo[RequestRetry.paidCloudNoReplayKey] as? Bool, true, file: file, line: line)
+        XCTAssertEqual(underlying?.errorDescription, TypefluxOfficialASRError.serverError(code).errorDescription,
+                       file: file, line: line)
     }
 
     func testBillingStopBeforeAudioIsReportedWithoutFailover() async throws {

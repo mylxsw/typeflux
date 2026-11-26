@@ -136,6 +136,7 @@ struct WorkflowScriptActionsVisualTests {
             launcher.workflows = fixture.store
             _ = await AskWorkflowPath.searchPath()
             await launcher.refreshLauncherWorkflows()
+            fixture.installLauncherImageDecoder(in: launcher)
             _ = launcher.plugins.detect(in: "qr typeflux")
             launcher.launcherDraft.text = "typeflux"
             launcher.plugins.update(

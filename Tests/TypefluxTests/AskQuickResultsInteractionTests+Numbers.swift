@@ -74,14 +74,17 @@ extension AskQuickResultsInteractionTests {
 
     @Test func `command number enters the chosen plugin list item`() async throws {
         try await withPasteboard { _ in
-            let launcher = try await Launcher(text: "prefix")
+            let chosen = AskKeyword(keyword: "web", pluginID: AskWebSearchPlugin.id)
+            let launcher = try await Launcher(text: "prefix", prepare: { model in
+                model.modelLibrary.settings.saveAskLauncherKeywords(AskPrefixPlugin.keywords + [chosen])
+            })
             defer { launcher.close() }
             let model = launcher.fixture.model
             try await launcher.press(Self.returnKey)
             try await AskQuickSearchSessionTests.wait { model.plugins.output?.items.isEmpty == false }
-            #expect(model.plugins.output?.items[1].title == "dict")
+            #expect(model.plugins.output?.items.map(\.title) == ["prefix", chosen.keyword])
             try await launcher.press(19, .command)
-            #expect(model.plugins.keyword?.keyword == "dict")
+            #expect(model.plugins.keyword == chosen)
             #expect(model.launcherDraft.text.isEmpty && model.plugins.phase == .waiting)
             #expect(launcher.dismissed == 0)
             #expect(await launcher.fixture.api.sends.isEmpty)

@@ -190,7 +190,8 @@ struct AskBrowserFaviconTests {
             let view = NSHostingView(rootView: AskBrowserFaviconView(url: site, fallback: nil,
                                                                      symbol: "rectangle.on.rectangle", filled: true,
                                                                      cache: cache).environment(\.askContextImageAccess, access))
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 28, height: 28),
+            let edge = AskTheme.launcherResultIconSize
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: edge, height: edge),
                                   styleMask: .borderless, backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.contentView = view
@@ -200,7 +201,7 @@ struct AskBrowserFaviconTests {
             let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
             view.cacheDisplay(in: view.bounds, to: bitmap)
             #expect(bitmap.pixelsWide > 0 && bitmap.pixelsHigh > 0)
-            #expect(view.fittingSize == NSSize(width: 28, height: 28))
+            #expect(view.fittingSize == NSSize(width: edge, height: edge))
             try await AskQuickSearchSessionTests.wait { cache.cached(site, access: access) != nil }
         }
     }

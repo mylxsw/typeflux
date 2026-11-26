@@ -128,7 +128,7 @@ struct AskLibraryVisualConsistencyTests {
         let placeholder: String? = switch identifier {
         case "ask.wordBook.search": L("ask.wordBook.search")
         case "ask.wordBook.lookup": L("ask.wordBook.lookup.placeholder")
-        case "ask.notes.search": L("ask.notes.search")
+        case "ask.notes.search": L("ask.notes.search.scope", L("ask.notes.shelf.all"))
         default: nil
         }
         let items = elements(in: host)

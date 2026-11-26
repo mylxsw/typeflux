@@ -134,7 +134,8 @@ struct FeatureHandoffTests {
     @Test func fullDraftMovesOnlyAfterDestinationAcceptsIt() async throws {
         let source = try AskTestFixture(), destination = try AskTestFixture(cacheOverride: source.cache)
         defer { source.model.resetSession(); destination.model.resetSession() }
-        let draft = AskDraft(text: "Review", includeScreenshot: false, selection: "Selected text", source: "Editor",
+        let draft = AskDraft(reasoningEffort: AskReasoningEffort.high.rawValue,
+            text: "Review", includeScreenshot: false, selection: "Selected text", source: "Editor",
             sourceBundleID: "fixture.editor", modelRef: "cloud:default",
             references: [.init(messageId: "reference", text: "Quoted text")],
             attachments: [.init(kind: .file, name: "example.txt", text: "File contents")], skills: ["review"])
@@ -186,7 +187,9 @@ struct FeatureHandoffTests {
         }
         #expect(await !source.model.transferFeatureDraft(draft, submit: true))
         #expect(source.model.launcherDraft == draft)
-        #expect(destination.model.draft == draft)
+        var receivedDraft = draft
+        receivedDraft.reasoningEffort = AskReasoningEffort.providerDefault.rawValue
+        #expect(destination.model.draft == receivedDraft)
         #expect(destination.model.acceptedFeatureHandoffs.isEmpty)
         #expect(await destination.api.sends.isEmpty)
         destination.model.onShowConversation = nil

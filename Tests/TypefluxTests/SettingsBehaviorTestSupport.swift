@@ -154,7 +154,14 @@ enum SettingsBehaviorTestSupport {
         let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: bitmap)
         let png = try #require(bitmap.representation(using: .png, properties: [:]))
-        #expect(png.count > 3000)
+        let captured = try #require(NSBitmapImageRep(data: png))
+        #expect(captured.pixelsWide == bitmap.pixelsWide && captured.pixelsHigh == bitmap.pixelsHigh)
+        let corner = try #require(captured.colorAt(x: 0, y: 0))
+        let columns = stride(from: 0, to: captured.pixelsWide, by: max(1, captured.pixelsWide / 64))
+        let rows = stride(from: 0, to: captured.pixelsHigh, by: max(1, captured.pixelsHigh / 32))
+        #expect(rows.contains { y in columns.contains { x in
+            captured.colorAt(x: x, y: y).map { $0 != corner } ?? false
+        } }, "\(name) is a uniform image")
         if let path = ProcessInfo.processInfo.environment["TYPEFLUX_GUL303_SNAPSHOTS"] {
             let directory = URL(fileURLWithPath: path)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

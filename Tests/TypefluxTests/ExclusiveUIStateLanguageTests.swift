@@ -408,13 +408,16 @@ extension ExclusiveUIStateLanguageTests {
         for (file, lines) in sources {
             for (index, line) in lines.enumerated() {
                 guard let type = name(declaration, line) else { continue }
-                let attributes = lines[..<index].reversed().prefix { $0.hasPrefix("@") || $0.hasPrefix("//") }
-                let suiteLines = attributes.filter { $0.hasPrefix("@Suite") }
+                let attributes = lines[..<index].reversed().prefix {
+                    $0.hasPrefix("@") || $0.hasPrefix("//") || $0.hasPrefix(")") || $0.first?.isWhitespace == true
+                }
+                let suiteLines = attributes.reversed().drop(while: { !$0.hasPrefix("@Suite") })
+                let suite = suiteLines.prefix { !$0.hasPrefix("@") || $0.hasPrefix("@Suite") }
                 let bodies = [body(lines, after: index)] + extensionBodies[type, default: []]
                 let isSuite = !suiteLines.isEmpty || bodies.contains { matches(testAttribute, $0) }
                 let isMainActor = line.hasPrefix("@MainActor") || attributes.contains { $0.hasPrefix("@MainActor") }
                 guard isSuite, isMainActor || bodies.contains(where: { matches(readsLanguage, $0) }) else { continue }
-                if !suiteLines.contains(where: { $0.contains(".exclusiveUIState") }) {
+                if !suite.contains(where: { $0.contains(".exclusiveUIState") }) {
                     missing.append("\(file): \(type)")
                 }
             }

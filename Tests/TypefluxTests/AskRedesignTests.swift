@@ -104,9 +104,10 @@ struct AskPresentationTests {
 @Suite("Ask redesign layout", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRedesignLayoutTests {
-    @Test func launcherPanelReportsTheRedesignedHeight() async throws {
+    @Test func simpleLauncherExpandsToAStableHeightForTheDraft() async throws {
         _ = NSApplication.shared
         let fixture = try AskTestFixture()
+        fixture.model.launcherWindowMode = .simple
         var reported: CGFloat = 0
         let size = NSSize(width: AskMetrics.launcherWidth, height: 114)
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size),
@@ -120,18 +121,14 @@ struct AskRedesignLayoutTests {
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
         try await Task.sleep(for: .milliseconds(300))
-        // Empty, the launcher offers its home under the controls.
-        let suggested = AskMetrics.launcherHeight(editor: 32, banners: 0,
-                                                  suggestions: AskLauncherSuggestions.height(for: fixture.model.launcherHome()))
-        #expect(reported >= suggested - 4)
-        #expect(reported <= suggested + 4)
-        let empty = reported
+        #expect(reported == AskLauncherWindowMode.simpleHeight)
         fixture.model.launcherDraft.text = String(repeating: "Line of text\n", count: 30)
-        // Wait for the typed height rather than a fixed delay, which flaked under load. The
-        // empty height (with the home) may already be above 200, so wait for it to change.
-        for _ in 0 ..< 100 where reported == empty || reported < 200 { try await Task.sleep(for: .milliseconds(20)) }
-        #expect(reported >= 200)
-        #expect(reported <= AskMetrics.launcherHeight(editor: 148, banners: 0))
+        try await SettingsBehaviorTestSupport.wait { reported == AskLauncherWindowMode.expandedHeight }
+        fixture.model.launcherDraft.text = "Short draft"
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(reported == AskLauncherWindowMode.expandedHeight)
+        fixture.model.launcherDraft.text = ""
+        try await SettingsBehaviorTestSupport.wait { reported == AskLauncherWindowMode.simpleHeight }
         fixture.model.resetSession()
     }
 
@@ -139,9 +136,10 @@ struct AskRedesignLayoutTests {
         _ = NSApplication.shared
         let fixture = try AskTestFixture()
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            let bitmap = try await render(AskConversationView(model: fixture.model),
+            let bitmap = try await render(AskConversationView(model: fixture.model)
+                                          .environment(\.askGlassMaterialOverride, .opaque),
                                           size: NSSize(width: 1100, height: 740), appearance: appearance)
-            let sidebar = try pixel(bitmap, x: 240, y: 400)
+            let sidebar = try pixel(bitmap, x: 180, y: 400)
             let transcript = try pixel(bitmap, x: 300, y: 400)
             #expect(sidebar.alphaComponent > 0.999)
             #expect(transcript.alphaComponent > 0.999)

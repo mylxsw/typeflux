@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import PDFKit
+import SwiftUI
 @testable import Typeflux
 
 /// Shared fixtures for clipboard history tests.
@@ -275,5 +276,20 @@ final class InMemoryClipboardHistoryStore: ClipboardHistoryStore {
 
     func setVoiceRecordPinned(_ pinned: Bool, recordID: UUID) {
         if pinned { pinnedVoiceIDs.insert(recordID) } else { pinnedVoiceIDs.remove(recordID) }
+    }
+}
+
+
+// Preview media is owned by the mounted selection, while the panel-wide
+// thumbnail session can still serve every visible row.
+struct ClipboardPlaybackSelectionFixture<Content: View>: View {
+    @ObservedObject var model: ClipboardPanelModel
+    let entryID: String
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        if model.previewEntry?.id == entryID {
+            content()
+        }
     }
 }

@@ -73,7 +73,10 @@ extension AskQuickResultsInteractionTests {
             defer { launcher.close() }
             let model = launcher.fixture.model
             try await typeText("nb ", into: launcher)
-            try await waitUntil { model.plugins.output?.items.first?.title == "Saved answer" }
+            try await waitUntil { model.plugins.output?.items.contains { $0.id == note.id.uuidString } == true }
+            #expect(model.plugins.output?.selected?.id == AskNotesPlugin.openNotesItemID)
+            try await launcher.press(Self.down)
+            #expect(model.plugins.output?.selected?.id == note.id.uuidString)
             try await launcher.press(Self.returnKey)
             await model.notebookTask?.value
             #expect(windows == [note.id] && launcher.dismissed == 1)

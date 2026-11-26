@@ -31,9 +31,9 @@ class FocusedCoverageTests(unittest.TestCase):
                 'if sys.argv[-1] == "list":\n'
                 '    print("TypefluxTests.LLMRouterTests/testRoutes")\n'
                 '    print("TypefluxTests.ProcessCommandRunnerTests/testExit")\n'
-                'elif sys.argv[1:] == ["build", "--show-bin-path"]:\n'
+                'elif sys.argv[1] == "build" and "--show-bin-path" in sys.argv:\n'
                 '    print(os.environ["COVERAGE_TEST_BIN"])\n'
-                'else:\n'
+                'elif sys.argv[1] == "test":\n'
                 '    sys.exit(int(os.environ["COVERAGE_TEST_FAIL"]))\n'
             )
             swift.chmod(0o755)
@@ -56,18 +56,23 @@ class FocusedCoverageTests(unittest.TestCase):
 
     def test_focused_coverage_builds_and_executes_only_its_scope(self):
         result, calls = self.invoke(["--suite", "LLMRouterTests"])
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(calls[0], ["test", "--enable-code-coverage", "list"])
-        self.assertIn("--no-parallel", calls[1])
-        self.assertIn("--enable-code-coverage", calls[1])
-        self.assertIn("LLMRouterTests", calls[1][-1])
-        self.assertNotIn("ProcessCommandRunnerTests", calls[1][-1])
-        self.assertEqual(calls[2], ["build", "--show-bin-path"])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        build, discovery, execution, binary_path = calls
+        coverage_build = ["--build-system", "native", "--enable-code-coverage"]
+        self.assertEqual(build, ["build", *coverage_build, "--build-tests"])
+        self.assertEqual(discovery, ["test", *coverage_build, "--skip-build", "list"])
+        self.assertIn("--no-parallel", execution)
+        self.assertIn("--enable-code-coverage", execution)
+        self.assertIn("LLMRouterTests", execution[-1])
+        self.assertNotIn("ProcessCommandRunnerTests", execution[-1])
+        self.assertEqual(binary_path, ["build", "--build-system", "native", "--show-bin-path"])
 
     def test_test_failure_is_not_masked_by_report_generation(self):
         result, calls = self.invoke(["--suite", "LLMRouterTests"], fail_tests=True)
         self.assertEqual(result.returncode, 7)
-        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(calls[-1][0], "test")
+        self.assertIn("--filter", calls[-1])
 
 
 if __name__ == "__main__":

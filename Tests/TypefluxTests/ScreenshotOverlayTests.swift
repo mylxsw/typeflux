@@ -369,10 +369,11 @@ final class ScreenshotOverlayTests: XCTestCase {
         let handle = try XCTUnwrap(bitmap.colorAt(x: Int(23 * scale), y: Int(140 * scale)))
         XCTAssertEqual(handle.redComponent, handle.greenComponent, accuracy: 0.02)
         XCTAssertEqual(handle.greenComponent, handle.blueComponent, accuracy: 0.02)
-        let loupeCenter = try XCTUnwrap(bitmap.colorAt(x: Int(170 * scale), y: Int(165 * scale)))
-        XCTAssertGreaterThan(loupeCenter.redComponent, 0.9)
-        XCTAssertGreaterThan(loupeCenter.greenComponent, 0.9)
-        XCTAssertGreaterThan(loupeCenter.blueComponent, 0.9)
+        // Sample the image inside the center frame. Its stroke is antialiased.
+        let loupeCenter = try XCTUnwrap(bitmap.colorAt(x: Int(175 * scale), y: Int(165 * scale)))
+        XCTAssertEqual(loupeCenter.redComponent, 0.5, accuracy: 0.03)
+        XCTAssertEqual(loupeCenter.greenComponent, 0.5, accuracy: 0.03)
+        XCTAssertEqual(loupeCenter.blueComponent, 0.5, accuracy: 0.03)
         // The loupe's dark body is drawn where it was placed.
         XCTAssertGreaterThan(bitmap.colorAt(x: Int(200 * scale), y: Int(130 * scale))?.alphaComponent ?? 0, 0.5)
 

@@ -87,7 +87,7 @@ struct AskAppSearchPluginTests {
         let output = try await plugin.run(request(""), plan: plan, progress: { _ in })
         #expect(output.items.compactMap(AskAppSearchGridView.application).count == 14)
         #expect(AskAppSearchGridView.height(count: 14) == AskApplicationGrid.height(count: 14))
-        #expect(AskPluginResultsView.cardHeight(output: output, failure: nil, comparing: false) == 334)
+        #expect(AskPluginResultsView.cardHeight(output: output, failure: nil, comparing: false) == AskApplicationGrid.height(count: 14))
         #expect(AskAppSearchGridView.height(count: 14, viewportHeight: 600) == 565)
         #expect(AskAppSearchGridView.height(count: 200) == 430)
         let renderer = ImageRenderer(content: AskAppSearchGridView(output: output, pending: false,
@@ -105,12 +105,13 @@ struct AskAppSearchPluginTests {
         try await launcher.press(36)
         let session = launcher.fixture.model.plugins
         try await AskQuickSearchSessionTests.wait { session.output?.applicationGrid == true }
+        let nextRow = AskApplicationGrid.columns
         try await launcher.press(125)
-        #expect(session.output?.selectedItem == 6)
+        #expect(session.output?.selectedItem == nextRow)
         try await launcher.press(124)
-        #expect(session.output?.selectedItem == 7)
+        #expect(session.output?.selectedItem == nextRow + 1)
         try await launcher.press(123)
-        #expect(session.output?.selectedItem == 6)
+        #expect(session.output?.selectedItem == nextRow)
         try await launcher.press(126)
         #expect(session.output?.selectedItem == 0)
         let selected = try #require(session.output?.action(for: .enter))
