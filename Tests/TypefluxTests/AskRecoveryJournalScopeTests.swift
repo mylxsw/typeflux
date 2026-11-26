@@ -32,6 +32,8 @@ struct AskRecoveryJournalScopeTests {
         older.run?.id = "older"
         let oldAudit = AskRecoveryFixture.audit(older)
         #expect(try await cache.claimExecution(oldAudit, owner: "owner"))
+        try await cache.saveReceipt(AskRecoveryFixture.receipt(older), identity: oldAudit.identity, owner: "owner")
+        try await cache.recordExecution(id: oldAudit.identity.key, event: .acknowledged, owner: "owner")
         #expect(try await cache.claimTool(id: "legacy", owner: "owner"))
         try await cache.associateTool(id: "legacy", conversationId: value.id, owner: "owner")
         var database: OpaquePointer?
@@ -47,7 +49,11 @@ struct AskRecoveryJournalScopeTests {
         #expect(try await cache.recoveryExecutions(conversationId: "other", runId: "run", owner: "owner").isEmpty)
         // Full history still reports corruption instead of silently losing evidence.
         await #expect(throws: (any Error).self) { _ = try await cache.executions(conversationId: value.id, owner: "owner") }
+        let pending = try await cache.pendingReceipts(conversationId: value.id, owner: "owner")
+        #expect(Set(pending.map(\.id)) == ["run/call", "inference/run/call"])
+        #expect(try await cache.pendingReceipts(conversationId: value.id, owner: "other").isEmpty)
         try await cache.delete(id: value.id, owner: "owner")
+        #expect(try await cache.pendingReceipts(conversationId: value.id, owner: "owner").isEmpty)
         #expect(try await cache.recoveryExecutions(conversationId: value.id, runId: "run", owner: "owner").allSatisfy(\.deleted))
     }
 

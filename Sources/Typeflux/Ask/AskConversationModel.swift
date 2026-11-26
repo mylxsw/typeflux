@@ -33,13 +33,13 @@ final class AskConversationModel: ObservableObject {
     var usageContext: AskContextUsage? {
         guard var context = selected?.contextUsage else { return nil }
         let ref = modelReference(launcher: false)
+        guard ref == context.modelRef else { return nil }
         let entry = modelLibrary.registry.resolve(ref)?.1
-        if ref != context.modelRef, context.estimated == false { return nil }
-        if ref != context.modelRef {
-            context.modelRef = ref
-            context.capacity = entry?.effectiveContextWindowTokens
-            context.outputReserve = min(4096, entry?.effectiveMaxOutputTokens ?? 4096)
-        } else if context.remaining == nil {
+        if context.estimated == true, let images = context.privateImageEstimate, let entry,
+           let total = images.total(perImage: AskImageTokenEstimate.tokens(entry.id, entry.name)) {
+            context.inputTokens = total
+        }
+        if context.remaining == nil {
             // Older snapshots may predate discovery of the selected model's capacity.
             context.capacity = entry?.effectiveContextWindowTokens
         }
@@ -1713,7 +1713,7 @@ final class AskConversationModel: ObservableObject {
               let current = credentials(for: value.id) else { return }
         guard admitAgentCommand(value) else { return }
         if canRetransmitReceipts {
-            Task { await retransmitSavedReceipts() }
+            Task { await retransmitSavedReceipts(includePriorRuns: false) }
             return
         }
         guard !recoveryBlocksResume(value) else { inspectingRecovery = true; return }

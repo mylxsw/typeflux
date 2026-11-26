@@ -87,6 +87,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                         let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
                         return AskContextLimits(window: model?.effectiveContextWindowTokens ?? 32768,
                                                 maxOutput: model?.effectiveMaxOutputTokens ?? 4096,
+                                                displayImageTokens: AskImageTokenEstimate.tokens(
+                                                    model?.id, model?.name, reference
+                                                ),
                                                 known: model?.effectiveContextWindowTokens != nil)
                     }, summarize: { inference, run, device in
                         let credential = try? await token()
@@ -101,6 +104,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
             return AskContextLimits(window: model?.effectiveContextWindowTokens ?? 32768,
                                     maxOutput: model?.effectiveMaxOutputTokens ?? 4096,
+                                    displayImageTokens: AskImageTokenEstimate.tokens(model?.id, model?.name, reference),
                                     known: model?.effectiveContextWindowTokens != nil)
         }, summarize: makeSummary(modelLibrary: modelLibrary, modelClient: modelClient),
         // Signed in, a conversation kept on this Mac may answer with Cloud models; the

@@ -1,0 +1,54 @@
+[
+  {
+    "pattern": "^(google-)?(gemini-?[34])(-|$)",
+    "tokens": 1120
+  },
+  {
+    "pattern": "^(google-)?(gemini-?2)(-|$)",
+    "tokens": 1032
+  },
+  {
+    "pattern": "^(anthropic-)?(claude-(opus|sonnet|haiku|fable|[0-9]+))(-|$)",
+    "tokens": 1800
+  },
+  {
+    "pattern": "^(openai-)?(gpt-4o-mini)(-|$)",
+    "tokens": 36835
+  },
+  {
+    "pattern": "^(openai-)?(gpt-4o)(-|$)",
+    "tokens": 1105
+  },
+  {
+    "pattern": "^(openai-)?gpt-4-1-mini(-|$)",
+    "tokens": 2349
+  },
+  {
+    "pattern": "^(openai-)?gpt-4-1-nano(-|$)",
+    "tokens": 3567
+  },
+  {
+    "pattern": "^(openai-)?(gpt-4-1)(-|$)",
+    "tokens": 1105
+  },
+  {
+    "pattern": "^(openai-)?(gpt-5-[2-9]|gpt-6|gpt-5-mini)(-|$)",
+    "tokens": 1740
+  },
+  {
+    "pattern": "^(openai-)?gpt-5-nano(-|$)",
+    "tokens": 2175
+  },
+  {
+    "pattern": "^(openai-)?gpt-5(-|$)",
+    "tokens": 910
+  },
+  {
+    "pattern": "^(alibaba-)?(qwen-?2-5-vl)(-|$)",
+    "tokens": 1850
+  },
+  {
+    "pattern": "^(alibaba-)?(qwen-?3-vl|qwen-?3-[5678]|qwen-vl-(plus|max)|qwen-?4)(-|$)",
+    "tokens": 1450
+  }
+]

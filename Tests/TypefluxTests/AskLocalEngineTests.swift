@@ -14,6 +14,51 @@ final class AskLocalEngineTests: XCTestCase {
         try? FileManager.default.removeItem(at: directory)
     }
 
+    func testImageEstimateFamilyRouting() async throws {
+        let families = ["google/Gemini 4 Hydrogen": 1120, "gemini-3.1-pro-preview": 1120,
+                        "Qwen/Qwen2.5-VL-7B": 1850, "Qwen3-VL-plus": 1450,
+                        "Claude Sonnet 4.7": 1800, "Claude Fable Latest": 1800,
+                        "openai/gpt-4o-mini-2024": 36835, "GPT-4o": 1105, "gpt-4.1-nano": 3567,
+                        "gpt-5.4": 1740, "not-gemini-4": 2000, "gemini-40": 2000]
+        XCTAssertEqual(AskImageTokenEstimate.tokens(nil, ""), 2000)
+        for (name, expected) in families { XCTAssertEqual(AskImageTokenEstimate.tokens(name), expected, name) }
+        let message: [String: Any] = ["role": "user", "content": [
+            ["type": "text", "text": "describe"],
+            ["type": "image_url", "image_url": ["url": "data:image/png;base64,AA=="]]
+        ] as [[String: Any]]]
+        XCTAssertEqual(AskContextPlanner.previewTokens(["messages": [message]], imageTokens: 2000), 2006)
+        for budget in [false, true] {
+            for count in 0...2 {
+                var estimates = [Int]()
+                for name in ["Gemini 4 Hydrogen", "unknown"] {
+                    let engine = AskLocalEngine(directory: directory.appendingPathComponent(UUID().uuidString),
+                        budgetEnabled: budget, contextLimits: { _ in
+                            .init(window: 204800, displayImageTokens: AskImageTokenEstimate.tokens("opaque", name),
+                                  known: name != "unknown")
+                        })
+                    var input = request("describe")
+                    input.attachments = (0..<count).map { index in
+                        .init(kind: .image, name: "image-\(index)", image: "data:image/png;base64,AA==")
+                    }
+                    let result = try await engine.send(conversationId: "images", request: input, token: "")
+                    XCTAssertEqual(result.run?.status, "waiting_inference")
+                    XCTAssertEqual(result.contextUsage?.capacity, name == "unknown" ? nil : 204800)
+                    XCTAssertEqual(result.contextUsage?.estimated, true)
+                    estimates.append(try XCTUnwrap(result.contextUsage?.inputTokens))
+                    let run = try XCTUnwrap(result.run)
+                    let inferenceID = try XCTUnwrap(run.inference?.id)
+                    let receipt = AskInferenceResult(runId: run.id, deviceId: device, inferenceId: inferenceID,
+                        content: "OK", usage: .init(promptTokens: 9430, completionTokens: 1, totalTokens: 9431))
+                    let done = try await engine.inferenceResult(conversationId: result.id, request: receipt, token: "")
+                    XCTAssertEqual(done.run?.status, "completed")
+                    XCTAssertEqual(done.contextUsage?.estimated, false)
+                    XCTAssertEqual(done.contextUsage?.inputTokens, 9430)
+                }
+                XCTAssertEqual(estimates[1] - estimates[0], count * (2000 - 1120))
+            }
+        }
+    }
+
     func testFailureKeepsPartialOutputAndCategoryWithoutRepeatingInference() async throws {
         let service = engine()
         let original = try await service.send(conversationId: "failed-stream", request: request(), token: "")

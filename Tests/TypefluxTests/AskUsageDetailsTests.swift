@@ -295,14 +295,25 @@ struct AskUsageDetailsTests {
         #expect(fixture.model.usageContext?.capacity == 128_000)
         #expect(fixture.model.usageContext?.remaining == 114_000)
         fixture.model.draft.modelRef = unknown.reference
-        #expect(fixture.model.usageContext?.modelRef == unknown.reference)
-        #expect(fixture.model.usageContext?.capacity == nil)
+        #expect(fixture.model.usageContext == nil)
         fixture.model.draft.modelRef = known.reference
         value.contextUsage?.capacity = 32_000
         value.revision += 1
         await fixture.api.seed(value)
         await fixture.model.select(value.id, reload: true)
         #expect(fixture.model.usageContext?.capacity == 32_000)
+        value.contextUsage?.estimated = true
+        value.contextUsage?.privateImageEstimate = .init(images: 2, textTokens: 10_000)
+        value.revision += 1
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id, reload: true)
+        #expect(fixture.model.usageContext?.inputTokens == 12_210)
+        value.contextUsage?.estimated = false
+        value.contextUsage?.inputTokens = 9430
+        value.revision += 1
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id, reload: true)
+        #expect(fixture.model.usageContext?.inputTokens == 9430)
         fixture.model.draft.modelRef = "custom:removed"
         #expect(fixture.model.usageContext?.capacity == nil)
     }

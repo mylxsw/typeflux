@@ -118,7 +118,7 @@ extension AskConversationModel {
             let receiptIDs = selectedRecoveryEntries.filter { !$0.acknowledged && $0.receipt != nil }
                 .map(\.id).sorted().joined(separator: ",")
             guard automaticRecoveryAttempts.insert(key + "/receipt/" + receiptIDs).inserted else { return }
-            await retransmitSavedReceipts()
+            await retransmitSavedReceipts(includePriorRuns: false)
             guard !canRetransmitReceipts else { return }
         }
         guard selectedId == value.id, selected?.run?.id == run.id else { return }
@@ -143,8 +143,8 @@ extension AskConversationModel {
         await refreshRecovery(response, route: current)
     }
 
-    /// User-requested delivery only. Does not call drive, retry, tools or a model.
-    func retransmitSavedReceipts() async {
+    /// Only an explicit refresh looks for unsettled receipts from previous runs.
+    func retransmitSavedReceipts(includePriorRuns: Bool = true) async {
         guard !recoveryWorking, let value = selected, !busyIds.contains(value.id),
               let current = credentials(for: value.id) else { return }
         let generation = recoveryGeneration
@@ -163,24 +163,27 @@ extension AskConversationModel {
             try await accept(latest, route: current)
             guard generation == recoveryGeneration, operationGenerations[value.id] == operation,
                   session()?.owner == current.account else { throw CancellationError() }
-            await refreshRecovery(latest, route: current)
-            for entry in recoveryEntries[value.id] ?? [] where !entry.acknowledged {
-                try Task.checkCancellation()
-                guard generation == recoveryGeneration, operationGenerations[value.id] == operation,
-                      session()?.owner == current.account,
-                      selectedId == value.id else { throw CancellationError() }
-                guard let response = try await transmit(
-                    entry,
-                    latest: latest,
-                    current: current,
-                    generation: generation,
-                    operation: operation
-                ) else { continue }
-                try await cache.recordExecution(id: entry.id, event: .acknowledged, owner: current.owner)
-                try await accept(response, route: current)
-                logRecovery(entry, event: .acknowledged)
+            func deliver(_ entries: [AskExecutionEntry]) async throws {
+                for entry in entries where !entry.acknowledged {
+                    try Task.checkCancellation()
+                    guard generation == recoveryGeneration, operationGenerations[value.id] == operation,
+                          session()?.owner == current.account, selectedId == value.id else { throw CancellationError() }
+                    guard let response = try await transmit(entry, latest: latest, current: current,
+                                                            generation: generation, operation: operation) else {
+                        continue
+                    }
+                    try await cache.recordExecution(id: entry.id, event: .acknowledged, owner: current.owner)
+                    try await accept(response, route: current)
+                    logRecovery(entry, event: .acknowledged)
+                }
             }
             await refreshRecovery(latest, route: current)
+            try await deliver(recoveryEntries[value.id] ?? [])
+            if includePriorRuns {
+                let pending = try await cache.pendingReceipts(conversationId: value.id, owner: current.owner)
+                try await deliver(pending.filter { $0.audit?.identity.runId != latest.run?.id })
+            }
+            await refreshRecovery(snapshots[value.id] ?? latest, route: current)
         } catch is CancellationError {} catch {
             await reportOperationError(error, id: value.id, owner: current.account)
         }
@@ -196,6 +199,12 @@ extension AskConversationModel {
         guard let identity = entry.audit?.identity, identity.owner == current.account,
               identity.conversationId == latest.id, identity.deviceId == deviceId,
               entry.permits(identity), let receipt = entry.receipt else { return nil }
+        // An obsolete tool intent may only acknowledge a result the server already has.
+        if case .tool = receipt, latest.run?.id != identity.runId {
+            return latest.messages.contains {
+                $0.role == "tool" && $0.runId == identity.runId && $0.toolCallId == identity.callId
+            } ? latest : nil
+        }
         try await cache.recordExecution(id: entry.id, event: .retransmitting, owner: current.owner)
         guard generation == recoveryGeneration, operationGenerations[latest.id] == operation,
               session()?.owner == current.account else { throw CancellationError() }

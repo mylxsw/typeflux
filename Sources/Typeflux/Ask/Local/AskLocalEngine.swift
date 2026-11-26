@@ -920,13 +920,18 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         var payload = payload
         payload.removeValue(forKey: "typeflux_summary_through")
         let limits = summaryThrough != nil ? contextLimits(payload["model"] as? String ?? "") : (record.contextLimits ?? .init())
+        func displayWeight(_ projected: [String: Any]) -> Int {
+            let imageTokens = limits.displayImageTokens ?? AskImageTokenEstimate.tokens(projected["model"] as? String)
+            return AskContextPlanner.previewTokens(projected, imageTokens: imageTokens)
+        }
         var bounded = summaryThrough != nil ? payload : AskContextCompaction.compact(payload, window: limits.window)
         if record.conversation.run?.budgetEnabled == true {
             do {
                 let plan = try AskContextPlanner.plan(payload, limits: limits) { projection in
                     guard summaryThrough == nil else { return }
                     record.conversation.contextUsage = .init(modelRef: record.conversation.run?.modelRef ?? "",
-                        inputTokens: projection.inputTokens, outputReserve: projection.outputReserve, capacity: projection.capacity,
+                        inputTokens: displayWeight(projection.payload), outputReserve: projection.outputReserve,
+                        capacity: limits.known ? projection.capacity : nil,
                         summarized: record.conversation.summary != nil, estimated: true, trimmed: projection.trimmed)
                 }
                 bounded = plan.payload
@@ -938,7 +943,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         }
         if summaryThrough == nil, record.conversation.run?.budgetEnabled != true {
             record.conversation.contextUsage = .init(modelRef: record.conversation.run?.modelRef ?? "",
-                inputTokens: AskContextCompaction.weight(bounded), outputReserve: bounded["max_tokens"] as? Int ?? 0,
+                inputTokens: displayWeight(bounded), outputReserve: bounded["max_tokens"] as? Int ?? 0,
                 capacity: limits.known ? limits.window : nil, summarized: record.conversation.summary != nil || AskContextCompaction.weight(bounded) < AskContextCompaction.weight(payload),
                 estimated: true, trimmed: AskContextCompaction.weight(bounded) < AskContextCompaction.weight(payload))
         }

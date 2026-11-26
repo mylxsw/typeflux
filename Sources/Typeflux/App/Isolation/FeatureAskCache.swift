@@ -10,6 +10,9 @@ struct FeatureAskCache: AskCaching {
 
     func execution(id: String, owner: String) async throws -> AskExecutionEntry? { try await invoke("cache.execution.0", Call0(id: id, owner: owner)) }
     func executions(conversationId: String, owner: String) async throws -> [AskExecutionEntry] { try await invoke("cache.executions.1", Call1(conversationId: conversationId, owner: owner)) }
+    func pendingReceipts(conversationId: String, owner: String) async throws -> [AskExecutionEntry] {
+        try await invoke("cache.executions.1", Call1(conversationId: conversationId, owner: owner, pendingOnly: true))
+    }
     func recoveryExecutions(conversationId: String, runId: String, owner: String) async throws -> [AskExecutionEntry] { try await invoke("cache.executions.1", Call1(conversationId: conversationId, owner: owner, runId: runId)) }
     func claimExecution(_ audit: AskExecutionAudit, owner: String) async throws -> Bool { try await invoke("cache.claimExecution.2", Call2(audit: audit, owner: owner)) }
     func saveRejectedToolReceipt(audit: AskExecutionAudit, receipt: AskToolResultRequest, owner: String) async throws { let _: FeatureRPC.Empty = try await invoke("cache.saveRejectedToolReceipt.3", Call3(audit: audit, receipt: receipt, owner: owner)) }
@@ -85,7 +88,12 @@ struct FeatureAskCache: AskCaching {
                 result = try JSONEncoder().encode(try await api.execution(id: value.id, owner: value.owner))
             case "cache.executions.1":
                 let value = try JSONDecoder().decode(Call1.self, from: payload)
-                if let runId = value.runId {
+                if value.pendingOnly == true {
+                    let entries = try await api.pendingReceipts(
+                        conversationId: value.conversationId, owner: value.owner
+                    )
+                    result = try JSONEncoder().encode(entries)
+                } else if let runId = value.runId {
                     result = try JSONEncoder().encode(try await api.recoveryExecutions(conversationId: value.conversationId, runId: runId, owner: value.owner))
                 } else {
                     result = try JSONEncoder().encode(try await api.executions(conversationId: value.conversationId, owner: value.owner))
@@ -161,6 +169,7 @@ struct FeatureAskCache: AskCaching {
         let conversationId: String
         let owner: String
         var runId: String? = nil
+        var pendingOnly: Bool?
     }
     private struct Call2: Codable, Sendable {
         let audit: AskExecutionAudit

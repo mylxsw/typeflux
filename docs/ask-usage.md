@@ -20,7 +20,26 @@ without changing a completed or replacement run. Missing or partial reports stay
 unknown or a lower bound. Older conversations still load, with a historical gap
 when metering starts; tokens from calls made before metering cannot be recovered.
 
-Context estimates describe saved request content, not the unsent draft. Model
-changes update the capacity and reserve; provider-specific tokenization remains
-an estimate. Earlier messages replaced by a summary are excluded from the input
+Context estimates describe saved request content, not the unsent draft. Switching models hides the previous request’s context until the selected model has its own request. Earlier messages replaced by a summary are excluded from the input
 budget, but remain in history and cumulative usage.
+
+### Image input estimates
+
+The API retains the prepared request estimate so subsequent answers and tool results cannot change it. For a private model, the API returns the image count and text estimate so the device can use its local model registry.
+
+Before a model reports usage, the panel assigns each image a token estimate for
+the model family. The presets assume a typical 1600 × 900 screenshot at default
+detail. The preview estimates text and tool definitions separately from images. For example, Gemini 3/4 uses 1,120 per image. GPT-4o uses six tiles at
+170 plus 85 base tokens, while GPT-4o mini uses six at 5,667 plus 2,833.
+Unrecognized models use a fixed estimate of 2,000 tokens per image. Individual images
+can cost more or less. The planner continues to use its own admission budget.
+
+The ordered rules in the API's `internal/ask/policy/image-token-estimates.json`
+are also packaged in the Mac app's `Sources/Typeflux/Resources/image-token-estimates.json`.
+Keep the two files identical. Estimates use the first recognized model identifier
+or catalog name, accepting provider paths, case, separators and version suffixes.
+
+Provider references: [Gemini](https://ai.google.dev/gemini-api/docs/media-resolution),
+[OpenAI](https://developers.openai.com/api/docs/guides/images-vision),
+[Claude](https://platform.claude.com/docs/en/build-with-claude/vision) and
+[Qwen](https://www.alibabacloud.com/help/en/model-studio/vision).

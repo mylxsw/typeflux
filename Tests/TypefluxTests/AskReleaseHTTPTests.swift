@@ -68,12 +68,27 @@ final class AskReleaseHTTPTests: XCTestCase {
         let id = UUID().uuidString, device = UUID().uuidString, model = "custom:" + UUID().uuidString
         for card in [true, false] {
             let input = card ? 300 : 530
-            let request = AskSendRequest(answerOnly: card ? true : nil, id: UUID().uuidString, deviceId: device,
+            var request = AskSendRequest(answerOnly: card ? true : nil, id: UUID().uuidString, deviceId: device,
                                          text: card ? "Explain hello" : "Follow up", tools: [], modelRef: model)
+            if card {
+                let image = AskAttachmentFixture.image(width: 1600, height: 900)
+                let jpeg = AskAttachmentFixture.encode(image, type: .jpeg)
+                request.image = "data:image/jpeg;base64," + jpeg.base64EncodedString()
+            }
             _ = try await fixture.api.send(conversationId: id, request: request, token: fixture.token)
             let value = try await wait(fixture.api, id: id, token: fixture.token, status: "waiting_inference")
             let run = try XCTUnwrap(value.run), inference = try XCTUnwrap(run.inference)
             let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(inference.payload.utf8)) as? [String: Any])
+            if card {
+                XCTAssertTrue(inference.payload.contains("data:image/jpeg;base64,"))
+                XCTAssertEqual(value.contextUsage?.estimated, true)
+                let estimated = try XCTUnwrap(value.contextUsage?.inputTokens)
+                let breakdown = try XCTUnwrap(value.contextUsage?.privateImageEstimate)
+                XCTAssertEqual(breakdown.images, 1)
+                XCTAssertEqual(estimated, breakdown.textTokens + 2000)
+                XCTAssertGreaterThan(estimated, 2000)
+                XCTAssertLessThan(estimated, 10000, "The test prompt and one unknown-model screenshot must fit in 10K")
+            }
             XCTAssertEqual((payload["tools"] as? [Any] ?? []).isEmpty, card)
             _ = try await fixture.api.inferenceResult(conversationId: id, request: .init(
                 runId: run.id, deviceId: device, inferenceId: inference.id, content: "Hello.",

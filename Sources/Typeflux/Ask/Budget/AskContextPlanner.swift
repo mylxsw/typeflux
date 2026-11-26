@@ -4,6 +4,7 @@ struct AskContextLimits: Codable, Equatable, Sendable {
     var window = 32768
     var maxOutput = 4096
     var imageTokens = 16384
+    var displayImageTokens: Int?
     var known = false
 }
 
@@ -133,6 +134,45 @@ enum AskContextPlanner {
             bytes: bytes[tail...],
             encoding: .utf8
         ) ?? "")
+    }
+
+    /// Estimate the messages and tool definitions actually sent. Binary image data is skipped.
+    static func previewTokens(_ payload: [String: Any], imageTokens: Int) -> Int {
+        func textTokens(_ text: String) -> Int {
+            // Mirror the cloud text estimator for Han characters and other text.
+            var han = 0, other = 0
+            for scalar in text.unicodeScalars {
+                switch scalar.value {
+                case 0x3400...0x4DBF, 0x4E00...0x9FFF, 0xF900...0xFAFF,
+                     0x20000...0x2A6DF, 0x2A700...0x2CEAF:
+                    han += 1
+                default:
+                    other += 1
+                }
+            }
+            return han + (other + 3) / 4
+        }
+        func jsonTokens(_ value: Any?) -> Int {
+            let options: JSONSerialization.WritingOptions = [.fragmentsAllowed, .withoutEscapingSlashes]
+            guard let value, let data = try? JSONSerialization.data(withJSONObject: value, options: options),
+                  let text = String(data: data, encoding: .utf8) else { return 0 }
+            return textTokens(text)
+        }
+        func contentTokens(_ content: Any?) -> Int {
+            if let text = content as? String { return textTokens(text) }
+            guard let parts = content as? [[String: Any]] else { return 0 }
+            return parts.reduce(0) { sum, part in
+                sum + (part["image_url"] == nil ? 0 : imageTokens) + textTokens(part["text"] as? String ?? "")
+            }
+        }
+        var total = jsonTokens(payload["tools"])
+        for message in payload["messages"] as? [[String: Any]] ?? [] {
+            total += 4 + contentTokens(message["content"]) + jsonTokens(message["tool_calls"])
+            for key in ["name", "reasoning_content", "tool_call_id"] {
+                total += textTokens(message[key] as? String ?? "")
+            }
+        }
+        return total
     }
 
     static func weight(_ value: Any, imageTokens: Int) -> Int {

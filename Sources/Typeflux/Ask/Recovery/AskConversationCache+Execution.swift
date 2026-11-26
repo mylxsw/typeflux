@@ -31,7 +31,12 @@ extension AskConversationCache {
         try journalEntries(conversationId: conversationId, runId: runId, owner: owner)
     }
 
-    private func journalEntries(conversationId: String, runId: String?, owner: String) throws -> [AskExecutionEntry] {
+    func pendingReceipts(conversationId: String, owner: String) async throws -> [AskExecutionEntry] {
+        try journalEntries(conversationId: conversationId, runId: nil, owner: owner, pendingOnly: true)
+    }
+
+    private func journalEntries(conversationId: String, runId: String?, owner: String,
+                                pendingOnly: Bool = false) throws -> [AskExecutionEntry] {
         try Task.checkCancellation()
         // One snapshot replaces per-entry receipt, audit and deletion queries.
         // Key ranges select this run before decoding large historical receipts.
@@ -49,6 +54,7 @@ extension AskConversationCache {
             sql += " AND (e.id IS NULL OR (o.id>=? AND o.id<?) OR (o.id>=? AND o.id<?))"
             bindings += [runId + "/", runId + "0", "inference/" + runId + "/", "inference/" + runId + "0"]
         }
+        if pendingOnly { sql += " AND e.id IS NOT NULL AND t.data IS NOT NULL AND d.id IS NULL" }
         sql += " ORDER BY o.id"
         let statement = try prepare(
             sql, strings: bindings
@@ -62,7 +68,8 @@ extension AskConversationCache {
             if let pointer = sqlite3_column_text(statement, 0) {
                 let id = String(cString: pointer)
                 let audit = try blob(statement, column: 1).map { try decoder.decode(AskExecutionAudit.self, from: $0) }
-                if runId == nil || audit == nil || audit?.identity.runId == runId {
+                let pending = audit?.acknowledged == false
+                if (!pendingOnly || pending) && (runId == nil || audit == nil || audit?.identity.runId == runId) {
                     var receipt: AskExecutionReceipt?
                     if let bytes = blob(statement, column: 2) {
                         receipt = try audit?.identity.kind == "model"

@@ -5,6 +5,7 @@ protocol AskCaching: Sendable {
     func execution(id: String, owner: String) async throws -> AskExecutionEntry?
     func executions(conversationId: String, owner: String) async throws -> [AskExecutionEntry]
     func recoveryExecutions(conversationId: String, runId: String, owner: String) async throws -> [AskExecutionEntry]
+    func pendingReceipts(conversationId: String, owner: String) async throws -> [AskExecutionEntry]
     func claimExecution(_ audit: AskExecutionAudit, owner: String) async throws -> Bool
     func saveRejectedToolReceipt(audit: AskExecutionAudit, receipt: AskToolResultRequest, owner: String) async throws
     func saveReceipt(_ receipt: AskExecutionReceipt, identity: AskExecutionIdentity, owner: String) async throws
@@ -23,6 +24,12 @@ protocol AskCaching: Sendable {
 }
 
 extension AskCaching {
+    func pendingReceipts(conversationId: String, owner: String) async throws -> [AskExecutionEntry] {
+        try await executions(conversationId: conversationId, owner: owner).filter {
+            !$0.deleted && !$0.acknowledged && $0.audit != nil && $0.receipt != nil
+        }
+    }
+
     func recoveryExecutions(conversationId: String, runId: String, owner: String) async throws -> [AskExecutionEntry] {
         try await executions(conversationId: conversationId, owner: owner).filter {
             $0.audit == nil || $0.audit?.identity.runId == runId

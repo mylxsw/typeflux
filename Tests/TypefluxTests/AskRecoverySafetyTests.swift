@@ -187,7 +187,11 @@ struct AskRecoverySafetyTests {
         var original = AskRecoveryFixture.conversation(model: true)
         original.messages[0].createdAt = original.updatedAt
         let audit = AskRecoveryFixture.audit(original, model: true)
-        let receipt = AskRecoveryFixture.receipt(original, model: true)
+        let receipt = AskExecutionReceipt.inference(.init(
+            runId: audit.identity.runId, deviceId: "device", inferenceId: audit.identity.callId,
+            content: "Saved answer",
+            usage: .init(promptTokens: 9430, completionTokens: 586, totalTokens: 10016)
+        ))
         #expect(try await fixture.cache.claimExecution(audit, owner: "owner"))
         try await fixture.cache.saveReceipt(receipt, identity: audit.identity, owner: "owner")
         var replacement = original
@@ -201,6 +205,7 @@ struct AskRecoverySafetyTests {
         await fixture.model.retransmitSavedReceipts()
         let results = await fixture.api.inferenceResults
         #expect(results.count == 1 && results.first?.runId == audit.identity.runId)
+        #expect(results.first?.usage?.promptTokens == 9430)
         #expect(fixture.model.selected?.run?.id == replacement.run?.id)
         #expect(fixture.model.selected?.messages == replacement.messages)
         #expect(try await fixture.cache.execution(id: audit.identity.key, owner: "owner")?.acknowledged == true)

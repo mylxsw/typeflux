@@ -66,6 +66,8 @@ struct AskExecutionAudit: Codable, Equatable, Sendable {
         case claimed, receiptSaved, retransmitting, acknowledged, ended
     }
 
+    var acknowledged: Bool { deliveryConfirmed == true || events.contains(.acknowledged) }
+
     mutating func record(_ event: Event) {
         if event == .acknowledged {
             deliveryConfirmed = true
@@ -121,7 +123,7 @@ struct AskExecutionEntry: Codable, Equatable, Sendable, Identifiable {
     }
 
     var acknowledged: Bool {
-        audit?.deliveryConfirmed == true || audit?.events.contains(.acknowledged) == true
+        audit?.acknowledged == true
     }
 
     /// A settled run may contain an earlier failed attempt that the model already

@@ -119,6 +119,18 @@ struct AskContextUsage: Codable, Equatable, Sendable {
     var summarized: Bool
     var estimated: Bool? = nil
     var trimmed: Bool? = nil
+    struct PrivateImageEstimate: Codable, Equatable, Sendable {
+        var images: Int
+        var textTokens: Int
+
+        func total(perImage: Int) -> Int? {
+            guard perImage > 0, images > 0, textTokens >= 0,
+                  images <= (Int.max - textTokens) / perImage else { return nil }
+            return textTokens + images * perImage
+        }
+    }
+
+    var privateImageEstimate: PrivateImageEstimate?
     var inputLabel: String {
         let count = AccountUsageDisplayFormatter.count(Int64(max(0, inputTokens)))
         return estimated == false ? L("ask.usage.reportedInput", count) : L("ask.usage.estimatedInput", count)

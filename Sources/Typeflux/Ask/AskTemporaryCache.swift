@@ -25,6 +25,10 @@ struct AskTemporaryCache: AskCaching {
         try await store(owner).executions(conversationId: conversationId, owner: owner)
     }
 
+    func pendingReceipts(conversationId: String, owner: String) async throws -> [AskExecutionEntry] {
+        try await store(owner).pendingReceipts(conversationId: conversationId, owner: owner)
+    }
+
     func recoveryExecutions(conversationId: String, runId: String, owner: String) async throws -> [AskExecutionEntry] {
         try await store(owner).recoveryExecutions(conversationId: conversationId, runId: runId, owner: owner)
     }
