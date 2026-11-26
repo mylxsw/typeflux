@@ -11,6 +11,7 @@ final class AppCoordinator {
     private var onboardingWindowController: OnboardingWindowController?
     var classicIntroCoordinator: ClassicIntroCoordinator?
     var classicIntroWindowController: ClassicIntroWindowController?
+    private let terminationPreparation = TerminationPreparationLatch()
     private let cloudEndpointProbeScheduler = CloudEndpointProbeScheduler()
     private let asrPublicConfigRefreshScheduler = TypefluxASRPublicConfigRefreshScheduler()
     private var authAnalyticsObserver: NSObjectProtocol?
@@ -402,7 +403,15 @@ final class AppCoordinator {
     }
 
     @discardableResult
+    /// Stops feature processes and drains work before quitting. Succeeds at most once; later calls
+    /// (for example the quit that follows a switch to Typeflux Classic) return immediately.
     func prepareForTermination() async -> Bool {
+        await terminationPreparation.run { [weak self] in
+            await self?.performPrepareForTermination() ?? true
+        }
+    }
+
+    private func performPrepareForTermination() async -> Bool {
         FeatureProcess.preventWarmup()
         if FeatureProcess.owns(.host), FeatureProcess.enabled { try? FeatureShortcutHost.shared.handle(.init(destination: .shortcuts, action: "stop")) }
         let model = di.existingAskConversationWindowController?.model
