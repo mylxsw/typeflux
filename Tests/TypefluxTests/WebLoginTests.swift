@@ -416,6 +416,7 @@ struct WebLoginHTTPTests {
             #expect(request.url?.scheme == configuration.apiOrigin.scheme)
             #expect(request.url?.port == configuration.apiOrigin.port)
             #expect(request.httpMethod == "POST" && !request.httpShouldHandleCookies)
+            #expect(request.value(forHTTPHeaderField: "X-Typeflux-Credit-Version") == "2")
             #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
             #expect(request.value(forHTTPHeaderField: "x-client-product") == "typeflux")
         }
