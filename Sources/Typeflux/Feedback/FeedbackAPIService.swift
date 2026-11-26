@@ -325,6 +325,8 @@ enum FeedbackAPIService {
         var request = URLRequest(url: url)
         request.httpMethod = target.method.isEmpty ? "POST" : target.method
         request.timeoutInterval = 300
+        // External storage hosts get no client metadata; ticket headers take precedence.
+        if isAPIOrigin { TypefluxCloudRequestHeaders.applyClientInfo(to: &request) }
         for (name, value) in target.headers where name.caseInsensitiveCompare("Authorization") != .orderedSame {
             request.setValue(value, forHTTPHeaderField: name)
         }

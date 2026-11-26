@@ -12,6 +12,30 @@ final class TypefluxCloudRequestHeadersTests: XCTestCase {
         XCTAssertNotEqual(first["Idempotency-Key"], second["Idempotency-Key"])
     }
 
+    func testASRWebSocketHandshakeCarriesTheProductHeader() throws {
+        let request = try TypefluxOfficialASRRequestFactory.makeWebSocketRequest(
+            apiBaseURL: "https://asr.example.test",
+            token: "fixture",
+            scenario: .voiceInput,
+            provider: "fixture"
+        )
+
+        XCTAssertEqual(request.url?.scheme, "wss")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "x-client-product"), "typeflux")
+    }
+
+    func testCloudLLMHeadersCarryTheProductAndOtherProvidersDoNot() {
+        let cloud = TypefluxCloudRequestHeaders.applyingScenario(
+            .textRewrite, provider: .typefluxCloud, clientInfoProvider: .fixture
+        )
+        let other = TypefluxCloudRequestHeaders.applyingScenario(
+            .textRewrite, provider: .openAI, clientInfoProvider: .fixture
+        )
+
+        XCTAssertEqual(cloud["x-client-product"], "typeflux")
+        XCTAssertNil(other["x-client-product"])
+    }
+
     func testClientIdentityStoreGeneratesAndPersistsClientID() throws {
         let suiteName = "TypefluxCloudRequestHeadersTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -32,6 +56,7 @@ final class TypefluxCloudRequestHeadersTests: XCTestCase {
 
         TypefluxCloudRequestHeaders.applyClientInfo(to: &request, provider: .fixture)
 
+        XCTAssertEqual(request.value(forHTTPHeaderField: "x-client-product"), "typeflux")
         XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "Typeflux/1.2.3")
         XCTAssertEqual(request.value(forHTTPHeaderField: "X-Typeflux-Credit-Version"), "2")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Accept-Language"), "zh-Hans-US, en-US;q=0.9")

@@ -14,6 +14,7 @@ final class NoopAnalyticsEventReporter: AnalyticsEventReporting, @unchecked Send
 }
 
 enum AnalyticsPropertyKeys {
+    static let product = "product"
     static let appVersion = "app_version"
     static let osName = "os_name"
     static let osVersion = "os_version"
@@ -421,6 +422,7 @@ final class AppAnalyticsReporter: AnalyticsEventReporting, @unchecked Sendable {
     private func clientProperties() -> [String: String] {
         let info = clientInfoProvider.info()
         return [
+            AnalyticsPropertyKeys.product: TypefluxProduct.identifier,
             AnalyticsPropertyKeys.appVersion: info.appVersion,
             AnalyticsPropertyKeys.osName: info.osName,
             AnalyticsPropertyKeys.osVersion: info.osVersion,

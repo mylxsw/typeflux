@@ -108,7 +108,10 @@ final class AutoUpdater {
                     return
                 }
 
-                if info.shouldUpdate {
+                if AutoUpdateRequestSupport.offersUpdate(
+                    shouldUpdate: info.shouldUpdate,
+                    latestVersion: info.latestVersion
+                ) {
                     prepareUpdate(info: info, manual: manual)
                 } else if manual {
                     showUpToDateAlert()
@@ -523,11 +526,28 @@ enum AutoUpdateRequestSupport {
         currentVersion: String,
         architecture: String? = packageArchitecture()
     ) -> [URLQueryItem] {
-        var items = [URLQueryItem(name: "version", value: currentVersion)]
+        var items = [
+            URLQueryItem(name: "version", value: currentVersion),
+            URLQueryItem(name: "product", value: TypefluxProduct.identifier)
+        ]
         if let architecture, !architecture.isEmpty {
             items.append(URLQueryItem(name: "arch", value: architecture))
         }
         return items
+    }
+
+    /// Automatic and manual update checks never cross products. A 0.x release belongs to
+    /// Typeflux Classic, which only the explicit "switch to Classic" flow may install.
+    static func offersUpdate(shouldUpdate: Bool, latestVersion: String) -> Bool {
+        shouldUpdate && isTypefluxVersion(latestVersion)
+    }
+
+    /// True for the 1.0 line and later, including prereleases. Unreadable versions are rejected.
+    static func isTypefluxVersion(_ version: String) -> Bool {
+        version.trimmingCharacters(in: .whitespacesAndNewlines).range(
+            of: #"^[vV]?0*[1-9][0-9]*(?:\.[0-9]+)*(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$"#,
+            options: .regularExpression
+        ) != nil
     }
 
     static func packageArchitecture() -> String {

@@ -40,6 +40,7 @@ final class AppAnalyticsReporterTests: XCTestCase {
         let events = queuedEvents(defaults: defaults)
         XCTAssertEqual(events.map(\.eventName), ["app_first_open"])
         XCTAssertEqual(events[0].clientID, "test-client")
+        XCTAssertEqual(events[0].properties["product"], "typeflux")
         XCTAssertEqual(events[0].properties["app_version"], "0.4.0")
     }
 
