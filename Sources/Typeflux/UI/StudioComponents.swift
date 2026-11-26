@@ -600,7 +600,11 @@ struct StudioShell<Content: View>: View {
 }
 
 /// Compatibility adapter for login and about windows; all windows share one material policy.
-struct StudioGlassBackground: View {
+extension StudioTheme {
+    static var windowCanvas: some View { StudioWindowCanvas() }
+}
+
+private struct StudioWindowCanvas: View {
     @Environment(\.usesLoginWindowCanvas) private var usesLoginWindowCanvas
     @Environment(\.interfaceStyle) private var style
     @Environment(\.colorScheme) private var colorScheme
