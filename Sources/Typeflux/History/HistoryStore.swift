@@ -228,14 +228,14 @@ struct HistoryPipelineStats: Codable, Equatable {
 }
 
 struct HistoryRecord: Codable, Identifiable {
-    enum Mode: String, Codable {
+    enum Mode: String, Codable, CaseIterable {
         case dictation
         case personaRewrite
         case editSelection
         case askAnswer
     }
 
-    enum StepStatus: String, Codable {
+    enum StepStatus: String, Codable, CaseIterable {
         case pending
         case running
         case succeeded

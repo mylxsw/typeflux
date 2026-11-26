@@ -91,7 +91,7 @@ enum TypefluxDataDirectories {
             return Layout(data: support, workspaces: documents, cache: caches, migrationErrors: errors)
         }
 
-        func destination(_ name: String, from source: URL) -> URL {
+        func destination(_ name: String, from source: URL, keepLegacyPath: Bool = false) -> URL {
             let target = root.appendingPathComponent(name, isDirectory: true)
             do {
                 if let link = try? fileManager.destinationOfSymbolicLink(atPath: source.path) {
@@ -115,16 +115,21 @@ enum TypefluxDataDirectories {
                 }
                 if sourceExists {
                     try fileManager.moveItem(at: source, to: target)
-                    // Existing records can contain absolute paths. Preserve those paths
-                    // without keeping another copy of the data.
+                } else if !targetExists {
+                    try fileManager.createDirectory(at: target, withIntermediateDirectories: true,
+                                                    attributes: [.posixPermissions: 0o700])
+                }
+                if sourceExists || keepLegacyPath {
+                    // Classic and existing absolute paths use this location.
                     do {
+                        if !sourceExists {
+                            try fileManager.createDirectory(at: source.deletingLastPathComponent(),
+                                                            withIntermediateDirectories: true)
+                        }
                         try fileManager.createSymbolicLink(at: source, withDestinationURL: target)
                     } catch {
                         errors.append("Cannot link old path \(source.path) to \(target.path): \(error.localizedDescription)")
                     }
-                } else if !targetExists {
-                    try fileManager.createDirectory(at: target, withIntermediateDirectories: true,
-                                                    attributes: [.posixPermissions: 0o700])
                 }
                 return target
             } catch {
@@ -133,7 +138,7 @@ enum TypefluxDataDirectories {
             }
         }
 
-        return Layout(data: destination("data", from: support),
+        return Layout(data: destination("data", from: support, keepLegacyPath: true),
                       workspaces: destination("workspaces", from: documents),
                       cache: destination("cache", from: caches),
                       migrationErrors: errors)

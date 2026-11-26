@@ -62,3 +62,7 @@ A stable code-signing identity prevents macOS from re-prompting for microphone/a
 Overrides are available via environment variables:
 - `TYPEFLUX_DEV_CODESIGN_IDENTITY` — force a specific signing identity (e.g., "Apple Development: user@example.com (...)")
 - `TYPEFLUX_DEV_PROVISIONING_PROFILE` — path to a macOS provisioning profile for Sign In with Apple support
+
+## Classic Data Contract
+
+Follow [section 4.4 of the Classic fork execution plan](docs/CLASSIC_FORK_EXECUTION_PLAN.zh-CN.md#44-共享数据契约) when changing shared preferences, history, JSON payloads, data directories, or Keychain identifiers. Run `ClassicCompatibilityContractTests` for changes affecting those formats. The [fixture README](Tests/Fixtures/ClassicContract/README.md) describes how to regenerate the artifacts consumed by Classic.
