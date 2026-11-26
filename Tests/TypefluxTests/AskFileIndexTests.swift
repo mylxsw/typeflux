@@ -557,7 +557,7 @@ struct AskFileIndexServiceTests {
         #expect(index.status.phase == .off, "rebuild does nothing while off")
     }
 
-    @Test func disablingAnActiveIndexStopsItsWatcherAndRemovesTheSnapshot() throws {
+    @Test func disablingAnActiveIndexStopsItsWatcherAndRetainsTheSnapshot() throws {
         let root = try makeTree()
         defer { try? FileManager.default.removeItem(at: root) }
         let snapshot = root.appendingPathComponent("index.bin")
@@ -577,7 +577,7 @@ struct AskFileIndexServiceTests {
         index.waitUntilIdle()
         #expect(watcher.stopped == 1)
         #expect(index.status.phase == .off)
-        #expect(!FileManager.default.fileExists(atPath: snapshot.path))
+        #expect(FileManager.default.fileExists(atPath: snapshot.path))
         #expect(index.search(AskSearchQuery("report"), options: AskFileSearchOptions()).isEmpty)
 
         enabled = true

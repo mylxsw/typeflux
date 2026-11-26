@@ -2,7 +2,7 @@ import Foundation
 
 /// Pages and progress stages are intentionally separate: model setup shares stage one.
 enum OnboardingStep: String, CaseIterable {
-    case welcome, route, cloud, speech, llm, permissions, shortcuts, `try`, recall
+    case welcome, route, cloud, speech, llm, permissions, fileSearch, shortcuts, `try`, recall
 
     var analyticsName: String {
         rawValue
@@ -13,14 +13,15 @@ enum OnboardingStep: String, CaseIterable {
         case .welcome: nil
         case .route, .cloud, .speech, .llm: 1
         case .permissions: 2
-        case .shortcuts: 3
-        case .try: 4
-        case .recall: 5
+        case .fileSearch: 3
+        case .shortcuts: 4
+        case .try: 5
+        case .recall: 6
         }
     }
 
     var pill: String? {
-        stage.map { String(format: "%02d / 05", $0) }
+        stage.map { String(format: "%02d / 06", $0) }
     }
 
     var isCentered: Bool {
@@ -37,6 +38,6 @@ enum OnboardingStep: String, CaseIterable {
         case .custom: [.speech, .llm]
         case .launcherOnly: []
         }
-        return [.welcome, .route] + models + [.permissions, .shortcuts, .try, .recall]
+        return [.welcome, .route] + models + [.permissions, .fileSearch, .shortcuts, .try, .recall]
     }
 }

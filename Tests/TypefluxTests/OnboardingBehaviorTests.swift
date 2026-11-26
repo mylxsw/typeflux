@@ -104,6 +104,13 @@ struct OnboardingBehaviorTests {
             try UI.button(OnboardingStrings.text("later"), in: host).press()
             model.confirmSkip()
             try await UI.wait {
+                model.currentStep == .fileSearch
+                    && UI.contains(OnboardingFileSearchPage.text("title"), in: host)
+            }
+            try UI.button(OnboardingStrings.text("continue"), in: host).press()
+            #expect(model.skipConfirmation == .fileSearch)
+            model.confirmSkip()
+            try await UI.wait {
                 model.currentStep == .shortcuts
                     && UI.contains(OnboardingStrings.text("title", table: OnboardingStep.shortcuts.table), in: host)
             }
@@ -122,6 +129,59 @@ struct OnboardingBehaviorTests {
             #expect(settings.isOnboardingCompleted)
             #expect(settings.onboardingSpeechDeferred && settings.onboardingAIDeferred)
             #expect(settings.onboardingPermissionsDeferred)
+        }
+    }
+
+    @Test func fileSearchUsesDirectChoicesAndSavesOnlyOnConfirmation() async throws {
+        for appearance in [AppearanceMode.dark, .light] {
+            try await fixture(language: .simplifiedChinese, appearance: appearance) { settings, model, host in
+                model.currentStep = .fileSearch
+                let text = { OnboardingFileSearchPage.text($0) }
+                try await UI.wait { UI.contains(text("subtitle"), in: host) && UI.contains(text("off"), in: host) }
+                #expect(model.fileSearchChoice == .off)
+                #expect(!settings.askQuickFileSearchEnabled && !settings.semanticFileSearch.enabled)
+                #expect(!UI.contains(text("scope"), in: host))
+                try await capture(host, name: "file-search-consent-default-\(appearance.rawValue)")
+
+                try UI.button(text("names"), in: host).press()
+                try await UI.wait { UI.contains("~", in: host) && UI.contains(text("enable"), in: host) }
+                #expect(!settings.askQuickFileSearchEnabled)
+                #expect(model.fileSearchFolders == ["~"])
+                try await capture(host, name: "file-search-consent-names-\(appearance.rawValue)")
+                let removeHome = OnboardingFileSearchPage.text("remove", arguments: [AskFileLabels.folder("~")])
+                try UI.button(removeHome, in: host).press()
+                try await UI.wait { UI.contains(text("empty"), in: host) }
+                #expect(!model.canAdvance)
+                model.advance()
+                #expect(model.currentStep == .fileSearch && settings.askLauncherSearchSettings.fileRoots == ["~"])
+
+                model.fileSearchFolders = ["~/Work"]
+                let mode: OnboardingFileSearchChoice = OnboardingFileSearchChoice.supportsContents ? .contents : .names
+                try UI.button(text(mode.rawValue), in: host).press()
+                try await UI.wait { UI.contains("~/Work", in: host) && model.canAdvance }
+                #expect(!settings.semanticFileSearch.enabled)
+                try UI.button(text("enable"), in: host).press()
+                #expect(model.currentStep == .shortcuts)
+                #expect(settings.askQuickFileSearchEnabled)
+                #expect(settings.askLauncherSearchSettings.fileRoots == ["~/Work"])
+                #expect(settings.semanticFileSearch.enabled == (mode == .contents))
+
+                model.goBack()
+                try await UI.wait { UI.contains(text("off"), in: host) }
+                try UI.button(text("off"), in: host).press()
+                try await UI.wait { UI.contains(OnboardingStrings.text("continue"), in: host) }
+                try UI.button(OnboardingStrings.text("continue"), in: host).press()
+                #expect(model.skipConfirmation == .fileSearch && model.currentStep == .fileSearch)
+                #expect(settings.askQuickFileSearchEnabled, "await explicit confirmation before disabling")
+                model.skipConfirmation = nil
+                #expect(settings.askQuickFileSearchEnabled && model.currentStep == .fileSearch)
+                try await UI.wait { UI.contains(OnboardingStrings.text("continue"), in: host) }
+                try UI.button(OnboardingStrings.text("continue"), in: host).press()
+                model.confirmSkip()
+                #expect(model.currentStep == .shortcuts)
+                #expect(!settings.askQuickFileSearchEnabled && !settings.semanticFileSearch.enabled)
+                #expect(settings.askLauncherSearchSettings.fileRoots == ["~/Work"])
+            }
         }
     }
 

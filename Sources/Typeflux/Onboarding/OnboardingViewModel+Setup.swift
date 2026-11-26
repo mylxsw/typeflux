@@ -5,13 +5,14 @@ import Foundation
 extension OnboardingViewModel {
     enum ServiceRoute: String { case cloud, custom, launcherOnly }
     enum SkipTarget: String, Identifiable {
-        case allModels, speech, language, permissions
+        case allModels, speech, language, permissions, fileSearch
         var id: String {
             rawValue
         }
 
         var message: String {
-            L("setup.skip.\(rawValue).message")
+            if self == .fileSearch { return OnboardingFileSearchPage.text("skip.message") }
+            return L("setup.skip.\(rawValue).message")
         }
     }
 

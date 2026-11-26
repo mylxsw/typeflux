@@ -1,0 +1,15 @@
+"eyebrow" = "File search";
+"title" = "檔案搜尋";
+"subtitle" = "檔案搜尋和索引都在這台 Mac 上完成，檔名、路徑和內容不會上傳至任何伺服器。";
+"off" = "不啟用檔案搜尋";
+"names" = "僅搜尋檔名";
+"contents" = "搜尋檔名和內容";
+"scope" = "搜尋範圍";
+"empty" = "尚未選擇資料夾";
+"add" = "加入資料夾…";
+"remove" = "移除%@";
+"enable" = "啟用並繼續";
+"skip.title" = "跳過檔案搜尋？";
+"skip.message" = "跳過後，超級搜尋框將無法搜尋檔案。";
+"skip.confirm" = "確認跳過";
+"skip.back" = "返回選擇";

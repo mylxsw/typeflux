@@ -26,6 +26,7 @@ extension OnboardingViewModel {
         case .cloud: true
         case .speech: speechModel.canContinue
         case .llm: llmModel.canContinue
+        case .fileSearch: fileSearchChoice == .off || !fileSearchFolders.isEmpty
         case .permissions: permissionsModel.canContinue
         case .shortcuts: shortcutsModel.canContinue
         case .try: tryModel.canContinue
@@ -34,7 +35,7 @@ extension OnboardingViewModel {
 
     var isPageBusy: Bool {
         switch currentStep {
-        case .welcome, .recall: false
+        case .welcome, .recall, .fileSearch: false
         case .route: routeModel.isBusy
         case .cloud: false
         case .speech: speechModel.isBusy
@@ -47,7 +48,7 @@ extension OnboardingViewModel {
 
     var pagePrimaryAction: (() -> Void)? {
         switch currentStep {
-        case .welcome, .recall: nil
+        case .welcome, .recall, .fileSearch: nil
         case .route: routeModel.primaryAction
         case .cloud: nil
         case .speech: speechModel.primaryAction

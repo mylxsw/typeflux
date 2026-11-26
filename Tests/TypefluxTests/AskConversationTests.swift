@@ -410,6 +410,8 @@ struct AskTestFixture {
                                          if localOnly { return (AskRoutedAPI.localOwner, "") }
                                          return authenticated ? (sessionState.owner, sessionState.token) : nil
                                      })
+        // The launcher fixture represents an opted-in user with synthetic file results.
+        if modelLibrary == nil { model.modelLibrary.settings.askQuickFileSearchEnabled = true }
         model.automaticRecoveryEnabled = automaticRecovery
         // These fixtures exercise tool flows, which only work offers; chat has its own tests.
         model.lastConversationKind = .work

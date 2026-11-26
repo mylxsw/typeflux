@@ -218,13 +218,33 @@ struct AskLauncherSearchSettingsTests {
         #expect(settings.fileIndexFingerprint != base)
     }
 
+    @Test func fileSearchRequiresAnExplicitChoiceAndRecognizesLegacyContentOptIn() throws {
+        let suite = "ask-search-consent-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        #expect(!settings.askQuickFileSearchEnabled)
+        settings.isOnboardingCompleted = true
+        #expect(!settings.askQuickFileSearchEnabled, "finishing an older onboarding is not consent")
+        settings.semanticFileSearch = .init(enabled: true)
+        #expect(settings.askQuickFileSearchEnabled, "older users who enabled content search keep searching")
+        settings.semanticFileSearch = .init()
+        #expect(settings.askQuickFileSearchEnabled, "turning off content preserves legacy name search")
+        settings.semanticFileSearch = .init(enabled: true)
+        settings.askQuickFileSearchEnabled = false
+        #expect(!settings.askQuickFileSearchEnabled, "an explicit off overrides the older preference")
+        settings.askQuickFileSearchEnabled = true
+        settings.semanticFileSearch = .init()
+        #expect(settings.askQuickFileSearchEnabled, "users who enabled file-name search keep searching")
+    }
+
     @Test func theStoreSavesAndAnnounces() throws {
         let suite = "ask-search-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let store = SettingsStore(defaults: defaults)
         #expect(store.askLauncherSearchSettings == AskLauncherSearchSettings())
-        #expect(store.askQuickFileSearchEnabled)
+        #expect(!store.askQuickFileSearchEnabled)
         var posted = 0
         let observer = NotificationCenter.default.addObserver(forName: .askLauncherSearchSettingsDidChange, object: store,
                                                               queue: nil) { _ in posted += 1 }

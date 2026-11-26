@@ -55,6 +55,14 @@ extension OnboardingViewModel {
 
     func advance() {
         guard canAdvance else { return }
+        if currentStep == .fileSearch {
+            guard skipConfirmation == nil else { return }
+            guard fileSearchChoice != .off else {
+                skipConfirmation = .fileSearch
+                return
+            }
+            applyFileSearchChoice()
+        }
         if currentStep == .route, serviceRoute == .launcherOnly {
             skipConfirmation = .allModels
             return
@@ -97,6 +105,7 @@ extension OnboardingViewModel {
 
     func confirmSkip(_ confirmedTarget: SkipTarget? = nil) {
         guard let target = confirmedTarget ?? skipConfirmation else { return }
+        guard target != .fileSearch || currentStep == .fileSearch else { return }
         skipConfirmation = nil
         reportCurrentStepCompleted(skipped: true)
         switch target {
@@ -116,6 +125,10 @@ extension OnboardingViewModel {
             advanceToNextStepOrComplete()
         case .permissions:
             settingsStore.onboardingPermissionsDeferred = true
+            advanceToNextStepOrComplete()
+        case .fileSearch:
+            fileSearchChoice = .off
+            applyFileSearchChoice()
             advanceToNextStepOrComplete()
         }
     }

@@ -45,6 +45,8 @@ final class OnboardingViewModel: ObservableObject {
     @Published var voicePracticeText = ""
     @Published var serviceRoute: ServiceRoute = .cloud
     @Published var skipConfirmation: SkipTarget?
+    @Published var fileSearchChoice: OnboardingFileSearchChoice
+    @Published var fileSearchFolders: [String]
     @Published var speechSkipped = false
     @Published var aiSkipped = false
     @Published var setupRevision = 0
@@ -101,6 +103,8 @@ final class OnboardingViewModel: ObservableObject {
         self.onComplete = onComplete
 
         appLanguage = settingsStore.appLanguage
+        fileSearchChoice = OnboardingFileSearchChoice(settings: settingsStore)
+        fileSearchFolders = settingsStore.askLauncherSearchSettings.fileRoots
         permissions = PrivacyGuard.snapshots()
         isGlobeKeyReady = globeKeyReader.isReadyForHotkey
         let storedActivationHotkey = settingsStore.activationHotkey ?? .defaultActivation

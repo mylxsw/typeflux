@@ -5,11 +5,11 @@ import Testing
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct OnboardingNavigationTests {
-    @Test func `all routes keep five progress stages and always reach recall`() {
+    @Test func `all routes keep six progress stages and always reach recall`() {
         let cases: [(OnboardingViewModel.ServiceRoute, [OnboardingStep])] = [
-            (.cloud, [.welcome, .route, .cloud, .permissions, .shortcuts, .try, .recall]),
-            (.custom, [.welcome, .route, .speech, .llm, .permissions, .shortcuts, .try, .recall]),
-            (.launcherOnly, [.welcome, .route, .permissions, .shortcuts, .try, .recall])
+            (.cloud, [.welcome, .route, .cloud, .permissions, .fileSearch, .shortcuts, .try, .recall]),
+            (.custom, [.welcome, .route, .speech, .llm, .permissions, .fileSearch, .shortcuts, .try, .recall]),
+            (.launcherOnly, [.welcome, .route, .permissions, .fileSearch, .shortcuts, .try, .recall])
         ]
         for (route, expected) in cases {
             #expect(OnboardingStep.visibleSteps(for: route) == expected)
@@ -18,8 +18,9 @@ struct OnboardingNavigationTests {
             #expect(step.analyticsName == step.rawValue)
             #expect(step.isCentered == [.route, .cloud].contains(step))
         }
-        #expect(OnboardingStep.allCases.map(\.pill) == [nil, "01 / 05", "01 / 05", "01 / 05",
-                                                        "01 / 05", "02 / 05", "03 / 05", "04 / 05", "05 / 05"])
+        #expect(OnboardingStep.allCases.map(\.pill) == [
+            nil, "01 / 06", "01 / 06", "01 / 06", "01 / 06", "02 / 06", "03 / 06", "04 / 06", "05 / 06", "06 / 06"
+        ])
     }
 
     @Test func `recovery prioritizes speech then AI then permissions without erasing settings`() async throws {
@@ -85,7 +86,7 @@ struct OnboardingNavigationTests {
             model.permissionsModel.canContinue = false; model.permissionsModel.primaryAction = action
             model.shortcutsModel.canContinue = false; model.shortcutsModel.primaryAction = action
             model.tryModel.canContinue = false; model.tryModel.primaryAction = action
-            for step in OnboardingStep.allCases where step != .welcome && step != .recall && step != .cloud {
+            for step in OnboardingStep.allCases where ![.welcome, .recall, .cloud, .fileSearch].contains(step) {
                 model.currentStep = step
                 #expect(!model.canAdvance)
                 #expect(!model.isPageBusy)

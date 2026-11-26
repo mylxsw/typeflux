@@ -306,7 +306,7 @@ extension AskFileIndex {
             preparationGeneration += 1
             generation += 1
         }
-        queue.async { [weak self] in self?.turnOff() }
+        queue.async { [weak self] in self?.turnOff(removeSnapshot: true) }
     }
 
     private func isCurrent(_ run: Int) -> Bool { lock.withLock { generation == run && !suspended && readerOwnership.permitsWork } }
@@ -373,7 +373,7 @@ extension AskFileIndex {
         build(scope: scope, run: run)
     }
 
-    private func turnOff() {
+    private func turnOff(removeSnapshot: Bool = false) {
         watcher?.stop()
         watcher = nil
         pendingEvents = nil
@@ -383,7 +383,7 @@ extension AskFileIndex {
         reader = makeReader()
         working = AskFileIndexState(home: home)
         dirty = false
-        try? FileManager.default.removeItem(at: snapshotURL)
+        if removeSnapshot { try? FileManager.default.removeItem(at: snapshotURL) }
         publish(phase: .off)
     }
 

@@ -89,7 +89,7 @@ struct LauncherSearchSettingsViewTests {
         #expect(settings.askQuickCalculatorEnabled, "search switches do not change the calculator")
     }
 
-    @Test func `moved file switch clears and rebuilds A real index`() throws {
+    @Test func `file switch pauses a real index and clear deletes its snapshot`() throws {
         let (settings, defaults, suite) = try store()
         defer { defaults.removePersistentDomain(forName: suite) }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("launcher-index-\(UUID().uuidString)")
@@ -109,6 +109,11 @@ struct LauncherSearchSettingsViewTests {
             makeWatcher: { AskTestFileWatcher() }
         )
         let view = LauncherSearchSettingsView(settings: settings, index: index)
+        index.start()
+        index.waitUntilIdle()
+        #expect(index.status.phase == .off)
+        #expect(!FileManager.default.fileExists(atPath: snapshot.path))
+
         view.setFilesEnabled(true)
         index.waitUntilIdle()
         #expect(index.status.phase == .ready && index.status.count > 0)
@@ -116,12 +121,16 @@ struct LauncherSearchSettingsViewTests {
         view.setFilesEnabled(false)
         index.waitUntilIdle()
         #expect(index.status.phase == .off && index.status.count == 0)
-        #expect(!FileManager.default.fileExists(atPath: snapshot.path))
+        #expect(FileManager.default.fileExists(atPath: snapshot.path))
+        #expect(index.search(AskSearchQuery("Report"), options: .init()).isEmpty)
         view.setFilesEnabled(true)
         index.waitUntilIdle()
         #expect(index.search(AskSearchQuery("Report"), options: AskFileSearchOptions()).first?.name == "Report.txt")
         view.setFilesEnabled(false)
         index.waitUntilIdle()
+        index.clear()
+        index.waitUntilIdle()
+        #expect(!FileManager.default.fileExists(atPath: snapshot.path))
     }
 
     @Test func pathsAreAddedOnceWithTheHomeShortened() {

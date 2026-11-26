@@ -94,7 +94,7 @@ struct AskQuickResultsTests {
         view.setQuickNumberConversions(false)
         let reopened = SettingsStore(defaults: try #require(UserDefaults(suiteName: suite)))
         #expect(!reopened.askQuickNumberConversionsEnabled)
-        #expect(reopened.askQuickCalculatorEnabled && reopened.askQuickAppSearchEnabled && reopened.askQuickFileSearchEnabled)
+        #expect(reopened.askQuickCalculatorEnabled && reopened.askQuickAppSearchEnabled && !reopened.askQuickFileSearchEnabled)
         view.setQuickCalculator(false)
         view.setQuickNumberConversions(true)
         #expect(reopened.askQuickNumberConversionsEnabled && !reopened.askQuickCalculatorEnabled)

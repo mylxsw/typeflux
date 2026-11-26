@@ -196,7 +196,6 @@ struct LauncherSearchSettingsView: View {
                 TFButton(title: L("launcher.search.index.clear"), destructive: true, size: .small) {
                     confirmingNameIndexClear = true
                 }
-                .disabled(status.phase == .off)
             }
             if confirmingNameIndexClear {
                 TFInlineConfirmation(title: L("launcher.search.index.clear.title"),

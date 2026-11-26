@@ -14,6 +14,11 @@ extension SettingsStore {
         set {
             if let data = try? JSONEncoder().encode(newValue) {
                 revokeSemanticScope(before: semanticScopeFingerprint(enabled: newValue.enabled))
+                if !newValue.enabled, semanticFileSearch.enabled,
+                   defaults.object(forKey: Self.fileSearchEnabledKey) == nil {
+                    // Turning off content should not revoke a legacy user's file-name opt-in.
+                    defaults.set(true, forKey: Self.fileSearchEnabledKey)
+                }
                 defaults.set(data, forKey: "ask.search.semantic")
             }
             NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)

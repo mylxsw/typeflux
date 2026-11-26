@@ -1,0 +1,15 @@
+"eyebrow" = "File search";
+"title" = "File Search";
+"subtitle" = "Search and indexing run on this Mac. File names, paths, and contents are never sent to any server.";
+"off" = "Don’t Enable File Search";
+"names" = "Search File Names Only";
+"contents" = "Search File Names and Contents";
+"scope" = "Search Locations";
+"empty" = "No folders selected";
+"add" = "Add Folder…";
+"remove" = "Remove %@";
+"enable" = "Enable and Continue";
+"skip.title" = "Skip file search?";
+"skip.message" = "You won’t be able to find files in the launcher.";
+"skip.confirm" = "Confirm Skip";
+"skip.back" = "Go Back";

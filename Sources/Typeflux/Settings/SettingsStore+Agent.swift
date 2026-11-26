@@ -74,12 +74,18 @@ extension SettingsStore {
         }
     }
 
+    static let fileSearchEnabledKey = "ask.quickResults.files"
+
     /// Whether the Ask launcher lists files and folders matching what is typed into it.
     var askQuickFileSearchEnabled: Bool {
-        get { defaults.object(forKey: "ask.quickResults.files") as? Bool ?? true }
+        get {
+            // An enabled content index is also an explicit opt-in on older installs,
+            // where the file-search switch may never have been touched.
+            defaults.object(forKey: Self.fileSearchEnabledKey) as? Bool ?? semanticFileSearch.enabled
+        }
         set {
             revokeSemanticScope(before: semanticScopeFingerprint(fileSearchEnabled: newValue))
-            defaults.set(newValue, forKey: "ask.quickResults.files")
+            defaults.set(newValue, forKey: Self.fileSearchEnabledKey)
             NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)
         }
     }

@@ -33,7 +33,7 @@ struct OnboardingView: View {
         }
         .preferredColorScheme(preferredColorScheme)
         .environment(\.locale, localization.locale)
-        .alert(L("setup.skip.title"), isPresented: Binding(
+        .alert(skipTitle, isPresented: Binding(
             get: { viewModel.skipConfirmation != nil },
             set: {
                 if !$0 {
@@ -41,8 +41,13 @@ struct OnboardingView: View {
                 }
             }
         ), presenting: viewModel.skipConfirmation) { target in
-            Button(L("setup.skip.confirm")) { viewModel.confirmSkip(target) }
-            Button(L("setup.skip.back"), role: .cancel) { viewModel.skipConfirmation = nil }
+            Button(target == .fileSearch ? OnboardingFileSearchPage.text("skip.confirm") : L("setup.skip.confirm")) {
+                viewModel.confirmSkip(target)
+            }
+            let backTitle = target == .fileSearch ? OnboardingFileSearchPage.text("skip.back") : L("setup.skip.back")
+            Button(backTitle, role: .cancel) {
+                viewModel.skipConfirmation = nil
+            }
         } message: { target in Text(viewModel.skipMessage(for: target)) }
         .onChange(of: viewModel.currentStep) { step in
             if step == .try {
@@ -66,10 +71,15 @@ struct OnboardingView: View {
         case .speech: OnboardingSpeechPage(viewModel: viewModel, model: viewModel.speechModel)
         case .llm: OnboardingLLMPage(viewModel: viewModel, model: viewModel.llmModel)
         case .permissions: OnboardingPermissionsPage(viewModel: viewModel, model: viewModel.permissionsModel)
+        case .fileSearch: OnboardingFileSearchPage(viewModel: viewModel)
         case .shortcuts: OnboardingShortcutsPage(viewModel: viewModel, model: viewModel.shortcutsModel)
         case .try: OnboardingTryPage(viewModel: viewModel, model: viewModel.tryModel)
         case .recall: OnboardingRecallPage(viewModel: viewModel)
         }
+    }
+
+    private var skipTitle: String {
+        viewModel.skipConfirmation == .fileSearch ? OnboardingFileSearchPage.text("skip.title") : L("setup.skip.title")
     }
 
     private var footerHint: String? {
@@ -91,7 +101,13 @@ struct OnboardingView: View {
 
     private var primary: OnboardingFooterAction {
         let step = viewModel.currentStep
-        return .init(title: OnboardingStrings.text(step == .welcome ? "start" : step == .recall ? "finish" : "continue"),
+        let title = switch step {
+        case .welcome: OnboardingStrings.text("start")
+        case .recall: OnboardingStrings.text("finish")
+        case .fileSearch where viewModel.fileSearchChoice != .off: OnboardingFileSearchPage.text("enable")
+        default: OnboardingStrings.text("continue")
+        }
+        return .init(title: title,
                      enabled: !viewModel.isSetupActionRunning
                          && (viewModel.canAdvance || viewModel.pagePrimaryAction != nil)) {
             viewModel.performSetupAction()

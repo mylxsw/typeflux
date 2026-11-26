@@ -119,7 +119,7 @@ struct OnboardingViewModelTests {
             #expect(model.serviceRoute == .launcherOnly)
             #expect(model.currentStep == .permissions)
             #expect(settings.onboardingSpeechDeferred && settings.onboardingAIDeferred)
-            #expect(model.visibleSteps.suffix(4) == [.permissions, .shortcuts, .try, .recall])
+            #expect(model.visibleSteps.suffix(5) == [.permissions, .fileSearch, .shortcuts, .try, .recall])
             #expect(model.requiredPermissionIDs == [.accessibility])
             #expect(manager.prepareCount == 0)
         }
@@ -197,7 +197,7 @@ struct OnboardingViewModelTests {
             #expect(model.currentStep == .permissions)
             #expect(model.skipConfirmation == .permissions)
             model.confirmSkip()
-            #expect(model.currentStep == .shortcuts)
+            #expect(model.currentStep == .fileSearch)
         }
     }
 

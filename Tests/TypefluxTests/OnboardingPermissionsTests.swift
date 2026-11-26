@@ -50,7 +50,7 @@ struct OnboardingPermissionsTests {
             #expect(session.canAdvance)
             settings.onboardingPermissionsDeferred = true
             session.advance()
-            #expect(session.currentStep == .shortcuts)
+            #expect(session.currentStep == .fileSearch)
             #expect(!settings.onboardingPermissionsDeferred)
             session.serviceRoute = .launcherOnly
             probe.statuses[.microphone] = .notGranted
@@ -61,7 +61,7 @@ struct OnboardingPermissionsTests {
             session.skipPermissions()
             session.confirmSkip()
             #expect(settings.onboardingPermissionsDeferred)
-            #expect(session.currentStep == .shortcuts)
+            #expect(session.currentStep == .fileSearch)
             model.session = nil
             await model.refresh()
             #expect(model.required.isEmpty && model.canContinue == false)
@@ -259,7 +259,7 @@ extension OnboardingPermissionsTests {
                         try await withPermissionWindow(session, dark: dark) { window, host in
                             try await Task.sleep(for: .milliseconds(100))
                             #expect(TestUI.contains(OnboardingPermissionsPage.text("title"), in: host))
-                            #expect(TestUI.contains("02 / 05", in: host))
+                            #expect(TestUI.contains("02 / 06", in: host))
                             if state == "initial" {
                                 let toggle = try #require(TestUI.elements(in: host).first {
                                     $0.value("accessibilityIdentifier") as? String == "onboarding.permissions.optional"
