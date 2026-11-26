@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>cloud.textModels</key>
+	<data>
+	W3siaWQiOiJkZWZhdWx0IiwibmFtZSI6IlR5cGVmbHV4IENsb3VkIiwic2NlbmFyaW9z
+	IjpbInJld3JpdGUiXX1d
+	</data>
+	<key>llm.profile.reference</key>
+	<string>custom:fixture-openai</string>
+	<key>models.registry.v2</key>
+	<data>
+	eyJwcm92aWRlcnMiOlt7ImJhc2VVUkwiOiIiLCJpZCI6Im9wZW5BSSIsIm1vZGVscyI6
+	W3siaWQiOiJncHQtNG8tbWluaSIsIm5hbWUiOiJHUFQtNG8gbWluaSIsInJlZmVyZW5j
+	ZSI6ImN1c3RvbTpmaXh0dXJlLW9wZW5haSJ9XSwibmFtZSI6Ik9wZW5BSSIsInJlbW90
+	ZSI6Im9wZW5BSSJ9LHsiYmFzZVVSTCI6IiIsImlkIjoidHlwZWZsdXhDbG91ZCIsIm1v
+	ZGVscyI6W3siaWQiOiJkZWZhdWx0IiwibmFtZSI6IlR5cGVmbHV4IENsb3VkIiwicmVm
+	ZXJlbmNlIjoiY2xvdWQ6ZGVmYXVsdCJ9XSwibmFtZSI6IlR5cGVmbHV4IENsb3VkIiwi
+	cmVtb3RlIjoidHlwZWZsdXhDbG91ZCJ9LHsiYmFzZVVSTCI6Imh0dHA6XC9cLzEyNy4w
+	LjAuMToxMTQzNCIsImlkIjoib2xsYW1hIiwibW9kZWxzIjpbeyJpZCI6InF3ZW4zOjhi
+	IiwibmFtZSI6IlF3ZW4zIiwicmVmZXJlbmNlIjoiY3VzdG9tOmZpeHR1cmUtb2xsYW1h
+	In1dLCJuYW1lIjoiT2xsYW1hIn0seyJhcGlTdHlsZSI6Im9wZW5BSUNvbXBhdGlibGUi
+	LCJiYXNlVVJMIjoiaHR0cHM6XC9cL2V4YW1wbGUuaW52YWxpZFwvdjEiLCJpZCI6ImVu
+	ZHBvaW50OmZpeHR1cmUiLCJtb2RlbHMiOlt7ImlkIjoiZml4dHVyZS1tb2RlbCIsIm5h
+	bWUiOiJGaXh0dXJlIE1vZGVsIiwicmVmZXJlbmNlIjoiY3VzdG9tOmZpeHR1cmUtZW5k
+	cG9pbnQifV0sIm5hbWUiOiJGaXh0dXJlIEVuZHBvaW50In1dLCJ2ZXJzaW9uIjoyfQ==
+	</data>
+</dict>
+</plist>

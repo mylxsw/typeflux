@@ -71,3 +71,7 @@ presentation and onboarding adapters outside the manifest. Run
 `python3 scripts/check_account_module_boundary.py` or `make test-scripts`
 with the v0.4.0 Git history available. New project types must belong to Classic
 v0.4.0 or to the manifest. The checker lists the exact IPC members Classic shims.
+
+## Classic Data Contract
+
+Follow [section 4.4 of the Classic fork execution plan](docs/CLASSIC_FORK_EXECUTION_PLAN.zh-CN.md#44-共享数据契约) when changing shared preferences, history, JSON payloads, data directories, or Keychain identifiers. Run `ClassicCompatibilityContractTests` for changes affecting those formats. The [fixture README](Tests/Fixtures/ClassicContract/README.md) describes how to regenerate the artifacts consumed by Classic.

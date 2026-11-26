@@ -25,7 +25,7 @@
 **目标**
 1. 两个 App 共用同一份语音核心代码：修一次 bug，两边同时受益。
 2. Typeflux 不出现任何功能回归，多进程架构保持不变。
-3. Classic 以单进程运行，不包含启动器、Agent 对话、截图、剪贴板、圆环的任何代码。
+3. Classic 以单进程运行，不包含超级搜索、Agent 对话、截图、剪贴板、圆环的任何代码。
 4. 共享数据有一份明确的、机器可检查的兼容约定。
 5. 产品标识贯穿请求头、更新检查、统计和日志。
 
@@ -119,7 +119,7 @@ typeflux-classic ─(SwiftPM, 按 tag/revision)─► TypefluxVoiceCore, Typeflu
 | S9 | Responses 流式传输（`ResponsesLLMClient`）| 把通用的流式原语（`ResponsesAPI`、`ResponsesStream`、SSE 帧、token 用量、流错误）下沉到核心的 `LLM/Transport/`。Ask 专属的预算控制、上下文压缩、自定义推理，通过可选 hook 注入。**这是 LLM 层最复杂的接缝**，实施时需要先单独评估 |
 | S10 | 记忆（`MemoryProvenance`、`AskMemoryNoteFileStorage`）| 定义 `MemoryInvalidationSink` 协议：Typeflux 桥接到 Ask 的记忆模块，Classic 用空实现。`AskPrivateFile`（很小）下沉 |
 | S11 | 热键 | 圆环修饰键手势目前写在 `EventTapHotkeyService` 内部，改为 App 注册的 `ModifierGestureExtension`；`KeywordHotkey` 留在 App。`HotkeyTarget` 和 `AppHotkeyAction` 作为纯数据类型留在核心（有意识的例外：它们没有行为、没有依赖）；Classic 只注册语音相关的内置热键 |
-| S12 | 启动器输入框里的语音输入（`WorkflowComposerRecording`、`AskVoiceInput`）| 留在 App |
+| S12 | 超级搜索框里的语音输入（`WorkflowComposerRecording`、`AskVoiceInput`）| 留在 App |
 | S13 | 稳定性 | 健康度基础设施下沉；各功能的模块注册留在 App（见第 4 节）|
 | S14 | 统计 | 核心保留上报器和语音事件；`FeatureAnalyticsMetadata` 中引用 Ask 插件和截图类型的部分迁回 App；产品标识由上报器统一附加 |
 | S15 | 权限引导 | `PermissionGuidanceService` 改为由 App 注册额外的权限项（屏幕录制、完全磁盘访问），核心只内置麦克风、辅助功能、语音识别 |

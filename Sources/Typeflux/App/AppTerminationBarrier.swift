@@ -75,3 +75,13 @@ private final class TerminationWatchdog: @unchecked Sendable {
         if shouldExit { forceExit() }
     }
 }
+
+extension NSApplication {
+    /// Quits from inside a Swift task. `terminate(_:)` spins a nested run loop until the delegate
+    /// replies, and that reply comes from `@MainActor` tasks. Called inside a main-queue job (any
+    /// `@MainActor` task), the nested loop cannot drain the main queue, so quit cleanup never runs and
+    /// only the hard watchdog ends the process. Scheduling the call on the run loop avoids that.
+    func terminateFromTask() {
+        perform(#selector(terminate(_:)), with: nil, afterDelay: 0)
+    }
+}

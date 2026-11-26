@@ -477,7 +477,7 @@
 "clipboard.settings.firstUnpinned" = "从未固定内容开始";
 "clipboard.settings.firstUnpinned.subtitle" = "打开面板时选中最新一条未固定的内容。";
 "clipboard.settings.position" = "面板位置";
-"clipboard.settings.position.launcher" = "与启动器一致";
+"clipboard.settings.position.launcher" = "与超级搜索框一致";
 "clipboard.settings.position.center" = "屏幕中央";
 "clipboard.settings.position.mouse" = "鼠标所在位置";
 "clipboard.settings.style" = "面板样式";
@@ -820,8 +820,8 @@
 "settings.personaAppBindings.picker.runningBadge" = "运行中";
 
 "settings.shortcuts.activation.title" = "语音输入";
-"settings.shortcuts.ask.title" = "对话";
-"settings.shortcuts.launcherPosition.title" = "启动器打开位置";
+"settings.shortcuts.ask.title" = "超级搜索";
+"settings.shortcuts.launcherPosition.title" = "超级搜索框打开位置";
 "settings.shortcuts.launcherPosition.center" = "始终居中";
 "settings.shortcuts.launcherPosition.last" = "记住上次位置";
 "settings.shortcuts.launcherPosition.center.subtitle" = "在鼠标所在屏幕的正中打开。拖动只影响这一次。";
@@ -832,23 +832,23 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "开启后，人设快捷键会先检查是否有选中文本；如果有，就用所选人设直接改写该文本，而不只是切换默认人设。";
 "settings.shortcuts.recording" = "正在录制新的快捷键";
 "settings.shortcuts.recordingActivation" = "现在按下新的语音输入按键或组合键。";
-"settings.shortcuts.recordingAsk" = "现在按下新的“对话”快捷键。也可以快速连按两次同一个修饰键。";
+"settings.shortcuts.recordingAsk" = "现在按下新的“超级搜索”快捷键。也可以快速连按两次同一个修饰键。";
 "settings.shortcuts.recordingPersona" = "现在按下用于打开人设选择器的快捷键。";
 "settings.shortcuts.recordingHistory" = "现在按下用于打开历史记录的快捷键。";
 "settings.shortcuts.recordingGeneric" = "按下你想使用的按键或组合键。";
 "settings.shortcuts.record" = "录制";
 "settings.shortcuts.stopRecording" = "停止录制";
-"settings.shortcuts.activationConflict" = "语音输入快捷键不能与“对话”、人设或历史记录快捷键相同。";
+"settings.shortcuts.activationConflict" = "语音输入快捷键不能与“超级搜索”、人设或历史记录快捷键相同。";
 "settings.shortcuts.activationUpdated" = "语音输入快捷键已更新。";
 "settings.shortcuts.activationUnset" = "语音输入快捷键已清除。";
-"settings.shortcuts.askConflict" = "“对话”快捷键不能与语音输入、人设或历史记录快捷键相同。";
-"settings.shortcuts.askUpdated" = "“对话”快捷键已更新。";
-"settings.shortcuts.askUnset" = "“对话”快捷键已清除。";
+"settings.shortcuts.askConflict" = "“超级搜索”快捷键不能与语音输入、人设或历史记录快捷键相同。";
+"settings.shortcuts.askUpdated" = "“超级搜索”快捷键已更新。";
+"settings.shortcuts.askUnset" = "“超级搜索”快捷键已清除。";
 "settings.shortcuts.doubleTapHelp" = "快速连按两次这个按键。";
-"settings.shortcuts.personaConflict" = "人设快捷键不能与语音输入、“对话”或历史记录快捷键相同。";
+"settings.shortcuts.personaConflict" = "人设快捷键不能与语音输入、“超级搜索”或历史记录快捷键相同。";
 "settings.shortcuts.personaUpdated" = "人设快捷键已更新。";
 "settings.shortcuts.personaUnset" = "人设快捷键已清除。";
-"settings.shortcuts.historyConflict" = "历史记录快捷键不能与语音输入、“对话”或人设快捷键相同。";
+"settings.shortcuts.historyConflict" = "历史记录快捷键不能与语音输入、“超级搜索”或人设快捷键相同。";
 "settings.shortcuts.historyUpdated" = "历史记录快捷键已更新。";
 "settings.shortcuts.historyUnset" = "历史记录快捷键已清除。";
 "settings.shortcuts.unset" = "取消设置";
@@ -1578,7 +1578,7 @@
 "ask.quick.app.open" = "打开";
 "ask.quick.app.system" = "系统";
 "ask.settings.quick.apps.title" = "应用搜索";
-"ask.settings.quick.apps.subtitle" = "在启动器里输入应用名称、首字母或拼音即可打开应用。";
+"ask.settings.quick.apps.subtitle" = "在超级搜索框里输入应用名称、首字母或拼音即可打开应用。";
 "ask.quick.copy" = "复制";
 "ask.quick.format.chineseAmount" = "中文大写";
 "ask.quick.format.grouped" = "千分位";
@@ -1589,7 +1589,7 @@
 "ask.quick.error.domain" = "超出定义域";
 "ask.quick.error.outOfRange" = "超出可计算范围";
 "ask.settings.quick.calculator.title" = "计算器";
-"ask.settings.quick.calculator.subtitle" = "在启动器里输入算式时直接显示结果，不发送给 AI。";
+"ask.settings.quick.calculator.subtitle" = "在超级搜索框里输入算式时直接显示结果，不发送给 AI。";
 "ask.settings.quick.numberConversions.title" = "数值转换";
 "ask.settings.quick.numberConversions.subtitle" = "输入纯数字时显示中文大写、进制等转换结果，同时保留内容搜索。";
 "ask.models.ownAPI" = "自有 API";
@@ -2664,7 +2664,7 @@
 "ask.workflow.missingRuntime" = "没有找到「%@」，请先安装或把它加入 PATH";
 "ask.workflow.spawnFailed" = "工作流无法启动：%@";
 "ask.workflow.invalid" = "无法读取这个工作流的清单";
-"ask.workflow.blocked.untrusted" = "请先在「设置 → 启动器 → 启动器工作流」里检查并信任这个工作流";
+"ask.workflow.blocked.untrusted" = "请先在「设置 → 超级搜索 → 工作流」里检查并信任这个工作流";
 "ask.workflow.blocked.modified" = "这个工作流的文件被修改过，请先在设置里重新确认";
 "ask.workflow.blocked.invalid" = "这个工作流无法运行：%@";
 "ask.workflow.blocked.disabled" = "这个工作流已停用";
@@ -2740,7 +2740,7 @@
 "ask.wordBook.emptyBook.title" = "单词本还是空的";
 "ask.wordBook.emptyBook.detail" = "查过的词会自动出现在这里";
 "ask.wordBook.tip.lookup" = "在上面输入一个词，回车查词";
-"ask.wordBook.tip.dict" = "在任何地方打开启动器，输入 dict 和一个词";
+"ask.wordBook.tip.dict" = "在任何地方打开超级搜索框，输入 dict 和一个词";
 "ask.wordBook.tip.star" = "在翻译结果上收藏，回来复习";
 "ask.wordBook.dismiss" = "移除";
 "ask.wordBook.copied" = "已复制「%@」";
@@ -2827,7 +2827,7 @@
 "ask.plugin.prompt.placeholder.selection" = "要处理的内容 · 留空处理选中的 %d 行";
 "ask.plugin.prompt.selection" = "%1$@选中的 %2$d 行";
 "ask.plugin.prompt.noModel" = "先在「设置 → 模型」里配置文本处理模型，才能使用 AI 指令";
-"ask.plugin.prompt.noPrompt" = "这个关键词还没有提示词，请到「设置 → 启动器 → 启动器关键词」里填写";
+"ask.plugin.prompt.noPrompt" = "这个关键词还没有提示词，请到「设置 → 超级搜索 → 关键词」里填写";
 "ask.plugin.prompt.empty" = "模型没有返回内容";
 "ask.plugin.prompt.askAI" = "我用「%1$@」处理了一段文字，帮我把结果改得更好。\n\n原文：\n%2$@\n\n结果：\n%3$@";
 "ask.plugin.web.title" = "网页搜索";
@@ -2849,7 +2849,7 @@
 "ask.settings.keywords.restore" = "恢复默认关键词";
 "ask.command.group.plugins" = "插件";
 "ask.settings.plugins.title" = "关键词";
-"ask.settings.plugins.footnote" = "在启动器开头输入关键词和空格，例如「fy hello」。关键词后面没有内容时，按 ↩ 处理选中的文字。";
+"ask.settings.plugins.footnote" = "在超级搜索框开头输入关键词和空格，例如「fy hello」。关键词后面没有内容时，按 ↩ 处理选中的文字。";
 "ask.settings.plugins.translate.subtitle" = "优先本机翻译；需要时用「设置 → 模型」里的文本处理模型";
 "ask.settings.plugins.translate.second" = "第二语言";
 "ask.settings.plugins.translate.secondSubtitle" = "内容已经是界面语言时，译成这种语言";
@@ -2889,7 +2889,7 @@
 "ask.workflow.assistant.fix" = "让 AI 修复";
 "ask.workflow.assistant.fix.prompt" = "用「%1$@」试跑失败了（退出码 %2$d）。找出原因并修复。";
 "ask.workflow.assistant.fix.location" = "错误指向 %1$@ 第 %2$d 行。";
-"ask.workflow.assistant.fix.launcher" = "这个工作流在启动器里处理「%1$@」时出错了。找出原因并修复。\n\n%2$@";
+"ask.workflow.assistant.fix.launcher" = "这个工作流在超级搜索框里处理「%1$@」时出错了。找出原因并修复。\n\n%2$@";
 "ask.workflow.assistant.generate.prompt" = "帮我做这个工作流：%1$@\n\n关键词用「%2$@」，id 保持「%3$@」。先检查本机环境，再提交清单和脚本，并试跑。";
 "ask.workflow.assistant.generate.runtime" = "\n用 %@ 写。";
 "ask.workflow.assistant.interrupted" = "助手被中断了，请再发一次。";
@@ -2943,7 +2943,7 @@
 "ask.workflow.editor.new.keywordFree" = "可以使用";
 "ask.workflow.editor.new.generate" = "生成";
 "ask.workflow.editor.new.create" = "创建并编辑";
-"ask.workflow.editor.new.aiFootnote" = "在干净的环境里试跑，不带你的密钥。保存前不会出现在启动器里。";
+"ask.workflow.editor.new.aiFootnote" = "在干净的环境里试跑，不带你的密钥。保存前不会出现在超级搜索框里。";
 "ask.workflow.editor.new.footnote" = "在这里创建的工作流直接视为已信任。";
 "ask.workflow.editor.name" = "名称";
 "ask.workflow.editor.description" = "说明";
@@ -2983,7 +2983,7 @@
 "ask.workflow.editor.step.input" = "输入";
 "ask.workflow.editor.step.script" = "脚本";
 "ask.workflow.editor.step.output" = "输出";
-"ask.workflow.editor.keywords.hint" = "在启动器里输入关键词加空格就会进入这个工作流。每个关键词可以有自己的入口脚本，不选时用默认入口。预设参数在脚本里用 {option:名字} 或 TYPEFLUX_OPTION_名字 读取。";
+"ask.workflow.editor.keywords.hint" = "在超级搜索框里输入关键词加空格就会进入这个工作流。每个关键词可以有自己的入口脚本，不选时用默认入口。预设参数在脚本里用 {option:名字} 或 TYPEFLUX_OPTION_名字 读取。";
 "ask.workflow.editor.keywords.title" = "显示名称";
 "ask.workflow.editor.keywords.titlePlaceholder" = "用工作流名称";
 "ask.workflow.editor.keywords.options" = "预设参数（名字=值）";
@@ -3002,7 +3002,7 @@
 "ask.workflow.editor.args.insert" = "插入：";
 "ask.workflow.editor.args.sampleSelection" = "选中的文字";
 "ask.workflow.editor.output" = "怎么显示";
-"ask.workflow.editor.output.hint" = "脚本打印到 stdout 的内容在启动器里的样子。";
+"ask.workflow.editor.output.hint" = "脚本打印到 stdout 的内容在超级搜索框里的样子。";
 "ask.workflow.editor.output.text" = "文本卡片";
 "ask.workflow.editor.output.none" = "不显示，只做事";
 "ask.workflow.editor.output.auto" = "自动判断";
@@ -3021,7 +3021,7 @@
 "ask.workflow.editor.test.stop" = "停止";
 "ask.workflow.editor.test.placeholder" = "100 usd jpy";
 "ask.workflow.editor.test.withSelection" = "带上示例选中文字";
-"ask.workflow.editor.test.empty" = "运行一次，看看启动器里会显示什么。";
+"ask.workflow.editor.test.empty" = "运行一次，看看超级搜索框里会显示什么。";
 "ask.workflow.editor.test.summary" = "退出码 %1$d · %2$.2f 秒";
 "ask.workflow.editor.test.timedOut" = "%.1f 秒后超时";
 "ask.workflow.editor.test.tab.preview" = "预览";
@@ -3029,10 +3029,10 @@
 "ask.workflow.editor.test.tab.stderr" = "stderr";
 "ask.workflow.editor.test.tab.received" = "传入了什么";
 "ask.workflow.editor.test.nothing" = "（空）";
-"ask.workflow.editor.test.dismisses" = "已完成，启动器关闭";
+"ask.workflow.editor.test.dismisses" = "已完成，超级搜索框关闭";
 "ask.workflow.editor.test.recent" = "最近运行";
 "ask.workflow.editor.test.sourceTest" = "测试 · %@";
-"ask.workflow.editor.test.sourceLauncher" = "启动器 · %@";
+"ask.workflow.editor.test.sourceLauncher" = "超级搜索 · %@";
 "ask.workflow.editor.test.saveFirst" = "请先保存生成的工作流，或让助手来试跑。";
 "ask.workflow.risk.network" = "访问网络：%@";
 "ask.workflow.risk.networkUnknown" = "访问网络（地址不确定）";
@@ -3071,7 +3071,7 @@
 "ask.workflow.editor.new.tileDetail.pythonText" = "读参数，打印结果，显示在卡片里。";
 "ask.workflow.editor.new.tileDetail.nodeText" = "JavaScript 版本。";
 "ask.workflow.editor.new.tileDetail.shellText" = "调用命令行工具最快。";
-"ask.workflow.editor.new.tileDetail.shellAction" = "打开项目、朗读、切换设置…运行完启动器关闭。";
+"ask.workflow.editor.new.tileDetail.shellAction" = "打开项目、朗读、切换设置…运行完超级搜索框关闭。";
 "ask.workflow.editor.argumentDetail.required" = "没有参数不能运行";
 "ask.workflow.editor.argumentDetail.optional" = "只输关键词也能运行";
 "ask.workflow.editor.argumentDetail.none" = "例如 ip、uuid";
@@ -3082,14 +3082,14 @@
 "ask.workflow.editor.selectionShort.always" = "+选中";
 "ask.workflow.editor.selectionShort.never" = "无选中";
 "ask.workflow.editor.outputDetail.text" = "打印的内容逐行显示；↩ 复制，⌥↩ 写回。";
-"ask.workflow.editor.outputDetail.none" = "运行完关闭启动器，只执行下面的动作。";
+"ask.workflow.editor.outputDetail.none" = "运行完关闭超级搜索框，只执行下面的动作。";
 "ask.workflow.editor.outputDetail.auto" = "是 {\"items\": …} 就当列表，否则当文本。";
 "ask.workflow.editor.outputDetail.items" = "打印 JSON 条目，兼容 Alfred Script Filter。";
 "ask.workflow.editor.outside.title" = "%@ 在编辑器外被修改了";
-"ask.workflow.editor.outside.detail" = "（%1$@，+%2$d −%3$d 行）。在你确认之前，这个工作流不会在启动器里运行。";
+"ask.workflow.editor.outside.detail" = "（%1$@，+%2$d −%3$d 行）。在你确认之前，这个工作流不会在超级搜索框里运行。";
 "ask.workflow.editor.outside.diffTrust" = "查看差异并信任…";
 "ask.workflow.editor.outside.trustTheirs" = "载入并信任…";
-"ask.workflow.editor.preview.title" = "启动器里的样子";
+"ask.workflow.editor.preview.title" = "超级搜索框里的样子";
 "ask.workflow.editor.preview.hint" = "用上次测试运行的输出；没运行过就用示例。";
 "ask.workflow.editor.preview.kind" = "工作流";
 "ask.workflow.editor.preview.sample" = "100 USD = 14,912.30 JPY\n1 USD = 149.123 JPY";
@@ -3106,7 +3106,7 @@
 "ask.workflow.editor.status.trusted" = "上次信任：SHA-256 %@";
 "ask.workflow.editor.test.inputBefore" = "输入";
 "ask.workflow.editor.test.inputAfter" = "后面的内容";
-"ask.workflow.editor.test.launcherShows" = "启动器里会显示";
+"ask.workflow.editor.test.launcherShows" = "超级搜索框里会显示";
 "ask.workflow.editor.test.lines" = "%d 行输出";
 "ask.workflow.editor.test.running" = "运行中 · %.1f 秒";
 "ask.workflow.editor.unsavedFile" = "%@ 未保存";
@@ -3126,7 +3126,7 @@
 "ask.workflow.editor.new.version" = "第 %d 版";
 "ask.workflow.editor.new.passed" = "试跑 %1$d/%2$d 通过";
 "ask.workflow.editor.new.doneTitle" = "「%@」做好了";
-"ask.workflow.editor.new.usage.before" = "在启动器里输入";
+"ask.workflow.editor.new.usage.before" = "在超级搜索框里输入";
 "ask.workflow.editor.new.usage.after" = "加内容就能用。";
 "ask.workflow.editor.new.adjust" = "在编辑器里调整";
 "ask.workflow.editor.new.save" = "保存";
@@ -3134,17 +3134,17 @@
 "ask.workflow.assistant.generate.promptPickKeyword" = "帮我做这个工作流：%1$@\n\n自己挑一个好记、好打的短关键词，用 workflow_check_keyword 确认可用，id 保持「%2$@」。先检查本机环境，再提交清单和脚本，并试跑。";
 
 /* Agent and Launcher settings panes */
-"studio.section.launcher" = "启动器";
-"studio.eyebrow.launcher" = "启动器";
-"studio.heading.launcher" = "启动器";
-"studio.subheading.launcher" = "启动器里的计算器、应用搜索、关键词和你自己的工作流。它们由启动器直接触发，不经过 Agent。";
-"studio.search.launcher" = "搜索启动器设置...";
+"studio.section.launcher" = "超级搜索";
+"studio.eyebrow.launcher" = "超级搜索";
+"studio.heading.launcher" = "超级搜索";
+"studio.subheading.launcher" = "超级搜索里的计算器、应用搜索、关键词和你自己的工作流。它们由超级搜索框直接触发，不经过 Agent。";
+"studio.search.launcher" = "搜索此页设置...";
 "launcher.pane.basics" = "通用";
 "launcher.inputSource.title" = "默认输入法";
-"launcher.inputSource.detail" = "打开启动器时切换到所选输入法；选择“无”则保持当前输入法。";
+"launcher.inputSource.detail" = "打开超级搜索框时切换到所选输入法；选择“无”则保持当前输入法。";
 "launcher.inputSource.none" = "无";
 "launcher.inputSource.unavailable" = "输入法不可用";
-"launcher.basics.subtitle" = "在启动器里直接得到结果，不发送给 AI。";
+"launcher.basics.subtitle" = "在超级搜索框里直接得到结果，不发送给 AI。";
 "agent.group.capabilities" = "能力";
 "agent.group.personalization" = "个性化";
 "agent.rules.title" = "安全规则";
@@ -3289,7 +3289,7 @@
 "ask.workflow.editor.output.group2" = "更多";
 "ask.workflow.editor.output.fieldSeparator" = "、";
 "ask.workflow.editor.output.after" = "动作执行完";
-"ask.workflow.editor.output.close" = "执行完关闭启动器";
+"ask.workflow.editor.output.close" = "执行完关闭超级搜索框";
 "ask.workflow.editor.output.closeDetail" = "适合「复制」「通知」这类不需要再看结果的工作流；「不显示」时总是关闭。";
 "ask.workflow.editor.output.scriptActions" = "允许脚本追加动作";
 "ask.workflow.editor.output.scriptActionsDetail" = "脚本打印 {\"text\": …, \"actions\": […]} 时，追加在上面的动作之后执行。";
@@ -3306,7 +3306,7 @@
 "ask.workflow.editor.placeholder.empty" = "（空）";
 "ask.workflow.editor.willRun.title" = "这次运行成功后会执行";
 "ask.workflow.editor.willRun.none" = "只显示结果";
-"ask.workflow.editor.willRun.close" = "关闭启动器";
+"ask.workflow.editor.willRun.close" = "关闭超级搜索框";
 "ask.workflow.editor.willRun.script" = "脚本追加的动作（如果有）";
 "ask.workflow.editor.test.previewActions" = "只预览动作，不真的执行";
 "ask.workflow.editor.test.tab.actions" = "动作";
@@ -3349,7 +3349,7 @@
 "ask.workflow.gallery.viewUpdate" = "查看更新";
 "ask.workflow.gallery.info" = "基本信息";
 "ask.workflow.gallery.usage" = "用法";
-"ask.workflow.gallery.inLauncher" = "在启动器里";
+"ask.workflow.gallery.inLauncher" = "在超级搜索框里";
 "ask.workflow.gallery.renameHint" = "冲突时自动改名，例如 %@";
 "ask.workflow.gallery.runtime" = "运行时";
 "ask.workflow.gallery.does" = "会做什么";
@@ -3442,7 +3442,7 @@
 "ask.workflow.items.empty" = "没有结果";
 "ask.workflow.items.invalid" = "输出不是条目列表（{\"items\": […]}），按文本显示";
 "ask.workflow.editor.preview.sampleMarkdown" = "### 100 美元\n\n| 货币 | 金额 |\n|---|---:|\n| 日元 | 14,912.30 |\n| 欧元 | 92.18 |\n\n汇率来自 **open.er-api.com**。";
-"ask.workflow.editor.preview.moreItems" = "启动器里还有 %d 条";
+"ask.workflow.editor.preview.moreItems" = "超级搜索框里还有 %d 条";
 "ask.workflow.gallery.list" = "显示列表供选择";
 "ask.workflow.gallery.ip.name" = "本机 IP";
 "ask.workflow.gallery.ip.summary" = "列出本机的网络地址，选一条复制。";
@@ -3563,7 +3563,7 @@
 "ask.plugin.files.title" = "文件搜索";
 "ask.plugin.files.option" = "类型";
 "ask.plugin.files.placeholder" = "文件或文件夹名 · .pdf 限定类型 · in: 限定文件夹";
-"ask.plugin.files.off" = "文件搜索已关闭，可在 设置 › 启动器 中打开";
+"ask.plugin.files.off" = "文件搜索已关闭，可在 设置 › 超级搜索 中打开";
 "ask.plugin.files.none" = "没有找到文件";
 "ask.plugin.files.none.recent" = "还没有最近的文件";
 "ask.plugin.files.unlock" = "授权后可以搜索 %@";
@@ -3575,7 +3575,7 @@
 "ask.settings.quick.files.title" = "文件搜索";
 "ask.settings.quick.files.subtitle" = "输入时列出名称匹配的文件和文件夹。索引只保存在本机。";
 "launcher.pane.search" = "内容检索";
-"launcher.search.subtitle" = "启动器如何查找应用和文件。文件索引只记录名称，只保存在本机。";
+"launcher.search.subtitle" = "超级搜索如何查找应用和文件。文件索引只记录名称，只保存在本机。";
 "launcher.search.tab.general" = "常规";
 "launcher.search.tab.apps" = "应用";
 "launcher.search.tab.files" = "文件";
@@ -3589,7 +3589,7 @@
 "launcher.search.fuzzy" = "模糊匹配";
 "launcher.search.fuzzy.subtitle" = "字母按顺序出现也算命中（tbpls → TablePlus），应用和文件都适用。";
 "launcher.search.limit" = "文件模式结果数量";
-"launcher.search.limit.subtitle" = "启动器每类只列几条；文件模式（f）最多显示这么多。";
+"launcher.search.limit.subtitle" = "超级搜索框每类只列几条；文件模式（f）最多显示这么多。";
 "launcher.search.icons" = "文件图标";
 "launcher.search.icons.subtitle" = "缩略图：图片和 PDF 显示内容预览。";
 "launcher.search.icons.thumbnails" = "缩略图";
@@ -3733,7 +3733,7 @@
 "ask.translation.error.service" = "服务返回错误 %@";
 "ask.translation.error.http" = "服务返回 HTTP %d";
 "ask.translation.error.from" = "%@：%@";
-"ask.translation.error.modelMissing" = "翻译模型已被删除，请到「设置 → 启动器 → 翻译」里重新选择";
+"ask.translation.error.modelMissing" = "翻译模型已被删除，请到「设置 → 超级搜索 → 翻译」里重新选择";
 "ask.plugin.translate.serviceFallback" = "%@ 没能翻译（%@），已改用 AI";
 "ask.translation.engine.ai" = "AI 大模型";
 "ask.translation.engine.notConfigured" = "%@（未配置）";
@@ -3771,9 +3771,9 @@
 "ask.workflow.chat.cancel" = "取消";
 "ask.workflow.chat.undo" = "撤销修改";
 "ask.workflow.chat.actionsPreview" = "运行后的动作仅预览。脚本本身可以访问你的 Mac。";
-"ask.workflow.chat.empty" = "输入内容后点「运行」，结果会按启动器里的样子显示在这里。";
-"ask.workflow.chat.save" = "保存到启动器";
-"ask.workflow.chat.saved" = "已保存到启动器";
+"ask.workflow.chat.empty" = "输入内容后点「运行」，结果会按超级搜索框里的样子显示在这里。";
+"ask.workflow.chat.save" = "保存到超级搜索";
+"ask.workflow.chat.saved" = "已保存到超级搜索";
 "ask.workflow.chat.advanced" = "高级编辑";
 "ask.workflow.chat.runNotice" = "允许这个草稿在你的 Mac 上运行代码吗？";
 "ask.workflow.chat.keyword" = "关键词 / 预设";
@@ -3819,7 +3819,7 @@
 "ask.workflow.chat.resultOK" = "运行成功";
 "ask.workflow.chat.resultFailed" = "运行失败";
 "ask.workflow.chat.exitCode" = "退出码 %d";
-"ask.workflow.chat.launcherPreview" = "启动器预览";
+"ask.workflow.chat.launcherPreview" = "超级搜索框预览";
 "ask.workflow.chat.log" = "运行日志";
 "ask.workflow.chat.logEmpty" = "（无错误输出）";
 "ask.workflow.chat.files" = "文件";
@@ -3835,12 +3835,12 @@
 "ask.workflow.chat.hint.testFirst" = "建议先试运行一次再保存";
 "ask.workflow.chat.hint.tested" = "试运行通过";
 "ask.workflow.chat.hint.testFailed" = "上次试运行失败，建议修改后再试";
-"ask.workflow.chat.hint.savedKeyword" = "已保存，在启动器输入 %@ 即可使用";
+"ask.workflow.chat.hint.savedKeyword" = "已保存，在超级搜索框输入 %@ 即可使用";
 "ask.tool.workflow_start" = "开始创建工具";
 "ask.tool.workflow_list" = "查找已有工具";
 "ask.tool.workflow_read" = "读取工具草稿";
 "ask.tool.workflow_environment" = "检查脚本环境";
-"ask.tool.workflow_check_keyword" = "检查启动关键词";
+"ask.tool.workflow_check_keyword" = "检查超级搜索关键词";
 "ask.tool.workflow_propose" = "更新工具草稿";
 "ask.tool.workflow_test" = "试用工具";
 "ask.tool.workflow_save" = "查看并保存工具";
@@ -4102,7 +4102,7 @@
 "ask.browser.placeholder" = "搜索标题或网址…";
 "ask.browser.focus" = "切换到 Tab";
 "ask.browser.copy" = "复制链接";
-"ask.browser.disabled" = "此搜索已关闭，可在启动器设置中开启。";
+"ask.browser.disabled" = "此搜索已关闭，可在超级搜索设置中开启。";
 "ask.browser.empty" = "暂无可搜索的浏览器内容。";
 "ask.browser.noMatch" = "没有匹配的 Tab 或书签。";
 "ask.browser.automation" = "搜索 %@ 的 Tab 需要自动化权限。";
@@ -4314,7 +4314,7 @@
 "screenshot.text.organize" = "一键整理";
 "screenshot.text.original" = "显示原文";
 "screenshot.text.organize.empty" = "AI 未返回整理结果，请重试或显示原文。";
-"screenshot.translate.unavailable" = "翻译没有可用的关键词，请在启动器的关键词设置里添加";
+"screenshot.translate.unavailable" = "翻译没有可用的关键词，请在超级搜索的关键词设置里添加";
 "screenshot.ask.attachmentName" = "截图";
 "screenshot.ask.attachmentPart" = "截图 %d/%d";
 "screenshot.ask.tooLong" = "长图超过 8 张，已改为先取字再问";
@@ -4430,7 +4430,7 @@
 "system.monitor.window.interval" = "刷新频率";
 "system.monitor.window.seconds" = "%@ 秒";
 "system.monitor.window.opacity" = "不透明度";
-"system.monitor.window.openInLauncher" = "在启动器中打开";
+"system.monitor.window.openInLauncher" = "在超级搜索框中打开";
 "system.monitor.window.activityMonitor" = "打开“活动监视器”";
 "system.monitor.window.options" = "选项";
 "system.monitor.window.mode.full" = "完整";
@@ -4560,10 +4560,10 @@
 "studio.section.hotkeys" = "快捷键";
 "studio.eyebrow.hotkeys" = "快捷键";
 "studio.heading.hotkeys" = "快捷键";
-"studio.subheading.hotkeys" = "在这里统一管理 Typeflux 的全局快捷键：语音输入、启动器、内容工具，以及运行关键词的快捷键。";
+"studio.subheading.hotkeys" = "在这里统一管理 Typeflux 的全局快捷键：语音输入、超级搜索、内容工具，以及运行关键词的快捷键。";
 "studio.search.hotkeys" = "搜索快捷键...";
 "hotkeys.group.voice" = "语音输入";
-"hotkeys.group.launcher" = "启动器与窗口";
+"hotkeys.group.launcher" = "超级搜索与窗口";
 "hotkeys.group.content" = "内容工具";
 "hotkeys.group.keywords" = "关键词快捷键";
 "hotkeys.builtIn.activation.title" = "语音输入";
@@ -4572,8 +4572,8 @@
 "hotkeys.builtIn.auxiliary.subtitle" = "用另一个人设进行语音输入。";
 "hotkeys.builtIn.persona.title" = "人设切换器";
 "hotkeys.builtIn.persona.subtitle" = "打开人设列表，切换当前人设。";
-"hotkeys.builtIn.ask.title" = "启动器";
-"hotkeys.builtIn.ask.subtitle" = "打开启动器（对话），可带上选中的文字。";
+"hotkeys.builtIn.ask.title" = "超级搜索";
+"hotkeys.builtIn.ask.subtitle" = "打开超级搜索框，可带上选中的文字。";
 "hotkeys.builtIn.history.title" = "剪贴板与历史";
 "hotkeys.builtIn.history.subtitle" = "打开剪贴板面板，查看复制过的内容和语音记录。";
 "hotkeys.builtIn.screenshot.title" = "截图";
@@ -4581,7 +4581,7 @@
 "hotkeys.action.openChat.title" = "打开对话窗口";
 "hotkeys.action.openChat.subtitle" = "打开对话窗口。";
 "hotkeys.action.screenshotText.title" = "截图识字";
-"hotkeys.action.screenshotText.subtitle" = "框选屏幕区域，在启动器中显示其中的文字。";
+"hotkeys.action.screenshotText.subtitle" = "框选屏幕区域，在超级搜索框中显示其中的文字。";
 "hotkeys.action.openNotes.title" = "打开笔记";
 "hotkeys.action.openNotes.subtitle" = "打开笔记窗口。";
 "hotkeys.action.openWordBook.title" = "打开单词本";
@@ -4589,7 +4589,7 @@
 "hotkeys.action.openStudio.title" = "打开 Typeflux";
 "hotkeys.action.openStudio.subtitle" = "打开 Typeflux 主窗口。";
 "hotkeys.keyword.name" = "关键词 %@";
-"hotkeys.keyword.subtitle" = "在启动器中运行「%@」，处理选中的文字";
+"hotkeys.keyword.subtitle" = "在超级搜索框中运行「%@」，处理选中的文字";
 "hotkeys.keyword.unavailable" = "快捷键对应的关键词「%@」已删除或停用。";
 "hotkeys.keyword.status.disabled" = "已停用";
 "hotkeys.keyword.status.unset" = "未设置按键";
@@ -4618,7 +4618,7 @@
 "hotkeys.menu.duplicate" = "复制一份";
 "hotkeys.menu.reset" = "恢复默认";
 "hotkeys.menu.more" = "更多";
-"hotkeys.footnote" = "设置页和启动器设置里的快捷键入口仍然保留，在任何一处修改都会同步。";
+"hotkeys.footnote" = "设置页和超级搜索设置里的快捷键入口仍然保留，在任何一处修改都会同步。";
 "hotkeys.updated" = "快捷键已设为 %@";
 
 "hotkeys.column.name" = "名称";
@@ -4635,10 +4635,10 @@
 "settings.glassIntensity.previewSearch" = "搜索";
 
 // Launcher default window mode
-"ask.settings.windowMode.title" = "启动器默认窗口";
+"ask.settings.windowMode.title" = "超级搜索框默认窗口";
 "ask.settings.windowMode.simple" = "简约";
 "ask.settings.windowMode.complete" = "完整";
-"ask.settings.windowMode.detail" = "下次打开启动器时生效。";
+"ask.settings.windowMode.detail" = "下次打开超级搜索框时生效。";
 "ask.settings.windowMode.selected" = "已选择";
 
 "ask.home.section.apps" = "应用";
@@ -4648,7 +4648,7 @@
 
 // Launcher file preview
 "launcher.search.preview" = "预览文件";
-"launcher.search.preview.subtitle" = "高亮文件时，在启动器旁显示预览。";
+"launcher.search.preview.subtitle" = "高亮文件时，在超级搜索框旁显示预览。";
 "ask.preview.loading" = "正在加载预览…";
 "ask.preview.pages" = "共 %d 页";
 "ask.preview.lines" = "共 %d 行";
@@ -4808,7 +4808,7 @@
 "ask.inputHistory.disabled" = "输入历史已关闭";
 "ask.inputHistory.noMatches" = "没有匹配的输入";
 "ask.inputHistory.empty" = "还没有输入历史";
-"ask.inputHistory.disabled.detail" = "在启动器设置中开启「记住输入历史」。";
+"ask.inputHistory.disabled.detail" = "在超级搜索设置中开启「记住输入历史」。";
 "ask.inputHistory.empty.detail" = "执行搜索或关闭未完成的输入后，可在这里找回。";
 "ask.inputHistory.clear" = "清除输入历史…";
 "ask.inputHistory.deleteAll" = "清除全部";
@@ -5240,7 +5240,7 @@
 "ask.translation.panel.source.input" = "输入翻译";
 "ask.translation.panel.source.selection" = "划词翻译";
 "ask.translation.panel.source.screenshot" = "截图翻译";
-"ask.translation.panel.source.launcher" = "来自启动器";
+"ask.translation.panel.source.launcher" = "来自超级搜索";
 "ask.translation.panel.position" = "打开位置";
 "ask.translation.panel.position.subtitle" = "所有入口均使用此位置；钉住的面板保持原位";
 "ask.translation.panel.position.center" = "屏幕中央";
@@ -5315,11 +5315,11 @@
 "help.keyword.shortcut.none" = "在任何应用里对选中的文字直接运行";
 "help.keyword.shortcut.set" = "在任何应用里选中文字后按下";
 "help.keyword.edit" = "编辑";
-"help.keyword.try" = "在启动器中试一试";
+"help.keyword.try" = "在超级搜索框中试一试";
 "help.keyword.none" = "没有选中的关键词";
 "help.shortcuts.global" = "全局";
 "help.shortcuts.keyword" = "关键词快捷键";
-"help.shortcuts.launcher" = "启动器里";
+"help.shortcuts.launcher" = "超级搜索框里";
 "help.shortcuts.result" = "结果上";
 "help.shortcuts.chat" = "对话窗口";
 "help.shortcuts.unset" = "未设置";
@@ -5369,7 +5369,7 @@
 "help.faq.keywordNoResponse.q" = "输入关键词没有反应";
 "help.faq.keywordNoResponse.a" = "关键词后面要加空格（或冒号）才会进入，例如「fy hello」。\n只输入关键词时按 ↩，会处理选中的文字。\n停用的关键词在「关键词」页显示为灰色。";
 "help.faq.customKeyword.q" = "怎么添加自己的关键词";
-"help.faq.customKeyword.a" = "在启动器设置 › 关键词里，可以基于翻译、AI 指令或网页搜索新建关键词。\n更复杂的需求可以写一个工作流，它的关键词会立刻出现在这里。";
+"help.faq.customKeyword.a" = "在超级搜索设置 › 关键词里，可以基于翻译、AI 指令或网页搜索新建关键词。\n更复杂的需求可以写一个工作流，它的关键词会立刻出现在这里。";
 "help.faq.shortcutConflict.q" = "快捷键和其他应用冲突";
 "help.faq.shortcutConflict.a" = "在「设置 › 快捷键」里重新录制，录制时会提示冲突。";
 "help.faq.privacy.q" = "我的语音和文字会上传吗";
@@ -5457,7 +5457,7 @@
 "permission.camera.title" = "摄像头";
 "permission.camera.summary" = "用于在录屏时显示摄像头画面。";
 "permission.calendar.title" = "日历";
-"permission.calendar.summary" = "用于在启动器和 Agent 中读取日程。";
+"permission.calendar.summary" = "用于在超级搜索和 Agent 中读取日程。";
 "permission.notifications.title" = "通知";
 "permission.notifications.summary" = "用于后台任务完成提醒和工作流通知。";
 "permission.automation.title" = "自动化";
@@ -5488,7 +5488,7 @@
 
 /* Dedicated semantic search keyword. */
 "semantic.keyword.placeholder" = "描述要找的内容 · .pdf 限定类型 · in: 限定文件夹";
-"semantic.keyword.unavailable" = "语义检索未开启或尚未就绪，请在 设置 › 启动器 中查看";
+"semantic.keyword.unavailable" = "语义检索未开启或尚未就绪，请在 设置 › 超级搜索 中查看";
 "semantic.keyword.query" = "描述你想查找的内容";
 "semantic.keyword.none" = "没有找到匹配的内容";
 "ask.settings.keywords.kind.semanticFiles.hint" = "根据内容含义搜索本机文件";
@@ -5904,7 +5904,7 @@
 "semantic.details.reason.imageNoText" = "图像内容已索引，未识别到可读取的文字。";
 "ask.plugin.apps.title" = "应用搜索";
 "ask.plugin.apps.placeholder" = "搜索应用";
-"ask.plugin.apps.off" = "应用搜索已关闭，请在“设置 › 启动器 › 搜索”中开启。";
+"ask.plugin.apps.off" = "应用搜索已关闭，请在“设置 › 超级搜索 › 搜索”中开启。";
 "ask.plugin.apps.empty" = "尚未索引到应用";
 "ask.plugin.apps.noMatch" = "没有匹配的应用";
 "ask.plugin.apps.open" = "打开应用";
@@ -6172,7 +6172,7 @@
 "ask.quickAsk.send" = "提问";
 "ask.quickAsk.hint" = "↵ 提问 · ⇧↵ 换行 · ⌘O 在聊天中打开";
 "ask.quickAsk.advanced" = "请在聊天中使用附件、技能或工具。";
-"ask.settings.keywords.kind.quickAsk.hint" = "在启动器中提问和查看回答，进入聊天继续追问。";
+"ask.settings.keywords.kind.quickAsk.hint" = "在超级搜索框中提问和查看回答，进入聊天继续追问。";
 
 "ask.usage.contextShared" = "剩余上下文由后续输入、思考和回复共享。输出预留是预算估计，不是已消耗的上下文。";
 
@@ -6193,7 +6193,7 @@
 "terminal.command.unavailable" = "无法准备所选终端，请检查其设置后重试。";
 "terminal.command.uncertain" = "命令可能已交给终端。再次运行前请先检查终端；未自动重发。";
 "terminal.command.application" = "终端应用";
-"ask.settings.keywords.kind.terminal.hint" = "在启动器、独立窗口或外部终端中运行 Shell 命令。";
+"ask.settings.keywords.kind.terminal.hint" = "在超级搜索框、独立窗口或外部终端中运行 Shell 命令。";
 "terminal.command.keywordConflict" = "终端命令触发词已被占用：%@。已保留原入口，可添加“终端命令”关键词另行指定。";
 "ask.plugin.hint.commandEnter" = "⌘↩ %@";
 "terminal.runner.runBuiltin" = "在内置终端运行";
@@ -6367,7 +6367,7 @@
 "ring.editor.record" = "点击录制";
 "ring.type.feature.title" = "Typeflux 功能";
 "ring.type.feature.target" = "功能";
-"ring.type.keyword.title" = "启动器关键词";
+"ring.type.keyword.title" = "超级搜索关键词";
 "ring.type.keyword.target" = "关键词";
 "ring.type.app.title" = "打开应用";
 "ring.type.app.target" = "应用";
@@ -6383,8 +6383,8 @@
 "ring.type.folder.target" = "文件夹";
 "ring.feature.dictation.title" = "语音输入";
 "ring.feature.dictation.detail" = "免按住听写，按语音输入快捷键结束";
-"ring.feature.ask.title" = "对话";
-"ring.feature.ask.detail" = "打开启动器";
+"ring.feature.ask.title" = "超级搜索";
+"ring.feature.ask.detail" = "打开超级搜索框";
 "ring.feature.chat.title" = "对话窗口";
 "ring.feature.chat.detail" = "打开对话窗口";
 "ring.feature.screenshot.title" = "截图";
@@ -6583,7 +6583,7 @@
 "onboarding.v2.verb.ring" = "划";
 "onboarding.v2.verb.chat" = "问";
 "onboarding.v2.verb.voice.detail" = "语音输入";
-"onboarding.v2.verb.launcher.detail" = "启动器 · 剪贴板";
+"onboarding.v2.verb.launcher.detail" = "超级搜索 · 剪贴板";
 "onboarding.v2.verb.ring.detail" = "圆环";
 "onboarding.v2.verb.chat.detail" = "对话";
 "onboarding.v2.hero.voice" = "按住说话，松开写进当前应用";
@@ -6754,7 +6754,7 @@
 "shortcutDiagnostics.title" = "诊断中心";
 "shortcutDiagnostics.privacy" = "仅保存在本机，不记录文本、剪贴板内容、图片或按键组合。每个日志文件最多 256 KiB，保留最多 16 个文件，7 天未更新的日志会过期。";
 "shortcutDiagnostics.record" = "记录响应耗时";
-"shortcutDiagnostics.scope" = "记录圆环、翻译、启动器、剪贴板和截图的展示链路；其他功能记录快捷键命令路由。";
+"shortcutDiagnostics.scope" = "记录圆环、翻译、超级搜索、剪贴板和截图的展示链路；其他功能记录快捷键命令路由。";
 "shortcutDiagnostics.inspect" = "查看耗时和完整阶段记录";
 "shortcutDiagnostics.open" = "打开诊断面板";
 "shortcutDiagnostics.refresh" = "刷新";
@@ -6772,14 +6772,14 @@
 "shortcutDiagnostics.other" = "其他结果 / 未完成";
 "shortcutDiagnostics.error" = "无法读取或导出诊断数据，请刷新或选择其他导出位置。";
 "shortcutDiagnostics.gaps" = "不可读文件：%d · 无效记录：%d · 丢弃事件：%d";
-"shortcutDiagnostics.empty" = "暂无记录。请使用启动器、剪贴板或截图快捷键，然后刷新。";
+"shortcutDiagnostics.empty" = "暂无记录。请使用超级搜索、剪贴板或截图快捷键，然后刷新。";
 "shortcutDiagnostics.select" = "选择一条记录查看各阶段耗时。";
 "shortcutDiagnostics.timeline" = "阶段时间线";
 "shortcutDiagnostics.columns" = "右侧为识别动作后的累计耗时，下方为与上一事件的间隔。";
 "shortcutDiagnostics.summaryNote" = "每 5 秒刷新 · 最近保留的 200 条样本 · P50/P95 仅统计筛选范围内已显示窗口的记录。未完成记录可能仍在执行，也可能缺失事件。";
 "shortcutDiagnostics.role.host" = "主进程";
 "shortcutDiagnostics.role.shortcuts" = "快捷键";
-"shortcutDiagnostics.role.launcher" = "启动器";
+"shortcutDiagnostics.role.launcher" = "超级搜索";
 "shortcutDiagnostics.role.clipboard" = "剪贴板";
 "shortcutDiagnostics.role.screenshot" = "截图与录屏";
 "shortcutDiagnostics.role.chat" = "聊天";
@@ -6887,8 +6887,8 @@
 /* Opening snapshot diagnostics */
 "shortcutDiagnostics.stage.dataCacheHit" = "复用打开快照，后台刷新";
 "shortcutDiagnostics.stage.dataCacheMiss" = "无有效打开快照，读取历史";
-"shortcutDiagnostics.stage.mediaActivationStarted" = "启动器媒体加载启用：开始";
-"shortcutDiagnostics.stage.mediaActivationFinished" = "启动器媒体加载启用：完成";
+"shortcutDiagnostics.stage.mediaActivationStarted" = "超级搜索媒体加载启用：开始";
+"shortcutDiagnostics.stage.mediaActivationFinished" = "超级搜索媒体加载启用：完成";
 
 "ask.history.filter" = "筛选对话";
 "ask.history.filter.all" = "全部";
@@ -7223,7 +7223,7 @@
 "help.extra.previousOption" = "切换到上一个选项或语言";
 "help.extra.kind" = "切换聊天／工作模式";
 "help.extra.historyDelete" = "删除选中的输入历史";
-"help.extra.pinLauncher" = "固定／取消固定启动器";
+"help.extra.pinLauncher" = "固定／取消固定超级搜索框";
 "help.extra.commandsMenu" = "输入斜杠命令";
 "help.extra.allFiles" = "显示全部文件结果";
 "help.extra.regenerate" = "重试／重新生成";
@@ -7312,9 +7312,9 @@
 "help.action.practice.done" = "结束练习";
 "help.action.voice.try" = "现在试一句";
 "help.action.voice.practice.placeholder" = "按住快捷键说话";
-"help.action.launcher.try" = "打开启动器";
+"help.action.launcher.try" = "打开超级搜索框";
 "help.action.ring.try" = "练习一次";
-"help.action.chat.try" = "打开启动器";
+"help.action.chat.try" = "打开超级搜索框";
 "help.action.voice.step1.title" = "按住快捷键";
 "help.action.voice.step1.detail" = "光标放在任何应用的输入框里";
 "help.action.voice.step2.title" = "说话";
@@ -7322,7 +7322,7 @@
 "help.action.voice.step3.title" = "松开";
 "help.action.voice.step3.detail" = "文字写进光标处，也在剪贴板里";
 "help.action.launcher.step1.title" = "按下快捷键";
-"help.action.launcher.step1.detail" = "启动器出现在任何应用之上";
+"help.action.launcher.step1.detail" = "超级搜索框出现在任何应用之上";
 "help.action.launcher.step2.title" = "输入";
 "help.action.launcher.step2.detail" = "应用名、算式、文件，或关键词加空格";
 "help.action.launcher.step3.title" = "按 ↩";
@@ -7333,10 +7333,10 @@
 "help.action.ring.step2.detail" = "指向翻译、截图、剪贴板…";
 "help.action.ring.step3.title" = "松开";
 "help.action.ring.step3.detail" = "执行所指的动作，也可以按数字键";
-"help.action.chat.step1.title" = "打开启动器";
-"help.action.chat.step1.detail" = "用启动器快捷键唤出输入框";
+"help.action.chat.step1.title" = "打开超级搜索框";
+"help.action.chat.step1.detail" = "用快捷键唤出超级搜索框";
 "help.action.chat.step2.title" = "输入 chat";
-"help.action.chat.step2.detail" = "在启动器输入 chat";
+"help.action.chat.step2.detail" = "在超级搜索框输入 chat";
 "help.action.chat.step3.title" = "按 ↩ 开始聊";
 "help.action.chat.step3.detail" = "打开独立的对话窗口";
 "help.progress.next" = "下一个：";
@@ -7348,7 +7348,7 @@
 "help.start.tip.recent.detail" = "输入框为空时按 ↑";
 "help.start.tip.recent.sample" = "上一次输入";
 "help.start.tip.selection.title" = "先选中再打开";
-"help.start.tip.selection.detail" = "选中的文字会自动带进启动器";
+"help.start.tip.selection.detail" = "选中的文字会自动带进超级搜索框";
 "help.start.tip.selection.sample" = "周五之前";
 "help.keywords.anatomy.sample" = "你好，世界";
 "help.keywords.anatomy.note" = "只输入关键词再按 ↩，会处理你在其他应用里选中的文字。";
@@ -7529,7 +7529,7 @@
 "apple.reminders.searchTitle" = "搜索系统提醒事项";
 "apple.notes.searchPlaceholder" = "搜索标题和正文；回车预览，Esc 返回";
 "apple.reminders.searchPlaceholder" = "搜索提醒事项；Tab 切换未完成／全部";
-"apple.notes.searchHint" = "浏览最近备忘录，或搜索标题和正文；回车在启动器内预览，⌘O 打开原文";
+"apple.notes.searchHint" = "浏览最近备忘录，或搜索标题和正文；回车在超级搜索框内预览，⌘O 打开原文";
 "apple.reminders.searchHint" = "搜索标题和备注；Tab 切换未完成／全部，回车预览，⌘O 打开原条目";
 "apple.search.scope" = "范围";
 "apple.search.preview" = "预览";
@@ -7580,7 +7580,7 @@
 "setup.speech.cloudUnavailable" = "请登录并检查云端服务权限，或配置本地语音模型。";
 "setup.speech.required" = "请先设置语音识别。%@";
 "setup.skip.title" = "稍后再设置？";
-"setup.skip.allModels.message" = "你仍可使用启动器搜索、打开应用和计算。语音输入、Agent 和 AI 改写需要完成模型配置后才能使用，之后可在设置中补充。";
+"setup.skip.allModels.message" = "你仍可使用超级搜索打开应用、查找文件和计算。语音输入、Agent 和 AI 改写需要完成模型配置后才能使用，之后可在设置中补充。";
 "setup.skip.speech.message" = "语音输入和语音提问将暂不可用。你仍可继续配置 AI，通过打字使用 Agent，之后在设置中补充语音模型。";
 "setup.skip.language.message" = "Agent、AI 对话和 AI 改写需要配置大语言模型。语音识别已配置时，普通听写仍可使用。";
 "setup.skip.permissions.message" = "未授权麦克风时无法录音；未授权辅助功能时无法向其他应用输入文字。之后可在设置中授权。";
@@ -7590,8 +7590,8 @@
 "setup.permission.microphone.impact" = "未授权麦克风时，语音输入和语音提问无法录音。";
 "setup.permission.accessibility.impact" = "未授权辅助功能时，无法向其他应用输入文字，部分全局快捷键也无法使用。";
 "setup.permission.speechRecognition.impact" = "Apple 语音识别需要授予语音识别权限。";
-"setup.permission.later" = "启动器基础搜索仍可使用，之后可在设置中授权。";
-"setup.skip.existingModels" = "已有模型配置会保留。你可以先使用启动器，未配置的语音和 AI 服务之后可在设置中补充。";
+"setup.permission.later" = "超级搜索基础功能仍可使用，之后可在设置中授权。";
+"setup.skip.existingModels" = "已有模型配置会保留。你可以先使用超级搜索，未配置的语音和 AI 服务之后可在设置中补充。";
 "setup.skip.existingSpeech" = "已有语音模型配置会保留，暂时跳过语音教学，之后可在设置中调整模型。";
 "setup.skip.existingAI" = "已有 AI 模型配置会保留，暂时跳过 AI 功能介绍，之后可在设置中调整模型。";
 
@@ -7655,7 +7655,7 @@
 "ask.image.cache.clearFailed" = "图片缓存清理失败。";
 
 "terminal.launcher.label" = "终端";
-"terminal.launcher.destination" = "启动器内";
+"terminal.launcher.destination" = "超级搜索框内";
 "terminal.launcher.windowDestination" = "独立窗口";
 "terminal.launcher.window" = "在窗口中运行";
 "terminal.launcher.open" = "打开终端";
@@ -7681,14 +7681,14 @@
 "terminal.session.close.short" = "关闭";
 "terminal.session.close" = "关闭会话";
 "terminal.session.close.others" = "关闭其他会话";
-"terminal.session.move.launcher" = "移到启动器";
+"terminal.session.move.launcher" = "移到超级搜索框";
 "terminal.session.window.title" = "终端";
 
 "terminal.session.window.new" = "新会话 ⌘T";
 
 "terminal.session.window.pin" = "置顶";
 
-"terminal.session.window.back" = "收回到启动器 ⌘O";
+"terminal.session.window.back" = "收回到超级搜索框 ⌘O";
 
 /* Launcher terminal settings and confirmation */
 "terminal.settings.group.run" = "运行";
@@ -7709,7 +7709,7 @@
 "terminal.settings.insert.commandAndOutput" = "命令 + 输出";
 "terminal.settings.finish" = "运行结束后";
 "terminal.settings.external" = "外部终端";
-"terminal.launcher.runInLauncher" = "在启动器内运行";
+"terminal.launcher.runInLauncher" = "在超级搜索框内运行";
 "terminal.risk.delete" = "永久删除文件，不进废纸篓";
 "terminal.risk.forcePush" = "强制覆盖远端分支";
 "terminal.risk.reset" = "丢弃未提交的改动";
@@ -7726,3 +7726,29 @@
 "terminal.ai.offline" = "当前处于离线状态。";
 "terminal.ai.failed" = "未能解释这条命令。";
 "terminal.ai.continue" = "在 Ask 中继续";
+
+/* Typeflux Classic introduction and switch */
+"classic.intro.title" = "认识 Typeflux Classic";
+"classic.intro.subtitle" = "只有语音输入，账户和数据通用。";
+"classic.intro.learnMore" = "了解区别";
+"classic.intro.continue" = "继续使用 Typeflux";
+"classic.action.switch" = "切换到 Typeflux Classic";
+"classic.feature.voice" = "语音输入";
+"classic.feature.launcher" = "启动器";
+"classic.feature.chat" = "对话";
+"classic.feature.ring" = "圆环";
+"classic.feature.screenshot" = "截图与录屏";
+"classic.feature.clipboard" = "剪贴板历史";
+"classic.feature.account" = "账户与数据";
+"classic.feature.included" = "包含";
+"classic.feature.notIncluded" = "不包含";
+"classic.switch.confirm.title" = "切换到 Typeflux Classic？";
+"classic.switch.confirm.dataKept" = "数据和账户都会保留。";
+"classic.switch.confirm.missing" = "Classic 中没有";
+"classic.switch.confirm.action" = "切换";
+"classic.switch.downloading" = "正在下载 Typeflux Classic";
+"classic.switch.installing" = "正在安装 Typeflux Classic";
+"classic.switch.failed" = "未能切换到 Typeflux Classic";
+"classic.switch.error.identity" = "下载的应用不是正版 Typeflux Classic，已拒绝安装。";
+"classic.switch.error.unavailable" = "Typeflux Classic 暂不可用。";
+"classic.switch.error.busy" = "请先结束当前的录音或任务，再重试。";

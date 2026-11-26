@@ -3,7 +3,7 @@
 "title" = "試一試";
 
 "feature.voice" = "語音輸入";
-"feature.launcher" = "啟動器";
+"feature.launcher" = "超級搜尋";
 "feature.ring" = "圓環";
 "feature.chat" = "Agent 對話";
 
@@ -33,7 +33,7 @@
 "ring.sector.ocr" = "識字";
 "ring.sector.clipboard" = "剪貼簿";
 
-"chat.instructionPrefix" = "在啟動器裡提問，按";
+"chat.instructionPrefix" = "在超級搜尋框裡提問，按";
 "chat.query" = "這張表哪個月增長最快？";
 "chat.result" = "7 月，環比 +32%";
 

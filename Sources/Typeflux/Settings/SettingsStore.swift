@@ -1084,7 +1084,9 @@ final class SettingsStore {
             } else {
                 activationHotkeyJSON = "__unset__"
             }
-            defaults.removeObject(forKey: "hotkey.custom.json")
+            if newValue == nil {
+                defaults.removeObject(forKey: "hotkey.custom.json")
+            }
             NotificationCenter.default.post(name: .hotkeySettingsDidChange, object: self)
         }
     }
@@ -1215,6 +1217,7 @@ final class SettingsStore {
         guard let first = decoded.first else { return nil }
 
         let migrated = HotkeyBinding(keyCode: first.keyCode, modifierFlags: first.modifierFlags)
+        // Keep the legacy array available to Classic.
         activationHotkey = migrated
         return migrated
     }

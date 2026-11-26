@@ -475,7 +475,7 @@
 "clipboard.settings.firstUnpinned" = "從未釘選內容開始";
 "clipboard.settings.firstUnpinned.subtitle" = "打開面板時選取最新一筆未釘選的內容。";
 "clipboard.settings.position" = "面板位置";
-"clipboard.settings.position.launcher" = "與啟動器一致";
+"clipboard.settings.position.launcher" = "與超級搜尋框一致";
 "clipboard.settings.position.center" = "螢幕中央";
 "clipboard.settings.position.mouse" = "游標所在位置";
 "clipboard.settings.style" = "面板樣式";
@@ -818,8 +818,8 @@
 "settings.personaAppBindings.picker.runningBadge" = "執行中";
 
 "settings.shortcuts.activation.title" = "語音輸入";
-"settings.shortcuts.ask.title" = "對話";
-"settings.shortcuts.launcherPosition.title" = "啟動器開啟位置";
+"settings.shortcuts.ask.title" = "超級搜尋";
+"settings.shortcuts.launcherPosition.title" = "超級搜尋框開啟位置";
 "settings.shortcuts.launcherPosition.center" = "永遠置中";
 "settings.shortcuts.launcherPosition.last" = "記住上次位置";
 "settings.shortcuts.launcherPosition.center.subtitle" = "在滑鼠所在螢幕的正中開啟。拖動只影響這一次。";
@@ -830,23 +830,23 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "開啟後，人設快捷鍵會先檢查是否有選取文字；如果有，就用所選人設直接改寫該文字，而不只是切換預設人設。";
 "settings.shortcuts.recording" = "正在錄製新的快捷鍵";
 "settings.shortcuts.recordingActivation" = "現在按下新的語音輸入按鍵或組合鍵。";
-"settings.shortcuts.recordingAsk" = "現在按下新的「對話」快捷鍵。也可以快速連按兩次同一個修飾鍵。";
+"settings.shortcuts.recordingAsk" = "現在按下新的「超級搜尋」快捷鍵。也可以快速連按兩次同一個修飾鍵。";
 "settings.shortcuts.recordingPersona" = "現在按下用於打開人設選擇器的快捷鍵。";
 "settings.shortcuts.recordingHistory" = "現在按下用於打開歷史記錄的快捷鍵。";
 "settings.shortcuts.recordingGeneric" = "按下你想使用的按鍵或組合鍵。";
 "settings.shortcuts.record" = "錄製";
 "settings.shortcuts.stopRecording" = "停止錄製";
-"settings.shortcuts.activationConflict" = "語音輸入快捷鍵不能與「對話」、人設或歷史記錄快捷鍵相同。";
+"settings.shortcuts.activationConflict" = "語音輸入快捷鍵不能與「超級搜尋」、人設或歷史記錄快捷鍵相同。";
 "settings.shortcuts.activationUpdated" = "語音輸入快捷鍵已更新。";
 "settings.shortcuts.activationUnset" = "語音輸入快捷鍵已清除。";
-"settings.shortcuts.askConflict" = "「對話」快捷鍵不能與語音輸入、人設或歷史記錄快捷鍵相同。";
-"settings.shortcuts.askUpdated" = "「對話」快捷鍵已更新。";
-"settings.shortcuts.askUnset" = "「對話」快捷鍵已清除。";
+"settings.shortcuts.askConflict" = "「超級搜尋」快捷鍵不能與語音輸入、人設或歷史記錄快捷鍵相同。";
+"settings.shortcuts.askUpdated" = "「超級搜尋」快捷鍵已更新。";
+"settings.shortcuts.askUnset" = "「超級搜尋」快捷鍵已清除。";
 "settings.shortcuts.doubleTapHelp" = "快速連按兩次這個按鍵。";
-"settings.shortcuts.personaConflict" = "人設快捷鍵不能與語音輸入、「對話」或歷史記錄快捷鍵相同。";
+"settings.shortcuts.personaConflict" = "人設快捷鍵不能與語音輸入、「超級搜尋」或歷史記錄快捷鍵相同。";
 "settings.shortcuts.personaUpdated" = "人設快捷鍵已更新。";
 "settings.shortcuts.personaUnset" = "人設快捷鍵已清除。";
-"settings.shortcuts.historyConflict" = "歷史記錄快捷鍵不能與語音輸入、「對話」或人設快捷鍵相同。";
+"settings.shortcuts.historyConflict" = "歷史記錄快捷鍵不能與語音輸入、「超級搜尋」或人設快捷鍵相同。";
 "settings.shortcuts.historyUpdated" = "歷史記錄快捷鍵已更新。";
 "settings.shortcuts.historyUnset" = "歷史記錄快捷鍵已清除。";
 "settings.shortcuts.unset" = "取消設定";
@@ -1575,7 +1575,7 @@
 "ask.quick.app.open" = "打開";
 "ask.quick.app.system" = "系統";
 "ask.settings.quick.apps.title" = "App 搜尋";
-"ask.settings.quick.apps.subtitle" = "在啟動器中輸入 App 名稱、首字母或拼音即可打開 App。";
+"ask.settings.quick.apps.subtitle" = "在超級搜尋框中輸入 App 名稱、首字母或拼音即可打開 App。";
 "ask.quick.copy" = "拷貝";
 "ask.quick.format.chineseAmount" = "中文大寫";
 "ask.quick.format.grouped" = "千分位";
@@ -1586,7 +1586,7 @@
 "ask.quick.error.domain" = "超出定義域";
 "ask.quick.error.outOfRange" = "超出可計算範圍";
 "ask.settings.quick.calculator.title" = "計算機";
-"ask.settings.quick.calculator.subtitle" = "在啟動器中輸入算式時直接顯示結果，不傳送給 AI。";
+"ask.settings.quick.calculator.subtitle" = "在超級搜尋框中輸入算式時直接顯示結果，不傳送給 AI。";
 "ask.settings.quick.numberConversions.title" = "數值轉換";
 "ask.settings.quick.numberConversions.subtitle" = "輸入純數字時顯示中文大寫、進位制等轉換結果，同時保留內容搜尋。";
 "ask.models.ownAPI" = "Own API";
@@ -2661,7 +2661,7 @@
 "ask.workflow.missingRuntime" = "找不到「%@」，請先安裝或將它加入 PATH";
 "ask.workflow.spawnFailed" = "工作流程無法啟動：%@";
 "ask.workflow.invalid" = "無法讀取這個工作流程的清單";
-"ask.workflow.blocked.untrusted" = "請先在「設定 → 啟動器 → 啟動器工作流程」中檢查並信任這個工作流程";
+"ask.workflow.blocked.untrusted" = "請先在「設定 → 超級搜尋 → 工作流程」中檢查並信任這個工作流程";
 "ask.workflow.blocked.modified" = "這個工作流程的檔案被修改過，請先在設定中重新確認";
 "ask.workflow.blocked.invalid" = "這個工作流程無法執行：%@";
 "ask.workflow.blocked.disabled" = "這個工作流程已停用";
@@ -2737,7 +2737,7 @@
 "ask.wordBook.emptyBook.title" = "單字本還是空的";
 "ask.wordBook.emptyBook.detail" = "查過的單字會自動出現在這裡";
 "ask.wordBook.tip.lookup" = "在上方輸入單字，按 Return 查詢";
-"ask.wordBook.tip.dict" = "在任何地方打開啟動器，輸入 dict 和單字";
+"ask.wordBook.tip.dict" = "在任何地方打開超級搜尋框，輸入 dict 和單字";
 "ask.wordBook.tip.star" = "在翻譯結果上收藏，回來複習";
 "ask.wordBook.dismiss" = "移除";
 "ask.wordBook.copied" = "已拷貝「%@」";
@@ -2824,7 +2824,7 @@
 "ask.plugin.prompt.placeholder.selection" = "要處理的內容 · 留空處理選取的 %d 行";
 "ask.plugin.prompt.selection" = "%1$@選取的 %2$d 行";
 "ask.plugin.prompt.noModel" = "先在「設定 → 模型」中設定文字處理模型，才能使用 AI 指令";
-"ask.plugin.prompt.noPrompt" = "這個關鍵詞還沒有提示詞，請到「設定 → 啟動器 → 啟動器關鍵詞」中填寫";
+"ask.plugin.prompt.noPrompt" = "這個關鍵詞還沒有提示詞，請到「設定 → 超級搜尋 → 關鍵詞」中填寫";
 "ask.plugin.prompt.empty" = "模型沒有回傳內容";
 "ask.plugin.prompt.askAI" = "我用「%1$@」處理了一段文字，幫我把結果改得更好。\n\n原文：\n%2$@\n\n結果：\n%3$@";
 "ask.plugin.web.title" = "網頁搜尋";
@@ -2846,7 +2846,7 @@
 "ask.settings.keywords.restore" = "恢復預設關鍵詞";
 "ask.command.group.plugins" = "外掛";
 "ask.settings.plugins.title" = "關鍵詞";
-"ask.settings.plugins.footnote" = "在啟動器開頭輸入關鍵詞和空白，例如「fy hello」。關鍵詞後面沒有內容時，按 ↩ 處理選取的文字。";
+"ask.settings.plugins.footnote" = "在超級搜尋框開頭輸入關鍵詞和空白，例如「fy hello」。關鍵詞後面沒有內容時，按 ↩ 處理選取的文字。";
 "ask.settings.plugins.translate.subtitle" = "優先本機翻譯；需要時用「設定 → 模型」中的文字處理模型";
 "ask.settings.plugins.translate.second" = "第二語言";
 "ask.settings.plugins.translate.secondSubtitle" = "內容已是介面語言時，譯成這種語言";
@@ -2886,7 +2886,7 @@
 "ask.workflow.assistant.fix" = "讓 AI 修復";
 "ask.workflow.assistant.fix.prompt" = "用「%1$@」試跑失敗了（結束碼 %2$d）。找出原因並修復。";
 "ask.workflow.assistant.fix.location" = "錯誤指向 %1$@ 第 %2$d 行。";
-"ask.workflow.assistant.fix.launcher" = "這個工作流程在啟動器裡處理「%1$@」時出錯了。找出原因並修復。\n\n%2$@";
+"ask.workflow.assistant.fix.launcher" = "這個工作流程在超級搜尋框裡處理「%1$@」時出錯了。找出原因並修復。\n\n%2$@";
 "ask.workflow.assistant.generate.prompt" = "幫我做這個工作流程：%1$@\n\n關鍵詞用「%2$@」，id 保持「%3$@」。先檢查本機環境，再提交清單和腳本，並試跑。";
 "ask.workflow.assistant.generate.runtime" = "\n用 %@ 寫。";
 "ask.workflow.assistant.interrupted" = "助手被中斷了，請再傳一次。";
@@ -2940,7 +2940,7 @@
 "ask.workflow.editor.new.keywordFree" = "可以使用";
 "ask.workflow.editor.new.generate" = "產生";
 "ask.workflow.editor.new.create" = "建立並編輯";
-"ask.workflow.editor.new.aiFootnote" = "在乾淨的環境裡試跑，不帶你的密鑰。儲存前不會出現在啟動器裡。";
+"ask.workflow.editor.new.aiFootnote" = "在乾淨的環境裡試跑，不帶你的密鑰。儲存前不會出現在超級搜尋框裡。";
 "ask.workflow.editor.new.footnote" = "在這裡建立的工作流程直接視為已信任。";
 "ask.workflow.editor.name" = "名稱";
 "ask.workflow.editor.description" = "說明";
@@ -2980,7 +2980,7 @@
 "ask.workflow.editor.step.input" = "輸入";
 "ask.workflow.editor.step.script" = "腳本";
 "ask.workflow.editor.step.output" = "輸出";
-"ask.workflow.editor.keywords.hint" = "在啟動器裡輸入關鍵詞加空格就會進入這個工作流程。每個關鍵詞可以有自己的入口腳本，不選時用預設入口。預設參數在腳本裡用 {option:名稱} 或 TYPEFLUX_OPTION_名稱 讀取。";
+"ask.workflow.editor.keywords.hint" = "在超級搜尋框裡輸入關鍵詞加空格就會進入這個工作流程。每個關鍵詞可以有自己的入口腳本，不選時用預設入口。預設參數在腳本裡用 {option:名稱} 或 TYPEFLUX_OPTION_名稱 讀取。";
 "ask.workflow.editor.keywords.title" = "顯示名稱";
 "ask.workflow.editor.keywords.titlePlaceholder" = "使用工作流程名稱";
 "ask.workflow.editor.keywords.options" = "預設參數（名稱=值）";
@@ -2999,7 +2999,7 @@
 "ask.workflow.editor.args.insert" = "插入：";
 "ask.workflow.editor.args.sampleSelection" = "選取的文字";
 "ask.workflow.editor.output" = "怎麼顯示";
-"ask.workflow.editor.output.hint" = "腳本輸出到 stdout 的內容在啟動器裡的樣子。";
+"ask.workflow.editor.output.hint" = "腳本輸出到 stdout 的內容在超級搜尋框裡的樣子。";
 "ask.workflow.editor.output.text" = "文字卡片";
 "ask.workflow.editor.output.none" = "不顯示，只做事";
 "ask.workflow.editor.output.auto" = "自動判斷";
@@ -3018,7 +3018,7 @@
 "ask.workflow.editor.test.stop" = "停止";
 "ask.workflow.editor.test.placeholder" = "100 usd jpy";
 "ask.workflow.editor.test.withSelection" = "帶上範例選取文字";
-"ask.workflow.editor.test.empty" = "執行一次，看看啟動器裡會顯示什麼。";
+"ask.workflow.editor.test.empty" = "執行一次，看看超級搜尋框裡會顯示什麼。";
 "ask.workflow.editor.test.summary" = "結束碼 %1$d · %2$.2f 秒";
 "ask.workflow.editor.test.timedOut" = "%.1f 秒後逾時";
 "ask.workflow.editor.test.tab.preview" = "預覽";
@@ -3026,10 +3026,10 @@
 "ask.workflow.editor.test.tab.stderr" = "stderr";
 "ask.workflow.editor.test.tab.received" = "傳入了什麼";
 "ask.workflow.editor.test.nothing" = "（空）";
-"ask.workflow.editor.test.dismisses" = "已完成，啟動器關閉";
+"ask.workflow.editor.test.dismisses" = "已完成，超級搜尋框關閉";
 "ask.workflow.editor.test.recent" = "最近執行";
 "ask.workflow.editor.test.sourceTest" = "測試 · %@";
-"ask.workflow.editor.test.sourceLauncher" = "啟動器 · %@";
+"ask.workflow.editor.test.sourceLauncher" = "超級搜尋 · %@";
 "ask.workflow.editor.test.saveFirst" = "請先儲存產生的工作流程，或讓助手來試跑。";
 "ask.workflow.risk.network" = "存取網路：%@";
 "ask.workflow.risk.networkUnknown" = "存取網路（位址不確定）";
@@ -3068,7 +3068,7 @@
 "ask.workflow.editor.new.tileDetail.pythonText" = "讀參數，印出結果，顯示在卡片裡。";
 "ask.workflow.editor.new.tileDetail.nodeText" = "JavaScript 版本。";
 "ask.workflow.editor.new.tileDetail.shellText" = "呼叫命令列工具最快。";
-"ask.workflow.editor.new.tileDetail.shellAction" = "打開專案、朗讀、切換設定…執行完啟動器關閉。";
+"ask.workflow.editor.new.tileDetail.shellAction" = "打開專案、朗讀、切換設定…執行完超級搜尋框關閉。";
 "ask.workflow.editor.argumentDetail.required" = "沒有參數不能執行";
 "ask.workflow.editor.argumentDetail.optional" = "只輸入關鍵詞也能執行";
 "ask.workflow.editor.argumentDetail.none" = "例如 ip、uuid";
@@ -3079,14 +3079,14 @@
 "ask.workflow.editor.selectionShort.always" = "+選取";
 "ask.workflow.editor.selectionShort.never" = "無選取";
 "ask.workflow.editor.outputDetail.text" = "印出的內容逐行顯示；↩ 複製，⌥↩ 寫回。";
-"ask.workflow.editor.outputDetail.none" = "執行完關閉啟動器，只執行下面的動作。";
+"ask.workflow.editor.outputDetail.none" = "執行完關閉超級搜尋框，只執行下面的動作。";
 "ask.workflow.editor.outputDetail.auto" = "是 {\"items\": …} 就當清單，否則當文字。";
 "ask.workflow.editor.outputDetail.items" = "印出 JSON 項目，相容 Alfred Script Filter。";
 "ask.workflow.editor.outside.title" = "%@ 在編輯器外被修改了";
-"ask.workflow.editor.outside.detail" = "（%1$@，+%2$d −%3$d 行）。在你確認之前，這個工作流程不會在啟動器裡執行。";
+"ask.workflow.editor.outside.detail" = "（%1$@，+%2$d −%3$d 行）。在你確認之前，這個工作流程不會在超級搜尋框裡執行。";
 "ask.workflow.editor.outside.diffTrust" = "查看差異並信任…";
 "ask.workflow.editor.outside.trustTheirs" = "載入並信任…";
-"ask.workflow.editor.preview.title" = "啟動器裡的樣子";
+"ask.workflow.editor.preview.title" = "超級搜尋框裡的樣子";
 "ask.workflow.editor.preview.hint" = "用上次測試執行的輸出；沒執行過就用範例。";
 "ask.workflow.editor.preview.kind" = "工作流程";
 "ask.workflow.editor.preview.sample" = "100 USD = 14,912.30 JPY\n1 USD = 149.123 JPY";
@@ -3103,7 +3103,7 @@
 "ask.workflow.editor.status.trusted" = "上次信任：SHA-256 %@";
 "ask.workflow.editor.test.inputBefore" = "輸入";
 "ask.workflow.editor.test.inputAfter" = "後面的內容";
-"ask.workflow.editor.test.launcherShows" = "啟動器裡會顯示";
+"ask.workflow.editor.test.launcherShows" = "超級搜尋框裡會顯示";
 "ask.workflow.editor.test.lines" = "%d 行輸出";
 "ask.workflow.editor.test.running" = "執行中 · %.1f 秒";
 "ask.workflow.editor.unsavedFile" = "%@ 未儲存";
@@ -3123,7 +3123,7 @@
 "ask.workflow.editor.new.version" = "第 %d 版";
 "ask.workflow.editor.new.passed" = "試跑 %1$d/%2$d 通過";
 "ask.workflow.editor.new.doneTitle" = "「%@」做好了";
-"ask.workflow.editor.new.usage.before" = "在啟動器裡輸入";
+"ask.workflow.editor.new.usage.before" = "在超級搜尋框裡輸入";
 "ask.workflow.editor.new.usage.after" = "加內容就能用。";
 "ask.workflow.editor.new.adjust" = "在編輯器裡調整";
 "ask.workflow.editor.new.save" = "儲存";
@@ -3131,17 +3131,17 @@
 "ask.workflow.assistant.generate.promptPickKeyword" = "幫我做這個工作流程：%1$@\n\n自己挑一個好記、好打的短關鍵詞，用 workflow_check_keyword 確認可用，id 保持「%2$@」。先檢查本機環境，再提交清單和腳本，並試跑。";
 
 /* Agent and Launcher settings panes */
-"studio.section.launcher" = "啟動器";
-"studio.eyebrow.launcher" = "啟動器";
-"studio.heading.launcher" = "啟動器";
-"studio.subheading.launcher" = "啟動器裡的計算機、應用程式搜尋、關鍵詞和你自己的工作流程。它們由啟動器直接觸發，不經過 Agent。";
-"studio.search.launcher" = "搜尋啟動器設定...";
+"studio.section.launcher" = "超級搜尋";
+"studio.eyebrow.launcher" = "超級搜尋";
+"studio.heading.launcher" = "超級搜尋";
+"studio.subheading.launcher" = "超級搜尋裡的計算機、應用程式搜尋、關鍵詞和你自己的工作流程。它們由超級搜尋框直接觸發，不經過 Agent。";
+"studio.search.launcher" = "搜尋此頁設定...";
 "launcher.pane.basics" = "通用";
 "launcher.inputSource.title" = "預設輸入法";
-"launcher.inputSource.detail" = "開啟啟動器時切換到所選輸入法；選擇「無」則保留目前的輸入法。";
+"launcher.inputSource.detail" = "開啟超級搜尋框時切換到所選輸入法；選擇「無」則保留目前的輸入法。";
 "launcher.inputSource.none" = "無";
 "launcher.inputSource.unavailable" = "輸入法無法使用";
-"launcher.basics.subtitle" = "在啟動器裡直接得到結果，不傳送給 AI。";
+"launcher.basics.subtitle" = "在超級搜尋框裡直接得到結果，不傳送給 AI。";
 "agent.group.capabilities" = "能力";
 "agent.group.personalization" = "個人化";
 "agent.rules.title" = "安全規則";
@@ -3286,7 +3286,7 @@
 "ask.workflow.editor.output.group2" = "更多";
 "ask.workflow.editor.output.fieldSeparator" = "、";
 "ask.workflow.editor.output.after" = "動作執行完";
-"ask.workflow.editor.output.close" = "執行完關閉啟動器";
+"ask.workflow.editor.output.close" = "執行完關閉超級搜尋框";
 "ask.workflow.editor.output.closeDetail" = "適合「複製」「通知」這類不需要再看結果的工作流程；「不顯示」時總是關閉。";
 "ask.workflow.editor.output.scriptActions" = "允許腳本追加動作";
 "ask.workflow.editor.output.scriptActionsDetail" = "腳本印出 {\"text\": …, \"actions\": […]} 時，追加在上面的動作之後執行。";
@@ -3303,7 +3303,7 @@
 "ask.workflow.editor.placeholder.empty" = "（空）";
 "ask.workflow.editor.willRun.title" = "這次執行成功後會執行";
 "ask.workflow.editor.willRun.none" = "只顯示結果";
-"ask.workflow.editor.willRun.close" = "關閉啟動器";
+"ask.workflow.editor.willRun.close" = "關閉超級搜尋框";
 "ask.workflow.editor.willRun.script" = "腳本追加的動作（如果有）";
 "ask.workflow.editor.test.previewActions" = "只預覽動作，不實際執行";
 "ask.workflow.editor.test.tab.actions" = "動作";
@@ -3346,7 +3346,7 @@
 "ask.workflow.gallery.viewUpdate" = "查看更新";
 "ask.workflow.gallery.info" = "基本資訊";
 "ask.workflow.gallery.usage" = "用法";
-"ask.workflow.gallery.inLauncher" = "在啟動器裡";
+"ask.workflow.gallery.inLauncher" = "在超級搜尋框裡";
 "ask.workflow.gallery.renameHint" = "衝突時自動改名，例如 %@";
 "ask.workflow.gallery.runtime" = "執行環境";
 "ask.workflow.gallery.does" = "會做什麼";
@@ -3439,7 +3439,7 @@
 "ask.workflow.items.empty" = "沒有結果";
 "ask.workflow.items.invalid" = "輸出不是條目列表（{\"items\": […]}），按文字顯示";
 "ask.workflow.editor.preview.sampleMarkdown" = "### 100 美元\n\n| 貨幣 | 金額 |\n|---|---:|\n| 日圓 | 14,912.30 |\n| 歐元 | 92.18 |\n\n匯率來自 **open.er-api.com**。";
-"ask.workflow.editor.preview.moreItems" = "啟動器裡還有 %d 條";
+"ask.workflow.editor.preview.moreItems" = "超級搜尋框裡還有 %d 條";
 "ask.workflow.gallery.list" = "顯示列表供選擇";
 "ask.workflow.gallery.ip.name" = "本機 IP";
 "ask.workflow.gallery.ip.summary" = "列出本機的網路位址，選一條複製。";
@@ -3560,7 +3560,7 @@
 "ask.plugin.files.title" = "檔案搜尋";
 "ask.plugin.files.option" = "類型";
 "ask.plugin.files.placeholder" = "檔案或檔案夾名稱 · .pdf 限定類型 · in: 限定檔案夾";
-"ask.plugin.files.off" = "檔案搜尋已關閉，可在 設定 › 啟動器 中開啟";
+"ask.plugin.files.off" = "檔案搜尋已關閉，可在 設定 › 超級搜尋 中開啟";
 "ask.plugin.files.none" = "找不到檔案";
 "ask.plugin.files.none.recent" = "還沒有最近的檔案";
 "ask.plugin.files.unlock" = "授權後可以搜尋 %@";
@@ -3572,7 +3572,7 @@
 "ask.settings.quick.files.title" = "檔案搜尋";
 "ask.settings.quick.files.subtitle" = "輸入時列出名稱符合的檔案與檔案夾。索引只儲存在本機。";
 "launcher.pane.search" = "內容檢索";
-"launcher.search.subtitle" = "啟動器如何尋找 App 與檔案。檔案索引只記錄名稱，只儲存在本機。";
+"launcher.search.subtitle" = "超級搜尋如何尋找 App 與檔案。檔案索引只記錄名稱，只儲存在本機。";
 "launcher.search.tab.general" = "一般";
 "launcher.search.tab.apps" = "App";
 "launcher.search.tab.files" = "檔案";
@@ -3586,7 +3586,7 @@
 "launcher.search.fuzzy" = "模糊比對";
 "launcher.search.fuzzy.subtitle" = "字母依序出現也算符合（tbpls → TablePlus），App 與檔案皆適用。";
 "launcher.search.limit" = "檔案模式結果數量";
-"launcher.search.limit.subtitle" = "啟動器每類只列幾筆；檔案模式（f）最多顯示這麼多。";
+"launcher.search.limit.subtitle" = "超級搜尋框每類只列幾筆；檔案模式（f）最多顯示這麼多。";
 "launcher.search.icons" = "檔案圖像";
 "launcher.search.icons.subtitle" = "縮圖：圖片與 PDF 顯示內容預覽。";
 "launcher.search.icons.thumbnails" = "縮圖";
@@ -3730,7 +3730,7 @@
 "ask.translation.error.service" = "服務回傳錯誤 %@";
 "ask.translation.error.http" = "服務回傳 HTTP %d";
 "ask.translation.error.from" = "%@：%@";
-"ask.translation.error.modelMissing" = "翻譯模型已被刪除，請到「設定 → 啟動器 → 翻譯」中重新選擇";
+"ask.translation.error.modelMissing" = "翻譯模型已被刪除，請到「設定 → 超級搜尋 → 翻譯」中重新選擇";
 "ask.plugin.translate.serviceFallback" = "%@ 未能翻譯（%@），已改用 AI";
 "ask.translation.engine.ai" = "AI 大模型";
 "ask.translation.engine.notConfigured" = "%@（未設定）";
@@ -3768,9 +3768,9 @@
 "ask.workflow.chat.cancel" = "取消";
 "ask.workflow.chat.undo" = "復原修改";
 "ask.workflow.chat.actionsPreview" = "執行後的動作僅預覽。腳本本身可以存取你的 Mac。";
-"ask.workflow.chat.empty" = "輸入內容後點「執行」，結果會按啟動器裡的樣子顯示在這裡。";
-"ask.workflow.chat.save" = "儲存到啟動器";
-"ask.workflow.chat.saved" = "已儲存到啟動器";
+"ask.workflow.chat.empty" = "輸入內容後點「執行」，結果會按超級搜尋框裡的樣子顯示在這裡。";
+"ask.workflow.chat.save" = "儲存到超級搜尋";
+"ask.workflow.chat.saved" = "已儲存到超級搜尋";
 "ask.workflow.chat.advanced" = "進階編輯";
 "ask.workflow.chat.runNotice" = "允許這個草稿在你的 Mac 上執行程式碼嗎？";
 "ask.workflow.chat.keyword" = "關鍵詞 / 預設";
@@ -3816,7 +3816,7 @@
 "ask.workflow.chat.resultOK" = "執行成功";
 "ask.workflow.chat.resultFailed" = "執行失敗";
 "ask.workflow.chat.exitCode" = "結束代碼 %d";
-"ask.workflow.chat.launcherPreview" = "啟動器預覽";
+"ask.workflow.chat.launcherPreview" = "超級搜尋框預覽";
 "ask.workflow.chat.log" = "執行記錄";
 "ask.workflow.chat.logEmpty" = "（無錯誤輸出）";
 "ask.workflow.chat.files" = "檔案";
@@ -3832,12 +3832,12 @@
 "ask.workflow.chat.hint.testFirst" = "建議先試執行一次再儲存";
 "ask.workflow.chat.hint.tested" = "試執行通過";
 "ask.workflow.chat.hint.testFailed" = "上次試執行失敗，建議修改後再試";
-"ask.workflow.chat.hint.savedKeyword" = "已儲存，在啟動器輸入 %@ 即可使用";
+"ask.workflow.chat.hint.savedKeyword" = "已儲存，在超級搜尋框輸入 %@ 即可使用";
 "ask.tool.workflow_start" = "開始建立工具";
 "ask.tool.workflow_list" = "尋找既有工具";
 "ask.tool.workflow_read" = "讀取工具草稿";
 "ask.tool.workflow_environment" = "檢查腳本環境";
-"ask.tool.workflow_check_keyword" = "檢查啟動關鍵詞";
+"ask.tool.workflow_check_keyword" = "檢查超級搜尋關鍵詞";
 "ask.tool.workflow_propose" = "更新工具草稿";
 "ask.tool.workflow_test" = "試用工具";
 "ask.tool.workflow_save" = "檢視並儲存工具";
@@ -4088,7 +4088,7 @@
 "ask.browser.placeholder" = "搜尋標題或網址…";
 "ask.browser.focus" = "切換至 Tab";
 "ask.browser.copy" = "複製連結";
-"ask.browser.disabled" = "此搜索已关闭，可在启动器设置中开启。";
+"ask.browser.disabled" = "此搜尋已關閉，可在超級搜尋設定中開啟。";
 "ask.browser.empty" = "暂无可搜索的浏览器内容。";
 "ask.browser.noMatch" = "没有匹配的 Tab 或书签。";
 "ask.browser.automation" = "搜索 %@ 的 Tab 需要自动化权限。";
@@ -4300,7 +4300,7 @@
 "screenshot.text.organize" = "一鍵整理";
 "screenshot.text.original" = "顯示原文";
 "screenshot.text.organize.empty" = "AI 未傳回整理結果，請重試或顯示原文。";
-"screenshot.translate.unavailable" = "翻譯沒有可用的關鍵詞，請在啟動器的關鍵詞設定中新增";
+"screenshot.translate.unavailable" = "翻譯沒有可用的關鍵詞，請在超級搜尋的關鍵詞設定中新增";
 "screenshot.ask.attachmentName" = "截圖";
 "screenshot.ask.attachmentPart" = "截圖 %d/%d";
 "screenshot.ask.tooLong" = "長圖超過 8 張，已改為先取字再問";
@@ -4416,7 +4416,7 @@
 "system.monitor.window.interval" = "更新頻率";
 "system.monitor.window.seconds" = "%@ 秒";
 "system.monitor.window.opacity" = "不透明度";
-"system.monitor.window.openInLauncher" = "在啟動器中打開";
+"system.monitor.window.openInLauncher" = "在超級搜尋框中打開";
 "system.monitor.window.activityMonitor" = "打開「活動監視器」";
 "system.monitor.window.options" = "選項";
 "system.monitor.window.mode.full" = "完整";
@@ -4546,10 +4546,10 @@
 "studio.section.hotkeys" = "快捷鍵";
 "studio.eyebrow.hotkeys" = "快捷鍵";
 "studio.heading.hotkeys" = "快捷鍵";
-"studio.subheading.hotkeys" = "在這裡統一管理 Typeflux 的全域快捷鍵：語音輸入、啟動器、內容工具，以及執行關鍵詞的快捷鍵。";
+"studio.subheading.hotkeys" = "在這裡統一管理 Typeflux 的全域快捷鍵：語音輸入、超級搜尋、內容工具，以及執行關鍵詞的快捷鍵。";
 "studio.search.hotkeys" = "搜尋快捷鍵...";
 "hotkeys.group.voice" = "語音輸入";
-"hotkeys.group.launcher" = "啟動器與視窗";
+"hotkeys.group.launcher" = "超級搜尋與視窗";
 "hotkeys.group.content" = "內容工具";
 "hotkeys.group.keywords" = "關鍵詞快捷鍵";
 "hotkeys.builtIn.activation.title" = "語音輸入";
@@ -4558,8 +4558,8 @@
 "hotkeys.builtIn.auxiliary.subtitle" = "用另一個人設進行語音輸入。";
 "hotkeys.builtIn.persona.title" = "人設切換器";
 "hotkeys.builtIn.persona.subtitle" = "開啟人設清單，切換目前的人設。";
-"hotkeys.builtIn.ask.title" = "啟動器";
-"hotkeys.builtIn.ask.subtitle" = "開啟啟動器（對話），可帶上選取的文字。";
+"hotkeys.builtIn.ask.title" = "超級搜尋";
+"hotkeys.builtIn.ask.subtitle" = "開啟超級搜尋框，可帶上選取的文字。";
 "hotkeys.builtIn.history.title" = "剪貼簿與歷史";
 "hotkeys.builtIn.history.subtitle" = "開啟剪貼簿面板，查看複製過的內容和語音記錄。";
 "hotkeys.builtIn.screenshot.title" = "截圖";
@@ -4567,7 +4567,7 @@
 "hotkeys.action.openChat.title" = "開啟對話視窗";
 "hotkeys.action.openChat.subtitle" = "開啟對話視窗。";
 "hotkeys.action.screenshotText.title" = "截圖識字";
-"hotkeys.action.screenshotText.subtitle" = "框選螢幕區域，在啟動器中顯示其中的文字。";
+"hotkeys.action.screenshotText.subtitle" = "框選螢幕區域，在超級搜尋框中顯示其中的文字。";
 "hotkeys.action.openNotes.title" = "開啟筆記";
 "hotkeys.action.openNotes.subtitle" = "開啟筆記視窗。";
 "hotkeys.action.openWordBook.title" = "開啟單字本";
@@ -4575,7 +4575,7 @@
 "hotkeys.action.openStudio.title" = "開啟 Typeflux";
 "hotkeys.action.openStudio.subtitle" = "開啟 Typeflux 主視窗。";
 "hotkeys.keyword.name" = "關鍵詞 %@";
-"hotkeys.keyword.subtitle" = "在啟動器中執行「%@」，處理選取的文字";
+"hotkeys.keyword.subtitle" = "在超級搜尋框中執行「%@」，處理選取的文字";
 "hotkeys.keyword.unavailable" = "快捷鍵對應的關鍵詞「%@」已刪除或停用。";
 "hotkeys.keyword.status.disabled" = "已停用";
 "hotkeys.keyword.status.unset" = "未設定按鍵";
@@ -4604,7 +4604,7 @@
 "hotkeys.menu.duplicate" = "複製一份";
 "hotkeys.menu.reset" = "恢復預設";
 "hotkeys.menu.more" = "更多";
-"hotkeys.footnote" = "設定頁和啟動器設定裡的快捷鍵入口仍然保留，在任何一處修改都會同步。";
+"hotkeys.footnote" = "設定頁和超級搜尋設定裡的快捷鍵入口仍然保留，在任何一處修改都會同步。";
 "hotkeys.updated" = "快捷鍵已設為 %@";
 
 "hotkeys.column.name" = "名稱";
@@ -4621,10 +4621,10 @@
 "settings.glassIntensity.previewSearch" = "搜尋";
 
 // Launcher default window mode
-"ask.settings.windowMode.title" = "啟動器預設視窗";
+"ask.settings.windowMode.title" = "超級搜尋框預設視窗";
 "ask.settings.windowMode.simple" = "簡約";
 "ask.settings.windowMode.complete" = "完整";
-"ask.settings.windowMode.detail" = "下次開啟啟動器時生效。";
+"ask.settings.windowMode.detail" = "下次開啟超級搜尋框時生效。";
 "ask.settings.windowMode.selected" = "已選取";
 
 "ask.home.section.apps" = "應用程式";
@@ -4634,7 +4634,7 @@
 
 // Launcher file preview
 "launcher.search.preview" = "預覽檔案";
-"launcher.search.preview.subtitle" = "反白檔案時，在啟動器旁顯示預覽。";
+"launcher.search.preview.subtitle" = "反白檔案時，在超級搜尋框旁顯示預覽。";
 "ask.preview.loading" = "正在載入預覽…";
 "ask.preview.pages" = "共 %d 頁";
 "ask.preview.lines" = "共 %d 行";
@@ -4794,7 +4794,7 @@
 "ask.inputHistory.disabled" = "輸入歷史已關閉";
 "ask.inputHistory.noMatches" = "沒有相符的輸入";
 "ask.inputHistory.empty" = "尚無輸入歷史";
-"ask.inputHistory.disabled.detail" = "在啟動器設定中開啟「記住輸入歷史」。";
+"ask.inputHistory.disabled.detail" = "在超級搜尋設定中開啟「記住輸入歷史」。";
 "ask.inputHistory.empty.detail" = "執行搜尋或關閉未完成的輸入後，可在這裡找回。";
 "ask.inputHistory.clear" = "清除輸入歷史…";
 "ask.inputHistory.deleteAll" = "清除全部";
@@ -5227,11 +5227,11 @@
 "help.keyword.shortcut.none" = "在任何 App 裡對選取的文字直接執行";
 "help.keyword.shortcut.set" = "在任何 App 裡選取文字後按下";
 "help.keyword.edit" = "編輯";
-"help.keyword.try" = "在啟動器中試試看";
+"help.keyword.try" = "在超級搜尋框中試試看";
 "help.keyword.none" = "沒有選取的關鍵詞";
 "help.shortcuts.global" = "全域";
 "help.shortcuts.keyword" = "關鍵詞快捷鍵";
-"help.shortcuts.launcher" = "啟動器中";
+"help.shortcuts.launcher" = "超級搜尋框中";
 "help.shortcuts.result" = "結果上";
 "help.shortcuts.chat" = "對話視窗";
 "help.shortcuts.unset" = "未設定";
@@ -5281,7 +5281,7 @@
 "help.faq.keywordNoResponse.q" = "輸入關鍵詞沒有反應";
 "help.faq.keywordNoResponse.a" = "關鍵詞後面要加空格（或冒號）才會進入，例如「fy hello」。\n只輸入關鍵詞時按 ↩，會處理選取的文字。\n停用的關鍵詞在「關鍵詞」頁顯示為灰色。";
 "help.faq.customKeyword.q" = "怎麼新增自己的關鍵詞";
-"help.faq.customKeyword.a" = "在啟動器設定 › 關鍵詞裡，可以根據翻譯、AI 指令或網頁搜尋新增關鍵詞。\n更複雜的需求可以寫一個工作流程，它的關鍵詞會立刻出現在這裡。";
+"help.faq.customKeyword.a" = "在超級搜尋設定 › 關鍵詞裡，可以根據翻譯、AI 指令或網頁搜尋新增關鍵詞。\n更複雜的需求可以寫一個工作流程，它的關鍵詞會立刻出現在這裡。";
 "help.faq.shortcutConflict.q" = "快捷鍵和其他 App 衝突";
 "help.faq.shortcutConflict.a" = "在「設定 › 快捷鍵」裡重新錄製，錄製時會提示衝突。";
 "help.faq.privacy.q" = "我的語音和文字會上傳嗎";
@@ -5332,7 +5332,7 @@
 
 "ask.translation.panel.source.screenshot" = "截圖翻譯";
 
-"ask.translation.panel.source.launcher" = "來自啟動器";
+"ask.translation.panel.source.launcher" = "來自超級搜尋";
 
 "ask.translation.stack.ready" = "按 Return 開始翻譯";
 
@@ -5379,7 +5379,7 @@
 "permission.camera.title" = "攝影機";
 "permission.camera.summary" = "用於在螢幕錄製時顯示攝影機畫面。";
 "permission.calendar.title" = "行事曆";
-"permission.calendar.summary" = "用於在啟動器和 Agent 中讀取行程。";
+"permission.calendar.summary" = "用於在超級搜尋和 Agent 中讀取行程。";
 "permission.notifications.title" = "通知";
 "permission.notifications.summary" = "用於背景工作完成提醒和工作流程通知。";
 "permission.automation.title" = "自動化";
@@ -5411,7 +5411,7 @@
 
 /* Dedicated semantic search keyword. */
 "semantic.keyword.placeholder" = "描述要找的內容 · .pdf 限定類型 · in: 限定檔案夾";
-"semantic.keyword.unavailable" = "語意搜尋未開啟或尚未就緒，請在 設定 › 啟動器 中查看";
+"semantic.keyword.unavailable" = "語意搜尋未開啟或尚未就緒，請在 設定 › 超級搜尋 中查看";
 "semantic.keyword.query" = "描述你想尋找的內容";
 "semantic.keyword.none" = "找不到符合的內容";
 "ask.settings.keywords.kind.semanticFiles.hint" = "根據內容含義搜尋本機檔案";
@@ -5827,7 +5827,7 @@
 "semantic.details.reason.imageNoText" = "影像內容已索引，未辨識到可讀取的文字。";
 "ask.plugin.apps.title" = "應用程式搜尋";
 "ask.plugin.apps.placeholder" = "搜尋應用程式";
-"ask.plugin.apps.off" = "應用程式搜尋已關閉，請在「設定 › 啟動器 › 搜尋」中開啟。";
+"ask.plugin.apps.off" = "應用程式搜尋已關閉，請在「設定 › 超級搜尋 › 搜尋」中開啟。";
 "ask.plugin.apps.empty" = "尚未索引到應用程式";
 "ask.plugin.apps.noMatch" = "沒有符合的應用程式";
 "ask.plugin.apps.open" = "開啟應用程式";
@@ -6095,7 +6095,7 @@
 "ask.quickAsk.send" = "提問";
 "ask.quickAsk.hint" = "↵ 提問 · ⇧↵ 換行 · ⌘O 在聊天中開啟";
 "ask.quickAsk.advanced" = "請在聊天中使用附件、技能或工具。";
-"ask.settings.keywords.kind.quickAsk.hint" = "在啟動器中提問和查看回答，進入聊天繼續追問。";
+"ask.settings.keywords.kind.quickAsk.hint" = "在超級搜尋框中提問和查看回答，進入聊天繼續追問。";
 
 "ask.usage.contextShared" = "剩餘上下文由後續輸入、思考和回覆共享。輸出預留是預算估計，不是已消耗的上下文。";
 
@@ -6116,7 +6116,7 @@
 "terminal.command.unavailable" = "無法準備所選終端，請檢查其設定後重試。";
 "terminal.command.uncertain" = "命令可能已交給終端。再次執行前請先檢查終端；未自動重送。";
 "terminal.command.application" = "終端應用程式";
-"ask.settings.keywords.kind.terminal.hint" = "內建終端在 Typeflux 視窗中用你的登入 shell 及其設定執行命令；外部終端會新開 Terminal 或 iTerm2 視窗。⌘↩ 使用另一種方式。Typeflux 不儲存命令歷史。";
+"ask.settings.keywords.kind.terminal.hint" = "內建終端在超級搜尋框或獨立視窗中用你的登入 shell 及其設定執行命令；外部終端會新開 Terminal 或 iTerm2 視窗。⌘↩ 使用另一種方式。Typeflux 不儲存命令歷史。";
 "terminal.command.keywordConflict" = "終端命令觸發詞已被占用：%@。已保留原入口，可新增「終端命令」關鍵詞另行指定。";
 "ask.plugin.hint.commandEnter" = "⌘↩ %@";
 "terminal.runner.runBuiltin" = "在內建終端執行";
@@ -6369,7 +6369,7 @@
 "ring.editor.record" = "按一下以錄製";
 "ring.type.feature.title" = "Typeflux 功能";
 "ring.type.feature.target" = "功能";
-"ring.type.keyword.title" = "啟動器關鍵詞";
+"ring.type.keyword.title" = "超級搜尋關鍵詞";
 "ring.type.keyword.target" = "關鍵詞";
 "ring.type.app.title" = "打開應用程式";
 "ring.type.app.target" = "應用程式";
@@ -6385,8 +6385,8 @@
 "ring.type.folder.target" = "資料夾";
 "ring.feature.dictation.title" = "語音輸入";
 "ring.feature.dictation.detail" = "免按住聽寫，按語音輸入快速鍵結束";
-"ring.feature.ask.title" = "對話";
-"ring.feature.ask.detail" = "打開啟動器";
+"ring.feature.ask.title" = "超級搜尋";
+"ring.feature.ask.detail" = "打開超級搜尋框";
 "ring.feature.chat.title" = "對話視窗";
 "ring.feature.chat.detail" = "打開對話視窗";
 "ring.feature.screenshot.title" = "截圖";
@@ -6585,7 +6585,7 @@
 "onboarding.v2.verb.ring" = "劃";
 "onboarding.v2.verb.chat" = "問";
 "onboarding.v2.verb.voice.detail" = "語音輸入";
-"onboarding.v2.verb.launcher.detail" = "啟動器 · 剪貼簿";
+"onboarding.v2.verb.launcher.detail" = "超級搜尋 · 剪貼簿";
 "onboarding.v2.verb.ring.detail" = "圓環";
 "onboarding.v2.verb.chat.detail" = "對話";
 "onboarding.v2.hero.voice" = "按住說話，放開寫進目前 App";
@@ -6756,7 +6756,7 @@
 "shortcutDiagnostics.title" = "診斷中心";
 "shortcutDiagnostics.privacy" = "僅儲存在本機，不記錄文字、剪貼簿內容、圖片或按鍵組合。每個日誌檔案最多 256 KiB，保留最多 16 個檔案，7 天未更新的日誌會到期。";
 "shortcutDiagnostics.record" = "記錄回應耗時";
-"shortcutDiagnostics.scope" = "記錄圓環、翻譯、啟動器、剪貼簿和截圖的顯示流程；其他功能記錄快捷鍵命令路由。";
+"shortcutDiagnostics.scope" = "記錄圓環、翻譯、超級搜尋、剪貼簿和截圖的顯示流程；其他功能記錄快捷鍵命令路由。";
 "shortcutDiagnostics.inspect" = "查看耗時與完整階段記錄";
 "shortcutDiagnostics.open" = "開啟診斷面板";
 "shortcutDiagnostics.refresh" = "重新整理";
@@ -6774,14 +6774,14 @@
 "shortcutDiagnostics.other" = "其他結果 / 未完成";
 "shortcutDiagnostics.error" = "無法讀取或匯出診斷資料，請重新整理或選擇其他匯出位置。";
 "shortcutDiagnostics.gaps" = "無法讀取檔案：%d · 無效記錄：%d · 捨棄事件：%d";
-"shortcutDiagnostics.empty" = "暫無記錄。請使用啟動器、剪貼簿或截圖快捷鍵，然後重新整理。";
+"shortcutDiagnostics.empty" = "暫無記錄。請使用超級搜尋、剪貼簿或截圖快捷鍵，然後重新整理。";
 "shortcutDiagnostics.select" = "選取一筆記錄查看各階段耗時。";
 "shortcutDiagnostics.timeline" = "階段時間軸";
 "shortcutDiagnostics.columns" = "右側為識別動作後的累計耗時，下方為與上一事件的間隔。";
 "shortcutDiagnostics.summaryNote" = "每 5 秒重新整理 · 最近保留的 200 筆樣本 · P50/P95 僅統計篩選範圍內已顯示視窗的記錄。未完成記錄可能仍在執行，也可能缺少事件。";
 "shortcutDiagnostics.role.host" = "主處理程序";
 "shortcutDiagnostics.role.shortcuts" = "快捷鍵";
-"shortcutDiagnostics.role.launcher" = "啟動器";
+"shortcutDiagnostics.role.launcher" = "超級搜尋";
 "shortcutDiagnostics.role.clipboard" = "剪貼簿";
 "shortcutDiagnostics.role.screenshot" = "截圖與錄影";
 "shortcutDiagnostics.role.chat" = "聊天";
@@ -6889,8 +6889,8 @@
 /* Opening snapshot diagnostics */
 "shortcutDiagnostics.stage.dataCacheHit" = "重用開啟快照，背景重新整理";
 "shortcutDiagnostics.stage.dataCacheMiss" = "無有效開啟快照，讀取歷史";
-"shortcutDiagnostics.stage.mediaActivationStarted" = "啟動器媒體載入啟用：開始";
-"shortcutDiagnostics.stage.mediaActivationFinished" = "啟動器媒體載入啟用：完成";
+"shortcutDiagnostics.stage.mediaActivationStarted" = "超級搜尋媒體載入啟用：開始";
+"shortcutDiagnostics.stage.mediaActivationFinished" = "超級搜尋媒體載入啟用：完成";
 
 "ask.history.filter" = "篩選對話";
 "ask.history.filter.all" = "全部";
@@ -7225,7 +7225,7 @@
 "help.extra.previousOption" = "切換到上一個選項或語言";
 "help.extra.kind" = "切換聊天／工作模式";
 "help.extra.historyDelete" = "刪除選取的輸入歷史";
-"help.extra.pinLauncher" = "固定／取消固定啟動器";
+"help.extra.pinLauncher" = "固定／取消固定超級搜尋框";
 "help.extra.commandsMenu" = "輸入斜線指令";
 "help.extra.allFiles" = "顯示全部檔案結果";
 "help.extra.regenerate" = "重試／重新產生";
@@ -7314,9 +7314,9 @@
 "help.action.practice.done" = "結束練習";
 "help.action.voice.try" = "現在試一句";
 "help.action.voice.practice.placeholder" = "按住快捷鍵說話";
-"help.action.launcher.try" = "打開啟動器";
+"help.action.launcher.try" = "打開超級搜尋框";
 "help.action.ring.try" = "練習一次";
-"help.action.chat.try" = "打開啟動器";
+"help.action.chat.try" = "打開超級搜尋框";
 "help.action.voice.step1.title" = "按住快捷鍵";
 "help.action.voice.step1.detail" = "游標放在任何 App 的輸入框裡";
 "help.action.voice.step2.title" = "說話";
@@ -7324,7 +7324,7 @@
 "help.action.voice.step3.title" = "放開";
 "help.action.voice.step3.detail" = "文字寫進游標處，也在剪貼簿裡";
 "help.action.launcher.step1.title" = "按下快捷鍵";
-"help.action.launcher.step1.detail" = "啟動器出現在任何 App 之上";
+"help.action.launcher.step1.detail" = "超級搜尋框出現在任何 App 之上";
 "help.action.launcher.step2.title" = "輸入";
 "help.action.launcher.step2.detail" = "App 名稱、算式、檔案，或關鍵詞加空格";
 "help.action.launcher.step3.title" = "按 ↩";
@@ -7335,10 +7335,10 @@
 "help.action.ring.step2.detail" = "指向翻譯、截圖、剪貼簿…";
 "help.action.ring.step3.title" = "放開";
 "help.action.ring.step3.detail" = "執行所指的動作，也可以按數字鍵";
-"help.action.chat.step1.title" = "打開啟動器";
-"help.action.chat.step1.detail" = "用啟動器快捷鍵叫出輸入框";
+"help.action.chat.step1.title" = "打開超級搜尋框";
+"help.action.chat.step1.detail" = "用快捷鍵叫出超級搜尋框";
 "help.action.chat.step2.title" = "輸入 chat";
-"help.action.chat.step2.detail" = "在啟動器輸入 chat";
+"help.action.chat.step2.detail" = "在超級搜尋框輸入 chat";
 "help.action.chat.step3.title" = "按 ↩ 開始聊";
 "help.action.chat.step3.detail" = "打開獨立的對話視窗";
 "help.progress.next" = "下一個：";
@@ -7350,7 +7350,7 @@
 "help.start.tip.recent.detail" = "輸入框為空時按 ↑";
 "help.start.tip.recent.sample" = "上一次輸入";
 "help.start.tip.selection.title" = "先選取再打開";
-"help.start.tip.selection.detail" = "選取的文字會自動帶進啟動器";
+"help.start.tip.selection.detail" = "選取的文字會自動帶進超級搜尋框";
 "help.start.tip.selection.sample" = "週五之前";
 "help.keywords.anatomy.sample" = "你好，世界";
 "help.keywords.anatomy.note" = "只輸入關鍵詞再按 ↩，會處理你在其他 App 裡選取的文字。";
@@ -7531,7 +7531,7 @@
 "apple.reminders.searchTitle" = "搜尋系統提醒事項";
 "apple.notes.searchPlaceholder" = "搜尋標題與內文；Return 預覽，Esc 返回";
 "apple.reminders.searchPlaceholder" = "搜尋提醒事項；Tab 切換未完成／全部";
-"apple.notes.searchHint" = "瀏覽最近備忘錄，或搜尋標題與內文；Return 在啟動器內預覽，⌘O 打開原文";
+"apple.notes.searchHint" = "瀏覽最近備忘錄，或搜尋標題與內文；Return 在超級搜尋框內預覽，⌘O 打開原文";
 "apple.reminders.searchHint" = "搜尋標題與備註；Tab 切換未完成／全部，Return 預覽，⌘O 打開原項目";
 "apple.search.scope" = "範圍";
 "apple.search.preview" = "預覽";
@@ -7582,7 +7582,7 @@
 "setup.speech.cloudUnavailable" = "請登入並檢查雲端服務權限，或設定本機語音模型。";
 "setup.speech.required" = "請先設定語音辨識。%@";
 "setup.skip.title" = "稍後再設定？";
-"setup.skip.allModels.message" = "你仍可使用啟動器搜尋、開啟應用程式和計算。語音輸入、Agent 和 AI 改寫需完成模型設定後才能使用，之後可在設定中補充。";
+"setup.skip.allModels.message" = "你仍可使用超級搜尋開啟應用程式、尋找檔案和計算。語音輸入、Agent 和 AI 改寫需完成模型設定後才能使用，之後可在設定中補充。";
 "setup.skip.speech.message" = "暫不設定語音輸入和語音提問。你仍可繼續設定 AI，透過打字使用 Agent。";
 "setup.skip.language.message" = "Agent、AI 對話和 AI 改寫需設定大型語言模型。語音辨識已設定時，普通聽寫仍可使用。";
 "setup.skip.permissions.message" = "未授權麥克風時無法錄音；未授權輔助使用時無法向其他應用程式輸入文字。之後可在設定中授權。";
@@ -7592,8 +7592,8 @@
 "setup.permission.microphone.impact" = "未授權麥克風時，語音輸入和語音提問無法錄音。";
 "setup.permission.accessibility.impact" = "未授權輔助使用時，無法向其他應用程式輸入文字，部分全域快速鍵也無法使用。";
 "setup.permission.speechRecognition.impact" = "Apple 語音辨識需要授予語音辨識權限。";
-"setup.permission.later" = "啟動器基本搜尋仍可使用，之後可在設定中授權。";
-"setup.skip.existingModels" = "已有模型設定會保留。你可以先使用啟動器，未設定的語音和 AI 服務之後可在設定中補充。";
+"setup.permission.later" = "超級搜尋基本功能仍可使用，之後可在設定中授權。";
+"setup.skip.existingModels" = "已有模型設定會保留。你可以先使用超級搜尋，未設定的語音和 AI 服務之後可在設定中補充。";
 "setup.skip.existingSpeech" = "已有語音模型設定會保留，暫時跳過語音教學，之後可在設定中調整模型。";
 "setup.skip.existingAI" = "已有 AI 模型設定會保留，暫時跳過 AI 功能介紹，之後可在設定中調整模型。";
 
@@ -7675,7 +7675,7 @@
 "terminal.settings.insert.commandAndOutput" = "指令 + 輸出";
 "terminal.settings.finish" = "執行完畢後";
 "terminal.settings.external" = "外部終端機";
-"terminal.launcher.runInLauncher" = "在啟動器中執行";
+"terminal.launcher.runInLauncher" = "在超級搜尋框中執行";
 "terminal.risk.delete" = "永久刪除檔案，不移到垃圾桶";
 "terminal.risk.forcePush" = "強制覆寫遠端分支";
 "terminal.risk.reset" = "捨棄未提交的變更";
@@ -7700,10 +7700,10 @@
 "terminal.session.close.short" = "關閉";
 "terminal.session.close" = "關閉工作階段";
 "terminal.session.close.others" = "關閉其他工作階段";
-"terminal.session.move.launcher" = "移到啟動器";
+"terminal.session.move.launcher" = "移到超級搜尋框";
 
 "terminal.launcher.label" = "終端機";
-"terminal.launcher.destination" = "啟動器內";
+"terminal.launcher.destination" = "超級搜尋框內";
 "terminal.launcher.windowDestination" = "獨立視窗";
 "terminal.launcher.window" = "在視窗中執行";
 "terminal.launcher.open" = "開啟終端機";
@@ -7725,4 +7725,31 @@
 "terminal.session.window.title" = "終端機";
 "terminal.session.window.new" = "新增工作階段 ⌘T";
 "terminal.session.window.pin" = "保持最上層";
-"terminal.session.window.back" = "移回啟動器 ⌘O";
+"terminal.session.window.back" = "移回超級搜尋框 ⌘O";
+
+
+/* Typeflux Classic introduction and switch */
+"classic.intro.title" = "認識 Typeflux Classic";
+"classic.intro.subtitle" = "只有語音輸入，帳號和資料通用。";
+"classic.intro.learnMore" = "了解差異";
+"classic.intro.continue" = "繼續使用 Typeflux";
+"classic.action.switch" = "切換到 Typeflux Classic";
+"classic.feature.voice" = "語音輸入";
+"classic.feature.launcher" = "啟動器";
+"classic.feature.chat" = "對話";
+"classic.feature.ring" = "圓環";
+"classic.feature.screenshot" = "截圖與錄影";
+"classic.feature.clipboard" = "剪貼簿歷史";
+"classic.feature.account" = "帳號與資料";
+"classic.feature.included" = "包含";
+"classic.feature.notIncluded" = "不包含";
+"classic.switch.confirm.title" = "切換到 Typeflux Classic？";
+"classic.switch.confirm.dataKept" = "資料和帳號都會保留。";
+"classic.switch.confirm.missing" = "Classic 中沒有";
+"classic.switch.confirm.action" = "切換";
+"classic.switch.downloading" = "正在下載 Typeflux Classic";
+"classic.switch.installing" = "正在安裝 Typeflux Classic";
+"classic.switch.failed" = "無法切換到 Typeflux Classic";
+"classic.switch.error.identity" = "下載的應用程式不是正版 Typeflux Classic，已拒絕安裝。";
+"classic.switch.error.unavailable" = "Typeflux Classic 暫時無法使用。";
+"classic.switch.error.busy" = "請先結束目前的錄音或工作，再重試。";

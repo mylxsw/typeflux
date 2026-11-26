@@ -25,7 +25,7 @@
 "camera.title" = "相機";
 "camera.summary" = "錄影時顯示相機畫面";
 "calendar.title" = "行事曆";
-"calendar.summary" = "在啟動器和 Agent 中讀取行程";
+"calendar.summary" = "在超級搜尋和 Agent 中讀取行程";
 "notifications.title" = "通知";
 "notifications.summary" = "背景工作完成提醒";
 "automation.title" = "自動化";

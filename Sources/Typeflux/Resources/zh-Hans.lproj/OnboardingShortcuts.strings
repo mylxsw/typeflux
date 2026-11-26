@@ -7,7 +7,7 @@
 "activation" = "语音输入";
 "auxiliary" = "辅助语音输入";
 "persona" = "人设切换";
-"ask" = "启动器";
+"ask" = "超级搜索";
 "ring" = "圆环";
 "history" = "剪贴板";
 "screenshot" = "截图";
@@ -15,7 +15,7 @@
 "activationHint" = "按住说话，松开写入";
 "auxiliaryHint" = "用另一个人设输入";
 "personaHint" = "切换当前人设";
-"askHint" = "打开启动器，可带上选中文字";
+"askHint" = "打开超级搜索框，可带上选中文字";
 "ringHint" = "按住打开，松开执行";
 "historyHint" = "复制过的内容和语音记录";
 "screenshotHint" = "框选区域截图并编辑";

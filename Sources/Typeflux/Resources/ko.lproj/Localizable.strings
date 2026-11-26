@@ -7721,3 +7721,29 @@
 "terminal.session.window.new" = "새 세션 ⌘T";
 "terminal.session.window.pin" = "항상 위에 표시";
 "terminal.session.window.back" = "런처로 돌아가기 ⌘O";
+
+/* Typeflux Classic introduction and switch */
+"classic.intro.title" = "Typeflux Classic 소개";
+"classic.intro.subtitle" = "음성 입력만 제공합니다. 계정과 데이터는 공유됩니다.";
+"classic.intro.learnMore" = "차이 보기";
+"classic.intro.continue" = "Typeflux 계속 사용";
+"classic.action.switch" = "Typeflux Classic으로 전환";
+"classic.feature.voice" = "음성 입력";
+"classic.feature.launcher" = "런처";
+"classic.feature.chat" = "대화";
+"classic.feature.ring" = "링";
+"classic.feature.screenshot" = "스크린샷 및 녹화";
+"classic.feature.clipboard" = "클립보드 기록";
+"classic.feature.account" = "계정 및 데이터";
+"classic.feature.included" = "포함";
+"classic.feature.notIncluded" = "미포함";
+"classic.switch.confirm.title" = "Typeflux Classic으로 전환할까요?";
+"classic.switch.confirm.dataKept" = "데이터와 계정은 그대로 유지됩니다.";
+"classic.switch.confirm.missing" = "Classic에 없는 기능";
+"classic.switch.confirm.action" = "전환";
+"classic.switch.downloading" = "Typeflux Classic 다운로드 중";
+"classic.switch.installing" = "Typeflux Classic 설치 중";
+"classic.switch.failed" = "Typeflux Classic으로 전환하지 못했습니다";
+"classic.switch.error.identity" = "다운로드한 앱이 정품 Typeflux Classic이 아니어서 설치하지 않았습니다.";
+"classic.switch.error.unavailable" = "현재 Typeflux Classic을 사용할 수 없습니다.";
+"classic.switch.error.busy" = "진행 중인 녹음이나 작업을 마친 후 다시 시도하세요.";

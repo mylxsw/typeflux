@@ -4,11 +4,11 @@
 
 [返回中文介绍](../README.zh-CN.md) · [English overview](../README.md)
 
-## 启动器 / Launcher
+## 超级搜索 / Launcher
 
 | Light · 亮色 | Dark · 暗色 |
 | --- | --- |
-| [![启动器 / Launcher Light](../assets/product/previews/launcher-light.jpg)](../assets/product/launcher-light.png) | [![启动器 / Launcher Dark](../assets/product/previews/launcher-dark.jpg)](../assets/product/launcher-dark.png) |
+| [![超级搜索框 / Launcher Light](../assets/product/previews/launcher-light.jpg)](../assets/product/launcher-light.png) | [![超级搜索框 / Launcher Dark](../assets/product/previews/launcher-dark.jpg)](../assets/product/launcher-dark.png) |
 
 ## 即时计算 / Calculator
 

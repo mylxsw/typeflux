@@ -19,7 +19,7 @@ struct VoiceModelsPagesRenderTests {
             let history = FileHistoryStore(baseDir: root.appendingPathComponent("history"))
             let now = Date()
             for (offset, text) in ["把下周的发布计划整理成三点，发到群里。", "帮我回复：周四下午三点可以开会。",
-                                   "Typeflux 的启动器支持关键词和工作流。"].enumerated() {
+                                   "Typeflux 的超级搜索支持关键词和工作流。"].enumerated() {
                 history.save(record: HistoryRecord(date: now.addingTimeInterval(Double(-offset) * 600),
                                                    transcriptText: text))
             }

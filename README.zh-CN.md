@@ -16,23 +16,23 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 ## 从一个输入框开始
 
-唤出启动器，输入应用名、文件名，或直接写下问题。打开应用、切到浏览器标签页、寻找文件里的内容，无需先想“该去哪个应用”。
+唤出超级搜索框，输入应用名、文件名，或直接写下问题。打开应用、切到浏览器标签页、寻找文件里的内容，无需先想“该去哪个应用”。
 
 | 亮色 | 暗色 |
 | --- | --- |
-| [![亮色启动器](assets/product/previews/launcher-light.jpg)](assets/product/launcher-light.png) | [![暗色启动器](assets/product/previews/launcher-dark.jpg)](assets/product/launcher-dark.png) |
+| [![亮色超级搜索框](assets/product/previews/launcher-light.jpg)](assets/product/launcher-light.png) | [![暗色超级搜索框](assets/product/previews/launcher-dark.jpg)](assets/product/launcher-dark.png) |
 
 **顺手算一下。** 买东西算折扣、分摊费用、换算数字，输入算式就能看到结果，再一键复制。
 
 | 亮色 | 暗色 |
 | --- | --- |
-| [![在亮色启动器中计算折扣](assets/product/previews/calculator-light.jpg)](assets/product/calculator-light.png) | [![在暗色启动器中计算折扣](assets/product/previews/calculator-dark.jpg)](assets/product/calculator-dark.png) |
+| [![在亮色超级搜索框中计算折扣](assets/product/previews/calculator-light.jpg)](assets/product/calculator-light.png) | [![在暗色超级搜索框中计算折扣](assets/product/previews/calculator-dark.jpg)](assets/product/calculator-dark.png) |
 
 **用关键词直达功能。** 输入 `clip` 查找剪贴板历史，`note` 记一条系统备忘录，`remind` 添加提醒事项。输入 `prefix`，还能浏览可用的关键词。常用操作也可以设成自己的关键词。
 
 | 亮色 | 暗色 |
 | --- | --- |
-| [![亮色启动器使用 clip 关键词查找灵感](assets/product/previews/keyword-light.jpg)](assets/product/keyword-light.png) | [![暗色启动器使用 clip 关键词查找灵感](assets/product/previews/keyword-dark.jpg)](assets/product/keyword-dark.png) |
+| [![亮色超级搜索框使用 clip 关键词查找灵感](assets/product/previews/keyword-light.jpg)](assets/product/keyword-light.png) | [![暗色超级搜索框使用 clip 关键词查找灵感](assets/product/previews/keyword-dark.jpg)](assets/product/keyword-dark.png) |
 
 ## 说出来，文字就到光标处
 
@@ -88,7 +88,7 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 ## 和 Chat 一起，把想法往前推进
 
-从启动器发起对话，带上文件、截图或选中的文字，让 AI 帮你查资料、整理内容、翻译和写作。还可以让它在你授权的文件夹里处理文件、操作应用，把回答变成实际完成的工作。
+从超级搜索框发起对话，带上文件、截图或选中的文字，让 AI 帮你查资料、整理内容、翻译和写作。还可以让它在你授权的文件夹里处理文件、操作应用，把回答变成实际完成的工作。
 
 对话里有内置浏览器、历史记录和笔记，查到的资料、正在讨论的内容可以放在一起。你也能把经常做的事情保存为指令或工作流，下次用一个关键词调用。
 
