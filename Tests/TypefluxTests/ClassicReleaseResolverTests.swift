@@ -85,6 +85,11 @@ final class ClassicReleaseResolverTests: XCTestCase {
         XCTAssertEqual(ClassicReleaseResolver.apiBaseURL(fromResponseURL: response)?.absoluteString, "https://example.com/gateway")
     }
 
+    func testAPIBaseURLWithoutReleasePathIsKept() throws {
+        let response = try XCTUnwrap(URL(string: "https://example.com/other?x=1#frag"))
+        XCTAssertEqual(ClassicReleaseResolver.apiBaseURL(fromResponseURL: response)?.absoluteString, "https://example.com/other")
+    }
+
     func testServerArchitectureMapsIntel() {
         XCTAssertEqual(ClassicReleaseResolver.serverArchitecture("amd64"), "x86_64")
         XCTAssertEqual(ClassicReleaseResolver.serverArchitecture("arm64"), "arm64")
@@ -150,6 +155,29 @@ final class ClassicBundleVerifierTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
         XCTAssertEqual(try ClassicBundleVerifier.sha256(ofFileAt: url),
                        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+    }
+
+    func testReadsIdentityOfASignedApp() throws {
+        let calculator = URL(fileURLWithPath: "/System/Applications/Calculator.app")
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: calculator.path))
+        let identity = try ClassicBundleVerifier.identity(ofAppAt: calculator)
+        XCTAssertEqual(identity.bundleIdentifier, "com.apple.calculator")
+        XCTAssertNotNil(identity.leafCertificateSHA256)
+        XCTAssertEqual(identity.leafCertificateSHA256?.count, 64)
+    }
+
+    func testReadsCurrentProcessIdentityWhenSigned() {
+        // The test runner may be ad-hoc signed; either outcome must be a clean result, not a crash.
+        if let identity = try? ClassicBundleVerifier.currentIdentity() {
+            XCTAssertEqual(identity.bundleIdentifier, Bundle.main.bundleIdentifier)
+        }
+    }
+
+    func testMissingAppIsUnreadable() {
+        let missing = URL(fileURLWithPath: "/nonexistent/\(UUID().uuidString).app")
+        XCTAssertThrowsError(try ClassicBundleVerifier.identity(ofAppAt: missing)) {
+            XCTAssertEqual($0 as? ClassicBundleVerificationError, .signatureUnreadable)
+        }
     }
 
     func testUnsignedDirectoryIdentityIsUnreadableOrTeamless() throws {

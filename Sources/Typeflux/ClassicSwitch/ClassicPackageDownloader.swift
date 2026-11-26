@@ -13,8 +13,15 @@ enum ClassicPackageDownloadError: LocalizedError, Equatable {
 }
 
 struct URLSessionClassicPackageDownloader: ClassicPackageDownloading {
+    /// Injectable for tests; each download builds its own session from it.
+    var configuration: @Sendable () -> URLSessionConfiguration = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 60
+        return configuration
+    }
+
     func download(from url: URL, progress: @escaping @Sendable (Double?) -> Void) async throws -> URL {
-        let operation = ClassicDownloadOperation(progress: progress)
+        let operation = ClassicDownloadOperation(configuration: configuration(), progress: progress)
         return try await withTaskCancellationHandler {
             try await operation.start(url: url)
         } onCancel: {
@@ -26,6 +33,7 @@ struct URLSessionClassicPackageDownloader: ClassicPackageDownloading {
 /// One transfer. URLSession retains its delegate until `finishTasksAndInvalidate` completes.
 private final class ClassicDownloadOperation: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
     private let progress: @Sendable (Double?) -> Void
+    private let configuration: URLSessionConfiguration
     private let lock = NSLock()
     private var continuation: CheckedContinuation<URL, Error>?
     private var task: URLSessionDownloadTask?
@@ -34,14 +42,13 @@ private final class ClassicDownloadOperation: NSObject, URLSessionDownloadDelega
     private var failure: Error?
     private var cancelled = false
 
-    init(progress: @escaping @Sendable (Double?) -> Void) {
+    init(configuration: URLSessionConfiguration, progress: @escaping @Sendable (Double?) -> Void) {
+        self.configuration = configuration
         self.progress = progress
     }
 
     func start(url: URL) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
-            let configuration = URLSessionConfiguration.ephemeral
-            configuration.timeoutIntervalForRequest = 60
             let session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
             let task = session.downloadTask(with: url)
             let alreadyCancelled = lock.withLock {
