@@ -1,5 +1,7 @@
+import Combine
 import Foundation
 import Testing
+import XCTest
 @testable import Typeflux
 
 private let opaque = String(repeating: "a", count: 43)
@@ -325,7 +327,11 @@ struct WebLoginCoordinatorTests {
         let h = Harness()
         h.api.create = { transaction(expiry: clock.timeIntervalSince1970 + 0.01) }
         await h.coordinator.start()
-        try await Task.sleep(for: .milliseconds(50))
+        let expired = XCTestExpectation(description: "Web login expired")
+        let observation = h.coordinator.$phase.first { $0 == .failed(.expired) }.sink { _ in expired.fulfill() }
+        defer { observation.cancel() }
+        let result = await XCTWaiter.fulfillment(of: [expired], timeout: 10)
+        #expect(result == .completed)
         #expect(h.coordinator.phase == .failed(.expired) && h.store.pending == nil)
         #expect(h.api.exchanges == 0)
     }
@@ -418,7 +424,7 @@ struct WebLoginHTTPTests {
             #expect(request.httpMethod == "POST" && !request.httpShouldHandleCookies)
             #expect(request.value(forHTTPHeaderField: "X-Typeflux-Credit-Version") == "2")
             #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
-            #expect(request.value(forHTTPHeaderField: "x-client-product") == "typeflux")
+            #expect(request.value(forHTTPHeaderField: "x-client-product") == TypefluxProduct.identifier)
         }
         let create = try JSONDecoder().decode([String: String].self, from: #require(requests[0].httpBody))
         let exchange = try JSONDecoder().decode([String: String].self, from: #require(requests[1].httpBody))
