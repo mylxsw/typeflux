@@ -208,7 +208,7 @@ final class AutoUpdater {
                 try AutoUpdater.performInstall(from: archiveURL, sourceURL: sourceURL, relaunch: relaunch)
             }.value
 
-            NSApp.terminate(nil)
+            NSApp.terminateFromTask()
         } catch {
             state = .idle
             showCheckFailedAlert(message: error.localizedDescription)
@@ -260,23 +260,7 @@ final class AutoUpdater {
             }
             try AutoUpdateArchiveInstaller.verifyCodeSignature(of: newAppURL)
             try? fm.removeItem(at: archiveURL)
-
-            let scriptURL = fm.temporaryDirectory.appendingPathComponent("typeflux_relaunch_\(UUID().uuidString).sh")
-            let script = AutoUpdateArchiveInstaller.relaunchScript(
-                currentAppURL: Bundle.main.bundleURL,
-                newAppURL: newAppURL,
-                cleanupURL: tempDir,
-                currentProcessIdentifier: getpid(),
-                relaunch: relaunch
-            )
-            try script.write(to: scriptURL, atomically: true, encoding: .utf8)
-            try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
-
-            let launcher = Process()
-            launcher.executableURL = URL(fileURLWithPath: "/bin/bash")
-            launcher.arguments = [scriptURL.path]
-            try launcher.run()
-            // launcher runs detached; do not wait
+            try AutoUpdateArchiveInstaller.launchReplacement(newAppURL: newAppURL, cleanupURL: tempDir, relaunch: relaunch)
         } catch {
             try? fm.removeItem(at: tempDir)
             throw error
@@ -402,6 +386,33 @@ enum AutoUpdateArchiveInstaller {
         guard status == 0 else {
             throw UpdateError.signatureVerificationFailed
         }
+    }
+
+    /// Starts a detached script that waits for this process to exit, swaps the app bundle in
+    /// place and optionally relaunches it. The caller terminates the app afterwards.
+    static func launchReplacement(
+        newAppURL: URL,
+        cleanupURL: URL?,
+        relaunch: Bool,
+        currentAppURL: URL = Bundle.main.bundleURL
+    ) throws {
+        let fm = FileManager.default
+        let scriptURL = fm.temporaryDirectory.appendingPathComponent("typeflux_relaunch_\(UUID().uuidString).sh")
+        let script = relaunchScript(
+            currentAppURL: currentAppURL,
+            newAppURL: newAppURL,
+            cleanupURL: cleanupURL,
+            currentProcessIdentifier: getpid(),
+            relaunch: relaunch
+        )
+        try script.write(to: scriptURL, atomically: true, encoding: .utf8)
+        try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
+
+        let launcher = Process()
+        launcher.executableURL = URL(fileURLWithPath: "/bin/bash")
+        launcher.arguments = [scriptURL.path]
+        try launcher.run()
+        // launcher runs detached; do not wait
     }
 
     static func relaunchScript(
