@@ -39,35 +39,61 @@ extension SemanticFileStore {
             \(columns.joined(separator: ",")));
         """)
         try sql("CREATE INDEX IF NOT EXISTS index_run_started ON index_runs(started DESC)")
+        try sql("""
+        CREATE TABLE IF NOT EXISTS automatic_index_schedule(
+            id INTEGER PRIMARY KEY CHECK(id=1), due REAL NOT NULL);
+        """)
         for counter in SemanticIndexDiagnostics.Counter.allCases {
             try addColumn("index_runs", name: counter.rawValue, declaration: "INTEGER NOT NULL DEFAULT 0")
         }
     }
 
-    func beginRun(reason: SemanticIndexDiagnostics.Reason, configuration: String) throws {
+    /// Start a collection window when pending work is first scheduled, then reuse it across restarts.
+    func automaticIndexDelay(interval: TimeInterval, now: Date, firstDiscovery: Bool) throws -> TimeInterval {
+        try lock.withLock {
+            if firstDiscovery {
+                let run = try statement("SELECT 1 FROM index_runs LIMIT 1")
+                defer { sqlite3_finalize(run) }
+                let status = sqlite3_step(run)
+                if status == SQLITE_DONE { return 0 }
+                guard status == SQLITE_ROW else { throw Failure.database }
+            }
+            let current = now.timeIntervalSince1970
+            try execute("INSERT OR IGNORE INTO automatic_index_schedule VALUES(1,?)", [current + interval])
+            let schedule = try statement("SELECT due FROM automatic_index_schedule WHERE id=1")
+            defer { sqlite3_finalize(schedule) }
+            guard sqlite3_step(schedule) == SQLITE_ROW else { throw Failure.database }
+            return max(0, sqlite3_column_double(schedule, 0) - current)
+        }
+    }
+
+    func beginRun(reason: SemanticIndexDiagnostics.Reason, configuration: String, now: Date = .now) throws {
         try lock.withLock {
             let generation = SHA256.hash(data: Data(configuration.utf8)).map { String(format: "%02x", $0) }.joined()
             let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
             let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
             let id = UUID().uuidString
-            try execute("""
-            INSERT INTO index_runs(id,reason,stage,started,configuration,model,recipe,application)
-            VALUES(?,?,'checking',?,?,?,?,?)
-            """, [id, reason.rawValue, Date().timeIntervalSince1970, generation,
-                  SemanticFilePolicy.profile,
-                  Self.documentProvenance + ";" + SemanticPDFText.recipe + ";"
-                      + SemanticWordText.recipe + ";" + SemanticHTMLText.recipe + ";"
-                      + SemanticRTFText.recipe + ";" + SemanticODTText.recipe + ";"
-                      + SemanticPresentationText.recipe + ";" + SemanticSpreadsheetText.recipe + ";"
-                      + Self.mediaProvenance + ";" + SemanticAudioWindows.recipe,
-                  version + " (" + build + ")"])
+            try transaction {
+                try execute("""
+                INSERT INTO index_runs(id,reason,stage,started,configuration,model,recipe,application)
+                VALUES(?,?,'checking',?,?,?,?,?)
+                """, [id, reason.rawValue, now.timeIntervalSince1970, generation,
+                      SemanticFilePolicy.profile,
+                      Self.documentProvenance + ";" + SemanticPDFText.recipe + ";"
+                          + SemanticWordText.recipe + ";" + SemanticHTMLText.recipe + ";"
+                          + SemanticRTFText.recipe + ";" + SemanticODTText.recipe + ";"
+                          + SemanticPresentationText.recipe + ";" + SemanticSpreadsheetText.recipe + ";"
+                          + Self.mediaProvenance + ";" + SemanticAudioWindows.recipe,
+                      version + " (" + build + ")"])
+                try sql("DELETE FROM automatic_index_schedule")
+                try execute(
+                    """
+                    DELETE FROM index_runs WHERE id IN (SELECT id FROM index_runs ORDER BY started DESC LIMIT -1 OFFSET 32)
+                    """,
+                    []
+                )
+            }
             activeRunID = id
-            try execute(
-                """
-                DELETE FROM index_runs WHERE id IN (SELECT id FROM index_runs ORDER BY started DESC LIMIT -1 OFFSET 32)
-                """,
-                []
-            )
         }
     }
 
@@ -91,11 +117,11 @@ extension SemanticFileStore {
         }
     }
 
-    func finishRun(stage: SemanticIndexDiagnostics.Stage) throws {
+    func finishRun(stage: SemanticIndexDiagnostics.Stage, now: Date = .now) throws {
         try lock.withLock {
             guard let activeRunID else { return }
             try execute("UPDATE index_runs SET stage=?,finished=? WHERE id=?",
-                        [stage.rawValue, Date().timeIntervalSince1970, activeRunID])
+                        [stage.rawValue, now.timeIntervalSince1970, activeRunID])
         }
     }
 

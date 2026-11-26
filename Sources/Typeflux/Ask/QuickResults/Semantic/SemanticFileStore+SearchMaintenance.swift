@@ -2,6 +2,20 @@ import Foundation
 import SQLite3
 
 extension SemanticFileStore {
+    func hasPendingSearchMaintenance() throws -> Bool {
+        try lock.withLock {
+            let row = try statement("""
+                SELECT 1 FROM search_migration WHERE page_done=0 OR lexical_done=0
+                UNION ALL SELECT 1 FROM totals_migration WHERE done=0
+                UNION ALL SELECT 1 FROM search_dirty LIMIT 1
+                """)
+            defer { sqlite3_finalize(row) }
+            let step = sqlite3_step(row)
+            guard step == SQLITE_ROW || step == SQLITE_DONE else { throw Failure.database }
+            return step == SQLITE_ROW
+        }
+    }
+
     // Initializers perform DDL only. Each keyset batch commits its generated rows and cursor together;
     // cancellation rolls back only this batch, while the previous FTS generation remains searchable.
     // swiftlint:disable:next function_body_length cyclomatic_complexity

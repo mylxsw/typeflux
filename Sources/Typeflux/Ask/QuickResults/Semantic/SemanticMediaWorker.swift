@@ -37,7 +37,7 @@ enum SemanticMediaIdle {
         let idle = events.map { event in
             CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: event)
         }.min() ?? 0
-        return idle >= 15
+        return idle >= 10 * 60
     }
 }
 

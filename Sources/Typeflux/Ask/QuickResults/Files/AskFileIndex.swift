@@ -94,6 +94,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private var usageCounts: [String: Int]
     /// What the queue is working towards; nil when off. Changing it cancels a scan under way.
     private var target: String?
+    private var needsTurnOff = true
     private var generation = 0
     private var preparationGeneration = 0
 
@@ -228,15 +229,17 @@ extension AskFileIndex {
             let fingerprint = enabled && !settings.fileRoots.isEmpty ? Self.fingerprint(settings, access: access) : nil
             let run = self.lock.withLock { () -> Int? in
                 guard self.preparationGeneration == requested,
-                      fingerprint != self.target || (fingerprint == nil && self.currentStatus.phase != .off) else { return nil }
+                      fingerprint == nil ? self.needsTurnOff : fingerprint != self.target else { return nil }
                 self.suspended = !self.readerOwnership.permitsWork && fingerprint != nil
                 // An initial pre-ready request must not consume this configuration.
                 // A later explicit start may try it; readiness itself never scans.
                 self.target = self.suspended ? nil : fingerprint
+                if fingerprint != nil { self.needsTurnOff = true }
                 // A new scope cannot reuse paths authorized by the old configuration.
                 self.published = AskFileIndexState(home: self.home)
                 self.publishedRevision += 1
-                self.currentStatus = AskFileIndexStatus(phase: self.suspended ? .ready : .loading)
+                let phase: AskFileIndexStatus.Phase = fingerprint == nil ? .off : (self.suspended ? .ready : .loading)
+                self.currentStatus = AskFileIndexStatus(phase: phase)
                 self.currentStatus.failed = self.suspended ? 1 : 0
                 self.generation += 1
                 return self.generation
@@ -244,7 +247,12 @@ extension AskFileIndex {
             if let run {
                 self.queue.async {
                     if let fingerprint { self.follow(settings: settings, access: access, fingerprint: fingerprint, run: run) }
-                    else { self.turnOff() }
+                    else if self.lock.withLock({ self.generation == run }) {
+                        self.turnOff()
+                        self.lock.withLock {
+                            if self.generation == run { self.needsTurnOff = false }
+                        }
+                    }
                 }
             }
         }
@@ -348,7 +356,7 @@ extension AskFileIndex {
 
     /// Brings the index in line with the settings: off, already right, loaded from disk, or built.
     private func follow(settings: AskLauncherSearchSettings, access: Bool, fingerprint: String, run: Int) {
-        guard isCurrent(run), fingerprint != self.fingerprint else { return }
+        guard isCurrent(run) else { return }
         reader = makeReader()
         let scope = AskFileScope(settings: settings, fullDiskAccess: access, home: home).resolved(using: reader)
         self.fingerprint = fingerprint
@@ -371,6 +379,7 @@ extension AskFileIndex {
         pendingEvents = nil
         fingerprint = nil
         scope = nil
+        reader.stop()
         reader = makeReader()
         working = AskFileIndexState(home: home)
         dirty = false

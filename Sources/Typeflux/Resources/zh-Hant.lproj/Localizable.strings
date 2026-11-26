@@ -5302,7 +5302,8 @@
 "help.link.feedback" = "回報問題";
 "help.start.untried" = "你還沒試過";
 "help.start.tips" = "不用關鍵詞也能做";
-"launcher.search.files.master.subtitle" = "在啟動器中搜尋檔案名稱。關閉後，檔案名稱與語意搜尋都會停止。";
+"launcher.search.files.master.title" = "檔案搜尋與索引";
+"launcher.search.files.master.subtitle" = "關閉後會停止檔案名稱與內容索引，並移除已儲存的檔案名稱索引。";
 "launcher.search.files.scope.shared" = "檔案名稱與語意搜尋共用這份範圍";
 "launcher.search.files.addFolder" = "加入資料夾";
 "launcher.search.files.exclusionsHint" = "排除規則在「排除」中設定";
@@ -5345,6 +5346,7 @@
 "semantic.media.downloading" = "正在下載媒體編碼器…";
 
 "semantic.media.waiting" = "文件已可搜尋 · 媒體索引等待閒置";
+"semantic.index.schedule" = "自動更新至少間隔 3 小時，使用電池供電時暫停。媒體索引在鍵盤與滑鼠閒置 10 分鐘後繼續。";
 
 "semantic.media.failed" = "媒體索引失敗，文件仍可搜尋";
 

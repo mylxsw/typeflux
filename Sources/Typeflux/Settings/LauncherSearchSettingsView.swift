@@ -131,8 +131,9 @@ struct LauncherSearchSettingsView: View {
 
     @ViewBuilder private var filesTab: some View {
         TFFormSection {
-            TFFormRow(title: L("ask.settings.quick.files.title"), icon: "doc.text.magnifyingglass") {
-                TFSwitch(title: L("ask.settings.quick.files.title"),
+            TFFormRow(title: L("launcher.search.files.master.title"), detail: L("launcher.search.files.master.subtitle"),
+                      icon: "doc.text.magnifyingglass") {
+                TFSwitch(title: L("launcher.search.files.master.title"),
                          isOn: Binding(get: { filesEnabled }, set: setFilesEnabled))
                     .accessibilityIdentifier("launcher.search.files.enabled")
             }

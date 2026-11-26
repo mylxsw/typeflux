@@ -5394,7 +5394,8 @@
 "ask.translation.panel.screenshot.editHint" = "you can fix typos, then press ↩";
 "ask.plugin.wordCard.moreExamples" = "More examples (%d)";
 "ask.translation.stack.configure" = "Configure";
-"launcher.search.files.master.subtitle" = "Find files by name in the launcher. Turning this off stops both name and semantic search.";
+"launcher.search.files.master.title" = "File search and indexing";
+"launcher.search.files.master.subtitle" = "Turning this off stops file name and content indexing and removes the saved file name index.";
 "launcher.search.files.scope.shared" = "Name and semantic search share these folders";
 "launcher.search.files.addFolder" = "Add Folder";
 "launcher.search.files.exclusionsHint" = "Set exclusions in the Exclude tab";
@@ -5423,6 +5424,7 @@
 "semantic.media.downloading" = "Downloading media encoders…";
 
 "semantic.media.waiting" = "Documents searchable · Media indexing waits for idle time";
+"semantic.index.schedule" = "Automatic updates are at least 3 hours apart and pause on battery power. Media indexing waits for 10 minutes of inactivity.";
 
 "semantic.media.failed" = "Media indexing failed; documents remain searchable";
 

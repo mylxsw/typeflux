@@ -17,8 +17,10 @@ final class SemanticIndexEvents: @unchecked Sendable {
     private var notificationPending = false
     private var lastSeenEventID: UInt64 = 0
     private var hasStoredReceipt = false
+    private let maximumPendingPaths: Int?
 
-    init(url: URL) throws {
+    init(url: URL, maximumPendingPaths: Int? = SemanticIndexEvents.batchSize) throws {
+        self.maximumPendingPaths = maximumPendingPaths
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,
                               nil) == SQLITE_OK else {
             sqlite3_close(database); throw SemanticFileStore.Failure.database
@@ -33,6 +35,8 @@ final class SemanticIndexEvents: @unchecked Sendable {
             CREATE TABLE IF NOT EXISTS events(path TEXT PRIMARY KEY,root TEXT NOT NULL,subtree INTEGER NOT NULL,revision INTEGER NOT NULL)
             """)
             try execute("CREATE INDEX IF NOT EXISTS event_roots ON events(root)")
+            try execute("CREATE INDEX IF NOT EXISTS event_subtrees ON events(root) WHERE subtree=1")
+            try execute("CREATE INDEX IF NOT EXISTS event_revisions ON events(revision,path)")
             try execute("CREATE TABLE IF NOT EXISTS coalescing(value INTEGER NOT NULL)")
             try execute("INSERT INTO coalescing SELECT 0 WHERE NOT EXISTS(SELECT 1 FROM coalescing)")
             try execute("CREATE TABLE IF NOT EXISTS watch_cursor(value TEXT NOT NULL)")
@@ -165,8 +169,9 @@ final class SemanticIndexEvents: @unchecked Sendable {
             "INSERT OR REPLACE INTO events VALUES(?,?,?,(SELECT value FROM clock))",
             [path, root, subtree ? 1 : 0]
         )
-        let pending = try rows("SELECT path,subtree,revision,root FROM events WHERE root=? LIMIT 129", [root])
-        if pending.count > Self.batchSize {
+        if let maximumPendingPaths, try !rows("""
+            SELECT path,subtree,revision,root FROM events WHERE root=? LIMIT 1 OFFSET ?
+            """, [root, maximumPendingPaths]).isEmpty {
             try execute("DELETE FROM events WHERE root=?", [root])
             try execute("INSERT INTO events VALUES(?,?,1,(SELECT value FROM clock))", [root, root])
             try execute("UPDATE coalescing SET value=value+1")
@@ -197,13 +202,24 @@ final class SemanticIndexEvents: @unchecked Sendable {
         try lock.withLock { try !rows("SELECT path,subtree,revision,root FROM events LIMIT 1").isEmpty }
     }
 
+    func latestRevision() throws -> Int64 {
+        try lock.withLock {
+            let row = try prepare("SELECT value FROM clock", [])
+            defer { sqlite3_finalize(row) }
+            guard sqlite3_step(row) == SQLITE_ROW else { throw SemanticFileStore.Failure.database }
+            return sqlite3_column_int64(row, 0)
+        }
+    }
+
     /// Acknowledge only after the main index has committed its durable queue. Revision guards retain
     /// another event for the same path received during transfer; crash replay is idempotent.
-    func transfer(to store: SemanticFileStore, cancelled: () -> Bool = { false }) throws {
+    @discardableResult
+    func transfer(to store: SemanticFileStore, through revision: Int64 = .max,
+                  cancelled: () -> Bool = { false }) throws -> Bool {
         guard !cancelled() else { throw CancellationError() }
         let batch = try lock
-            .withLock { try rows("SELECT path,subtree,revision,root FROM events ORDER BY revision,path LIMIT 128") }
-        guard !batch.isEmpty else { return }
+            .withLock { try rows("SELECT path,subtree,revision,root FROM events WHERE revision<=? ORDER BY revision,path LIMIT 128", [revision]) }
+        guard !batch.isEmpty else { return false }
         try store.acceptEvents(batch, cancelled: cancelled)
         try lock.withLock {
             guard !cancelled() else { throw CancellationError() }
@@ -218,6 +234,7 @@ final class SemanticIndexEvents: @unchecked Sendable {
                 try execute("COMMIT")
             } catch { try? execute("ROLLBACK"); throw error }
         }
+        return true
     }
 
     private func prepare(_ sql: String, _ values: [Any]) throws -> OpaquePointer {

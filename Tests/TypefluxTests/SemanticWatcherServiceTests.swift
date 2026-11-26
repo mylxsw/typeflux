@@ -9,6 +9,17 @@ private final class WatcherHistory: @unchecked Sendable {
     func snapshot(_: [String]) -> (UInt64, String?) { lock.withLock { (id, "private-fixture-volume") } }
 }
 
+private final class WatcherPolicyInputs: @unchecked Sendable {
+    static let interval: TimeInterval = 3 * 60 * 60
+    private let lock = NSLock()
+    private var time = Date(timeIntervalSince1970: 1_000_000)
+    private var pluggedIn = false
+    var now: Date { lock.withLock { time } }
+    var externalPower: Bool { lock.withLock { pluggedIn } }
+    func advance(_ seconds: TimeInterval) { lock.withLock { time += seconds } }
+    func plugIn(_ value: Bool) { lock.withLock { pluggedIn = value } }
+}
+
 private final class WatcherWorkGate: @unchecked Sendable {
     private let condition = NSCondition()
     private var held = false, entered = false, failure = false
@@ -70,7 +81,7 @@ struct SemanticWatcherServiceTests {
         await service.clear(removeModel: true)
     }
 
-    private func fixture() async throws -> (SemanticFileSearchService, URL, SemanticFixtureWatcher,
+    private func fixture(policy: WatcherPolicyInputs? = nil) async throws -> (SemanticFileSearchService, URL, SemanticFixtureWatcher,
         SemanticProgressScheduler, WatcherHistory, WatcherReader, WatcherEncoder, SemanticFileStore, AskFileScope) {
         let (base, root, reader, models) = try SemanticFileServiceTests().fixture()
         try FileManager.default.copyItem(at: models.source, to: base.modelURL)
@@ -79,15 +90,81 @@ struct SemanticWatcherServiceTests {
         let service = SemanticFileSearchService(settings: base.settings, directory: root,
             helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true, watcher: watcher,
             access: { true }, automaticStart: false, lowPowerMode: { false }, thermalConstrained: { false },
+            externalPower: { policy?.externalPower ?? true }, batchInterval: policy == nil ? 0 : WatcherPolicyInputs.interval,
+            now: { policy?.now ?? .now },
             models: models, makeReader: { scoped }, makeEncoder: { _, _ in encoder },
             makeQuery: { _, _ in SemanticFixtureQuery() }, watcherDelivery: SemanticWatcherDelivery(schedule: { queue.enqueue($0) }),
             eventHistory: { history.snapshot($0) })
         #expect(service.setEnabled(true))
-        try await SemanticFileServiceTests.wait { service.phase == .ready }
         let store = try SemanticFileStore(url: root.appendingPathComponent("semantic-files.sqlite"))
         let scope = SemanticFilePolicy.scope(names: service.settings.askLauncherSearchSettings, fullDiskAccess: true)
+        if policy != nil {
+            try await SemanticFileServiceTests.wait { service.phase == .paused }
+            return (service, root, watcher, queue, history, scoped, encoder, store, scope)
+        }
+        try await SemanticFileServiceTests.wait { service.phase == .ready }
         #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 100)
         return (service, root, watcher, queue, history, scoped, encoder, store, scope)
+    }
+
+    @Test func timedBatchesSurviveRestartAndRequireExternalPower() async throws {
+        let policy = WatcherPolicyInputs()
+        let (service, root, watcher, queue, history, reader, encoder, store, _) = try await fixture(policy: policy)
+        defer { encoder.gate.release(); try? FileManager.default.removeItem(at: root) }
+        func updatePower(_ pluggedIn: Bool) {
+            policy.plugIn(pluggedIn)
+            // Force a pause-state refresh without relying on the host Mac's power source.
+            service.setForegroundBusy(true)
+            service.setForegroundBusy(false)
+        }
+        #expect(try store.runDiagnostics() == nil)
+        updatePower(true)
+        try await SemanticFileServiceTests.wait { service.phase == .ready && service.files == 1 }
+        let firstRun = try store.runDiagnostics()
+        let first = try #require(firstRun)
+
+        reader.base.modified += 1
+        history.advance(101)
+        watcher.change?([.init(path: reader.base.path, rescan: false)], 101)
+        queue.run()
+        try await SemanticFileServiceTests.wait {
+            (try? store.lock.withLock { try store.count("automatic_index_schedule") }) == 1
+        }
+        policy.advance(WatcherPolicyInputs.interval - 60)
+        service.start(force: true)
+        try await SemanticFileServiceTests.wait { service.phase == .ready && watcher.since == 101 }
+        #expect(try store.runDiagnostics()?.id == first.id)
+
+        updatePower(false)
+        policy.advance(60)
+        #expect(service.phase == .paused)
+        #expect(try store.runDiagnostics()?.id == first.id)
+        encoder.gate.hold()
+        updatePower(true)
+        try await SemanticFileServiceTests.wait { encoder.gate.waiting }
+        let secondRun = try store.runDiagnostics()
+        let second = try #require(secondRun)
+        #expect(second.started == policy.now)
+        let latePath = root.appendingPathComponent("late.txt").path
+        history.advance(102)
+        watcher.change?([.init(path: latePath, rescan: false)], 102)
+        queue.run()
+        updatePower(false)
+        #expect(service.phase == .paused)
+        updatePower(true)
+        encoder.gate.release()
+        try await SemanticFileServiceTests.wait { service.phase == .ready }
+        let journal = try SemanticIndexEvents(url: root.appendingPathComponent("index-events.sqlite"))
+        #expect(try journal.pending(), "A later revision belongs to the next window")
+        #expect(try store.runDiagnostics()?.id == second.id)
+
+        policy.advance(WatcherPolicyInputs.interval)
+        updatePower(true)
+        try await SemanticFileServiceTests.wait {
+            service.phase == .ready && (try? store.runDiagnostics()?.id) != second.id
+        }
+        #expect(try !journal.pending())
+        await service.shutdown()
     }
 
     @Test func heldConsumerDoesNotAcknowledgeUntilTargetedWorkActuallyFinishes() async throws {

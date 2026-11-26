@@ -5,6 +5,28 @@ import Testing
 
 @Suite("Index work diagnostics", .serialized)
 struct SemanticIndexDiagnosticsTests {
+    @Test func automaticCollectionWindowStartsWhenWorkArrivesAfterALongQuietPeriod() throws {
+        let root = try semanticFixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("index.sqlite")
+        let store = try SemanticFileStore(url: url)
+        let interval: TimeInterval = 3 * 60 * 60
+        let firstRun = Date(timeIntervalSince1970: 1_000_000)
+        #expect(try store.automaticIndexDelay(interval: interval, now: firstRun, firstDiscovery: true) == 0)
+        try store.beginRun(reason: .startup, configuration: "fixture", now: firstRun)
+        try store.finishRun(stage: .complete, now: firstRun.addingTimeInterval(60))
+
+        let arrival = firstRun.addingTimeInterval(10 * 60 * 60)
+        #expect(try store.automaticIndexDelay(interval: interval, now: arrival, firstDiscovery: false) == interval)
+        let reopened = try SemanticFileStore(url: url)
+        #expect(try reopened.automaticIndexDelay(
+            interval: interval, now: arrival.addingTimeInterval(60), firstDiscovery: false
+        ) == interval - 60)
+        #expect(try reopened.automaticIndexDelay(
+            interval: interval, now: arrival.addingTimeInterval(interval), firstDiscovery: false
+        ) == 0)
+    }
+
     @Test func `unchanged startup and single-file events encode only necessary content`() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let a = root.appendingPathComponent("a.txt"), b = root.appendingPathComponent("b.txt")

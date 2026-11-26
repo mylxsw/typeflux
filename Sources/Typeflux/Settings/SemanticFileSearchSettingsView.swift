@@ -50,6 +50,9 @@ struct SemanticFileSearchSettingsView: View {
                 .accessibilityIdentifier("semantic.enabled")
             }
             detail
+            if enabled && filesEnabled {
+                Self.caption(L("semantic.index.schedule"))
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 14)
         .onHover { isHovering = $0 }

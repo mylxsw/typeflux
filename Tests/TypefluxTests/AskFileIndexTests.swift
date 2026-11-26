@@ -557,6 +557,36 @@ struct AskFileIndexServiceTests {
         #expect(index.status.phase == .off, "rebuild does nothing while off")
     }
 
+    @Test func disablingAnActiveIndexStopsItsWatcherAndRemovesTheSnapshot() throws {
+        let root = try makeTree()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let snapshot = root.appendingPathComponent("index.bin")
+        let watcher = AskTestFileWatcher()
+        let names = settings(root)
+        var enabled = true
+        let index = AskFileIndex(configuration: { (enabled, names) }, fullDiskAccess: { true },
+                                 snapshotURL: snapshot, home: root.path,
+                                 makeReader: { AskRecordingFileReader() }, makeWatcher: { watcher })
+        index.start()
+        index.waitUntilIdle()
+        #expect(FileManager.default.fileExists(atPath: snapshot.path))
+        #expect(index.status.phase == .ready)
+
+        enabled = false
+        index.start()
+        index.waitUntilIdle()
+        #expect(watcher.stopped == 1)
+        #expect(index.status.phase == .off)
+        #expect(!FileManager.default.fileExists(atPath: snapshot.path))
+        #expect(index.search(AskSearchQuery("report"), options: AskFileSearchOptions()).isEmpty)
+
+        enabled = true
+        index.start()
+        index.waitUntilIdle()
+        #expect(index.status.phase == .ready)
+        #expect(!index.search(AskSearchQuery("report"), options: AskFileSearchOptions()).isEmpty)
+    }
+
     @Test func remembersWhatWasOpened() throws {
         let suite = "ask-files-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))

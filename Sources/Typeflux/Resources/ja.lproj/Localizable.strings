@@ -5268,7 +5268,8 @@
 "help.link.feedback" = "問題を報告";
 "help.start.untried" = "まだ試していない";
 "help.start.tips" = "キーワードなしで";
-"launcher.search.files.master.subtitle" = "ランチャーでファイル名を検索します。オフにすると名前と意味検索の両方が停止します。";
+"launcher.search.files.master.title" = "ファイル検索と索引";
+"launcher.search.files.master.subtitle" = "オフにするとファイル名と内容の索引作成が停止し、保存済みのファイル名索引が削除されます。";
 "launcher.search.files.scope.shared" = "名前検索と意味検索はこの範囲を共有します";
 "launcher.search.files.addFolder" = "フォルダを追加";
 "launcher.search.files.exclusionsHint" = "除外ルールは「除外」で設定";
@@ -5311,6 +5312,7 @@
 "semantic.media.downloading" = "メディアエンコーダーをダウンロード中…";
 
 "semantic.media.waiting" = "文書は検索可能 · アイドル時にメディアを索引";
+"semantic.index.schedule" = "自動更新は 3 時間以上の間隔で行われ、バッテリー駆動中は一時停止します。メディアの索引作成は 10 分間操作がないと再開します。";
 
 "semantic.media.failed" = "メディアの索引に失敗しました。文書は検索できます";
 
