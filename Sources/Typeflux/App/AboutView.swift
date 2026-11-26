@@ -19,6 +19,7 @@ struct AboutView: View {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
                     headerCard
                     detailsCard
+                        .refreshesClassicAvailability()
                 }
                 .padding(StudioTheme.Insets.cardDefault)
                 .frame(maxWidth: 560, alignment: .leading)
@@ -126,7 +127,37 @@ struct AboutView: View {
                 value: versionDescription,
                 subtitle: L("about.build.subtitle")
             )
+
+            ClassicSwitchEntry(controller: .shared) {
+                divider
+                classicSwitchRow
+            }
         }
+    }
+
+    private var classicSwitchRow: some View {
+        Button {
+            ClassicSwitchWindowController.shared.present()
+        } label: {
+            HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
+                detailIcon("arrow.left.arrow.right")
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                    Text("Typeflux Classic")
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                    Text(L("classic.action.switch"))
+                        .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(StudioInteractiveButtonStyle())
+        .accessibilityIdentifier("about.classic.switch")
     }
 
     private func detailRow(icon: String, title: String, value: String, subtitle: String) -> some View {

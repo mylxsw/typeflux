@@ -7721,3 +7721,29 @@
 "terminal.session.window.new" = "新規セッション ⌘T";
 "terminal.session.window.pin" = "常に手前に表示";
 "terminal.session.window.back" = "ランチャーに戻す ⌘O";
+
+/* Typeflux Classic introduction and switch */
+"classic.intro.title" = "Typeflux Classic のご紹介";
+"classic.intro.subtitle" = "音声入力のみ。アカウントとデータは共通です。";
+"classic.intro.learnMore" = "違いを見る";
+"classic.intro.continue" = "Typeflux を使い続ける";
+"classic.action.switch" = "Typeflux Classic に切り替える";
+"classic.feature.voice" = "音声入力";
+"classic.feature.launcher" = "ランチャー";
+"classic.feature.chat" = "チャット";
+"classic.feature.ring" = "リング";
+"classic.feature.screenshot" = "スクリーンショットと録画";
+"classic.feature.clipboard" = "クリップボード履歴";
+"classic.feature.account" = "アカウントとデータ";
+"classic.feature.included" = "あり";
+"classic.feature.notIncluded" = "なし";
+"classic.switch.confirm.title" = "Typeflux Classic に切り替えますか？";
+"classic.switch.confirm.dataKept" = "データとアカウントはそのまま残ります。";
+"classic.switch.confirm.missing" = "Classic にない機能";
+"classic.switch.confirm.action" = "切り替える";
+"classic.switch.downloading" = "Typeflux Classic をダウンロード中";
+"classic.switch.installing" = "Typeflux Classic をインストール中";
+"classic.switch.failed" = "Typeflux Classic に切り替えられませんでした";
+"classic.switch.error.identity" = "ダウンロードしたアプリは正規の Typeflux Classic ではないため、インストールしませんでした。";
+"classic.switch.error.unavailable" = "Typeflux Classic は現在利用できません。";
+"classic.switch.error.busy" = "現在の録音やタスクを終えてから、もう一度お試しください。";
