@@ -1,6 +1,9 @@
 name: Tests
 
 on:
+  pull_request:
+  push:
+    branches: [main]
   issue_comment:
     types: [created]
 
@@ -8,10 +11,19 @@ permissions:
   contents: read
 
 concurrency:
-  group: tests-autotest-${{ github.event.issue.number }}
+  group: tests-autotest-${{ github.event.issue.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  account-boundary:
+    if: github.event_name != 'issue_comment'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: git fetch --no-tags --depth=1 origin refs/tags/v0.4.0
+      - run: python3 scripts/check_account_module_boundary.py
+      - run: python3 -m unittest discover -s scripts/tests -p test_account_module_boundary.py
+
   test:
     if: >-
       github.event.issue.pull_request &&
@@ -30,6 +42,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ github.event.issue.number }}/merge
+
+      - name: Fetch Classic baseline
+        if: matrix.group == 'unit'
+        run: git fetch --no-tags --depth=1 origin refs/tags/v0.4.0
 
       - name: Test development scripts
         if: matrix.group == 'unit'

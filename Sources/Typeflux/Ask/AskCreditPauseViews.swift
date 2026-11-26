@@ -94,7 +94,7 @@ struct AskCreditPauseCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AskAccountTone.chip))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AccountTone.chip))
         .accessibilityElement(children: .combine)
     }
 

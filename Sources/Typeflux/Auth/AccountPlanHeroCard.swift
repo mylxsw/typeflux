@@ -107,7 +107,7 @@ struct AccountPlanHeroCard: View {
                         .lineLimit(1)
                 }
                 .padding(.top, StudioTheme.Spacing.medium)
-                AskAccountProgressBar(progress: credits.progress ?? 0, color: AskAccountTone.bar(status.level))
+                AccountProgressBar(progress: credits.progress ?? 0, color: AccountTone.bar(status.level))
                     .padding(.top, 10)
                     .accessibilityElement()
                     .accessibilityLabel(L("auth.account.usageQuota"))
@@ -142,7 +142,7 @@ struct AccountPlanHeroCard: View {
             AccountAddonCreditRow(addon: addon, compact: false)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AskAccountTone.chip))
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AccountTone.chip))
                 .padding(.top, 12)
         }
     }

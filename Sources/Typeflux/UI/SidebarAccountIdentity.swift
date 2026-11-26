@@ -32,7 +32,7 @@ struct AskSignedOutIdentity: View {
             Image(systemName: "desktopcomputer").font(.system(size: 13, weight: .medium))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .frame(width: 30, height: 30)
-                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .background(AccountTone.hoverFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             VStack(alignment: .leading, spacing: 1) {
                 Text(L("ask.local.identity")).font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
@@ -47,7 +47,7 @@ struct AskSignedOutIdentity: View {
         .padding(.leading, 4).padding(.trailing, 8)
         .frame(height: 40)
         .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
-            .fill(hovering ? AskTheme.hoverFill : .clear))
+            .fill(hovering ? AccountTone.hoverFill : .clear))
         .contentShape(Rectangle())
     }
 }

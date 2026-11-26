@@ -76,7 +76,7 @@ struct AskAccountCard: View {
                     .monospacedDigit()
             }
             if let progress = credits.progress {
-                AskAccountProgressBar(progress: progress, color: AskAccountTone.bar(presentation.level))
+                AccountProgressBar(progress: progress, color: AccountTone.bar(presentation.level))
                     .padding(.top, 8)
                     .padding(.bottom, 6)
             } else {
@@ -103,7 +103,7 @@ struct AskAccountCard: View {
         .padding(.horizontal, 10)
         .padding(.top, 10)
         .padding(.bottom, 11)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AskAccountTone.chip))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(AccountTone.chip))
         .padding(.horizontal, 4)
     }
 
@@ -151,7 +151,7 @@ struct AskAccountCard: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .frame(height: 28)
-                    .background(Capsule().fill(tone == .accent ? StudioTheme.accent : AskAccountTone.foreground(tone)))
+                    .background(Capsule().fill(tone == .accent ? StudioTheme.accent : AccountTone.foreground(tone)))
                     .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -179,7 +179,7 @@ struct AskAccountCard: View {
                                       startPoint: .topLeading, endPoint: .bottomTrailing))
                 .overlay(shape.strokeBorder(StudioTheme.accent.opacity(0.25)))
         } else {
-            shape.fill(AskAccountTone.fill(tone))
+            shape.fill(AccountTone.fill(tone))
         }
     }
 
@@ -221,22 +221,6 @@ struct AskAccountCard: View {
                 }
             )
         }
-    }
-}
-
-struct AskAccountProgressBar: View {
-    let progress: Double
-    let color: Color
-
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .leading) {
-                Capsule().fill(AskAccountTone.chip)
-                Capsule().fill(color).frame(width: max(0, proxy.size.width * min(max(progress, 0), 1)))
-            }
-        }
-        .frame(height: 6)
-        .accessibilityHidden(true)
     }
 }
 

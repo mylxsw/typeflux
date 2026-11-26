@@ -17,16 +17,10 @@ protocol CloudModelDefaultsPrompting: AnyObject {
 
 @MainActor
 final class CloudModelDefaultsAlertPresenter: CloudModelDefaultsPrompting {
-    private let settingsStore: SettingsStore
-
-    init(settingsStore: SettingsStore) {
-        self.settingsStore = settingsStore
-    }
-
     func confirmSwitchToCloudDefaults() -> Bool {
         let alert = NSAlert()
         alert.alertStyle = .informational
-        alert.icon = AppIconController.image(for: settingsStore.appIconStyle)
+        alert.icon = NSApplication.shared.applicationIconImage
         alert.messageText = L("cloud.subscriptionSwitch.title")
         alert.informativeText = L("cloud.subscriptionSwitch.body")
         alert.addButton(withTitle: L("cloud.subscriptionSwitch.confirm"))
@@ -49,6 +43,7 @@ final class CloudLoginSyncCoordinator {
     }
 
     private let settingsStore: SettingsStore
+    private let languageProvider: (SettingsStore) -> LLMProvider
     private let authState: AuthState
     private let promptPresenter: CloudModelDefaultsPrompting
     private let logger = Logger(subsystem: "ai.gulu.app.typeflux", category: "CloudLoginSyncCoordinator")
@@ -59,11 +54,13 @@ final class CloudLoginSyncCoordinator {
     init(
         settingsStore: SettingsStore,
         authState: AuthState? = nil,
-        promptPresenter: CloudModelDefaultsPrompting? = nil
+        promptPresenter: CloudModelDefaultsPrompting? = nil,
+        languageProvider: @escaping (SettingsStore) -> LLMProvider = { $0.llmProvider }
     ) {
+        self.languageProvider = languageProvider
         self.settingsStore = settingsStore
         self.authState = authState ?? AuthState.shared
-        self.promptPresenter = promptPresenter ?? CloudModelDefaultsAlertPresenter(settingsStore: settingsStore)
+        self.promptPresenter = promptPresenter ?? CloudModelDefaultsAlertPresenter()
         let notifications: [Notification.Name] = [
             .authDidLogin, .authCheckoutSubscriptionDidBecomeEntitled, .authSubscriptionCheckDidFinish, .authDidLogout
         ]
@@ -94,7 +91,7 @@ final class CloudLoginSyncCoordinator {
 
     private var currentOffer: Offer? {
         guard authState.isLoggedIn, settingsStore.isOnboardingCompleted,
-              OnboardingCloudModel.activeSession == nil else { return nil }
+              !AccountOnboarding.hasActiveSession else { return nil }
         return Offer(generation: authState.sessionGeneration, speech: settingsStore.sttProvider,
                      language: settingsStore.llmProvider, languageRemote: settingsStore.llmRemoteProvider,
                      rewriteReference: settingsStore.rewriteModelReference)
@@ -115,7 +112,7 @@ final class CloudLoginSyncCoordinator {
         guard let canUseSpeech = authState.settledCloudASRAccess else { return }
         pendingOffer = nil
         guard canUseSpeech else { return }
-        let alreadyUsesCloudRewrite = settingsStore.effectiveLLMProvider == .openAICompatible
+        let alreadyUsesCloudRewrite = languageProvider(settingsStore) == .openAICompatible
             && settingsStore.textLLMConfiguration().provider == .typefluxCloud
         guard !alreadyUsesCloudRewrite || offer.speech != .typefluxOfficial else { return }
 

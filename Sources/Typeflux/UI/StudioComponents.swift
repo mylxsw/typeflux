@@ -601,11 +601,12 @@ struct StudioShell<Content: View>: View {
 
 /// Compatibility adapter for login and about windows; all windows share one material policy.
 struct StudioGlassBackground: View {
+    @Environment(\.usesLoginWindowCanvas) private var usesLoginWindowCanvas
     @Environment(\.interfaceStyle) private var style
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        if style == .classic {
+        if style == .classic && !usesLoginWindowCanvas {
             StudioTheme.windowBackground.background(AskWindowBackdrop.base(dark: colorScheme == .dark))
         } else {
             AskWindowBackdrop()

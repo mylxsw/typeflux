@@ -36,10 +36,7 @@ enum AskTheme {
         light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.08),
         dark: NSColor(calibratedWhite: 1.0, alpha: 0.10)
     )
-    static let separator = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.08),
-        dark: NSColor(calibratedWhite: 1.0, alpha: 0.07)
-    )
+    static let separator = AccountTone.separator
     static let accentSoft = StudioTheme.dynamic(
         light: NSColor(calibratedRed: 0.906, green: 0.937, blue: 1.0, alpha: 1),
         dark: NSColor(calibratedRed: 0.082, green: 0.149, blue: 0.243, alpha: 1)
@@ -73,10 +70,7 @@ enum AskTheme {
                             dark: StudioTheme.rgb(dark, alpha: darkAlpha ?? alpha))
     }
 
-    static let accentText = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 29 / 255, green: 78 / 255, blue: 216 / 255, alpha: 1),
-        dark: NSColor(calibratedRed: 0.557, green: 0.741, blue: 1.0, alpha: 1)
-    )
+    static let accentText = AccountTone.accentText
     static let successSoft = StudioTheme.dynamic(
         light: NSColor(calibratedRed: 0.894, green: 0.965, blue: 0.929, alpha: 1),
         dark: NSColor(calibratedRed: 0.071, green: 0.161, blue: 0.114, alpha: 1)
@@ -231,10 +225,7 @@ enum AskTheme {
         dark: NSColor(calibratedWhite: 1, alpha: 0.12)
     )
     /// Translucent hover wash, so borderless controls read the same on any surface.
-    static let hoverFill = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 0, alpha: 0.06),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.08)
-    )
+    static let hoverFill = AccountTone.hoverFill
     static let monoSurface = StudioTheme.dynamic(
         light: NSColor(calibratedRed: 0.957, green: 0.965, blue: 0.976, alpha: 1),
         dark: NSColor(calibratedRed: 0.063, green: 0.071, blue: 0.086, alpha: 1)

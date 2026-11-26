@@ -3,6 +3,25 @@ import Foundation
 import XCTest
 
 final class RecentInputMemoryTests: XCTestCase {
+    func testAccountTransitionFencesObservationsAndClearsOnlyTheDepartingOwner() {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let store = RecentInputMemoryStore(fileURL: file)
+        let center = NotificationCenter()
+        let observer = RecentInputMemoryStore.observeAccountChanges(in: center) { store }
+        defer { center.removeObserver(observer) }
+        for owner in ["first", "second"] {
+            store.upsert(id: UUID(), appIdentifier: "app", scope: "app", text: owner, owner: owner)
+        }
+        let initialGeneration = store.currentGeneration()
+        center.post(name: .accountSessionWillChange, object: nil)
+        XCTAssertNotEqual(store.currentGeneration(), initialGeneration)
+        XCTAssertEqual(store.recent(scope: "app", owner: "first"), ["first"])
+        center.post(name: .accountSessionWillChange, object: "first")
+        XCTAssertTrue(store.recent(scope: "app", owner: "first").isEmpty)
+        XCTAssertEqual(store.recent(scope: "app", owner: "second"), ["second"])
+    }
+
     func testSettingsEnableAllAppsExceptExplicitExclusions() {
         let name = "RecentInputMemoryTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: name)!

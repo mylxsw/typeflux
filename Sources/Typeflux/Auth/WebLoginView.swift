@@ -1,5 +1,16 @@
 import SwiftUI
 
+private enum LoginWindowCanvasKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var usesLoginWindowCanvas: Bool {
+        get { self[LoginWindowCanvasKey.self] }
+        set { self[LoginWindowCanvasKey.self] = newValue }
+    }
+}
+
 struct WebLoginView: View {
     @ObservedObject var coordinator: WebLoginCoordinator
     @ObservedObject private var localization = AppLocalization.shared
@@ -43,7 +54,7 @@ struct WebLoginView: View {
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(AskWindowBackdrop())
+        .background(StudioGlassBackground().environment(\.usesLoginWindowCanvas, true))
         .onChange(of: coordinator.phase) { phase in
             if phase == .succeeded {
                 onDismiss()

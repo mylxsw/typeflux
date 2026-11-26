@@ -259,7 +259,9 @@ final class DIContainer {
             ollama: OllamaAgentService()
         )
         notificationService = SystemLocalNotificationService.shared
-        cloudLoginSyncCoordinator = FeatureProcess.owns(.host) ? CloudLoginSyncCoordinator(settingsStore: settingsStore) : nil
+        cloudLoginSyncCoordinator = FeatureProcess.owns(.host) ? CloudLoginSyncCoordinator(
+            settingsStore: settingsStore, languageProvider: { $0.effectiveLLMProvider }
+        ) : nil
         cloudDataSyncCoordinator = FeatureProcess.owns(.host) ? CloudDataSyncCoordinator.shared : nil
         localModelManager = LocalModelManager(analyticsReporter: analyticsReporter)
         bundledModelAutoSetup = BundledModelAutoSetup(linker: localModelManager)
