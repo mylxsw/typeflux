@@ -1794,7 +1794,7 @@
 // Ask conversation usage
 "ask.usage.title" = "使用量";
 "ask.usage.conversationSpent" = "この会話で使用";
-"ask.usage.conversationSpentHelp" = "この会話で使用した credits です。アカウント残高ではありません。クリックすると内訳を表示します。";
+"ask.usage.conversationSpentHelp" = "この会話で使用したクレジットです。アカウント残高ではありません。クリックすると内訳を表示します。";
 "ask.usage.close" = "使用量を閉じる";
 "ask.usage.context" = "コンテキスト";
 "ask.usage.conversationContext" = "会話のコンテキスト";
@@ -1812,7 +1812,7 @@
 "ask.usage.pendingShort" = "確認待ち";
 "ask.usage.pending" = "一部の料金は確認待ちです。表示額は確認済み分のみです。";
 "ask.usage.incomplete" = "一部の使用量または料金を取得できません。既知の分のみ表示します。";
-"ask.usage.external" = "独自 API は Typeflux credits を消費しません。プロバイダー料金は別途発生します。";
+"ask.usage.external" = "独自 API は Typeflux クレジットを消費しません。プロバイダー料金は別途発生します。";
 "ask.usage.confirmed" = "確認済み · 呼び出し時の課金結果";
 "ask.usage.unavailable" = "使用量を取得できません";
 "ask.usage.scope" = "集計範囲";
@@ -1841,7 +1841,7 @@
 "ask.usage.summary" = "自動要約";
 "ask.usage.inference" = "回答 / ツール判断";
 "ask.usage.externalShort" = "独自 API";
-"ask.usage.localHelp" = "独自モデルが報告したトークン数です。使用量はこの Mac に保存され、Typeflux credits は消費しません。";
+"ask.usage.localHelp" = "独自モデルが報告したトークン数です。使用量はこの Mac に保存され、Typeflux クレジットは消費しません。";
 
 /* GUL-151 Ask tools */
 "ask.files.denied" = "このパスは チャット に許可されたフォルダの外にあります。設定 → Agent → ファイルアクセス でフォルダを追加してください。";
@@ -7602,7 +7602,9 @@
 "ask.local.contextTooLong" = "会話がモデルの処理できる長さを超えています。新しい会話を開始してください。";
 "ask.local.requestRejected" = "モデルがリクエストを拒否しました。選択したモデルとリクエストの設定を確認してください。";
 
-"models.cloud.price.details" = "入力：%@ Credits / 1K Tokens\n出力：%@ Credits / 1K Tokens\nキャッシュ入力（Cached）：%@";
+"models.cloud.price.label" = "↓ %@ / ↑ %@ クレジット / 1K Tokens";
+"models.cloud.price.rate" = "%@ クレジット / 1K Tokens";
+"models.cloud.price.details" = "入力：%@ クレジット / 1K Tokens\n出力：%@ クレジット / 1K Tokens\nキャッシュ入力（Cached）：%@";
 "models.cloud.price.unavailable" = "未提供";
 
 // Image approval details

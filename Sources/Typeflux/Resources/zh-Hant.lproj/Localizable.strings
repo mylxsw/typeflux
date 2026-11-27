@@ -1801,7 +1801,7 @@
 // Ask conversation usage
 "ask.usage.title" = "用量";
 "ask.usage.conversationSpent" = "本對話已用";
-"ask.usage.conversationSpentHelp" = "這段對話已消耗的 credits，不是帳戶餘額。點選查看用量明細。";
+"ask.usage.conversationSpentHelp" = "這段對話已消耗的額度，不是帳戶餘額。點選查看用量明細。";
 "ask.usage.close" = "關閉用量";
 "ask.usage.context" = "上下文";
 "ask.usage.conversationContext" = "對話上下文";
@@ -1819,7 +1819,7 @@
 "ask.usage.pendingShort" = "待確認";
 "ask.usage.pending" = "部分費用待確認；目前金額僅含已確認部分。";
 "ask.usage.incomplete" = "部分用量或費用無法取得；僅顯示已知消耗。";
-"ask.usage.external" = "自有 API，不消耗 Typeflux credits。供應商費用另計。";
+"ask.usage.external" = "自有 API，不消耗 Typeflux 額度。供應商費用另計。";
 "ask.usage.confirmed" = "已確認 · 採用呼叫時的計費結果";
 "ask.usage.unavailable" = "用量無法取得";
 "ask.usage.scope" = "統計範圍";
@@ -1848,7 +1848,7 @@
 "ask.usage.summary" = "自動摘要";
 "ask.usage.inference" = "回答 / 工具決策";
 "ask.usage.externalShort" = "自有 API";
-"ask.usage.localHelp" = "用量來自自有模型回傳的 token 資訊，儲存在本機，不消耗 Typeflux credits。";
+"ask.usage.localHelp" = "用量來自自有模型回傳的 token 資訊，儲存在本機，不消耗 Typeflux 額度。";
 
 /* GUL-151 Ask tools */
 "ask.files.denied" = "該路徑不在授權給 對話 的資料夾中。請在 設定 → Agent → 檔案存取 中加入該資料夾。";
@@ -3877,8 +3877,8 @@
 "ask.credits.upgrade" = "升級方案";
 "ask.credits.continue" = "繼續";
 "account.addon.title" = "加購額度";
-"account.addon.nextExpiry" = "最近到期：%@ credits，%@";
-"account.addon.expiringSoon" = "%@ credits 將於 %@ 到期，請在此之前用完。";
+"account.addon.nextExpiry" = "最近到期：%@ 額度，%@";
+"account.addon.expiringSoon" = "%@ 額度將於 %@ 到期，請在此之前用完。";
 
 "ask.submission.models" = "設定 → 模型";
 "ask.usage.empty" = "還沒有用量";
@@ -7605,7 +7605,9 @@
 "ask.local.contextTooLong" = "對話內容超出模型可處理的長度，請開啟新對話。";
 "ask.local.requestRejected" = "模型拒絕了這次請求，請檢查所選模型與請求參數。";
 
-"models.cloud.price.details" = "輸入：%@ Credits / 1K Tokens\n輸出：%@ Credits / 1K Tokens\n快取輸入（Cached）：%@";
+"models.cloud.price.label" = "↓ %@ / ↑ %@ 額度 / 1K Tokens";
+"models.cloud.price.rate" = "%@ 額度 / 1K Tokens";
+"models.cloud.price.details" = "輸入：%@ 額度 / 1K Tokens\n輸出：%@ 額度 / 1K Tokens\n快取輸入（Cached）：%@";
 "models.cloud.price.unavailable" = "未提供";
 
 // Inline image generation and download states.

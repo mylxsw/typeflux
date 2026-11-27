@@ -76,6 +76,21 @@ final class LocalizationEnglishResidueTests: XCTestCase {
         XCTAssertEqual(report(outdated), "")
     }
 
+    /// Each language has its own term, such as 额度 or クレジット.
+    func testTranslatedValuesDoNotUseTheEnglishWordCredit() throws {
+        var found = Set<Entry>()
+        for table in try tableNames() {
+            for language in Self.languages {
+                for (key, value) in try strings(table: table, language: language)
+                    where value.range(of: "credit", options: .caseInsensitive) != nil {
+                    found.insert(Entry(language: language.rawValue, table: table, key: key))
+                }
+            }
+        }
+
+        XCTAssertEqual(report(found), "", "Use the language's own term for credits")
+    }
+
     func testEveryAllowanceIsUniqueAndExplained() throws {
         let allowances = try allowances()
         let names = Set(Self.languages.map(\.rawValue))
