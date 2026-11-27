@@ -1804,7 +1804,7 @@
 // Ask conversation usage
 "ask.usage.title" = "用量";
 "ask.usage.conversationSpent" = "本对话已用";
-"ask.usage.conversationSpentHelp" = "这段对话已消耗的 credits，不是账户余额。点击查看用量明细。";
+"ask.usage.conversationSpentHelp" = "这段对话已消耗的额度，不是账户余额。点击查看用量明细。";
 "ask.usage.close" = "关闭用量";
 "ask.usage.context" = "上下文";
 "ask.usage.conversationContext" = "对话上下文";
@@ -1822,7 +1822,7 @@
 "ask.usage.pendingShort" = "待确认";
 "ask.usage.pending" = "部分费用待确认；当前金额仅含已确认部分。";
 "ask.usage.incomplete" = "部分用量或费用不可用；仅展示已知消耗。";
-"ask.usage.external" = "自有 API，不消耗 Typeflux credits。供应商费用另计。";
+"ask.usage.external" = "自有 API，不消耗 Typeflux 额度。供应商费用另计。";
 "ask.usage.confirmed" = "已确认 · 使用调用时的计费结果";
 "ask.usage.unavailable" = "用量不可用";
 "ask.usage.scope" = "统计范围";
@@ -1851,7 +1851,7 @@
 "ask.usage.summary" = "自动摘要";
 "ask.usage.inference" = "回答 / 工具决策";
 "ask.usage.externalShort" = "自有 API";
-"ask.usage.localHelp" = "用量来自自有模型返回的 token 信息，保存在本机，不消耗 Typeflux credits。";
+"ask.usage.localHelp" = "用量来自自有模型返回的 token 信息，保存在本机，不消耗 Typeflux 额度。";
 
 /* GUL-151 Ask tools */
 "ask.files.denied" = "该路径不在授权给 Ask 的文件夹中。请在 设置 → Agent → 文件访问 中添加该文件夹。";
@@ -3880,8 +3880,8 @@
 "ask.credits.upgrade" = "升级套餐";
 "ask.credits.continue" = "继续";
 "account.addon.title" = "加购额度";
-"account.addon.nextExpiry" = "最近到期：%@ credits，%@";
-"account.addon.expiringSoon" = "%@ credits 将于 %@ 到期，请在此之前用完。";
+"account.addon.nextExpiry" = "最近到期：%@ 额度，%@";
+"account.addon.expiringSoon" = "%@ 额度将于 %@ 到期，请在此之前用完。";
 
 "ask.submission.models" = "设置 → 模型";
 "ask.usage.empty" = "还没有用量";
@@ -7603,7 +7603,9 @@
 "ask.local.contextTooLong" = "对话内容超出模型可处理的长度，请新开对话。";
 "ask.local.requestRejected" = "模型拒绝了这次请求，请检查所选模型和请求参数。";
 
-"models.cloud.price.details" = "输入：%@ Credits / 1K Tokens\n输出：%@ Credits / 1K Tokens\n缓存输入（Cached）：%@";
+"models.cloud.price.label" = "↓ %@ / ↑ %@ 额度 / 1K Tokens";
+"models.cloud.price.rate" = "%@ 额度 / 1K Tokens";
+"models.cloud.price.details" = "输入：%@ 额度 / 1K Tokens\n输出：%@ 额度 / 1K Tokens\n缓存输入（Cached）：%@";
 "models.cloud.price.unavailable" = "未提供";
 
 // Inline image generation and download states.

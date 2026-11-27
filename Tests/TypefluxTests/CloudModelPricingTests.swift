@@ -2,6 +2,36 @@
 import XCTest
 
 final class CloudModelPricingTests: XCTestCase {
+    private var previousLanguage = AppLanguage.english
+
+    override func setUp() {
+        super.setUp()
+        previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.english)
+    }
+
+    override func tearDown() {
+        AppLocalization.shared.setLanguage(previousLanguage)
+        super.tearDown()
+    }
+
+    func testPricesUseTheInterfaceLanguageTermForCredits() throws {
+        let price = CloudModelPricing(multiplier: "1", inputPer1k: "0.56", outputPer1k: "2.8", cachedPer1k: "0.028")
+        let terms: [(AppLanguage, String)] = [
+            (.simplifiedChinese, "额度"), (.traditionalChinese, "額度"),
+            (.japanese, "クレジット"), (.korean, "크레딧"),
+        ]
+        for (language, term) in terms {
+            AppLocalization.shared.setLanguage(language)
+            XCTAssertEqual(price.label, "↓ 0.56 / ↑ 2.8 \(term) / 1K Tokens")
+            let tooltip = try XCTUnwrap(price.tooltip)
+            for rate in ["0.56", "2.8", "0.028"] {
+                XCTAssertTrue(tooltip.contains("\(rate) \(term) / 1K Tokens"), tooltip)
+            }
+            XCTAssertNil(tooltip.range(of: "credit", options: .caseInsensitive), tooltip)
+        }
+    }
+
     func testPerModelRetailPriceDecodesAndDisplaysPerThousandTokens() throws {
         let raw = #"{"multiplier":"1.0000","base_rate_version":"retail-v2","unit":"credit","input_per_1k":"0.0500","output_per_1k":"0.2000","cached_per_1k":"0.0010"}"#
         let price = try AskCoding.decoder().decode(CloudModelPricing.self, from: Data(raw.utf8))

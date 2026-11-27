@@ -18,12 +18,12 @@ struct CloudModelPricing: Codable, Equatable, Sendable {
     /// Catalog rates already include all pricing adjustments.
     var label: String? {
         guard let input = Self.rate(inputPer1k), let output = Self.rate(outputPer1k) else { return nil }
-        return "↓ \(input) / ↑ \(output) Credits / 1K Tokens"
+        return L("models.cloud.price.label", input, output)
     }
 
     var tooltip: String? {
         guard let input = Self.rate(inputPer1k), let output = Self.rate(outputPer1k) else { return nil }
-        let cached = Self.rate(cachedPer1k).map { "\($0) Credits / 1K Tokens" }
+        let cached = Self.rate(cachedPer1k).map { L("models.cloud.price.rate", $0) }
             ?? L("models.cloud.price.unavailable")
         return String(format: L("models.cloud.price.details"), input, output, cached)
     }
