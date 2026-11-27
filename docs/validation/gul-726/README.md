@@ -1,49 +1,53 @@
 # GUL-726 macOS release validation
 
-**Release decision: blocked.** Native Classic observations below used a locally signed debug preview of 0.5.0 at `5d6d3fed42`. Repeat them on the optimized package after Classic PR #7 lands. A pass in the table applies only to the stated build and scope. Screenshot names refer to the evidence archive attached to GUL-726.
+**Release decision pending startup triage (GUL-731).** The native upgrade, one-click switch, return to Typeflux and five local dictation targets worked. Classic took longer than 0.4.0 to expose its menu on two runs. The existing microphone label is an accepted release-note item. Hosted checkout and remote speech recognition require sandbox configuration.
 
-Five rows passed at the scope indicated, one failed and ten remain blocked. The native 1.0.1 release build was stopped during Swift optimization after more than 100 minutes on the shared Mac. No installable 1.0.1 artifact was produced. Its build cache and the signed-in 1.0.0 VM checkpoint were retained for the next run. The test VMs and dedicated services were stopped.
+## Builds and environment
 
-## Environment
+Apple Silicon, disposable macOS Tahoe profiles, synthetic accounts and local services. The guest used nginx, the API, Postgres and dedicated Redis with AOF and synchronous fsync. Local S3 emulation handled feedback. Neither baseline install touched the shared host desktop. The API compose correction is tracked separately. Screenshot stems below identify native captures in the GUL-726 issue thread.
 
-Apple Silicon, disposable macOS Tahoe VMs, isolated home directory, Keychain and privacy databases. Signed 0.4.0 and 1.0.0 app-only baselines came from the product releases. The local nginx frontend connected the guest to the local API, dedicated Postgres and Redis, synthetic accounts and test billing records. Feedback objects used local S3 emulation. The ASR gateway ran locally. VM snapshots preserve the baseline and test profiles independently of the shared host desktop.
+| Product | Build used | Verification |
+|---|---|---|
+| Classic 0.5.0 | Release, main at `9d014f7947`; initial functional pass used Debug at `5d6d3fed42` | Release build on idle mac-pro took 227.48 s including dependencies, 134.44 s in Swift build |
+| Typeflux 1.0.1 | Debug, `4f85af511e`, including helpers | Swift build reported 107.82 s after dependency resolution |
+| Baselines | Signed 0.4.0 and 1.0.0 release bundles | In-place upgrades using the native updaters |
 
-| Component | Revision |
-|---|---|
-| Typeflux | 4f85af511e |
-| Classic | 5d6d3fed42 |
-| API | cd7ea489d4 |
-| Homepage | e4aeafd4b3 |
-| Dashboard | 530fe9a200 |
-| Docs | 17232a1b89 |
-| Realtime ASR | 5fc286e |
+Both candidate ZIPs were registered in the local API with their actual sizes and SHA-256. Both passed deep strict signature verification and the minimum-OS audit. Local packaging used the compiled artifacts and disabled timestamping. Classic: 14,779,677 bytes, `e4583b4494174f98cb49f555a4ad3420336167ec28f326509bd25e11fa3a7532`. Typeflux: 109,177,433 bytes, `b6142f1016527855a283d0bbb2befea9948f8214b9b02bca4f0dcf0319a263b1`.
+
+Service revisions: API `cd7ea489d4`, homepage `e4aeafd4b3`, dashboard `530fe9a200`, docs `17232a1b89`, realtime ASR `5fc286e`.
 
 ## Acceptance matrix
 
-| # | Scenario | Result | Observation and remaining coverage |
-|---|---|---|---|
-| 1 | 0.4.0 automatic upgrade | Blocked | The installed updater replaced and relaunched the Classic preview. History, sound setting and the microphone grant survived. Repeat with a logged-in baseline, Accessibility granted and the final package. See local040-update, after040-upgrade, settings-en-light-history and microphone-permission. |
-| 2 | 1.0.1 introduction | Blocked | The signed 1.0.0 baseline launched. Upgrade, second launch and clean-profile comparison are required. See baseline100. |
-| 3 | One-click switch to Classic | Blocked | A local Classic release was registered. The native switch, mapped models, shared history and grants need verification with both candidates. |
-| 4 | Return to 1.0.1 | Blocked | Set Typeflux Cloud and English Translator in Classic. Persistence across the return to 1.0.1 and onboarding suppression remain open. See cloud-rewrite-choice and persona-selected. |
-| 5 | Update isolation | Pass (local API) | Four live checks: legacy 0.4.0 and 1.0.0 received 0.5.0 and 1.0.1 respectively. Each product-tagged current client received its own version with should_update=false. See update.json and routing-classic. |
-| 6 | System product name | Fail (preview) | Finder, Activity Monitor, menu, login items and the Safari open-app prompt showed Typeflux Classic. The existing microphone permission entry retained Typeflux. Dock and app launcher remain unchecked. See finding A. |
-| 7 | Account and checkout | Blocked | Native account UI showed 569.99 of 570 credits and usage charts. The local billing page opened. Receipt, membership/add-on purchase and return after payment need a configured sandbox. See credits-v2, prepaid-renewal and usage-v2.txt. |
-| 8 | 15-minute access token | Pass (preview) | Native web login exchanged a token at 12:50:11 and refreshed at 13:00:11 (Singapore time). The account remained signed in past original expiry during repeated navigation, including ten close/reopen/account cycles in 19.77 s. See account-after-expiry and web-login.json. |
-| 9 | Feedback upload origin | Pass (preview plus focused tests) | Native image attachment completed presign, relative PUT and feedback submission against local services. The client suite covered disallowed origins. See feedback-uploaded and feedback-sent. |
-| 10 | Web sign-in | Blocked | Settings opened Safari. Completing sign-in opened the installed Classic through the system URL handler and restored the signed-in account. The onboarding start, cancel, timeout and app-quit branches still need native evidence. See settings-login, login-callback and login-return. |
-| 11 | Prepaid membership | Pass (preview) | The Pro screen displayed the seeded expiry, offered web renewal and omitted the subscription-management action. Renewal opened the local billing page. See prepaid-live and prepaid-renewal. |
-| 12 | Account data across products | Pass (preview / 1.0.0) | After replacing the Classic bundle in the same user profile, 1.0.0 recognized the existing Pro account. Both account pages showed 569.99/570 credits, the same billing period and usage counters (1 voice entry, 3 AI requests). See cross100-account, credits-v2 and usage-v2.txt. |
-| 13 | Account switch | Blocked | Two synthetic accounts completed separate local login transactions. The native A→B switch with outstanding requests still needs observation. See web-login.json. |
-| 14 | Speech input | Blocked | Local SenseVoice retried a synthetic history WAV and saved the expected transcript, “The blue notebook is on the table.” Gateway health and token issuance worked. Physical capture, streamed preview, remote recognition, polishing, vocabulary and insertion in target apps remain open. See retry-options and retry-result. |
-| 15 | Performance | Blocked | Preview and baseline samples had different build configurations and window states. Paired cold-start, idle CPU/RSS and release-to-insert timings are still required. |
-| 16 | Visual inspection | Blocked | Captured overview, general settings, vocabulary, history, models and personas in English and Simplified Chinese, both appearances. See settings-* images. Remaining work includes onboarding, overlay, prompts, other settings states and post-merge language checks. |
+| # | Scenario | Result and evidence |
+|---|---|---|
+| 1 | Legacy automatic upgrade | **Pass.** Signed in to 0.4.0, accepted the updater and opened Classic at the same path. Pro, history, sound preference and both TCC grants persisted. See native040-signedin, opted040-update, actual050. |
+| 2 | Typeflux introduction | **Pass.** The 1.0.0 updater offered and installed 1.0.1. Opened the installed copy and saw the introduction once. A later launch skipped it. A clean profile showed regular onboarding on both launches and set the intro-ineligible flag. See update-101-offer, upgraded-101-intro, roundtrip101-return, fresh-101-first and fresh-101-relaunch. |
+| 3 | Switch to Classic | **Pass.** The About button and confirmation downloaded the signed Classic ZIP, replaced the bundle and launched 0.5.0. Cloud speech and rewrite models, persona, history, Pro session and grants survived. The test proxy needed its download route corrected before this run. See switch-native-confirm, switched-classic-models, classic-shared-llm, switched-classic-history and switched-permissions.txt. |
+| 4 | Return to Typeflux | **Pass.** In Classic changed Cloud recognition to local SenseVoice and English Translator to Typeflux. Reinstalled the registered 1.0.1 ZIP at the same path. The returning process retained both selections and Pro, and skipped onboarding and the introduction. See classic-new-stt, classic-new-persona, roundtrip101-return and return101-values.txt. |
+| 5 | Product update isolation | **Pass.** Both installed legacy updaters reached the intended candidate. Four API cases covered both legacy clients and both product-tagged current clients. See update.json in the first evidence archive. |
+| 6 | System name | **Pass with accepted exception.** Finder, Activity Monitor, menu, login items, Dock, Tahoe Apps grid and Safari open-app prompt showed Typeflux Classic. After a guest reboot the existing enabled microphone entry still showed Typeflux. See mic-before-toggle (post-reboot), apps-tahoe and dock-classic. |
+| 7 | Account, checkout and credits | **Pass for local billing; hosted checkout pending sandbox keys.** Paid PostgreSQL fixtures exercised membership terms and add-on checkout/webhook posting. Separately, an audited local grant added 12.3456 to 569.9948. Both native apps showed 12.35 add-on and 569.99/570 base. The web account reflected the same balance. See grant-check.json, classic-post-grant, account101-open and web-A-dashboard. Provider-hosted payment, receipt delivery and post-payment return remain unverified. |
+| 8 | Short token lifetime | **Pass (Debug).** A real 15-minute token refreshed after ten minutes. Account access continued beyond original expiry, including ten settings/account close-open cycles in 19.77 s. See account-after-expiry in the first archive. |
+| 9 | Feedback origin | **Pass (Debug and focused tests).** Native image upload completed local presign, relative PUT and submit. The origin tests covered disallowed URLs. See feedback-uploaded and feedback-sent in the first archive. |
+| 10 | Browser sign-in | **Pass.** Safari returned to the installed Classic from settings and onboarding. Cancel and a shortened 60-second transaction expiry showed the expected state. Quitting during login and finishing the old browser transaction reopened the app as a guest; fresh sign-in succeeded. See wizard-signedin, login-cancelled, login-expired-final and login-quit-guest. |
+| 11 | Prepaid membership | **Pass.** Pro showed expiry and web renewal, with subscription-management hidden. The native action opened local billing. See prepaid-live and prepaid-renewal in the first archive. |
+| 12 | Shared account totals | **Pass.** Classic and 1.0.0 showed the same period, balance and usage (one voice entry and three AI requests). Classic and 1.0.1 also agreed after the add-on grant. See credits-v2, cross100-account, classic-post-grant and account101-open. |
+| 13 | Account change | **Pass for native switch and focused session tests.** Signed A out of Classic and the local web session, then signed B in via Safari. B showed Free, 5/5 and zero calls, without A’s Pro add-on. Async result isolation was covered by the focused session tests. See account-A-logout, B-callback-result and B-free-after-switch. |
+| 14 | Speech input | **Pass for five local targets; remote providers pending keys.** Held the configured hotkey while playing a known WAV into the guest microphone via BlackHole. SenseVoice inserted the sentence in Notes, TextEdit, a Safari form, Terminal (unexecuted) and Obsidian (Electron) on signed Debug. Release repeated TextEdit insertion three times. History retry also recovered the expected transcript. Release showed a partial during recording and inserted into Safari’s address field. With English Translator selected and a seeded vocabulary entry, a loopback streaming fixture received recognized text and the term GulNotebook, and its deterministic response reached both TextEdit and Safari. This exercises the rewrite transport and insertion; model quality was outside the fixture. See live-safari-hold, live-safari-insert and voice-fixture-textedit. See voice-notes-typed, perf-release, voice-safari, voice-terminal and voice-obsidian. |
+| 15 | Performance | **Fail for startup, GUL-731.** Idle CPU and RSS were comparable. Median release-to-insert time improved, with a slower first Classic recognition. Measurements below. |
+| 16 | Visual inspection | **Pass for captured surfaces.** Five languages × two appearances × six settings sections on latest Classic Release, plus all six onboarding steps in English and Simplified Chinese in both appearances. English and Simplified Chinese captures also cover the status menu, feedback menu and live recording capsule in both appearances. Account, switch confirmation, expiry, and system permission dialogs have separate scenario captures. OS-owned dialogs reflect the guest system appearance. See opt-*, wizard-*, menu-* and extra-* captures. |
 
-## Findings for triage
+## Performance measurements
 
-**A. Existing microphone permission retains the previous product name.** On the guest, grant microphone access to installed 0.4.0, update in place to the signed Classic preview, then open System Settings → Privacy & Security → Microphone. Expected the enabled entry to identify Typeflux Classic. Actual label was Typeflux and the grant stayed enabled. Finder and Activity Monitor showed Typeflux Classic for the same install. Compare microphone-permission, finder-name and activity-detail. Verify with the final signed candidate and a fresh grant to distinguish a cached system label.
+On the same VM, quit and open the signed application and poll for its status item. These are fresh processes with the OS file cache retained. Idle readings are medians of five samples; insertion measures key release to observable TextEdit content using the same audio and recognizer.
 
-**B. Fresh local API startup requires durable Redis settings.** Start the documented local Redis container with default configuration, prepare the billing database and start the API. Startup reported BILLING_STORAGE_UNSAFE, first requiring appendonly=yes and then appendfsync=always. Applying both to the dedicated test instance allowed API startup. Expected the local setup to start with the required storage policy. The default image is in `typeflux-api/docker-compose.yml:19`; the settings check is in `internal/service/regional_storage.go:15` in that repository.
+| Measurement | 0.4.0 Release | 0.5.0 Release |
+|---|---|---|
+| Status item, seconds (three launches) | 0.388 / 0.389 / 0.393 | 1.685 / 0.741 / 0.868; independent repeat 1.751 / 0.731 / 0.702 |
+| Idle CPU and RSS | 0.0%, 160,016 KiB | 0.0%, 161,728 KiB |
+| Release to inserted text, seconds | 1.389 / 1.051 / 1.285 | 3.150 / 1.001 / 0.964 |
+
+The Classic startup medians were 0.868 s and 0.731 s versus 0.389 s for the baseline. This probe includes Launch Services and accessibility polling. It does not isolate which startup operation accounts for the difference.
 
 ## Focused test evidence
 
@@ -54,5 +58,7 @@ Apple Silicon, disposable macOS Tahoe VMs, isolated home directory, Keychain and
 | Go TestAppReleaseProductRouting | Passed | 0.918 s package time |
 | Go TestWebLoginPreservesSubscriptionCreditsAndLegacySession | Passed | 4.902 s package time, 9 min 27 s cold command |
 | Go TestPrepaidPurchaseTermsAndMembershipConsumersPostgres | Passed, six term/channel combinations | 8.267 s package time |
+| Classic LocalizationReleaseTests | 2 passed | 1.512 s test execution |
+| Go TestCreditPackBillingPostgresFixtures/paid | Passed against isolated Postgres | 2.45 s subtest, 3.347 s package time |
 
-Timing units above distinguish package/test execution from wall time where available. Payment fixtures exercise the billing contract. Native checkout requires separate sandbox evidence.
+Only the listed focused suites ran.
