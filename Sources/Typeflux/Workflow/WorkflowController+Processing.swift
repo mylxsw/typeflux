@@ -1489,7 +1489,34 @@ extension WorkflowController {
             return (rawTranscribedText, .raw)
         }
 
+        let prefix = fallbackPreviewText.dropLast(normalizedRawTranscript.count)
+        guard isPlausibleMissingTranscriptPrefix(prefix, before: normalizedRawTranscript) else {
+            return (rawTranscribedText, .raw)
+        }
         return (fallbackPreviewText, .finalWasPreviewSuffix)
+    }
+
+    private static func isPlausibleMissingTranscriptPrefix(_ prefix: Substring, before final: String) -> Bool {
+        let prefixLetters = String(prefix.filter(\.isLetter))
+        guard prefixLetters.count >= 3,
+              prefix.range(of: #"\p{L}\p{M}*\p{L}"#, options: .regularExpression) != nil,
+              let firstFinalLetter = final.first(where: \.isLetter)
+        else {
+            return false
+        }
+
+        // Use the first word's script so a later code-switch in the final text does not
+        // make a foreign prefix look like part of the same phrase.
+        let unspacedScripts = [#"\p{Han}\p{Hiragana}\p{Katakana}"#, #"\p{Thai}"#]
+        let spacedScripts = [#"\p{Latin}"#, #"\p{Hangul}"#, #"\p{Cyrillic}"#, #"\p{Arabic}"#, #"\p{Devanagari}"#]
+        let hasWordBoundary = prefix.last.map { !$0.isLetter && !$0.isNumber } == true
+            || final.first.map { !$0.isLetter && !$0.isNumber } == true
+        let scripts = hasWordBoundary ? unspacedScripts + spacedScripts : unspacedScripts
+
+        return scripts.contains { script in
+            String(firstFinalLetter).range(of: "[\(script)]", options: .regularExpression) != nil
+                && prefixLetters.range(of: "[^\(script)\\p{M}]", options: .regularExpression) == nil
+        }
     }
 
     enum TranscriptChoiceReason: Equatable {

@@ -74,6 +74,7 @@ actor LocalModelLivePreviewBackend: LivePreviewBackend {
         let activeSessionID = sessionID
         pendingBuffers = []
         pendingDuration = 0
+        guard !AudioContentAnalysis.isHardSilence(buffers: buffers) else { return }
         isDecoding = true
 
         Task {
@@ -82,6 +83,8 @@ actor LocalModelLivePreviewBackend: LivePreviewBackend {
     }
 
     private func decode(buffers: [AVAudioPCMBuffer], sessionID activeSessionID: UUID) async {
+        guard activeSessionID == sessionID else { return }
+
         let text: String?
         do {
             let audioFile = try writeTemporaryAudioFile(buffers: buffers)

@@ -2547,6 +2547,49 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(historyStore.list().last?.transcriptText, "前半段内容，后半段内容。")
     }
 
+    func testPreferredTranscriptKeepsFinalWhenPreviewPrefixIsImplausible() {
+        let final = "The blue notebook is on the table."
+        for prefix in ["그.", "A. ", "Uh. ", "... ", "123. ", "A. B. C. ", "안녕하세요. ", "blue"] {
+            let choice = WorkflowController.preferredTranscript(
+                rawTranscribedText: final,
+                recordingPreviewText: prefix + final
+            )
+
+            XCTAssertEqual(choice.text, final, "Prefix: \(prefix)")
+            XCTAssertEqual(choice.reason, .raw, "Prefix: \(prefix)")
+        }
+    }
+
+    func testPreferredTranscriptRecoversPlausibleMissingPrefix() {
+        let examples = [
+            (final: "notebook is on the table.", preview: "The blue notebook is on the table."),
+            (final: "后半段内容。", preview: "前半段内容，后半段内容。"),
+            (final: "청색입니다.", preview: "이 노트는 청색입니다."),
+            (final: "食べます。", preview: "明日の朝食べます。"),
+            (final: "内容。", preview: "これは内容。")
+        ]
+
+        for (final, preview) in examples {
+            let choice = WorkflowController.preferredTranscript(
+                rawTranscribedText: final,
+                recordingPreviewText: preview
+            )
+
+            XCTAssertEqual(choice.text, preview)
+            XCTAssertEqual(choice.reason, .finalWasPreviewSuffix)
+        }
+    }
+
+    func testPreferredTranscriptUsesPreviewWhenFinalIsEmpty() {
+        let choice = WorkflowController.preferredTranscript(
+            rawTranscribedText: " \n",
+            recordingPreviewText: "  preview transcript  "
+        )
+
+        XCTAssertEqual(choice.text, "preview transcript")
+        XCTAssertEqual(choice.reason, .emptyFinalUsedPreview)
+    }
+
     func testPreferredTranscriptKeepsRawWhenPreviewDoesNotContainFinalAsSuffix() {
         let choice = WorkflowController.preferredTranscript(
             rawTranscribedText: "final transcript",

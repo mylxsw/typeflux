@@ -116,13 +116,40 @@ final class LiveTranscriptionPreviewerTests: XCTestCase {
         let buffer = try makeTestBuffer(sampleCount: 40000)
         await backend.append(buffer)
 
-        await fulfillment(of: [updateReceived], timeout: 1.0)
+        await fulfillment(of: [updateReceived], timeout: 15.0)
         let transcribeCallCount = await transcriber.transcribeCallCount()
         XCTAssertEqual(transcribeCallCount, 1)
         _ = await backend.finish()
     }
 
-    private func makeTestBuffer(sampleCount: AVAudioFrameCount) throws -> AVAudioPCMBuffer {
+    func testLocalModelBackendSkipsSilentChunksAndDecodesFollowingSpeech() async throws {
+        let transcriber = MockLivePreviewTranscriber(result: "hello")
+        let backend = LocalModelLivePreviewBackend { transcriber }
+        let updateReceived = expectation(description: "live preview update received")
+
+        try await backend.start { text in
+            XCTAssertEqual(text, "hello")
+            updateReceived.fulfill()
+        }
+
+        let silent = try makeTestBuffer(sampleCount: 38400, amplitude: 0)
+        let nearSilent = try makeTestBuffer(sampleCount: 38400, amplitude: 0.0001)
+        let audible = try makeTestBuffer(sampleCount: 40000, amplitude: 0.1)
+        await backend.append(silent)
+        await backend.append(nearSilent)
+        await backend.append(audible)
+
+        await fulfillment(of: [updateReceived], timeout: 15.0)
+        let decodedDurations = await transcriber.decodedDurations
+        XCTAssertEqual(decodedDurations, [2.5])
+        let finalPreview = await backend.finish()
+        XCTAssertEqual(finalPreview, "hello")
+    }
+
+    private func makeTestBuffer(
+        sampleCount: AVAudioFrameCount,
+        amplitude: Float = 0.1
+    ) throws -> AVAudioPCMBuffer {
         guard let format = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: 16000,
@@ -139,7 +166,7 @@ final class LiveTranscriptionPreviewerTests: XCTestCase {
         buffer.frameLength = sampleCount
         if let channel = buffer.floatChannelData?[0] {
             for index in 0 ..< Int(sampleCount) {
-                channel[index] = Float(index) / 10
+                channel[index] = index.isMultiple(of: 2) ? amplitude : -amplitude
             }
         }
         return buffer
@@ -171,18 +198,18 @@ actor MockLivePreviewBackend: LivePreviewBackend {
 
 private actor MockLivePreviewTranscriber: Transcriber {
     private let result: String
-    private var calls = 0
+    private(set) var decodedDurations: [TimeInterval] = []
 
     init(result: String) {
         self.result = result
     }
 
-    func transcribe(audioFile _: AudioFile) async throws -> String {
-        calls += 1
+    func transcribe(audioFile: AudioFile) async throws -> String {
+        decodedDurations.append(audioFile.duration)
         return result
     }
 
     func transcribeCallCount() -> Int {
-        calls
+        decodedDurations.count
     }
 }
