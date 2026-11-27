@@ -2129,7 +2129,7 @@ struct StudioView: View {
                     }
                 }
                 HStack {
-                    Text("\(specs.parameterValue) parameters · \(specs.sizeValue)")
+                    Text("\(specs.parameterCountText) · \(specs.sizeValue)")
                         .font(.system(size: 12)).foregroundStyle(TFColors.textTertiary)
                     Spacer()
                     localSTTModelDownloadIconButton(model)

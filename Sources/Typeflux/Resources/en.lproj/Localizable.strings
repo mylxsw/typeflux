@@ -348,6 +348,7 @@
 "localSTT.funASR.summary" = "Fast and accurate Chinese-focused ASR model by Alibaba DAMO Academy, based on the Paraformer architecture.";
 "localSTT.funASR.parameterValue" = "220M";
 "localSTT.funASR.sizeValue" = "~180 MB";
+"localSTT.parameterCount" = "%@ parameters";
 "localSTT.prepare.runtimePreparing" = "Preparing native local speech runtime...";
 "localSTT.prepare.cleaningLegacyRuntime" = "Cleaning legacy Python runtime...";
 "localSTT.prepare.runtimeDownloading" = "Downloading Sherpa-ONNX native runtime...";
@@ -7754,3 +7755,4 @@
 "classic.switch.error.identity" = "The download isn't a genuine Typeflux Classic, so it wasn't installed.";
 "classic.switch.error.unavailable" = "Typeflux Classic isn't available right now.";
 "classic.switch.error.busy" = "Finish the current recording or task, then try again.";
+"classic.switch.error.download" = "Couldn't download Typeflux Classic. Check your network connection and try again.";

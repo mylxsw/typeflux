@@ -107,6 +107,11 @@ enum LocalSTTModel: String, CaseIterable, Codable {
         let summary: String
         let parameterValue: String
         let sizeValue: String
+
+        /// The parameter count with its localized unit, for example "234M parameters".
+        var parameterCountText: String {
+            L("localSTT.parameterCount", parameterValue)
+        }
     }
 
     var displayName: String {

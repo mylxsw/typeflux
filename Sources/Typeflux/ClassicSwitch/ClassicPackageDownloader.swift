@@ -9,7 +9,7 @@ protocol ClassicPackageDownloading: Sendable {
 enum ClassicPackageDownloadError: LocalizedError, Equatable {
     case httpStatus(Int)
 
-    var errorDescription: String? { L("updater.download.failed") }
+    var errorDescription: String? { L("classic.switch.error.download") }
 }
 
 struct URLSessionClassicPackageDownloader: ClassicPackageDownloading {
