@@ -131,7 +131,12 @@ final class SettingsWindowController: NSObject {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = true
-        window.contentView = hosting
+        // A hosting view installed directly as contentView can update the window's size limits.
+        let content = NSView(frame: NSRect(origin: .zero, size: window.contentRect(forFrameRect: window.frame).size))
+        hosting.frame = content.bounds
+        hosting.autoresizingMask = [.width, .height]
+        content.addSubview(hosting)
+        window.contentView = content
         window.isReleasedWhenClosed = false
         window.delegate = self
         var minimumWindowSize = NSSize(
@@ -153,7 +158,6 @@ final class SettingsWindowController: NSObject {
         self.window = window
         DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
-        window.contentMinSize = minimumWindowSize
         NSApp.activate(ignoringOtherApps: true)
         AuthState.shared.refreshProfileIfNeeded()
     }

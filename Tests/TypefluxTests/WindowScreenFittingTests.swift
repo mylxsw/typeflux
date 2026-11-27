@@ -70,8 +70,7 @@ struct WindowScreenFittingTests {
 
         #expect(small.contains(window.frame), "\(window.frame) exceeds \(small)")
         #expect(window.frame.width == small.width)
-        #expect(window.contentMinSize.width <= small.width)
-        #expect(window.contentMinSize.height <= small.height)
+        assertMinimumSize(in: small, window: window)
     }
 
     @Test func settingsWindowKeepsItsDefaultSizeOnALargeScreen() async throws {
@@ -83,6 +82,19 @@ struct WindowScreenFittingTests {
         defer { window.close() }
 
         #expect(window.frame.size == NSSize(width: width, height: height))
+        assertMinimumSize(in: available, window: window)
+    }
+
+    private func assertMinimumSize(in visibleFrame: NSRect, window: NSWindow) {
+        let expected = NSSize(
+            width: min(StudioTheme.Layout.settingsWindowMinWidth, visibleFrame.width),
+            height: min(StudioTheme.Layout.settingsWindowMinHeight, visibleFrame.height)
+        )
+        #expect(window.contentMinSize == expected)
+        window.setContentSize(NSSize(width: expected.width / 2, height: expected.height / 2))
+        window.contentView?.layoutSubtreeIfNeeded()
+        #expect(window.frame.width >= expected.width)
+        #expect(window.frame.height >= expected.height)
     }
 
     @Test func chatWindowWithoutASavedFrameOpensInsideASmallScreen() async throws {
