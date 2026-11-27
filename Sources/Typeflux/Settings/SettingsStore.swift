@@ -859,6 +859,10 @@ final class SettingsStore {
         false
     }
 
+    var usesCloudRewriteForAccountDefaults: Bool {
+        textLLMConfiguration().provider == .typefluxCloud
+    }
+
     var effectiveLLMProvider: LLMProvider {
         if rewriteModelReference.isEmpty {
             return llmProvider

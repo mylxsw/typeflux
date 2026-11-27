@@ -51,6 +51,7 @@ Sources/Typeflux/Networking/TypefluxCloudServerErrorMessage.swift
 Sources/Typeflux/STT/TypefluxOfficialASRGrantSequence.swift
 Sources/Typeflux/UI/SidebarAccountFooter.swift
 Sources/Typeflux/UI/SidebarAccountIdentity.swift
+Sources/Typeflux/UI/StudioGlassBackground.swift
 Sources/Typeflux/UI/StudioSidebarAccountCard.swift
 Sources/Typeflux/UI/StudioSymbolTint.swift
 Tests/TypefluxTests/AccountBillingFlowTests.swift

@@ -16,6 +16,7 @@ DECLARATION = re.compile(
 )
 IDENTIFIER = re.compile(r"\b[A-Z]\w*\b")
 SHIMS = {
+    "TypefluxProduct": {"identifier"},
     "FeatureProcess": {"enabled", "role", "owns", "send"},
     "FeatureAuth": {"refresh"},
     "FeatureRPC": {"Failure.unavailable"},
