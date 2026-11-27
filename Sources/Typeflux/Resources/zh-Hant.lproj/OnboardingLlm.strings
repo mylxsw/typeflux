@@ -1,9 +1,9 @@
 /* Onboarding v3: OnboardingLlm */
-"eyebrow" = "Language Model";
+"eyebrow" = "語言模型";
 "title" = "AI 模型";
 "titleBadge" = "可選";
 "subtitle" = "用於 AI 改寫、翻譯和 Agent 對話。";
-"configEyebrow" = "Configuration";
+"configEyebrow" = "設定";
 
 "provider.free.title" = "免費模型";
 "provider.free.detail" = "無需配置";

@@ -1,5 +1,5 @@
 /* Onboarding v3: OnboardingShortcuts */
-"eyebrow" = "Keyboard Shortcuts";
+"eyebrow" = "キーボードショートカット";
 "title" = "ショートカット";
 "subtitle" = "キーをクリックして変更します。競合は自動的に表示されます。";
 "voice" = "音声";

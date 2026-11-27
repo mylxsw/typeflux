@@ -1,8 +1,8 @@
 /* Onboarding v3: OnboardingSpeech */
-"eyebrow" = "Voice Recognition";
+"eyebrow" = "语音识别";
 "title" = "语音识别";
 "subtitle" = "选择一个服务并完成配置，测试可选。";
-"configEyebrow" = "Configuration";
+"configEyebrow" = "配置";
 
 "provider.local.title" = "本地模型";
 "provider.local.detail" = "在这台 Mac 上运行，离线免费";
