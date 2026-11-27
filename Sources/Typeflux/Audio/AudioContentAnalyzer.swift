@@ -12,6 +12,8 @@ struct AudioContentAnalysis: Sendable {
     private static let minimumAudibleFrameRatio = 0.04
     private static let hardSilencePeakPowerDB: Float = -72
 
+    private static let hardSilencePeakAmplitude = powf(10, hardSilencePeakPowerDB / 20)
+
     let duration: TimeInterval
     let rmsPowerDB: Float
     let peakPowerDB: Float
@@ -37,6 +39,22 @@ struct AudioContentAnalysis: Sendable {
             && audibleDuration >= Self.minimumAudibleDuration
             && audibleFrameRatio >= Self.minimumAudibleFrameRatio
         return passesTransientGate ? .audible : .lowEnergy
+    }
+
+    static func isHardSilence(buffers: [AVAudioPCMBuffer]) -> Bool {
+        buffers.allSatisfy { buffer in
+            // The recorder supplies Float32 PCM. Let unfamiliar formats reach ASR.
+            guard let channels = buffer.floatChannelData else { return false }
+
+            for channel in 0 ..< Int(buffer.format.channelCount) {
+                for frame in 0 ..< Int(buffer.frameLength) {
+                    if !(abs(channels[channel][frame * buffer.stride]) <= hardSilencePeakAmplitude) {
+                        return false
+                    }
+                }
+            }
+            return true
+        }
     }
 
     var containsAudibleSignal: Bool {
