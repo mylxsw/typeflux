@@ -2,14 +2,26 @@ import Foundation
 @testable import Typeflux
 import XCTest
 
-/// Releases must not fall back to English: a translated language may repeat an English value only
-/// where `Fixtures/localization-english-allowlist.json` records why.
+/// Releases must not fall back to another language: a translated language may repeat an English value
+/// only where `Fixtures/localization-english-allowlist.json` records why, and Traditional Chinese may
+/// not use the Simplified-only characters in `Fixtures/localization-simplified-characters.json`.
 final class LocalizationEnglishResidueTests: XCTestCase {
     private struct Allowance: Decodable {
         let table: String
         let key: String
         let languages: [String]
         let reason: String
+    }
+
+    private struct SimplifiedCharacters: Decodable {
+        struct Allowance: Decodable {
+            let table: String
+            let key: String
+            let reason: String
+        }
+
+        let characters: String
+        let allowed: [Allowance]
     }
 
     private struct Entry: Hashable, CustomStringConvertible {
@@ -76,10 +88,51 @@ final class LocalizationEnglishResidueTests: XCTestCase {
         }
     }
 
+    func testTraditionalChineseHasNoSimplifiedOnlyCharacters() throws {
+        let fixture: SimplifiedCharacters = try decodeFixture("localization-simplified-characters.json")
+        let simplified = Set(fixture.characters)
+        let language = AppLanguage.traditionalChinese
+        let allowed = Set(fixture.allowed.map {
+            Entry(language: language.rawValue, table: $0.table, key: $0.key)
+        })
+        var found: [Entry: String] = [:]
+        for table in try tableNames() {
+            for (key, value) in try strings(table: table, language: language) {
+                let characters = String(value.filter(simplified.contains))
+                if !characters.isEmpty {
+                    found[Entry(language: language.rawValue, table: table, key: key)] = characters
+                }
+            }
+        }
+
+        let unexpected = found.filter { !allowed.contains($0.key) }
+            .map { "\($0.key): \($0.value)" }.sorted().joined(separator: "\n")
+        XCTAssertEqual(unexpected, "", "Write these values in Traditional Chinese")
+        XCTAssertEqual(report(allowed.subtracting(found.keys)), "",
+                       "Remove allowances that no longer use Simplified characters")
+    }
+
+    func testSimplifiedCharacterListSeparatesTheTwoScripts() throws {
+        let fixture: SimplifiedCharacters = try decodeFixture("localization-simplified-characters.json")
+        let simplified = Set(fixture.characters)
+
+        XCTAssertTrue(Set("设档视频权浏览开简体").isSubset(of: simplified))
+        // Includes characters both scripts share, which must not be reported.
+        XCTAssertTrue(Set("設檔視頻權瀏覽開簡體台里后面只").isDisjoint(with: simplified))
+        XCTAssertEqual(Set(fixture.allowed.map { "\($0.table) \($0.key)" }).count, fixture.allowed.count)
+        for allowance in fixture.allowed {
+            XCTAssertFalse(allowance.reason.trimmingCharacters(in: .whitespaces).isEmpty, allowance.key)
+        }
+    }
+
     private func allowances() throws -> [Allowance] {
+        try decodeFixture("localization-english-allowlist.json")
+    }
+
+    private func decodeFixture<Value: Decodable>(_ name: String) throws -> Value {
         let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("Fixtures/localization-english-allowlist.json")
-        return try JSONDecoder().decode([Allowance].self, from: Data(contentsOf: url))
+            .appendingPathComponent("Fixtures/" + name)
+        return try JSONDecoder().decode(Value.self, from: Data(contentsOf: url))
     }
 
     private func tableNames() throws -> [String] {
