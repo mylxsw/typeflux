@@ -57,6 +57,14 @@ struct AccountStatusPresentation: Equatable {
 
     static let lowThreshold = 0.2
 
+    /// The note under the plan line. A cancelled subscription's end date is
+    /// already the restore offer's title; a prepaid membership has no such
+    /// offer, so its expiry is shown here.
+    func heroPeriodNote(isPrepaidMembership: Bool) -> PeriodNote? {
+        if case .ends = periodNote, !isPrepaidMembership { return nil }
+        return periodNote
+    }
+
     var offerDestination: Destination? {
         switch offer {
         case .upgrade, .lowQuota(_, true), .exhausted(true):

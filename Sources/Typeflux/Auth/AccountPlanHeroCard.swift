@@ -32,8 +32,8 @@ struct AccountPlanHeroCard: View {
             HStack(alignment: .center, spacing: StudioTheme.Spacing.xxLarge) {
                 VStack(alignment: .leading, spacing: 0) {
                     planLine(status)
-                    switch status.periodNote {
-                    case .ends, nil:
+                    switch status.heroPeriodNote(isPrepaidMembership: authState.subscription.isPrepaidMembership) {
+                    case nil:
                         EmptyView()
                     case let note?:
                         Text(AccountStatusText.period(note, locale: localization.locale))

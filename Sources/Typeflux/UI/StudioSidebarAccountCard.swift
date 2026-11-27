@@ -57,34 +57,46 @@ struct StudioSidebarAccountCard<Footer: View>: View {
         .padding(.horizontal, -StudioTheme.Spacing.small)
     }
 
+    /// Name and action share one line when both fit; a long localized action
+    /// (for example Japanese 「アップグレード」) moves below the name instead of
+    /// squeezing it to an ellipsis.
     private var identityRow: some View {
-        HStack(spacing: StudioTheme.Spacing.xSmall) {
-            identityControl
-
-            Spacer(minLength: StudioTheme.Spacing.xxxSmall)
-
-            if presentation.state != .loading {
-                Button(action: action) {
-                    Text(actionTitle)
-                        .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
-                        .foregroundStyle(actionColor)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
-                }
-                .buttonStyle(StudioInteractiveButtonStyle())
-                .layoutPriority(1)
-                .accessibilityLabel(actionAccessibilityTitle)
-                .accessibilityHint(actionTitle)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: StudioTheme.Spacing.xSmall) {
+                identityControl(fitsName: true)
+                Spacer(minLength: StudioTheme.Spacing.xxxSmall)
+                actionButton
+            }
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                identityControl(fitsName: false)
+                actionButton
             }
         }
         .frame(minHeight: 20)
     }
 
     @ViewBuilder
-    private var identityControl: some View {
+    private var actionButton: some View {
+        if presentation.state != .loading {
+            Button(action: action) {
+                Text(actionTitle)
+                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .semibold))
+                    .foregroundStyle(actionColor)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .buttonStyle(StudioInteractiveButtonStyle())
+            .layoutPriority(1)
+            .accessibilityLabel(actionAccessibilityTitle)
+            .accessibilityHint(actionTitle)
+        }
+    }
+
+    @ViewBuilder
+    private func identityControl(fitsName: Bool) -> some View {
         if isIdentityInteractive {
             Button(action: identityAction) {
-                identityLabel
+                identityLabel(fitsName: fitsName)
             }
             .buttonStyle(.plain)
             .contentShape(Rectangle())
@@ -106,11 +118,13 @@ struct StudioSidebarAccountCard<Footer: View>: View {
             }
             .accessibilityLabel(L("sidebar.accountCard.viewAccountAccessibility"))
         } else {
-            identityLabel
+            identityLabel(fitsName: fitsName)
         }
     }
 
-    private var identityLabel: some View {
+    /// `fitsName` asks for the whole name, so the one-line layout is rejected
+    /// rather than truncated; the stacked fallback still truncates very long names.
+    private func identityLabel(fitsName: Bool) -> some View {
         HStack(spacing: StudioTheme.Spacing.xSmall) {
             Image(
                 systemName: presentation.usesFilledIdentityIcon
@@ -127,6 +141,7 @@ struct StudioSidebarAccountCard<Footer: View>: View {
                 .underline(isHoveringIdentity && isIdentityInteractive)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .fixedSize(horizontal: fitsName, vertical: false)
         }
     }
 

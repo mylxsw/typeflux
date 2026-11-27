@@ -57,6 +57,7 @@ Sources/Typeflux/UI/StudioSymbolTint.swift
 Tests/TypefluxTests/AccountBillingFlowTests.swift
 Tests/TypefluxTests/AccountCreditChartTests.swift
 Tests/TypefluxTests/AccountDateDisplayFormatterTests.swift
+Tests/TypefluxTests/AccountLocalizedLayoutTests.swift
 Tests/TypefluxTests/AccountStatusPresentationTests.swift
 Tests/TypefluxTests/AccountSubscriptionPresentationTests.swift
 Tests/TypefluxTests/AccountUsageCreditPresentationTests.swift
