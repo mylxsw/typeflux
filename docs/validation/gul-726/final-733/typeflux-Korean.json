@@ -1,0 +1,15 @@
+{
+  "utc": "2026-11-27 09:34:08",
+  "transcript_text": "The blue notebook is on the table.",
+  "post_processed_text": "The blue notebook is on the table.",
+  "apply_status": "succeeded",
+  "error_message": null,
+  "duration_s": 14.293,
+  "leading_silence_s": 10.048,
+  "product": "typeflux",
+  "source_before": "com.apple.inputmethod.Korean.2SetKorean",
+  "source_after": "com.apple.inputmethod.Korean.2SetKorean",
+  "inserted": "The blue notebook is on the table.",
+  "new_row": true,
+  "wall_seconds": 20.93
+}
