@@ -104,6 +104,12 @@ A built-in browser, conversation history, and notebooks keep your research and w
 
 The Typeflux app is free and open source. Cloud services may incur charges. When you use a remote model, the voice or text you submit is sent to your chosen provider.
 
+## Only need voice input?
+
+Use [Typeflux Classic](https://github.com/mylxsw/typeflux-classic). It continues the original voice-input app from Typeflux 0.4: hold `Fn` to dictate, or double-press `Fn` to ask anything. It doesn't include the launcher, Chat, Ring, clipboard history, screenshots, or recording.
+
+Both apps use the same account, subscription, and local data. Each installs as `Typeflux.app`, so a Mac runs one or the other, and installing one replaces the other without losing your history or settings. To switch, choose **Switch to Typeflux Classic** in **About Typeflux**, or download it from the [Classic releases](https://github.com/mylxsw/typeflux-classic/releases/latest).
+
 ---
 
 [Download the latest version](https://github.com/mylxsw/typeflux/releases/latest) · [Release notes](https://typeflux.app/releases) · [Usage guide](docs/USAGE.md) · [Screenshot gallery](docs/SCREENSHOTS.md)
