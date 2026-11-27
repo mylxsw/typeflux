@@ -9,8 +9,6 @@ final class AppCoordinator {
     var workflowController: WorkflowController?
     var ringController: RingController?
     private var onboardingWindowController: OnboardingWindowController?
-    var classicIntroCoordinator: ClassicIntroCoordinator?
-    var classicIntroWindowController: ClassicIntroWindowController?
     private let terminationPreparation = TerminationPreparationLatch()
     private let cloudEndpointProbeScheduler = CloudEndpointProbeScheduler()
     private let asrPublicConfigRefreshScheduler = TypefluxASRPublicConfigRefreshScheduler()
@@ -45,8 +43,6 @@ final class AppCoordinator {
 
     // swiftlint:disable:next function_body_length
     func start() {
-        // Read before onboarding can change it: the Classic introduction targets existing users.
-        let onboardingCompletedBeforeLaunch = ClassicIntroStore(defaults: di.settingsStore.defaults).onboardingCompleted
         featurePreferenceChanges = FeaturePreferenceChanges(defaults: di.settingsStore.defaults)
         FeatureProcess.handle = { [weak self] command in
             guard let self else { throw FeatureRPC.Failure.unavailable }
@@ -307,13 +303,11 @@ final class AppCoordinator {
             }
         }
 
-        let needsOnboarding = !di.settingsStore.isOnboardingCompleted
-        if needsOnboarding {
+        if !di.settingsStore.isOnboardingCompleted {
             presentOnboarding()
         } else {
             presentPermissionGuidanceIfNeeded()
         }
-        startClassicSwitch(onboardingCompletedBeforeLaunch: onboardingCompletedBeforeLaunch, needsOnboarding: needsOnboarding)
     }
 
     private func prewarmClipboardHistoryWhenReady() async {
@@ -404,7 +398,7 @@ final class AppCoordinator {
 
     @discardableResult
     /// Stops feature processes and drains work before quitting. Succeeds at most once; later calls
-    /// (for example the quit that follows a switch to Typeflux Classic) return immediately.
+    /// return immediately.
     func prepareForTermination() async -> Bool {
         await terminationPreparation.run { [weak self] in
             await self?.performPrepareForTermination() ?? true
@@ -608,7 +602,6 @@ final class AppCoordinator {
             if let self, !di.settingsStore.onboardingSpeechDeferred {
                 di.autoModelDownloadService.triggerIfNeeded()
             }
-            self?.classicIntroCoordinator?.onboardingDidFinish()
         }
     }
 

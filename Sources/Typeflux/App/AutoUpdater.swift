@@ -537,7 +537,7 @@ enum AutoUpdateRequestSupport {
     }
 
     /// Automatic and manual update checks never cross products. A 0.x release belongs to
-    /// Typeflux Classic, which only the explicit "switch to Classic" flow may install.
+    /// Typeflux Classic, so Typeflux never offers or installs it.
     static func offersUpdate(shouldUpdate: Bool, latestVersion: String) -> Bool {
         shouldUpdate && isTypefluxVersion(latestVersion)
     }

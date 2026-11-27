@@ -7729,30 +7729,3 @@
 "terminal.ai.offline" = "当前处于离线状态。";
 "terminal.ai.failed" = "未能解释这条命令。";
 "terminal.ai.continue" = "在 Ask 中继续";
-
-/* Typeflux Classic introduction and switch */
-"classic.intro.title" = "认识 Typeflux Classic";
-"classic.intro.subtitle" = "只有语音输入，账户和数据通用。";
-"classic.intro.learnMore" = "了解区别";
-"classic.intro.continue" = "继续使用 Typeflux";
-"classic.action.switch" = "切换到 Typeflux Classic";
-"classic.feature.voice" = "语音输入";
-"classic.feature.launcher" = "启动器";
-"classic.feature.chat" = "对话";
-"classic.feature.ring" = "圆环";
-"classic.feature.screenshot" = "截图与录屏";
-"classic.feature.clipboard" = "剪贴板历史";
-"classic.feature.account" = "账户与数据";
-"classic.feature.included" = "包含";
-"classic.feature.notIncluded" = "不包含";
-"classic.switch.confirm.title" = "切换到 Typeflux Classic？";
-"classic.switch.confirm.dataKept" = "数据和账户都会保留。";
-"classic.switch.confirm.missing" = "Classic 中没有";
-"classic.switch.confirm.action" = "切换";
-"classic.switch.downloading" = "正在下载 Typeflux Classic";
-"classic.switch.installing" = "正在安装 Typeflux Classic";
-"classic.switch.failed" = "未能切换到 Typeflux Classic";
-"classic.switch.error.identity" = "下载的应用不是正版 Typeflux Classic，已拒绝安装。";
-"classic.switch.error.unavailable" = "Typeflux Classic 暂不可用。";
-"classic.switch.error.busy" = "请先结束当前的录音或任务，再重试。";
-"classic.switch.error.download" = "无法下载 Typeflux Classic，请检查网络后重试。";
