@@ -2,6 +2,8 @@
 
 **Release decision: blocked.** Native Classic observations below used a locally signed debug preview of 0.5.0 at `5d6d3fed42`. Repeat them on the optimized package after Classic PR #7 lands. A pass in the table applies only to the stated build and scope. Screenshot names refer to the evidence archive attached to GUL-726.
 
+Five rows passed at the scope indicated, one failed and ten remain blocked. The native 1.0.1 release build was stopped during Swift optimization after more than 100 minutes on the shared Mac. No installable 1.0.1 artifact was produced. Its build cache and the signed-in 1.0.0 VM checkpoint were retained for the next run. The test VMs and dedicated services were stopped.
+
 ## Environment
 
 Apple Silicon, disposable macOS Tahoe VMs, isolated home directory, Keychain and privacy databases. Signed 0.4.0 and 1.0.0 app-only baselines came from the product releases. The local nginx frontend connected the guest to the local API, dedicated Postgres and Redis, synthetic accounts and test billing records. Feedback objects used local S3 emulation. The ASR gateway ran locally. VM snapshots preserve the baseline and test profiles independently of the shared host desktop.
@@ -41,7 +43,7 @@ Apple Silicon, disposable macOS Tahoe VMs, isolated home directory, Keychain and
 
 **A. Existing microphone permission retains the previous product name.** On the guest, grant microphone access to installed 0.4.0, update in place to the signed Classic preview, then open System Settings → Privacy & Security → Microphone. Expected the enabled entry to identify Typeflux Classic. Actual label was Typeflux and the grant stayed enabled. Finder and Activity Monitor showed Typeflux Classic for the same install. Compare microphone-permission, finder-name and activity-detail. Verify with the final signed candidate and a fresh grant to distinguish a cached system label.
 
-**B. Fresh local API startup requires durable Redis settings.** Start the documented local Redis container with default configuration, prepare the billing database and start the API. Startup reported BILLING_STORAGE_UNSAFE, first requiring appendonly=yes and then appendfsync=always. Applying both to the dedicated test instance allowed API startup. Expected the local setup to start with the required storage policy. This affects reproducing the test environment.
+**B. Fresh local API startup requires durable Redis settings.** Start the documented local Redis container with default configuration, prepare the billing database and start the API. Startup reported BILLING_STORAGE_UNSAFE, first requiring appendonly=yes and then appendfsync=always. Applying both to the dedicated test instance allowed API startup. Expected the local setup to start with the required storage policy. The default image is in `typeflux-api/docker-compose.yml:19`; the settings check is in `internal/service/regional_storage.go:15` in that repository.
 
 ## Focused test evidence
 
