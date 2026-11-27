@@ -104,6 +104,12 @@ macOS 13+ · Apple 芯片与 Intel · 开源免费
 
 Typeflux 应用开源免费，云端服务可能产生费用。使用远程模型时，提交的语音或文字会发送给你选择的服务商。
 
+## 只需要语音输入？
+
+请使用 [Typeflux Classic](https://github.com/mylxsw/typeflux-classic)。它延续了 Typeflux 0.4 那个纯语音输入的版本：按住 `Fn` 说话输入，双击 `Fn` 随口提问。它不包含超级搜索、Chat、圆环、剪贴板历史、截图和录屏。
+
+两个应用共用同一个账户、会员和本地数据。它们安装后都是 `Typeflux.app`，一台 Mac 上只能使用其中一个；安装一个会替换另一个，历史记录和设置都会保留。想切换的话，在“关于 Typeflux”中选择“切换到 Typeflux Classic”，或从 [Classic 发布页](https://github.com/mylxsw/typeflux-classic/releases/latest)下载。
+
 ---
 
 [下载最新版本](https://github.com/mylxsw/typeflux/releases/latest) · [版本记录](https://typeflux.app/zh-CN/releases) · [使用指南](docs/USAGE.md) · [更多截图](docs/SCREENSHOTS.md)
