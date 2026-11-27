@@ -344,6 +344,7 @@
 "localSTT.funASR.summary" = "Alibaba DAMO Academy가 개발한 Paraformer 아키텍처 기반의 중국어 특화 ASR 모델. 빠르고 정확합니다.";
 "localSTT.funASR.parameterValue" = "220M";
 "localSTT.funASR.sizeValue" = "~180 MB";
+"localSTT.parameterCount" = "%@ 파라미터";
 "localSTT.prepare.runtimePreparing" = "네이티브 로컬 음성 런타임을 준비 중입니다...";
 "localSTT.prepare.cleaningLegacyRuntime" = "레거시 Python 런타임을 정리 중입니다...";
 "localSTT.prepare.runtimeDownloading" = "Sherpa-ONNX 네이티브 런타임을 다운로드 중입니다...";
@@ -7749,3 +7750,4 @@
 "classic.switch.error.identity" = "다운로드한 앱이 정품 Typeflux Classic이 아니어서 설치하지 않았습니다.";
 "classic.switch.error.unavailable" = "현재 Typeflux Classic을 사용할 수 없습니다.";
 "classic.switch.error.busy" = "진행 중인 녹음이나 작업을 마친 후 다시 시도하세요.";
+"classic.switch.error.download" = "Typeflux Classic을 다운로드할 수 없습니다. 네트워크 연결을 확인한 후 다시 시도해 주세요.";

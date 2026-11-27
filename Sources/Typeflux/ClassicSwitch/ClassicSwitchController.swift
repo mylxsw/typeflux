@@ -170,11 +170,13 @@ final class ClassicSwitchController: ObservableObject {
     }
 
     static func message(for error: Error) -> String {
+        // Network failures, from the release check or from the transfer, share one message.
+        // The executor describes them in untranslated technical English.
+        if error is CloudRequestExecutorError || (error as NSError).domain == NSURLErrorDomain {
+            return L("classic.switch.error.download")
+        }
         if let error = error as? LocalizedError, let description = error.errorDescription, !description.isEmpty {
             return description
-        }
-        if error is URLError || (error as NSError).domain == NSURLErrorDomain {
-            return L("updater.download.failed")
         }
         return error.localizedDescription
     }

@@ -197,7 +197,7 @@
 "menu.personas.empty" = "暫無人設";
 "menu.personas.edit" = "編輯人設";
 "menu.appearance" = "外觀";
-"menu.settings" = "系統設定";
+"menu.settings" = "Typeflux 設定";
 "menu.setupGuide" = "新手引導";
 "menu.about" = "關於 Typeflux";
 "menu.checkForUpdates" = "檢查更新";
@@ -346,6 +346,7 @@
 "localSTT.funASR.summary" = "阿里巴巴達摩院開發的 Paraformer 架構中文 ASR 模型，速度快，準確率高。";
 "localSTT.funASR.parameterValue" = "220M";
 "localSTT.funASR.sizeValue" = "~180 MB";
+"localSTT.parameterCount" = "%@ 參數";
 "localSTT.prepare.runtimePreparing" = "正在準備原生本地語音執行環境...";
 "localSTT.prepare.cleaningLegacyRuntime" = "正在清理舊版 Python 執行環境...";
 "localSTT.prepare.runtimeDownloading" = "正在下載 Sherpa-ONNX 原生執行環境...";
@@ -7755,3 +7756,4 @@
 "classic.switch.error.identity" = "下載的應用程式不是正版 Typeflux Classic，已拒絕安裝。";
 "classic.switch.error.unavailable" = "Typeflux Classic 暫時無法使用。";
 "classic.switch.error.busy" = "請先結束目前的錄音或工作，再重試。";
+"classic.switch.error.download" = "無法下載 Typeflux Classic，請檢查網路後再試一次。";

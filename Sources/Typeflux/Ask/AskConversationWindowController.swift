@@ -16,6 +16,8 @@ private final class FirstMouseHostingView<Content: View>: NSHostingView<Content>
 @MainActor
 final class AskConversationWindowController: NSObject, NSWindowDelegate {
     var confirmRunningClose: (NSAlert) -> NSApplication.ModalResponse = { $0.runModal() }
+    /// The area a window without a saved frame has to fit; replaced by tests.
+    var visibleScreenFrame: () -> NSRect? = { NSScreen.main?.visibleFrame }
     let model: AskConversationModel
     private let dockVisibility: DockVisibilityController
     private let settings: SettingsStore
@@ -678,6 +680,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 window.setFrame(visibleFrame, display: false)
             } else {
                 window.center()
+                if let visibleFrame = visibleScreenFrame() {
+                    window.setFrame(WindowScreenFitting.frame(window.frame, within: visibleFrame), display: false)
+                }
             }
             conversationWindow = window
         }
