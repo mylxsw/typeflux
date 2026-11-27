@@ -33,6 +33,22 @@ PACKAGE_NAME="${TYPEFLUX_PACKAGE_NAME:-$DEFAULT_PACKAGE_NAME}"
 APP_BUNDLE="${BUILD_DIR}/${APP_NAME}.app"
 APP_EXECUTABLE="${APP_BUNDLE}/Contents/MacOS/${APP_NAME}"
 ZIP_PATH="${BUILD_DIR}/${PACKAGE_NAME}.zip"
+# macOS applies the legacy appearance to apps linked against an older SDK.
+MIN_SDK_MAJOR=26
+
+# Xcode 27 defaults to the swiftbuild build system, which stamps the executable
+# with the deployment target (13.0) as its SDK. Older toolchains may not accept
+# the flag, so detect it from the help text.
+select_build_system() {
+  local help_text
+  help_text="$(swift build --help 2>/dev/null || true)"
+  if [[ "$help_text" == *"--build-system"* ]]; then
+    SWIFT_BUILD_ARGS+=(--build-system native)
+    echo "Build system: native"
+  else
+    echo "Build system: toolchain default (--build-system is not supported)"
+  fi
+}
 
 profile_supports_apple_sign_in() {
   local profile_path="$1"
@@ -97,6 +113,28 @@ verify_main_executable_architecture() {
   esac
 }
 
+verify_main_executable_sdk() {
+  local load_commands sdk_versions sdk
+  # -arch all: every slice of a universal binary has its own SDK version.
+  if ! load_commands="$(otool -arch all -l "$APP_EXECUTABLE")"; then
+    echo "Error: cannot read the load commands of ${APP_EXECUTABLE}" >&2
+    exit 1
+  fi
+  sdk_versions="$(awk '$1 == "sdk" { print $2 }' <<<"$load_commands")"
+  if [[ -z "$sdk_versions" ]]; then
+    echo "Error: no SDK version found in ${APP_EXECUTABLE}" >&2
+    exit 1
+  fi
+  echo "Main executable SDK: $(paste -sd ' ' - <<<"$sdk_versions")"
+
+  while IFS= read -r sdk; do
+    if [[ ! "$sdk" =~ ^[0-9]+(\.[0-9]+)*$ ]] || (( 10#${sdk%%.*} < MIN_SDK_MAJOR )); then
+      echo "Error: ${APP_EXECUTABLE} has SDK ${sdk}; ${MIN_SDK_MAJOR} or later is required." >&2
+      exit 1
+    fi
+  done <<<"$sdk_versions"
+}
+
 source "$ROOT_DIR/scripts/signing_keychain.sh"
 use_local_release_credentials "$0" "$@"
 select_signing_identity release "${TYPEFLUX_CODESIGN_IDENTITY:-}" "${TYPEFLUX_CODESIGN_KEYCHAIN:-}"
@@ -125,6 +163,7 @@ case "$RELEASE_ARCH" in
     SWIFT_BUILD_ARGS+=(--arch arm64 --arch x86_64)
     ;;
 esac
+select_build_system
 
 swift build "${SWIFT_BUILD_ARGS[@]}"
 
@@ -150,6 +189,7 @@ bash "$ROOT_DIR/scripts/copy_chat_window_helper.sh" "$BIN_DIR" "$APP_BUNDLE"
 cp "$ROOT_DIR/app/Typeflux.icns" "$APP_BUNDLE/Contents/Resources/Typeflux.icns"
 bash "$ROOT_DIR/scripts/copy_resource_bundles.sh" "$BIN_DIR" "$APP_BUNDLE/Contents/Resources"
 verify_main_executable_architecture
+verify_main_executable_sdk
 
 rm -rf "$APP_BUNDLE/Contents/Resources/BundledModels"
 rm -rf "$APP_BUNDLE/Contents/Resources/LocalRuntimes"

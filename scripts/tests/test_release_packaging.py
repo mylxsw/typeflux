@@ -26,7 +26,8 @@ class ReleasePackagingTests(unittest.TestCase):
                     offenders.append(f'{source.relative_to(ROOT)}:{line_number}')
         self.assertFalse(offenders, 'Use Bundle.appResources in the main app:\n' + '\n'.join(offenders))
 
-    def run_release(self, fail_tokenizer=False, missing_identity=False):
+    def run_release(self, fail_tokenizer=False, missing_identity=False, build_system_flag=True,
+                    help_status=0, sdk='26.5', otool_status=0, arch='native'):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             scripts = root / 'scripts'
@@ -62,8 +63,19 @@ class ReleasePackagingTests(unittest.TestCase):
 [ "$FIXTURE_MISSING_IDENTITY" = 0 ] || exit 0
 echo '  1) 0123456789ABCDEF0123456789ABCDEF01234567 "Developer ID Application: fixture"'
 """,
-                'swift': '#!/bin/sh\ncase "$*" in *--show-bin-path*) echo "$FIXTURE_PRODUCTS";; esac\n',
-                'lipo': '#!/bin/sh\necho arm64\n',
+                'swift': '''#!/bin/sh
+case "$*" in
+  *--help*) printf '%s\\n' "$FIXTURE_HELP"; exit "$FIXTURE_HELP_STATUS";;
+esac
+echo "$*" >> "$FIXTURE_SWIFT_LOG"
+case "$*" in *--show-bin-path*) echo "$FIXTURE_PRODUCTS";; esac
+''',
+                'otool': '''#!/bin/sh
+[ "$1 $2 $3" = "-arch all -l" ] || exit 2
+[ "$FIXTURE_OTOOL_STATUS" = 0 ] || exit "$FIXTURE_OTOOL_STATUS"
+for sdk in $FIXTURE_SDK; do printf ' platform 1\\n    minos 13.0\\n      sdk %s\\n' "$sdk"; done
+''',
+                'lipo': '#!/bin/sh\necho arm64 x86_64\n',
                 'ditto': '#!/bin/sh\nexit 0\n',
                 'codesign': '''#!/usr/bin/env python3
 import json, os, pathlib, sys
@@ -89,7 +101,11 @@ if target.endswith('/MacOS/Typeflux') or target.endswith('.app'):
                        TYPEFLUX_RELEASE_VARIANT='app-only', TYPEFLUX_CODESIGN_IDENTITY='Developer ID Application: fixture',
                        TYPEFLUX_CODESIGN_KEYCHAIN=str(keychain), FIXTURE_MISSING_IDENTITY=str(int(missing_identity)),
                        FIXTURE_PRODUCTS=str(products), FIXTURE_SIGNATURES=str(root / 'signatures.json'),
-                       FIXTURE_FAIL='1' if fail_tokenizer else '0')
+                       FIXTURE_FAIL='1' if fail_tokenizer else '0',
+                       FIXTURE_HELP='  --build-system <build-system>' if build_system_flag else '  --arch <arch>',
+                       FIXTURE_HELP_STATUS=str(help_status), FIXTURE_SDK=sdk,
+                       FIXTURE_OTOOL_STATUS=str(otool_status), FIXTURE_SWIFT_LOG=str(root / 'swift.log'),
+                       TYPEFLUX_RELEASE_ARCH=arch)
             trace_env = root / 'trace-env'
             trace_env.write_text("PS4='+${BASH_SOURCE}:${LINENO}:'\n")
             env['BASH_ENV'] = str(trace_env)
@@ -100,6 +116,8 @@ if target.endswith('/MacOS/Typeflux') or target.endswith('.app'):
                     trace.write(result.stderr)
             log = root / 'signatures.json'
             rows = json.loads(log.read_text()) if log.exists() else []
+            swift_log = root / 'swift.log'
+            result.swift_calls = swift_log.read_text().splitlines() if swift_log.exists() else []
             return result, rows
 
     def test_tokenizer_is_signed_before_workers_and_host_without_host_entitlements(self):
@@ -130,6 +148,46 @@ if target.endswith('/MacOS/Typeflux') or target.endswith('.app'):
         self.assertEqual(result.returncode, 23)
         self.assertEqual(len(rows), 1)
         self.assertTrue(rows[0][-1].endswith('swift-transformers_Hub.bundle'))
+
+    def test_native_build_system_is_used_for_the_build_and_its_bin_path(self):
+        for arch in ['native', 'arm64', 'x86_64']:
+            with self.subTest(arch=arch):
+                result, _ = self.run_release(arch=arch)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(len(result.swift_calls), 2)
+                for call in result.swift_calls:
+                    self.assertIn('--build-system native', call)
+                self.assertIn('Build system: native', result.stdout)
+                self.assertIn('Main executable SDK: 26.5', result.stdout)
+
+    def test_toolchain_without_build_system_flag_builds_with_its_default(self):
+        for kwargs in [{'build_system_flag': False}, {'build_system_flag': False, 'help_status': 1}]:
+            with self.subTest(kwargs=kwargs):
+                result, _ = self.run_release(**kwargs)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(len(result.swift_calls), 2)
+                for call in result.swift_calls:
+                    self.assertNotIn('--build-system', call)
+                self.assertIn('toolchain default', result.stdout)
+
+    def test_supported_sdk_versions_pass(self):
+        for sdk in ['26', '26.0', '27.2', '26.5 27.2']:
+            with self.subTest(sdk=sdk):
+                result, _ = self.run_release(sdk=sdk)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f'Main executable SDK: {sdk}\n', result.stdout)
+
+    def test_old_or_unreadable_sdk_stops_before_signing(self):
+        cases = [({'sdk': '13.0'}, 'has SDK 13.0'), ({'sdk': '25.9'}, 'has SDK 25.9'),
+                 ({'sdk': '27.2 13.0'}, 'has SDK 13.0'), ({'sdk': 'n/a'}, 'has SDK n/a'),
+                 ({'sdk': ''}, 'no SDK version found'), ({'otool_status': 1}, 'cannot read the load commands')]
+        for kwargs, message in cases:
+            with self.subTest(kwargs=kwargs):
+                result, rows = self.run_release(**kwargs)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn(message, result.stderr)
+                self.assertEqual(rows, [])
+                self.assertNotIn('Release archive created', result.stdout)
 
 
 if __name__ == '__main__':
