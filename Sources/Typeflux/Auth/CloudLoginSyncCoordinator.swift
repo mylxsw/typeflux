@@ -113,7 +113,7 @@ final class CloudLoginSyncCoordinator {
         pendingOffer = nil
         guard canUseSpeech else { return }
         let alreadyUsesCloudRewrite = languageProvider(settingsStore) == .openAICompatible
-            && settingsStore.textLLMConfiguration().provider == .typefluxCloud
+            && settingsStore.usesCloudRewriteForAccountDefaults
         guard !alreadyUsesCloudRewrite || offer.speech != .typefluxOfficial else { return }
 
         presentingGeneration = offer.generation
