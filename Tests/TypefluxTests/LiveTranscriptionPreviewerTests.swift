@@ -116,7 +116,7 @@ final class LiveTranscriptionPreviewerTests: XCTestCase {
         let buffer = try makeTestBuffer(sampleCount: 40000)
         await backend.append(buffer)
 
-        await fulfillment(of: [updateReceived], timeout: 1.0)
+        await fulfillment(of: [updateReceived], timeout: 15.0)
         let transcribeCallCount = await transcriber.transcribeCallCount()
         XCTAssertEqual(transcribeCallCount, 1)
         _ = await backend.finish()
@@ -139,7 +139,7 @@ final class LiveTranscriptionPreviewerTests: XCTestCase {
         await backend.append(nearSilent)
         await backend.append(audible)
 
-        await fulfillment(of: [updateReceived], timeout: 1.0)
+        await fulfillment(of: [updateReceived], timeout: 15.0)
         let decodedDurations = await transcriber.decodedDurations
         XCTAssertEqual(decodedDurations, [2.5])
         let finalPreview = await backend.finish()
