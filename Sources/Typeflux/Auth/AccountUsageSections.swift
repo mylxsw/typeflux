@@ -135,23 +135,28 @@ struct AccountCreditBreakdownView: View {
                     .foregroundStyle(StudioTheme.textTertiary)
                     .frame(maxWidth: .infinity, minHeight: 92, alignment: .center)
             } else {
-                ForEach(shares, id: \.feature) { share in
-                    HStack(spacing: 8) {
-                        Text(Self.title(share.feature))
-                            .font(.studioBody(StudioTheme.Typography.bodySmall))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .lineLimit(1)
-                            .frame(width: 74, alignment: .leading)
-                        AccountProgressBar(progress: share.fraction, color: Self.color(share.feature))
-                            .frame(height: 8)
-                        Text(AccountStatusText.percent(share.fraction))
-                            .font(.studioBody(StudioTheme.Typography.bodySmall))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                            .monospacedDigit()
-                            .frame(width: 40, alignment: .trailing)
+                // A grid sizes the label column to the longest localized title,
+                // so no language truncates and the bars stay aligned.
+                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 9) {
+                    ForEach(shares, id: \.feature) { share in
+                        GridRow {
+                            Text(Self.title(share.feature))
+                                .font(.studioBody(StudioTheme.Typography.bodySmall))
+                                .foregroundStyle(StudioTheme.textSecondary)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .frame(minWidth: 52, alignment: .leading)
+                            AccountProgressBar(progress: share.fraction, color: Self.color(share.feature))
+                                .frame(height: 8)
+                            Text(AccountStatusText.percent(share.fraction))
+                                .font(.studioBody(StudioTheme.Typography.bodySmall))
+                                .foregroundStyle(StudioTheme.textPrimary)
+                                .monospacedDigit()
+                                .frame(width: 40, alignment: .trailing)
+                        }
+                        .help(AccountUsageDisplayFormatter.creditAmount(share.credits))
+                        .accessibilityElement(children: .combine)
                     }
-                    .help(AccountUsageDisplayFormatter.creditAmount(share.credits))
-                    .accessibilityElement(children: .combine)
                 }
                 Text(L("account.page.featureFootnote"))
                     .font(.system(size: 10.5))
