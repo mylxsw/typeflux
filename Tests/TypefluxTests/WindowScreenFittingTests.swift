@@ -70,8 +70,7 @@ struct WindowScreenFittingTests {
 
         #expect(small.contains(window.frame), "\(window.frame) exceeds \(small)")
         #expect(window.frame.width == small.width)
-        #expect(window.contentMinSize.width <= small.width)
-        #expect(window.contentMinSize.height <= small.height)
+        assertMinimumSize(in: small, window: window)
     }
 
     @Test func settingsWindowKeepsItsDefaultSizeOnALargeScreen() async throws {
@@ -83,6 +82,17 @@ struct WindowScreenFittingTests {
         defer { window.close() }
 
         #expect(window.frame.size == NSSize(width: width, height: height))
+        assertMinimumSize(in: available, window: window)
+    }
+
+    private func assertMinimumSize(in visibleFrame: NSRect, window: NSWindow) {
+        let expected = NSSize(
+            width: min(StudioTheme.Layout.settingsWindowMinWidth, visibleFrame.width),
+            height: min(StudioTheme.Layout.settingsWindowMinHeight, visibleFrame.height)
+        )
+        #expect(window.contentMinSize.width == expected.width)
+        // AppKit can add toolbar height to the minimum in a full-size content window.
+        #expect(window.contentMinSize.height >= expected.height)
     }
 
     @Test func chatWindowWithoutASavedFrameOpensInsideASmallScreen() async throws {
