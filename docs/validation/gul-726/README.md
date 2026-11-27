@@ -1,6 +1,6 @@
 # GUL-726 macOS release validation
 
-**Release decision pending startup triage (GUL-731).** The native upgrade, one-click switch, return to Typeflux and five local dictation targets worked. Classic took longer than 0.4.0 to expose its menu on two runs. The existing microphone label is an accepted release-note item. Hosted checkout and remote speech recognition require sandbox configuration.
+**Review follow-up.** GUL-731 closed after interleaved startup measurements put the two releases within 5 ms. Local dictation can insert a spurious Korean syllable before English speech. Visual sign-off awaits a Classic Release built with the merged GUL-732 script and an SDK marker of at least 26. The existing microphone label is an accepted release-note item. Hosted checkout and remote speech recognition require sandbox configuration.
 
 ## Builds and environment
 
@@ -33,9 +33,25 @@ Service revisions: API `cd7ea489d4`, homepage `e4aeafd4b3`, dashboard `530fe9a20
 | 11 | Prepaid membership | **Pass.** Pro showed expiry and web renewal, with subscription-management hidden. The native action opened local billing. See prepaid-live and prepaid-renewal in the first archive. |
 | 12 | Shared account totals | **Pass.** Classic and 1.0.0 showed the same period, balance and usage (one voice entry and three AI requests). Classic and 1.0.1 also agreed after the add-on grant. See credits-v2, cross100-account, classic-post-grant and account101-open. |
 | 13 | Account change | **Pass for native switch and focused session tests.** Signed A out of Classic and the local web session, then signed B in via Safari. B showed Free, 5/5 and zero calls, without A’s Pro add-on. Async result isolation was covered by the focused session tests. See account-A-logout, B-callback-result and B-free-after-switch. |
-| 14 | Speech input | **Pass for five local targets; remote providers pending keys.** Held the configured hotkey while playing a known WAV into the guest microphone via BlackHole. SenseVoice inserted the sentence in Notes, TextEdit, a Safari form, Terminal (unexecuted) and Obsidian (Electron) on signed Debug. Release repeated TextEdit insertion three times. History retry also recovered the expected transcript. Release showed a partial during recording and inserted into Safari’s address field. With English Translator selected and a seeded vocabulary entry, a loopback streaming fixture received recognized text and the term GulNotebook, and its deterministic response reached both TextEdit and Safari. This exercises the rewrite transport and insertion; model quality was outside the fixture. See live-safari-hold, live-safari-insert and voice-fixture-textedit. See voice-notes-typed, perf-release, voice-safari, voice-terminal and voice-obsidian. |
-| 15 | Performance | **Fail for startup, GUL-731.** Idle CPU and RSS were comparable. Median release-to-insert time improved, with a slower first Classic recognition. Measurements below. |
-| 16 | Visual inspection | **Pass for captured surfaces.** Five languages × two appearances × six settings sections on latest Classic Release, plus all six onboarding steps in English and Simplified Chinese in both appearances. English and Simplified Chinese captures also cover the status menu, feedback menu and live recording capsule in both appearances. Account, switch confirmation, expiry, and system permission dialogs have separate scenario captures. OS-owned dialogs reflect the guest system appearance. See opt-*, wizard-*, menu-* and extra-* captures. |
+| 14 | Speech input | **Insertion delivered to five targets; transcript accuracy failed on the leading-silence case below.** Remote providers await keys. Held the configured hotkey while playing a known WAV into the guest microphone via BlackHole. SenseVoice inserted the sentence in Notes, TextEdit, a Safari form, Terminal (unexecuted) and Obsidian (Electron) on signed Debug. Release repeated TextEdit insertion three times. History retry also recovered the expected transcript. Release showed a partial during recording and inserted into Safari’s address field. With English Translator selected and a seeded vocabulary entry, a loopback streaming fixture received recognized text and the term GulNotebook, and its deterministic response reached both TextEdit and Safari. This exercises the rewrite transport and insertion; model quality was outside the fixture. See live-safari-hold, live-safari-insert and voice-fixture-textedit. See voice-notes-typed, perf-release, voice-safari, voice-terminal and voice-obsidian. |
+| 15 | Performance | **Pass on interleaved retest (GUL-731, closed).** Idle CPU and RSS were comparable. Median release-to-insert time improved, with a slower first Classic recognition. Measurements below. |
+| 16 | Visual inspection | **Provisional.** The captured binary had an SDK marker of 13.0, which selects the compatibility appearance on Tahoe. Settings, account, onboarding and the capsule still need SDK ≥26 captures in both English and Simplified Chinese, light and dark. Five languages × two appearances × six settings sections on latest Classic Release, plus all six onboarding steps in English and Simplified Chinese in both appearances. English and Simplified Chinese captures also cover the status menu, feedback menu and live recording capsule in both appearances. Account, switch confirmation, expiry, and system permission dialogs have separate scenario captures. OS-owned dialogs reflect the guest system appearance. See opt-*, wizard-*, menu-* and extra-* captures. |
+
+## Dictation prefix investigation
+
+The stored transcript for the original Terminal run (05:46:17 UTC) already started with `그.` (U+ADF8, U+002E). The same prefix appeared in the processed text. This fixture had 9.75 s of digital silence before speech. Decoding its complete archived WAV with the installed SenseVoice model in automatic language mode produced the clean English sentence. Decoding only the first 2.4 s of verified all-zero PCM produced language `ko`, tokens `["그", "."]`. This test ran the decoder directly, without an editor or keyboard events.
+
+On the signed 0.5.0 Release, the test selected each macOS input source after focusing an empty target and read back the source ID before and after dictation. It compared Classic history with the actual TextEdit document or a shell reader that captured a Terminal line verbatim. The hotkey driver only held and released Ctrl+Shift+J during speech. All six insertions matched the processed transcript exactly.
+
+| Active input source | TextEdit | Terminal |
+|---|---|---|
+| ABC | Clean English | Clean English (capital B in Blue) |
+| Korean 2-Set | `그.` + English | `그.` + English |
+| Simplified Pinyin | Clean English | Clean English |
+
+A Korean 2-Set control with speech starting promptly produced clean English. In an ABC control, the native capsule showed the syllable during silence, before the English recording began. Another ABC run with a 9.7 s playback delay reproduced the full prefix in TextEdit. The app logged that it chose the 36-character preview over the 34-character final transcript. The earlier ABC control finished clean, so the defect depends on timing. The artifact occurs upstream of input-method composition.
+
+**Reproduction.** Select SenseVoice with local live preview, leave polishing disabled, focus a blank TextEdit document and hold the dictation shortcut. Wait through several 2.4 s preview chunks before playing the synthetic English sentence, then release after the final word. Compare the live capsule, history and document with an offline decode of the same WAV. Chunk timing affects whether the extra prefix survives. `LocalModelLivePreviewBackend` accumulates nonempty chunk transcripts. In `WorkflowController+Processing.swift`, `preferredTranscript` selects the longer preview if its suffix matches the final transcript. The screenshots, exact strings, source IDs and decoder tokens are attached to GUL-726.
 
 ## Performance measurements
 
@@ -47,7 +63,7 @@ On the same VM, quit and open the signed application and poll for its status ite
 | Idle CPU and RSS | 0.0%, 160,016 KiB | 0.0%, 161,728 KiB |
 | Release to inserted text, seconds | 1.389 / 1.051 / 1.285 | 3.150 / 1.001 / 0.964 |
 
-The Classic startup medians were 0.868 s and 0.731 s versus 0.389 s for the baseline. This probe includes Launch Services and accessibility polling. It does not isolate which startup operation accounts for the difference.
+The initial non-interleaved Classic startup medians were 0.868 s and 0.731 s versus 0.389 s for the baseline. This probe includes Launch Services and accessibility polling. The later interleaved comparison in GUL-731 supersedes these startup samples for the release decision. GUL-730 merged.
 
 ## Focused test evidence
 
