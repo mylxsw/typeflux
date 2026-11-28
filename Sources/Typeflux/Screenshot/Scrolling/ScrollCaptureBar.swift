@@ -8,6 +8,9 @@ struct ScrollCaptureBar: View {
     let actions: ScrollCaptureActions
 
     static func message(for state: ScrollCaptureViewState) -> String {
+        if state.status == .finishing {
+            return L("screenshot.scroll.status.finishing")
+        }
         if state.lastSegmentSuspicious {
             return L("screenshot.scroll.status.suspicious")
         }
@@ -19,6 +22,7 @@ struct ScrollCaptureBar: View {
         case .pausedByMouse: L("screenshot.scroll.status.pausedByMouse")
         case .misaligned: L("screenshot.scroll.status.misaligned")
         case .needsAccessibility: L("screenshot.scroll.status.needsAccessibility")
+        case .finishing: L("screenshot.scroll.status.finishing")
         }
     }
 
@@ -30,11 +34,17 @@ struct ScrollCaptureBar: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: state.lastSegmentSuspicious ? "exclamationmark.triangle.fill"
-                : (state.axis == .horizontal ? "arrow.right.to.line.compact" : "arrow.down.to.line.compact"))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(state.lastSegmentSuspicious ? Color.orange : AskTheme.accent)
-                .padding(.leading, 6)
+            if state.status == .finishing {
+                ProgressView()
+                    .controlSize(.small)
+                    .padding(.leading, 6)
+            } else {
+                Image(systemName: state.lastSegmentSuspicious ? "exclamationmark.triangle.fill"
+                    : (state.axis == .horizontal ? "arrow.right.to.line.compact" : "arrow.down.to.line.compact"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(state.lastSegmentSuspicious ? Color.orange : AskTheme.accent)
+                    .padding(.leading, 6)
+            }
             Text(Self.message(for: state))
                 .font(.system(size: 12.5, weight: .medium))
                 .lineLimit(1)
@@ -75,7 +85,8 @@ struct ScrollCaptureBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(state.pixelSize.width == 0)
+            .disabled(!state.canFinish)
+            .opacity(state.canFinish || state.status == .finishing ? 1 : 0.5)
         }
         .padding(4)
         .screenshotSurface(corner: 12, elevation: nil, placement: .floating)
@@ -164,7 +175,7 @@ final class ScrollCaptureBarView: NSView {
         case ScreenshotOverlayView.Key.escape:
             actions.cancel()
         case ScreenshotOverlayView.Key.returnKey, ScreenshotOverlayView.Key.enter:
-            if state.pixelSize.width > 0 {
+            if state.canFinish {
                 actions.finish()
             }
         default:

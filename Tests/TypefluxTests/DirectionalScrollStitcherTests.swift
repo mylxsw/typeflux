@@ -136,4 +136,27 @@ final class DirectionalScrollStitcherTests: XCTestCase {
                        Fixtures.bytes(of: image))
         XCTAssertTrue(ScrollCaptureAxis.vertical.orient(image) === image)
     }
+
+    func testThePreviewGetsSmallCopiesOfWideSegmentsOnBothAxes() throws {
+        let page = Fixtures.page(width: 800, height: 1200)
+        for axis: ScrollCaptureAxis in [.vertical, .horizontal] {
+            var stitcher = DirectionalScrollStitcher()
+            _ = stitcher.add(frame(page, 0, axis: axis))
+            _ = stitcher.add(frame(page, 100, axis: axis))
+            XCTAssertEqual(stitcher.segments.count, 2)
+            for segment in stitcher.segments {
+                let thumbnail = try XCTUnwrap(segment.thumbnail)
+                let cross = axis == .horizontal ? thumbnail.height : thumbnail.width
+                XCTAssertEqual(cross, DirectionalScrollStitcher.thumbnailCrossLength)
+            }
+            XCTAssertNil(stitcher.footerThumbnail)
+        }
+        let small = Fixtures.page(header: 0, footer: 20)
+        var stitcher = DirectionalScrollStitcher()
+        _ = stitcher.add(frame(small, 0, axis: .vertical))
+        _ = stitcher.add(frame(small, 100, axis: .vertical))
+        XCTAssertNotNil(stitcher.footer)
+        XCTAssertNil(stitcher.segments.last?.thumbnail, "Narrow segments are drawn as they are")
+        XCTAssertNil(stitcher.footerThumbnail)
+    }
 }

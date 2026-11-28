@@ -4291,6 +4291,7 @@
 "screenshot.scroll.status.misaligned" = "Lost overlap · scroll back to the captured area";
 "screenshot.scroll.status.needsAccessibility" = "Scroll by hand · allow Accessibility to scroll automatically";
 "screenshot.scroll.status.suspicious" = "This part may not line up · press ⌫ to undo it";
+"screenshot.scroll.status.finishing" = "Making the long image…";
 "screenshot.scroll.allow" = "Allow";
 "screenshot.scroll.pause" = "Pause";
 "screenshot.scroll.resume" = "Resume";

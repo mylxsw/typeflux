@@ -4277,6 +4277,7 @@
 "screenshot.scroll.status.misaligned" = "畫面接不上，請捲回已截圖的位置";
 "screenshot.scroll.status.needsAccessibility" = "請手動滾動 · 授權輔助使用後可自動滾動";
 "screenshot.scroll.status.suspicious" = "這一段可能沒對齊 · 按 ⌫ 撤銷";
+"screenshot.scroll.status.finishing" = "正在產生長圖…";
 "screenshot.scroll.allow" = "授權";
 "screenshot.scroll.pause" = "暫停";
 "screenshot.scroll.resume" = "繼續";

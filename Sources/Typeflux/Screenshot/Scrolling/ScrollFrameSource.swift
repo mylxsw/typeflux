@@ -32,11 +32,11 @@ protocol ScrollFrameSource: AnyObject {
     func stop()
 }
 
-/// `SCStream` with `sourceRect` set to the region, at about 15 frames a second. The same path
+/// `SCStream` with `sourceRect` set to the region, at up to 30 frames a second. The same path
 /// works on macOS 13 and later.
 final class ScreenCaptureStreamFrameSource: NSObject, ScrollFrameSource, SCStreamOutput, SCStreamDelegate,
     @unchecked Sendable {
-    static let framesPerSecond: Int32 = 15
+    static let framesPerSecond: Int32 = 30
 
     private let queue = DispatchQueue(label: "Typeflux.ScrollCapture.frames", qos: .userInitiated)
     private let ownProcessID: pid_t

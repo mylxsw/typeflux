@@ -418,41 +418,90 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(finishedImage).0.height, 350)
     }
 
-    func testWheelBurstsAreDebouncedButContinuousScrollingKeepsOverlap() async {
+    func testScrollingByHandJoinsEveryFrameWithoutWaitingForThePictureToHoldStill() async {
         let session = makeSession()
         await start(session)
         await settle(session, 0)
-        monitor.handler?(.scrolled)
-        session.receive(frame(120))
-        advance(ScrollCaptureSession.manualSampleInterval / 2)
-        await tick(session)
-        XCTAssertEqual(session.stitcher.segments.count, 1)
-        monitor.handler?(.scrolled)
-        // The latest viewport has already scrolled past the first one.
-        session.receive(frame(270))
-        advance(ScrollCaptureSession.manualSampleInterval / 2)
-        await tick(session)
-        XCTAssertEqual(session.state.pixelSize.height, 370, "Keeps the earlier overlapping frame")
-        advance(ScrollCaptureSession.quietInterval)
-        await tick(session)
-        XCTAssertEqual(session.state.pixelSize.height, 520, "Also joins the latest frame")
-        XCTAssertEqual(session.stitcher.segments.count, 3)
+        for (offset, height) in [(60, 310), (130, 380), (210, 460)] {
+            monitor.handler?(.scrolled)
+            session.receive(frame(offset))
+            XCTAssertNotNil(session.analysis, "Analysis starts as the frame arrives")
+            await session.analysis?.value
+            XCTAssertEqual(session.state.pixelSize.height, height)
+        }
+        XCTAssertEqual(session.stitcher.segments.count, 4)
+        XCTAssertEqual(presenter.previews.last?.newestStart, 1, "One scroll so far")
         XCTAssertTrue(driver.scrolls.isEmpty)
     }
 
-    func testManualCaptureKeepsOverlappingFramesEvenAfterAFastGestureStops() async {
+    func testFramesThatArriveDuringAnAnalysisBridgeAGapTheNewestIsPast() async throws {
         let session = makeSession()
         await start(session)
         await settle(session, 0)
-        for offset in [120, 250, 370] {
-            session.receive(frame(offset))
-        }
-        advance(ScrollCaptureSession.quietInterval)
-        for height in [370, 500, 620] {
-            await tick(session)
-            XCTAssertEqual(session.state.pixelSize.height, height)
-        }
+        session.receive(frame(120))
+        // Scrolling outruns the analysis: the newest frame no longer overlaps the joined image.
+        session.receive(frame(250))
+        session.receive(frame(370))
+        await session.analysis?.value
+        XCTAssertEqual(session.state.pixelSize.height, 370)
+        await session.analysis?.value
+        XCTAssertEqual(session.state.pixelSize.height, 620, "Bridged through the frame in between")
         XCTAssertEqual(session.state.status, .manual)
+        XCTAssertEqual(Fixtures.bytes(of: try XCTUnwrap(session.stitcher.makeImage())),
+                       page.expected(lastOffset: 370, scrollingHeight: 250))
+    }
+
+    func testBridgesAreThinnedEvenlyFromTheOldest() {
+        let images = (0 ..< 5).map { Fixtures.solid(width: 2, height: 2, gray: UInt8($0 * 40)) }
+        XCTAssertTrue(zip(ScrollCaptureSession.thinned(images), [images[0], images[2], images[4]]).allSatisfy { $0 === $1 })
+        XCTAssertEqual(ScrollCaptureSession.thinned(images).count, 3)
+    }
+
+    func testOneUndoRemovesTheWholeNewestScroll() async {
+        let session = makeSession()
+        await start(session)
+        await settle(session, 0)
+        for offset in [40, 90] {
+            session.receive(frame(offset))
+            await session.analysis?.value
+            advance(0.05)
+        }
+        advance(ScrollCaptureSession.gestureGap + 0.05)
+        for offset in [140, 200] {
+            session.receive(frame(offset))
+            await session.analysis?.value
+            advance(0.05)
+        }
+        XCTAssertEqual(session.state.pixelSize.height, 450)
+        XCTAssertEqual(presenter.previews.last?.newestStart, 3)
+
+        presenter.actions?.undo()
+        XCTAssertEqual(session.state.pixelSize.height, 340, "Back to where the second scroll began")
+        XCTAssertEqual(presenter.previews.last?.newestStart, 1)
+        presenter.actions?.undo()
+        XCTAssertEqual(session.state.pixelSize.height, 250)
+        XCTAssertFalse(session.state.canUndo)
+    }
+
+    func testAFrameThatDoesNotLineUpWhileScrollingIsRetriedWithRegistrationOnceStill() async {
+        let calls = ScrollHealthCalls()
+        let session = makeSession(estimator: CountingRegistration(calls: calls))
+        await start(session)
+        await settle(session, 0)
+        monitor.handler?(.scrolled)
+        session.receive(Fixtures.noise(width: page.width, height: 250, seed: 4))
+        await session.analysis?.value
+        XCTAssertEqual(calls.count, 0, "No native registration while frames keep coming")
+        await tick(session)
+        XCTAssertEqual(calls.count, 0, "Not before the picture holds still")
+        advance(ScrollCaptureSession.quietInterval)
+        await tick(session)
+        XCTAssertGreaterThan(calls.count, 0)
+        XCTAssertEqual(session.state.status, .misaligned)
+        let after = calls.count
+        advance(ScrollCaptureSession.quietInterval)
+        await tick(session)
+        XCTAssertEqual(calls.count, after, "Retried once")
     }
 
     func testManualHorizontalCaptureCanFinishOrOptIntoHorizontalAutomaticAndUndo() async throws {
@@ -460,7 +509,8 @@ final class ScrollCaptureSessionTests: XCTestCase {
         await start(session)
         for offset in [0, 100, 180] {
             session.receive(Fixtures.transpose(frame(offset)))
-            advance(ScrollCaptureSession.quietInterval)
+            // Separate scrolls, so one undo removes only the last.
+            advance(ScrollCaptureSession.gestureGap + 0.05)
             await tick(session)
         }
         XCTAssertEqual(session.state.axis, .horizontal)
@@ -877,10 +927,57 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertEqual(driver.scrolls.count, steps)
     }
 
+    func testDoneShowsThatTheImageIsBeingMadeAndLocksTheControls() async throws {
+        driver.canScroll = false
+        let session = makeSession()
+        await start(session)
+        await settle(session, 0)
+        await settle(session, 100)
+        presenter.actions?.finish()
+        let state = try XCTUnwrap(presenter.states.last)
+        XCTAssertEqual(state.status, .finishing)
+        XCTAssertFalse(state.canFinish)
+        XCTAssertFalse(state.canUndo)
+        XCTAssertFalse(state.canToggleAutomatic)
+        await session.finishTask?.value
+        XCTAssertEqual(try XCTUnwrap(finishedImage).0.height, 350)
+    }
+
+    func testDoneDoesNotWaitLongForASlowRegistration() async throws {
+        let registration = ScrollSessionRegistrationGate()
+        let session = makeSession(estimator: registration)
+        await start(session); await settle(session, 0)
+        presenter.actions?.togglePause(); await tick(session)
+        session.receive(frame(100)); advance(ScrollCaptureSession.quietInterval); session.tick()
+        await registration.waitForCall()
+        let started = Date()
+        session.finish(.user)
+        await session.finishTask?.value
+        XCTAssertLessThan(Date().timeIntervalSince(started), 2)
+        XCTAssertEqual(try XCTUnwrap(finishedImage).0.height, 350, "The frame in flight is joined anyway")
+        await registration.release(); await session.analysis?.value
+        XCTAssertEqual(results.count, 1)
+    }
+
+    func testTheGracePeriodReturnsWithoutWaitingForAStuckTask() async {
+        let gate = ScrollSessionRegistrationGate()
+        let stuck = Task { _ = try? await gate.verticalShifts(from: frame(0), to: frame(0)) }
+        let started = Date()
+        let finishedInTime = await ScrollCaptureSession.completes(stuck, within: 0.05)
+        XCTAssertFalse(finishedInTime)
+        XCTAssertLessThan(Date().timeIntervalSince(started), 1)
+        await gate.release()
+        await stuck.value
+        let done = Task {}
+        let doneInTime = await ScrollCaptureSession.completes(done, within: 5)
+        XCTAssertTrue(doneInTime)
+    }
+
     func testAccountRevocationDuringFinalDrainNeverExportsLatePixels() async {
         let registration = ScrollSessionRegistrationGate()
         let session = makeSession(estimator: registration)
         await start(session); await settle(session, 0)
+        presenter.actions?.togglePause(); await tick(session)
         session.receive(frame(100)); advance(ScrollCaptureSession.quietInterval); session.tick()
         await registration.waitForCall()
         session.finish(.user)
@@ -898,6 +995,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         let session = makeSession(estimator: registration)
         await start(session); await settle(session, 0); await settle(session, 100)
         await registration.hold()
+        presenter.actions?.togglePause(); await tick(session)
         session.receive(frame(180)); advance(ScrollCaptureSession.quietInterval); session.tick()
         await registration.waitForCall()
         session.undo()
@@ -915,6 +1013,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         let registration = ScrollSessionRegistrationGate()
         var session: ScrollCaptureSession? = makeSession(estimator: registration)
         await start(session!); await settle(session!, 0)
+        session!.togglePause(); await tick(session!)
         session!.receive(frame(100)); advance(ScrollCaptureSession.quietInterval); session!.tick()
         await registration.waitForCall()
         let work = session!.analysis
@@ -944,6 +1043,15 @@ private actor ScrollSessionRegistrationGate: ScrollFrameRegistering {
             try? await Task.sleep(for: .milliseconds(5))
         }
         XCTFail("Registration was not reached")
+    }
+}
+
+private struct CountingRegistration: ScrollFrameRegistering {
+    let calls: ScrollHealthCalls
+    var canSkipWhenLocallyAligned: Bool { true }
+    func verticalShifts(from previous: CGImage, to current: CGImage) async throws -> [Int] {
+        calls.add()
+        return []
     }
 }
 

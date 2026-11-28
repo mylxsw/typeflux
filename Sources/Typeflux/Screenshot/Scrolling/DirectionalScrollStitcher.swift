@@ -30,6 +30,9 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
     private(set) var axis: ScrollCaptureAxis?
     private(set) var segments: [ScrollStitcher.Segment] = []
     private(set) var footer: CGImage?
+    /// `footer` reduced for the preview; nil when it is small already.
+    private(set) var footerThumbnail: CGImage?
+    private var normalizedFooter: CGImage?
 
     init(maxPixels: Int = ScrollStitcher.defaultMaxPixels, estimator: (any ScrollOffsetEstimating)? = nil) {
         self.estimator = estimator
@@ -111,6 +114,7 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
                 joined = horizontal
                 self.first = nil
                 normalizedSegments = []
+                normalizedFooter = nil
                 refreshPreview()
                 return horizontalOutcome
             }
@@ -189,7 +193,8 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
         joined.makeImage().flatMap { (axis ?? .vertical).orient($0) }
     }
 
-    /// Only newly stored pieces are transposed; old preview images are reused.
+    /// Only newly stored pieces are transposed and reduced; old preview images are reused. This runs
+    /// with the analysis, off the main thread, so the preview only ever draws small images.
     private mutating func refreshPreview() {
         let originals = joined.segments
         let axis = axis ?? .vertical
@@ -199,10 +204,38 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
                 return segments[index]
             }
             return axis.orient(segment.image).map {
-                ScrollStitcher.Segment(image: $0, isSuspicious: segment.isSuspicious)
+                ScrollStitcher.Segment(image: $0, isSuspicious: segment.isSuspicious,
+                                       thumbnail: Self.thumbnail(of: $0, axis: axis))
             }
         }
         normalizedSegments = originals
-        footer = joined.footer.flatMap { axis.orient($0) }
+        if let original = joined.footer, original !== normalizedFooter {
+            footer = axis.orient(original)
+            footerThumbnail = footer.flatMap { Self.thumbnail(of: $0, axis: axis) }
+        } else if joined.footer == nil {
+            footer = nil
+            footerThumbnail = nil
+        }
+        normalizedFooter = joined.footer
+    }
+
+    /// The preview is about 120 points across the capture axis; this keeps it sharp at 2× and 3×.
+    static let thumbnailCrossLength = 360
+
+    /// `image` scaled down across the capture axis (and along it by as much), or nil when it is
+    /// already small.
+    static func thumbnail(of image: CGImage, axis: ScrollCaptureAxis) -> CGImage? {
+        let cross = axis == .horizontal ? image.height : image.width
+        guard cross > thumbnailCrossLength else { return nil }
+        let scale = CGFloat(thumbnailCrossLength) / CGFloat(cross)
+        let width = max(1, Int((CGFloat(image.width) * scale).rounded()))
+        let height = max(1, Int((CGFloat(image.height) * scale).rounded()))
+        let space = image.colorSpace.flatMap { $0.model == .rgb ? $0 : nil } ?? CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+        context.interpolationQuality = .medium
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()
     }
 }

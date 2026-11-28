@@ -46,6 +46,14 @@ struct ScrollStitcher: @unchecked Sendable {
         let image: CGImage
         /// The overlap did not check out well; the preview marks it and the user can undo it.
         let isSuspicious: Bool
+        /// A small copy for the live preview, made off the main thread; nil draws `image`.
+        var thumbnail: CGImage?
+
+        init(image: CGImage, isSuspicious: Bool, thumbnail: CGImage? = nil) {
+            self.image = image
+            self.isSuspicious = isSuspicious
+            self.thumbnail = thumbnail
+        }
 
         var height: Int { image.height }
     }

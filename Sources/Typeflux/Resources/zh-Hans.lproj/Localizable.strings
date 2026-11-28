@@ -4291,6 +4291,7 @@
 "screenshot.scroll.status.misaligned" = "画面接不上，请滚回已截图的位置";
 "screenshot.scroll.status.needsAccessibility" = "请手动滚动 · 授权辅助功能后可自动滚动";
 "screenshot.scroll.status.suspicious" = "这一段可能没对齐 · 按 ⌫ 撤销";
+"screenshot.scroll.status.finishing" = "正在生成长图…";
 "screenshot.scroll.allow" = "授权";
 "screenshot.scroll.pause" = "暂停";
 "screenshot.scroll.resume" = "继续";

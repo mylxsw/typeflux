@@ -4270,6 +4270,7 @@
 "screenshot.scroll.status.misaligned" = "画面がつながりません。撮影済みの位置まで戻してください";
 "screenshot.scroll.status.needsAccessibility" = "手動でスクロールしてください · アクセシビリティを許可すると自動スクロールできます";
 "screenshot.scroll.status.suspicious" = "この部分はずれている可能性があります · ⌫ で取り消し";
+"screenshot.scroll.status.finishing" = "長い画像を作成中…";
 "screenshot.scroll.allow" = "許可";
 "screenshot.scroll.pause" = "一時停止";
 "screenshot.scroll.resume" = "再開";

@@ -145,7 +145,7 @@ final class ScrollCaptureUITests: XCTestCase {
         XCTAssertNil(ScrollCaptureBar.sizeText(for: state))
         let statuses: [(ScrollCaptureViewState.Status, String)] = [
             (.manual, "manual"), (.scrolling, "scrolling"), (.paused, "paused"), (.pausedByMouse, "pausedByMouse"),
-            (.misaligned, "misaligned"), (.needsAccessibility, "needsAccessibility")
+            (.misaligned, "misaligned"), (.needsAccessibility, "needsAccessibility"), (.finishing, "finishing")
         ]
         for (status, key) in statuses {
             state.status = status
@@ -154,8 +154,24 @@ final class ScrollCaptureUITests: XCTestCase {
         }
         state.pixelSize = ScreenPixelSize(width: 1280, height: 5400)
         XCTAssertEqual(ScrollCaptureBar.sizeText(for: state), "1280 × 5400 px")
+        state.status = .manual
         state.lastSegmentSuspicious = true
         XCTAssertEqual(ScrollCaptureBar.message(for: state), L("screenshot.scroll.status.suspicious"))
+        state.status = .finishing
+        XCTAssertEqual(ScrollCaptureBar.message(for: state), L("screenshot.scroll.status.finishing"),
+                       "Making the image outranks a doubtful segment")
+        XCTAssertFalse(state.canFinish)
+        XCTAssertFalse(state.canToggleAutomatic)
+    }
+
+    func testThePreviewOutlinesTheWholeNewestScroll() {
+        var value = preview(segmentHeights: [100, 20, 20, 20])
+        value.newestStart = 2
+        let layout = ScrollCapturePreviewView.layout(value, in: CGRect(x: 0, y: 0, width: 66, height: 200))
+        XCTAssertEqual(layout.segments.map(\.isNewest), [false, false, true, true])
+        XCTAssertEqual(ScrollCapturePreviewView.newestFrame(layout), CGRect(x: 8, y: 68, width: 50, height: 20))
+        XCTAssertNil(ScrollCapturePreviewView.newestFrame(ScrollCapturePreviewView.layout(
+            preview(segmentHeights: [100]), in: CGRect(x: 0, y: 0, width: 66, height: 200))))
     }
 
     func testTheBarsKeysActOnlyWhenTheyCan() {
@@ -430,7 +446,7 @@ final class ScrollCaptureUITests: XCTestCase {
         XCTAssertEqual(config.width, 801)
         XCTAssertEqual(config.height, 600)
         XCTAssertFalse(config.showsCursor)
-        XCTAssertEqual(config.minimumFrameInterval.seconds, 1.0 / 15, accuracy: 0.0001)
+        XCTAssertEqual(config.minimumFrameInterval.seconds, 1.0 / 30, accuracy: 0.0001)
         XCTAssertEqual(config.pixelFormat, kCVPixelFormatType_32BGRA)
         let source = ScreenCaptureStreamFrameSource(ownProcessID: 1)
         source.stop()

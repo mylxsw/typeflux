@@ -39,6 +39,8 @@ struct ScrollCaptureViewState: Equatable {
         case misaligned
         /// No Accessibility access: only scrolling by hand.
         case needsAccessibility
+        /// Done was chosen: the last frames are joined and the long image is made.
+        case finishing
     }
 
     var status: Status = .starting
@@ -54,7 +56,11 @@ struct ScrollCaptureViewState: Equatable {
 
     /// Accessibility is requested only after the user asks to start automatic scrolling.
     var canToggleAutomatic: Bool {
-        status != .starting
+        status != .starting && status != .finishing
+    }
+
+    var canFinish: Bool {
+        pixelSize.width > 0 && status != .finishing
     }
 }
 
@@ -63,9 +69,13 @@ struct ScrollCapturePreview {
     var axis: ScrollCaptureAxis = .vertical
     var segments: [ScrollStitcher.Segment] = []
     var footer: CGImage?
+    /// `footer` reduced for drawing; nil draws `footer`.
+    var footerThumbnail: CGImage?
     /// The fixed top bar's height, or the fixed left bar's width for a horizontal capture.
     var headerHeight = 0
     var width = 0
+    /// The first segment of the newest scroll, which one undo removes; 0 for the last segment alone.
+    var newestStart = 0
 }
 
 /// The buttons and keys of the scrolling capture bar.

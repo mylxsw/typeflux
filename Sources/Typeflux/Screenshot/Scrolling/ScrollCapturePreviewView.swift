@@ -55,11 +55,13 @@ final class ScrollCapturePreviewView: NSView {
         let total = preview.segments.reduce(CGFloat(0)) { $0 + length($1.image) } + footerLength
         var position = (horizontal ? area.minX : area.minY) - max(0, total - (horizontal ? area.width : area.height))
         var placements: [Placement] = []
+        // Without a known scroll start, the newest segment alone.
+        let newest = preview.newestStart > 0 ? preview.newestStart : preview.segments.count - 1
         for (index, segment) in preview.segments.enumerated() {
             let extent = length(segment.image)
             placements.append(Placement(frame: rect(at: position, length: extent),
                                         isSuspicious: segment.isSuspicious,
-                                        isNewest: index > 0 && index == preview.segments.count - 1))
+                                        isNewest: index > 0 && index >= newest))
             position += extent
         }
         let header = preview.headerHeight > 0 ? placements.first.map {
@@ -77,18 +79,20 @@ final class ScrollCapturePreviewView: NSView {
         NSColor.white.withAlphaComponent(0.14).setStroke()
         card.stroke()
         let layout = Self.layout(preview, in: bounds)
+        let area = bounds.insetBy(dx: Self.inset, dy: Self.inset)
         context.saveGState()
-        context.clip(to: bounds.insetBy(dx: Self.inset, dy: Self.inset))
+        context.clip(to: area)
+        context.interpolationQuality = .medium
         for (placement, segment) in zip(layout.segments, preview.segments)
-            where placement.frame.intersects(dirtyRect) {
-            ScreenshotRenderer.drawImage(segment.image, in: placement.frame, context: context)
+            where placement.frame.intersects(dirtyRect) && placement.frame.intersects(area) {
+            ScreenshotRenderer.drawImage(segment.thumbnail ?? segment.image, in: placement.frame, context: context)
             if placement.isSuspicious {
                 context.setFillColor(Self.suspiciousColor.withAlphaComponent(0.28).cgColor)
                 context.fill(placement.frame)
             }
         }
         if let footer = preview.footer, let frame = layout.footer {
-            ScreenshotRenderer.drawImage(footer, in: frame, context: context)
+            ScreenshotRenderer.drawImage(preview.footerThumbnail ?? footer, in: frame, context: context)
         }
         if let header = layout.header {
             context.setFillColor(Self.headerColor.withAlphaComponent(0.25).cgColor)
@@ -97,12 +101,24 @@ final class ScrollCapturePreviewView: NSView {
             context.setLineWidth(1)
             context.stroke(header.insetBy(dx: 0.5, dy: 0.5))
         }
-        for placement in layout.segments where placement.isNewest || placement.isSuspicious {
-            let color = placement.isSuspicious ? Self.suspiciousColor : ScreenshotOverlayChromeView.accent
-            context.setStrokeColor(color.cgColor)
+        // The newest scroll is one outline, however many slices it was joined in.
+        if let newest = Self.newestFrame(layout) {
+            context.setStrokeColor(ScreenshotOverlayChromeView.accent.cgColor)
+            context.setLineWidth(2)
+            context.stroke(newest.insetBy(dx: 1, dy: 1))
+        }
+        for placement in layout.segments where placement.isSuspicious {
+            context.setStrokeColor(Self.suspiciousColor.cgColor)
             context.setLineWidth(2)
             context.stroke(placement.frame.insetBy(dx: 1, dy: 1))
         }
         context.restoreGState()
+    }
+
+    /// The outline around the newest scroll's segments.
+    static func newestFrame(_ layout: Layout) -> CGRect? {
+        let newest = layout.segments.filter(\.isNewest).map(\.frame)
+        guard let first = newest.first else { return nil }
+        return newest.dropFirst().reduce(first) { $0.union($1) }
     }
 }

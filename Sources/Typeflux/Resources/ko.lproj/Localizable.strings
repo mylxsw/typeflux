@@ -4270,6 +4270,7 @@
 "screenshot.scroll.status.misaligned" = "화면이 이어지지 않아요. 캡처한 위치로 돌아가세요";
 "screenshot.scroll.status.needsAccessibility" = "직접 스크롤하세요 · 손쉬운 사용을 허용하면 자동으로 스크롤합니다";
 "screenshot.scroll.status.suspicious" = "이 부분이 어긋났을 수 있습니다 · ⌫ 로 취소";
+"screenshot.scroll.status.finishing" = "긴 이미지를 만드는 중…";
 "screenshot.scroll.allow" = "허용";
 "screenshot.scroll.pause" = "일시 정지";
 "screenshot.scroll.resume" = "다시 시작";
