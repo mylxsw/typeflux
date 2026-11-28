@@ -846,15 +846,7 @@ struct StudioView: View {
                 settingSwitch(L("settings.analyticsSharing.title"), detail: L("settings.analyticsSharing.subtitle"),
                               isOn: Binding(get: { viewModel.analyticsSharingEnabled },
                                             set: viewModel.setAnalyticsSharingEnabled))
-                ClassicSwitchEntry(controller: .shared) {
-                    TFDivider.form
-                    TFFormRow(title: "Typeflux Classic") {
-                        TFButton(title: L("classic.action.switch")) { ClassicSwitchWindowController.shared.present() }
-                            .accessibilityIdentifier("settings.classic.switch")
-                    }
-                }
             }
-            .refreshesClassicAvailability()
         }
         .onAppear { viewModel.suggestInstantVoiceInputForCurrentMicrophoneIfNeeded() }
     }

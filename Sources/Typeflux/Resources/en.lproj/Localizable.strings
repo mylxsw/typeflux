@@ -7729,30 +7729,3 @@
 "terminal.ai.offline" = "You appear to be offline.";
 "terminal.ai.failed" = "Couldn’t explain this command.";
 "terminal.ai.continue" = "Continue in Ask";
-
-/* Typeflux Classic introduction and switch */
-"classic.intro.title" = "Meet Typeflux Classic";
-"classic.intro.subtitle" = "Voice input only. Same account and data.";
-"classic.intro.learnMore" = "Compare";
-"classic.intro.continue" = "Continue with Typeflux";
-"classic.action.switch" = "Switch to Typeflux Classic";
-"classic.feature.voice" = "Voice input";
-"classic.feature.launcher" = "Launcher";
-"classic.feature.chat" = "Chat";
-"classic.feature.ring" = "Ring";
-"classic.feature.screenshot" = "Screenshots and recording";
-"classic.feature.clipboard" = "Clipboard history";
-"classic.feature.account" = "Account and data";
-"classic.feature.included" = "Included";
-"classic.feature.notIncluded" = "Not included";
-"classic.switch.confirm.title" = "Switch to Typeflux Classic?";
-"classic.switch.confirm.dataKept" = "Your data and account are kept.";
-"classic.switch.confirm.missing" = "Not in Classic";
-"classic.switch.confirm.action" = "Switch";
-"classic.switch.downloading" = "Downloading Typeflux Classic";
-"classic.switch.installing" = "Installing Typeflux Classic";
-"classic.switch.failed" = "Couldn't switch to Typeflux Classic";
-"classic.switch.error.identity" = "The download isn't a genuine Typeflux Classic, so it wasn't installed.";
-"classic.switch.error.unavailable" = "Typeflux Classic isn't available right now.";
-"classic.switch.error.busy" = "Finish the current recording or task, then try again.";
-"classic.switch.error.download" = "Couldn't download Typeflux Classic. Check your network connection and try again.";

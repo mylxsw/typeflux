@@ -7729,31 +7729,3 @@
 "terminal.session.window.new" = "新增工作階段 ⌘T";
 "terminal.session.window.pin" = "保持最上層";
 "terminal.session.window.back" = "移回超級搜尋框 ⌘O";
-
-
-/* Typeflux Classic introduction and switch */
-"classic.intro.title" = "認識 Typeflux Classic";
-"classic.intro.subtitle" = "只有語音輸入，帳號和資料通用。";
-"classic.intro.learnMore" = "了解差異";
-"classic.intro.continue" = "繼續使用 Typeflux";
-"classic.action.switch" = "切換到 Typeflux Classic";
-"classic.feature.voice" = "語音輸入";
-"classic.feature.launcher" = "啟動器";
-"classic.feature.chat" = "對話";
-"classic.feature.ring" = "圓環";
-"classic.feature.screenshot" = "截圖與錄影";
-"classic.feature.clipboard" = "剪貼簿歷史";
-"classic.feature.account" = "帳號與資料";
-"classic.feature.included" = "包含";
-"classic.feature.notIncluded" = "不包含";
-"classic.switch.confirm.title" = "切換到 Typeflux Classic？";
-"classic.switch.confirm.dataKept" = "資料和帳號都會保留。";
-"classic.switch.confirm.missing" = "Classic 中沒有";
-"classic.switch.confirm.action" = "切換";
-"classic.switch.downloading" = "正在下載 Typeflux Classic";
-"classic.switch.installing" = "正在安裝 Typeflux Classic";
-"classic.switch.failed" = "無法切換到 Typeflux Classic";
-"classic.switch.error.identity" = "下載的應用程式不是正版 Typeflux Classic，已拒絕安裝。";
-"classic.switch.error.unavailable" = "Typeflux Classic 暫時無法使用。";
-"classic.switch.error.busy" = "請先結束目前的錄音或工作，再重試。";
-"classic.switch.error.download" = "無法下載 Typeflux Classic，請檢查網路後再試一次。";
