@@ -44,9 +44,6 @@ final class ScrollCaptureSession: ScrollCapturing {
         /// Oldest first; only while scrolling by hand.
         var bridges: [CGImage]
         let since: Date
-        /// Already analyzed without native registration and did not line up; tried with it once
-        /// the picture holds still.
-        var retry = false
     }
 
     /// The frames one analysis joins: the newest first, then, when it is past the overlap, the
@@ -54,7 +51,8 @@ final class ScrollCaptureSession: ScrollCapturing {
     struct Batch: @unchecked Sendable {
         let latest: CGImage
         var bridges: [CGImage] = []
-        /// Native registration may propose shifts; too slow to use while frames keep coming.
+        /// Native registration may propose shifts. It runs in a helper process and takes from a few
+        /// hundred milliseconds to seconds on a large display, so scrolling by hand never waits on it.
         var registers = true
         var arrived: Date
     }
@@ -200,7 +198,7 @@ final class ScrollCaptureSession: ScrollCapturing {
                 if bridges.count > room { bridges = Self.thinned(bridges) }
             }
         }
-        let since = pending.flatMap { $0.retry ? nil : $0.since } ?? time
+        let since = pending?.since ?? time
         pending = PendingFrame(image: image, arrived: time, bridges: bridges, since: since)
         if !state.isAutomatic { pump() }
     }
@@ -237,8 +235,6 @@ final class ScrollCaptureSession: ScrollCapturing {
             let time = now()
             let settled = time.timeIntervalSince(pending.arrived) >= Self.quietInterval
                 && lastScroll.map { time.timeIntervalSince($0) >= Self.quietInterval } != false
-            let batch = Batch(latest: pending.image, bridges: pending.bridges, registers: settled,
-                              arrived: pending.arrived)
             if stitcher.isEmpty {
                 startAnalysis(of: Batch(latest: pending.image, arrived: pending.arrived))
                 return
@@ -248,8 +244,9 @@ final class ScrollCaptureSession: ScrollCapturing {
                     startAnalysis(of: Batch(latest: pending.image, arrived: pending.arrived))
                     return
                 }
-            } else if !pending.retry || settled {
-                startAnalysis(of: batch)
+            } else {
+                startAnalysis(of: Batch(latest: pending.image, bridges: pending.bridges, registers: false,
+                                        arrived: pending.arrived))
                 return
             }
         }
@@ -294,12 +291,6 @@ final class ScrollCaptureSession: ScrollCapturing {
                 stitcherVersion += 1
                 for outcome in outcomes where !finishing && isActive {
                     handle(outcome)
-                }
-                if outcomes.last == .unaligned, !batch.registers, self.registration != nil, pending == nil,
-                   !state.isAutomatic, !finishing, isActive {
-                    // Native registration may still line it up once the picture holds still.
-                    pending = PendingFrame(image: batch.latest, arrived: batch.arrived, bridges: [],
-                                           since: batch.arrived, retry: true)
                 }
             }
             pump()
@@ -492,10 +483,11 @@ final class ScrollCaptureSession: ScrollCapturing {
         publish()
     }
 
-    /// Stops capture at once and shows that the image is being made. An analysis in flight gets a
-    /// short grace period; after it, its frames are joined again here. Frames still waiting are joined
-    /// with the local check only, so Done never waits on native registration. Nothing runs on the
-    /// UI actor but bookkeeping.
+    /// Stops capture at once and shows that the image is being made. An analysis in flight finishes:
+    /// starting it again would only repeat its work. Only one waiting on native registration gets a
+    /// short grace period, after which its frame is joined again here with the local check. Frames
+    /// still waiting are joined with the local check only. Nothing runs on the UI actor but
+    /// bookkeeping.
     func finish(_ ending: ScrollCaptureEnding) {
         guard isActive, !finishing else { return }
         finishing = true
@@ -517,7 +509,13 @@ final class ScrollCaptureSession: ScrollCapturing {
         finishTask = Task { [weak self] in
             var batches = waiting
             if let existing, ending == .user {
-                let joined = await Self.completes(existing, within: grace)
+                let joined: Bool
+                if inFlight?.registers == true {
+                    joined = await Self.completes(existing, within: grace)
+                } else {
+                    await existing.value
+                    joined = true
+                }
                 guard let self, isActive, !Task.isCancelled else { return }
                 if !joined {
                     // Too slow (native registration): drop its late result and join its frames here.

@@ -595,6 +595,53 @@ final class ScrollFrameSignatureTests: XCTestCase {
         XCTAssertEqual(scrolled.hashes[0], scrolled.hashes[1])
     }
 
+    func testTheVectorizedSignatureMatchesPlainBoxAverages() {
+        var generator = SystemRandomNumberGenerator()
+        for (width, height) in [(16, 3), (1000, 40), (1864, 12), (3, 3)] {
+            var gray = (0 ..< width * height).map { _ in UInt8.random(in: 0 ... 255, using: &generator) }
+            // A repeated row, and a plain one.
+            gray.replaceSubrange(width ..< 2 * width, with: gray[0 ..< width])
+            gray.replaceSubrange((height - 1) * width ..< height * width, with: repeatElement(UInt8(90), count: width))
+            let signature = ScrollFrameSignature(gray: gray, width: width, height: height)
+            let compared = ScrollFrameSignature.comparedWidth(width)
+            func averages(_ row: Int, boxes: Int) -> [UInt8] {
+                var sums = [Int](repeating: 0, count: boxes), counts = [Int](repeating: 0, count: boxes)
+                for column in 0 ..< compared {
+                    let box = column * boxes / compared
+                    sums[box] += Int(gray[row * width + column])
+                    counts[box] += 1
+                }
+                return (0 ..< boxes).map { UInt8(sums[$0] / max(counts[$0], 1)) }
+            }
+            for row in 0 ..< height {
+                let levels = gray[row * width ..< row * width + compared]
+                XCTAssertEqual(signature.isDetailed[row], levels.max()! - levels.min()! >= ScrollFrameSignature.detailThreshold)
+                XCTAssertEqual(Array(signature.profiles[row * signature.bins ..< (row + 1) * signature.bins]),
+                               averages(row, boxes: signature.bins), "\(width)×\(height) row \(row)")
+                XCTAssertEqual(Array(signature.fine[row * signature.samples ..< (row + 1) * signature.samples]),
+                               averages(row, boxes: signature.samples), "\(width)×\(height) row \(row)")
+            }
+            XCTAssertEqual(signature.hashes[0], signature.hashes[1])
+            XCTAssertNotEqual(signature.hashes[0], signature.hashes[height - 1])
+            XCTAssertFalse(signature.isDetailed[height - 1])
+        }
+    }
+
+    func testRowDistancesAreTheMeanAndLargestBoxDifference() {
+        let first: [UInt8] = (0 ..< 40).map { UInt8($0 * 3) }
+        var second = first
+        second[5] = second[5] &+ 100
+        second[6] = second[6] &- 9
+        let signature = ScrollFrameSignature(gray: first + second, width: 40, height: 2)
+        let samples = signature.samples
+        let left = signature.fine[0 ..< samples].map(Int.init), right = signature.fine[samples ..< 2 * samples].map(Int.init)
+        let differences = zip(left, right).map { abs($0 - $1) }
+        XCTAssertEqual(signature.distance(0, to: 1, of: signature), differences.reduce(0, +) / samples)
+        XCTAssertEqual(signature.row(0, matches: 1, of: signature), differences.reduce(0, +) / samples
+            <= ScrollFrameSignature.rowTolerance && differences.max()! <= ScrollFrameSignature.boxTolerance)
+        XCTAssertFalse(signature.row(0, matches: 1, of: signature), "One box far off")
+    }
+
     func testGrayPixelsReadTheImage() throws {
         let image = ScrollCaptureFixtures.solid(width: 3, height: 2, gray: 128)
         let gray = try XCTUnwrap(ScrollFrameSignature.grayPixels(of: image))

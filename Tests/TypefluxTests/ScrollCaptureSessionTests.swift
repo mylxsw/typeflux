@@ -483,7 +483,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertFalse(session.state.canUndo)
     }
 
-    func testAFrameThatDoesNotLineUpWhileScrollingIsRetriedWithRegistrationOnceStill() async {
+    func testScrollingByHandNeverWaitsOnNativeRegistration() async {
         let calls = ScrollHealthCalls()
         let session = makeSession(estimator: CountingRegistration(calls: calls))
         await start(session)
@@ -491,17 +491,13 @@ final class ScrollCaptureSessionTests: XCTestCase {
         monitor.handler?(.scrolled)
         session.receive(Fixtures.noise(width: page.width, height: 250, seed: 4))
         await session.analysis?.value
-        XCTAssertEqual(calls.count, 0, "No native registration while frames keep coming")
-        await tick(session)
-        XCTAssertEqual(calls.count, 0, "Not before the picture holds still")
         advance(ScrollCaptureSession.quietInterval)
         await tick(session)
-        XCTAssertGreaterThan(calls.count, 0)
+        await session.analysis?.value
         XCTAssertEqual(session.state.status, .misaligned)
-        let after = calls.count
-        advance(ScrollCaptureSession.quietInterval)
-        await tick(session)
-        XCTAssertEqual(calls.count, after, "Retried once")
+        await settle(session, 120)
+        XCTAssertEqual(session.state.pixelSize.height, 370)
+        XCTAssertEqual(calls.count, 0, "A helper round trip takes too long for live frames, even still ones")
     }
 
     func testManualHorizontalCaptureCanFinishOrOptIntoHorizontalAutomaticAndUndo() async throws {

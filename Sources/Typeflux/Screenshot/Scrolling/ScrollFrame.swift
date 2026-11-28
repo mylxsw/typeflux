@@ -1,3 +1,4 @@
+import Accelerate
 import CoreGraphics
 import Foundation
 
@@ -81,6 +82,9 @@ struct ScrollFrameSignature: Equatable, Sendable {
     }
 
     /// - Parameter gray: one byte per pixel, top row first.
+    /// Runs for every captured frame, millions of pixels on a large display. All per-pixel and per-box
+    /// work runs in Accelerate and the standard library's hasher, so it stays fast in unoptimized
+    /// builds too.
     init(gray: [UInt8], width: Int, height: Int) {
         let compared = Self.comparedWidth(width)
         let bins = max(1, min(Self.profileBins, compared))
@@ -89,23 +93,45 @@ struct ScrollFrameSignature: Equatable, Sendable {
         var detailed = [Bool](repeating: false, count: height)
         var profiles = [UInt8](repeating: 0, count: height * bins)
         var fine = [UInt8](repeating: 0, count: height * samples)
-        let coarse = BoxAverager(width: compared, boxes: bins)
-        let small = BoxAverager(width: compared, boxes: samples)
+        let coarseBoxes = Boxes(width: compared, count: bins)
+        let fineBoxes = Boxes(width: compared, count: samples)
+        var levels = [Float](repeating: 0, count: max(compared, 1))
+        // `prefix[k]` is the sum of the first `k` levels: exact, as it stays far below 2^24.
+        var prefix = [Float](repeating: 0, count: compared + 1)
+        var scratch = [Float](repeating: 0, count: 2 * (samples + 1))
+        let length = vDSP_Length(compared)
         gray.withUnsafeBufferPointer { pixels in
-            for row in 0 ..< height {
-                var hash: UInt64 = 0xCBF2_9CE4_8422_2325
-                var low: UInt8 = 255, high: UInt8 = 0
-                let start = row * width
-                for column in 0 ..< compared {
-                    let value = pixels[start + column]
-                    hash = (hash ^ UInt64(value)) &* 0x0000_0100_0000_01B3
-                    low = min(low, value)
-                    high = max(high, value)
+            guard let base = pixels.baseAddress, compared > 0 else { return }
+            levels.withUnsafeMutableBufferPointer { levels in
+                prefix.withUnsafeMutableBufferPointer { prefix in
+                    scratch.withUnsafeMutableBufferPointer { scratch in
+                        profiles.withUnsafeMutableBufferPointer { profiles in
+                            fine.withUnsafeMutableBufferPointer { fine in
+                                let levels = levels.baseAddress!, prefix = prefix.baseAddress!
+                                for row in 0 ..< height {
+                                    let start = base + row * width
+                                    var hasher = Hasher()
+                                    hasher.combine(bytes: UnsafeRawBufferPointer(start: start, count: compared))
+                                    hashes[row] = UInt64(bitPattern: Int64(hasher.finalize()))
+                                    vDSP_vfltu8(start, 1, levels, 1, length)
+                                    var low: Float = 0, high: Float = 0
+                                    vDSP_minv(levels, 1, &low, length)
+                                    vDSP_maxv(levels, 1, &high, length)
+                                    detailed[row] = high - low >= Float(Self.detailThreshold)
+                                    // vDSP's running sum leaves out the first level; add it back.
+                                    var one: Float = 1, first = levels[0]
+                                    vDSP_vrsum(levels, 1, &one, prefix + 1, 1, length)
+                                    vDSP_vsadd(prefix + 1, 1, &first, prefix + 1, 1, length)
+                                    prefix[0] = 0
+                                    coarseBoxes.average(prefix, scratch: scratch.baseAddress!,
+                                                        into: profiles.baseAddress! + row * bins)
+                                    fineBoxes.average(prefix, scratch: scratch.baseAddress!,
+                                                      into: fine.baseAddress! + row * samples)
+                                }
+                            }
+                        }
+                    }
                 }
-                hashes[row] = hash
-                detailed[row] = high - low >= Self.detailThreshold
-                coarse.average(pixels, start: start, into: &profiles, at: row * bins)
-                small.average(pixels, start: start, into: &fine, at: row * samples)
             }
         }
         self.init(width: width, height: height, hashes: hashes, isDetailed: detailed, profiles: profiles, bins: bins,
@@ -136,17 +162,26 @@ struct ScrollFrameSignature: Equatable, Sendable {
                         comparable: samples == other.samples)
     }
 
+    /// Called for every candidate row pair while frames are aligned, so the arithmetic runs in
+    /// Accelerate.
     private static func difference(_ lhs: [UInt8], _ lhsStart: Int, _ rhs: [UInt8], _ rhsStart: Int,
                                    count: Int, comparable: Bool) -> (mean: Int, max: Int) {
-        guard comparable, count > 0 else { return (255, 255) }
-        var sum = 0, largest = 0
-        for index in 0 ..< count {
-            let left = Int(lhs[lhsStart + index]), right = Int(rhs[rhsStart + index])
-            let difference = left > right ? left - right : right - left
-            sum += difference
-            largest = max(largest, difference)
+        guard comparable, count > 0, lhsStart >= 0, rhsStart >= 0, lhsStart + count <= lhs.count,
+              rhsStart + count <= rhs.count else { return (255, 255) }
+        return lhs.withUnsafeBufferPointer { lhs in
+            rhs.withUnsafeBufferPointer { rhs in
+                withUnsafeTemporaryAllocation(of: Float.self, capacity: count * 2) { scratch in
+                    let left = scratch.baseAddress!, right = left + count, length = vDSP_Length(count)
+                    vDSP_vfltu8(lhs.baseAddress! + lhsStart, 1, left, 1, length)
+                    vDSP_vfltu8(rhs.baseAddress! + rhsStart, 1, right, 1, length)
+                    vDSP_vsub(right, 1, left, 1, left, 1, length)
+                    var sum: Float = 0, largest: Float = 0
+                    vDSP_svemg(left, 1, &sum, length)
+                    vDSP_maxmgv(left, 1, &largest, length)
+                    return (Int(sum) / count, Int(largest))
+                }
+            }
         }
-        return (sum / count, largest)
     }
 
     /// The image's gray levels, one byte per pixel, top row first.
@@ -167,26 +202,36 @@ struct ScrollFrameSignature: Equatable, Sendable {
     }
 }
 
-/// Averages a row of gray levels over equal boxes of columns.
-private struct BoxAverager {
-    let width: Int
-    let boxes: Int
-    /// The box of each column.
-    private let boxOfColumn: [Int]
-    private let counts: [Int]
+/// Equal boxes of columns: box `b` holds the columns `c` with `c * count / width == b`, a contiguous
+/// range. Averages a row's levels over them from its prefix sums.
+private struct Boxes {
+    let count: Int
+    /// One-based positions in the prefix sums of each box's first column, then the end.
+    private let bounds: [vDSP_Length]
+    private let sizes: [Float]
 
-    init(width: Int, boxes: Int) {
-        self.width = width
-        self.boxes = boxes
-        boxOfColumn = (0 ..< width).map { $0 * boxes / max(width, 1) }
-        var counts = [Int](repeating: 0, count: boxes)
-        for box in boxOfColumn { counts[box] += 1 }
-        self.counts = counts
+    init(width: Int, count: Int) {
+        self.count = count
+        let starts = (0 ... count).map { box in (box * width + count - 1) / max(count, 1) }
+        bounds = starts.map { vDSP_Length($0 + 1) }
+        sizes = (0 ..< count).map { Float(max(starts[$0 + 1] - starts[$0], 1)) }
     }
 
-    func average(_ pixels: UnsafeBufferPointer<UInt8>, start: Int, into output: inout [UInt8], at offset: Int) {
-        var sums = [Int](repeating: 0, count: boxes)
-        for column in 0 ..< width { sums[boxOfColumn[column]] += Int(pixels[start + column]) }
-        for box in 0 ..< boxes { output[offset + box] = UInt8(sums[box] / max(counts[box], 1)) }
+    /// Each box's sum divided by its size, rounded down, as integer division would. The sums are exact;
+    /// vDSP's division is not, so half a column is added first: `(sum + 0.5) / size` lies at least
+    /// `0.5 / size` (at least 1/1024 here) from the next integer, far more than the division's error.
+    func average(_ prefix: UnsafeMutablePointer<Float>, scratch: UnsafeMutablePointer<Float>,
+                 into output: UnsafeMutablePointer<UInt8>) {
+        let sums = scratch + count + 1, length = vDSP_Length(count)
+        var half: Float = 0.5
+        bounds.withUnsafeBufferPointer { bounds in
+            sizes.withUnsafeBufferPointer { sizes in
+                vDSP_vgathr(prefix, bounds.baseAddress!, 1, scratch, 1, vDSP_Length(count + 1))
+                vDSP_vsub(scratch, 1, scratch + 1, 1, sums, 1, length)
+                vDSP_vsadd(sums, 1, &half, sums, 1, length)
+                vDSP_vdiv(sizes.baseAddress!, 1, sums, 1, sums, 1, length)
+                vDSP_vfixu8(sums, 1, output, 1, length)
+            }
+        }
     }
 }
