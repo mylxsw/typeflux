@@ -263,6 +263,14 @@ final class ScrollCaptureUITests: XCTestCase {
         controller.update(state, preview: preview(segmentHeights: [400, 300]))
         XCTAssertEqual(controller.barView?.state, state)
         XCTAssertEqual(controller.previewView?.preview.segments.count, 2)
+        let viewport = ScrollCaptureFixtures.solid(width: 64, height: 40, gray: 127)
+        let toolbarFrame = barPanel.frame
+        controller.updateViewport(viewport)
+        XCTAssertTrue(controller.previewView?.liveViewport === viewport)
+        XCTAssertEqual(controller.previewView?.preview.segments.count, 2)
+        XCTAssertEqual(barPanel.frame, toolbarFrame)
+        controller.updateViewport(nil)
+        XCTAssertNil(controller.previewView?.liveViewport)
         controller.barView?.handleKey(Key.returnKey)
         XCTAssertEqual(calls.finishes, 1)
 

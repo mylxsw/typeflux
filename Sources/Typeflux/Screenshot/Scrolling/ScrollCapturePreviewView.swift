@@ -25,6 +25,36 @@ final class ScrollCapturePreviewView: NSView {
         didSet { needsDisplay = true }
     }
 
+    private lazy var viewportView: NSImageView = {
+        let view = NSImageView()
+        view.imageScaling = .scaleProportionallyUpOrDown
+        view.wantsLayer = true
+        view.layer?.cornerRadius = 5
+        view.layer?.masksToBounds = true
+        view.layer?.borderWidth = 1
+        view.layer?.borderColor = NSColor.white.withAlphaComponent(0.35).cgColor
+        view.layer?.backgroundColor = NSColor.black.cgColor
+        addSubview(view)
+        return view
+    }()
+    private(set) var liveViewport: CGImage?
+
+    /// Keeps the current viewport visible while the stitcher verifies new content. The inset stays
+    /// separate from the confirmed image so a reverse scroll or an unaligned frame adds no pixels.
+    func showViewport(_ thumbnail: CGImage?) {
+        guard liveViewport !== thumbnail else { return }
+        liveViewport = thumbnail
+        viewportView.isHidden = thumbnail == nil
+        viewportView.image = thumbnail.map { NSImage(cgImage: $0, size: .zero) }
+        if let thumbnail {
+            let area = bounds.insetBy(dx: Self.inset, dy: Self.inset)
+            let scale = min(area.width * 0.64 / CGFloat(thumbnail.width),
+                            area.height * 0.25 / CGFloat(thumbnail.height))
+            let width = CGFloat(thumbnail.width) * scale, height = CGFloat(thumbnail.height) * scale
+            viewportView.frame = CGRect(x: area.maxX - width, y: area.maxY - height, width: width, height: height)
+        }
+    }
+
     override var isFlipped: Bool {
         true
     }

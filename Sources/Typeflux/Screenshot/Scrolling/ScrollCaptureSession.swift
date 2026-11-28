@@ -20,7 +20,10 @@ final class ScrollCaptureSession: ScrollCapturing {
     static let finishGrace: TimeInterval = 0.4
     /// Frames kept to bridge a gap while scrolling by hand, under a byte limit.
     private static let bridgeBudget = 64_000_000
+    /// A larger viewport may keep one original intermediate frame alongside the newest one.
+    private static let largeViewportBudget = 128_000_000
     private static let maxPendingFrames = 5
+    private static let viewportLinger: TimeInterval = 0.16
     /// After a step, nothing at all arriving for this long means nothing moved.
     static let stepTimeout: TimeInterval = 0.7
     /// This many steps in a row without change end the capture.
@@ -90,6 +93,7 @@ final class ScrollCaptureSession: ScrollCapturing {
     private var startupDeadline: Date?
     private var stopTicking: (() -> Void)?
     private var pending: PendingFrame?
+    private var viewportDeadline: Date?
     private var lastScroll: Date?
     private var awaitingScrollAfterUndo = false
     /// The frames being analyzed.
@@ -164,7 +168,7 @@ final class ScrollCaptureSession: ScrollCapturing {
                 try await source.start(region, onFrame: { [weak self] image in
                     guard inbox.offer(image) else { return }
                     Task { @MainActor [weak self] in
-                        if let image = inbox.take() { self?.receive(image) }
+                        if let frame = inbox.take() { self?.receive(frame.image, viewport: frame.viewport) }
                     }
                 }, onError: { [weak self] _ in
                     guard inbox.fail() else { return }
@@ -185,22 +189,37 @@ final class ScrollCaptureSession: ScrollCapturing {
 
     // MARK: Frames
 
-    func receive(_ image: CGImage) {
+    func receive(_ image: CGImage, viewport: CGImage? = nil) {
         guard isActive, !finishing, !awaitingScrollAfterUndo, Self.accepts(image) else { return }
         let time = now()
+        if let viewport {
+            viewportDeadline = time.addingTimeInterval(Self.viewportLinger)
+            presenter.updateViewport(viewport)
+        }
         var bridges: [CGImage] = []
         if !state.isAutomatic, !stitcher.isEmpty, let pending {
-            bridges = pending.bridges
-            let frameBytes = max(1, image.width * image.height * 4)
-            let room = min(Self.maxPendingFrames, Self.bridgeBudget / frameBytes) - 1
-            if room > 0 {
+            let (frameBytes, overflow) = image.bytesPerRow.multipliedReportingOverflow(by: image.height)
+            let room = overflow ? 0 : Self.bridgeSlots(frameBytes: frameBytes)
+            if room > 0, pending.image.width == image.width, pending.image.height == image.height {
+                bridges = pending.bridges
                 bridges.append(pending.image)
-                if bridges.count > room { bridges = Self.thinned(bridges) }
+                if bridges.count > room { bridges = Array(Self.thinned(bridges).prefix(room)) }
             }
         }
         let since = pending?.since ?? time
         pending = PendingFrame(image: image, arrived: time, bridges: bridges, since: since)
         if !state.isAutomatic { pump() }
+    }
+
+    static func bridgeSlots(frameBytes: Int) -> Int {
+        guard frameBytes > 0, frameBytes <= largeViewportBudget / 2 else { return 0 }
+        return max(1, min(maxPendingFrames, bridgeBudget / frameBytes) - 1)
+    }
+
+    private func clearViewport() {
+        guard viewportDeadline != nil else { return }
+        viewportDeadline = nil
+        presenter.updateViewport(nil)
     }
 
     /// Every other frame, starting with the oldest: evenly spaced, still closest to the joined image.
@@ -216,6 +235,9 @@ final class ScrollCaptureSession: ScrollCapturing {
             stop()
             deliver(.timedOut)
             return
+        }
+        if let viewportDeadline, time >= viewportDeadline, pending == nil, analysis == nil {
+            clearViewport()
         }
         if analysis == nil, pending == nil, let step, time.timeIntervalSince(step.sent) >= Self.stepTimeout {
             // The step moved nothing on screen, so no frame came.
@@ -449,6 +471,7 @@ final class ScrollCaptureSession: ScrollCapturing {
         analysis?.cancel()
         pending = nil
         analyzing = nil
+        clearViewport()
         failures = 0
         unchangedSteps = 0
         if state.status == .scrolling {
@@ -492,6 +515,7 @@ final class ScrollCaptureSession: ScrollCapturing {
         guard isActive, !finishing else { return }
         finishing = true
         stopInputs()
+        clearViewport()
         let existing = analysis, inFlight = analyzing
         var batches: [Batch] = []
         if ending == .user, let pending {
@@ -600,6 +624,7 @@ final class ScrollCaptureSession: ScrollCapturing {
         analysis?.cancel()
         finishTask?.cancel()
         stopInputs()
+        clearViewport()
         presenter.dismiss()
         pending = nil
         lastScroll = nil

@@ -94,6 +94,7 @@ protocol ScrollCapturePresenting: AnyObject {
     var automaticScrollRect: CGRect? { get }
     func present(_ region: ScrollCaptureRegion, actions: ScrollCaptureActions)
     func update(_ state: ScrollCaptureViewState, preview: ScrollCapturePreview)
+    func updateViewport(_ thumbnail: CGImage?)
     func dismiss()
 }
 

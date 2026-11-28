@@ -60,10 +60,15 @@ let package = Package(
             publicHeadersPath: "include"
         ),
         .target(
+            name: "TypefluxScrollMatching",
+            cSettings: [.unsafeFlags(["-O2"], .when(configuration: .debug))]
+        ),
+        .target(
             name: "Typeflux",
             dependencies: [
                 .product(name: "PermissionFlow", package: "PermissionFlow"),
                 "TypefluxAudioSafety",
+                "TypefluxScrollMatching",
                 "TypefluxChatWindowProtocol",
                 "TypefluxInferenceProtocol",
                 "TypefluxMediaProtocol",

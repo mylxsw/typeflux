@@ -1,11 +1,31 @@
 import AppKit
 import SwiftUI
 
+@MainActor
+final class ScrollCaptureBarModel: ObservableObject {
+    @Published var state: ScrollCaptureViewState
+
+    init(state: ScrollCaptureViewState = ScrollCaptureViewState()) {
+        self.state = state
+    }
+}
+
 /// The bar under the region while it scrolls: what is happening, the size so far, and
 /// ␣ pause, ⌫ undo the last part, esc cancel, ↩ done.
 struct ScrollCaptureBar: View {
-    let state: ScrollCaptureViewState
+    @ObservedObject var model: ScrollCaptureBarModel
     let actions: ScrollCaptureActions
+
+    private var state: ScrollCaptureViewState { model.state }
+
+    init(state: ScrollCaptureViewState, actions: ScrollCaptureActions) {
+        self.init(model: ScrollCaptureBarModel(state: state), actions: actions)
+    }
+
+    init(model: ScrollCaptureBarModel, actions: ScrollCaptureActions) {
+        self.model = model
+        self.actions = actions
+    }
 
     static func message(for state: ScrollCaptureViewState) -> String {
         if state.status == .finishing {
@@ -121,9 +141,14 @@ struct ScrollCaptureBar: View {
 /// Holds the bar and takes its keys, so ␣ ⌫ esc ↩ work while the bar's panel is key.
 @MainActor
 final class ScrollCaptureBarView: NSView {
-    var actions: ScrollCaptureActions?
-    private(set) var state = ScrollCaptureViewState()
+    var actions: ScrollCaptureActions? {
+        didSet { measuredSize = nil }
+    }
+    private let model = ScrollCaptureBarModel()
+    private var measuredSize: CGSize?
     private let host = NSHostingView(rootView: AnyView(EmptyView()))
+
+    var state: ScrollCaptureViewState { model.state }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -147,10 +172,27 @@ final class ScrollCaptureBarView: NSView {
 
     /// The bar's size for `state`.
     func show(_ state: ScrollCaptureViewState) -> CGSize {
-        self.state = state
+        let previous = model.state
+        if previous != state {
+            model.state = state
+        }
         guard let actions else { return .zero }
-        host.rootView = AnyView(ScrollCaptureBar(state: state, actions: actions).screenshotAppearance())
-        return host.fittingSize
+        // The size label uses monospaced digits. Its content can update without measuring the
+        // hosting view or moving the panel until the number of digits changes.
+        if let measuredSize, Self.sameLayout(previous, state) {
+            return measuredSize
+        }
+        host.rootView = AnyView(ScrollCaptureBar(model: model, actions: actions).screenshotAppearance())
+        let size = host.fittingSize
+        measuredSize = size
+        return size
+    }
+
+    private static func sameLayout(_ previous: ScrollCaptureViewState, _ current: ScrollCaptureViewState) -> Bool {
+        var withUpdatedSize = previous
+        withUpdatedSize.pixelSize = current.pixelSize
+        return withUpdatedSize == current
+            && ScrollCaptureBar.sizeText(for: previous)?.count == ScrollCaptureBar.sizeText(for: current)?.count
     }
 
     override func keyDown(with event: NSEvent) {

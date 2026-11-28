@@ -1,6 +1,7 @@
 // swiftlint:disable file_length type_body_length
 import CoreGraphics
 @testable import Typeflux
+import TypefluxScrollMatching
 import XCTest
 
 final class ScrollStitcherTests: XCTestCase {
@@ -624,6 +625,31 @@ final class ScrollFrameSignatureTests: XCTestCase {
             XCTAssertEqual(signature.hashes[0], signature.hashes[1])
             XCTAssertNotEqual(signature.hashes[0], signature.hashes[height - 1])
             XCTAssertFalse(signature.isDetailed[height - 1])
+        }
+    }
+
+    func testNativeCoarseSearchMatchesTheScalarScores() {
+        let rows: [Int32] = [2, 3, 5, 6, 10, 12, 16, 17, 20]
+        for bins in [1, 14, 32] {
+            let current = (0 ..< 24 * bins).map { UInt8(truncatingIfNeeded: $0 * 53 + $0 / 7) }
+            let reference = (0 ..< 24 * bins).map { UInt8(truncatingIfNeeded: $0 * 29 + $0 / 11) }
+            let search = TypefluxScrollSearch(rowWidth: Int32(bins), firstRow: 2, endRow: 21,
+                                              shiftLimit: 15, minimumRows: 3, closestPercent: 85)
+            var actual = [Double](repeating: 0, count: 31)
+            typeflux_scroll_coarse_scores(current, reference, rows, rows.count, search, &actual)
+            for shift in -15 ... 15 {
+                let distances = rows.compactMap { row -> Int? in
+                    let shifted = Int(row) + shift
+                    guard (2 ..< 21).contains(shifted) else { return nil }
+                    let sum = (0 ..< bins).reduce(0) { sum, bin in
+                        sum + abs(Int(current[Int(row) * bins + bin]) - Int(reference[shifted * bins + bin]))
+                    }
+                    return sum / bins
+                }
+                let closest = distances.sorted().prefix(max(1, distances.count * 85 / 100))
+                let expected = distances.count < 3 ? -1 : Double(closest.reduce(0, +)) / Double(closest.count)
+                XCTAssertEqual(actual[shift + 15], expected, "\(bins) bins at shift \(shift)")
+            }
         }
     }
 

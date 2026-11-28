@@ -75,6 +75,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         var actions: ScrollCaptureActions?
         private(set) var states: [ScrollCaptureViewState] = []
         private(set) var previews: [ScrollCapturePreview] = []
+        private(set) var viewport: CGImage?
         private(set) var dismissals = 0
 
         func present(_ region: ScrollCaptureRegion, actions: ScrollCaptureActions) {
@@ -85,6 +86,10 @@ final class ScrollCaptureSessionTests: XCTestCase {
         func update(_ state: ScrollCaptureViewState, preview: ScrollCapturePreview) {
             states.append(state)
             previews.append(preview)
+        }
+
+        func updateViewport(_ thumbnail: CGImage?) {
+            viewport = thumbnail
         }
 
         func dismiss() {
@@ -455,6 +460,30 @@ final class ScrollCaptureSessionTests: XCTestCase {
         let images = (0 ..< 5).map { Fixtures.solid(width: 2, height: 2, gray: UInt8($0 * 40)) }
         XCTAssertTrue(zip(ScrollCaptureSession.thinned(images), [images[0], images[2], images[4]]).allSatisfy { $0 === $1 })
         XCTAssertEqual(ScrollCaptureSession.thinned(images).count, 3)
+    }
+
+    func testLargeViewportKeepsOneBridgeWithinItsBudget() {
+        XCTAssertEqual(ScrollCaptureSession.bridgeSlots(frameBytes: 1878 * 1674 * 4), 4)
+        XCTAssertEqual(ScrollCaptureSession.bridgeSlots(frameBytes: 3840 * 2160 * 4), 1)
+        XCTAssertEqual(ScrollCaptureSession.bridgeSlots(frameBytes: 5120 * 2880 * 4), 1)
+        XCTAssertEqual(ScrollCaptureSession.bridgeSlots(frameBytes: 64_000_001), 0)
+    }
+
+    func testViewportUpdatesBeforeTheJoinAndClearsWhenCaughtUp() async {
+        let session = makeSession()
+        await start(session)
+        await settle(session, 0)
+        let viewport = Fixtures.solid(width: 20, height: 20, gray: 127)
+        session.receive(frame(60), viewport: viewport)
+        XCTAssertTrue(presenter.viewport === viewport)
+        XCTAssertEqual(presenter.previews.last?.segments.count, 1)
+
+        await session.analysis?.value
+        XCTAssertEqual(presenter.previews.last?.segments.count, 2)
+        advance(1)
+        await tick(session)
+        XCTAssertNil(presenter.viewport)
+        session.cancel()
     }
 
     func testOneUndoRemovesTheWholeNewestScroll() async {

@@ -107,13 +107,19 @@ final class ScrollCaptureOverlayController: ScrollCapturePresenting {
 
     func update(_ state: ScrollCaptureViewState, preview: ScrollCapturePreview) {
         guard region != nil else { return }
-        layOutBar(for: state)
+        if barView?.state != state {
+            layOutBar(for: state)
+        }
         previewView?.preview = preview
         // A click in the app being captured takes the keys away; ␣ ⌫ esc ↩ belong to the bar until the end.
         if let barPanel, let barView, !barPanel.isKeyWindow {
             barPanel.makeKey()
             barPanel.makeFirstResponder(barView)
         }
+    }
+
+    func updateViewport(_ thumbnail: CGImage?) {
+        previewView?.showViewport(thumbnail)
     }
 
     func dismiss() {
@@ -136,7 +142,10 @@ final class ScrollCaptureOverlayController: ScrollCapturePresenting {
         guard let region, let barView, let barPanel else { return }
         let size = barView.show(state)
         let frame = ScrollCaptureLayout.barFrame(size: size, region: region.rect, display: region.displayFrame)
-        barPanel.setFrame(appKitFrame(frame), display: true)
+        let panelFrame = appKitFrame(frame)
+        if panelFrame != barPanel.frame {
+            barPanel.setFrame(panelFrame, display: true)
+        }
     }
 
     private func makePanel(_ rect: CGRect, becomesKey: Bool = false) -> ScreenshotFloatingPanel {

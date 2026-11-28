@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import TypefluxScrollMatching
 
 /// Pure synchronous candidate fixture seam; production native preparation is async.
 /// Finds how far the content moved between two frames, as candidates the stitcher checks row by row.
@@ -345,9 +346,7 @@ struct ScrollStitcher: @unchecked Sendable {
         let sample = stride(from: 0, to: detailed.count, by: step).map { detailed[$0] }
         let limit = middle.count - max(1, middle.count / minimumOverlapDivisor)
         guard limit >= 0 else { return [] }
-        let coarse = closestShifts(in: -limit ... limit, sample: sample, middle: middle) {
-            current.profileDistance($0, to: $1, of: previous)
-        }
+        let coarse = coarseShifts(previous: previous, current: current, middle: middle, sample: sample, limit: limit)
         var shifts: [Int] = []
         for shift in coarse.prefix(searchedCandidates) {
             let nearby = max(-limit, shift - refineRadius) ... min(limit, shift + refineRadius)
@@ -360,12 +359,35 @@ struct ScrollStitcher: @unchecked Sendable {
         return shifts
     }
 
+    private static func coarseShifts(previous: ScrollFrameSignature, current: ScrollFrameSignature,
+                                     middle: Range<Int>, sample: [Int], limit: Int) -> [Int] {
+        guard current.bins > 0, current.bins == previous.bins,
+              current.profiles.count >= middle.upperBound * current.bins,
+              previous.profiles.count >= middle.upperBound * previous.bins else {
+            return closestShifts(in: -limit ... limit, sample: sample, middle: middle) {
+                current.profileDistance($0, to: $1, of: previous)
+            }
+        }
+        let search = TypefluxScrollSearch(rowWidth: Int32(current.bins), firstRow: Int32(middle.lowerBound),
+                                          endRow: Int32(middle.upperBound), shiftLimit: Int32(limit),
+                                          minimumRows: Int32(max(3, sample.count / minimumOverlapDivisor)),
+                                          closestPercent: Int32(trimmedShare))
+        var scores = [Double](repeating: -1, count: 2 * limit + 1)
+        typeflux_scroll_coarse_scores(current.profiles, previous.profiles, sample.map(Int32.init), sample.count,
+                                    search, &scores)
+        let scored = scores.enumerated().compactMap { index, distance -> (shift: Int, distance: Double)? in
+            distance >= 0 ? (index - limit, distance) : nil
+        }
+        return rankedShifts(scored)
+    }
+
     /// The shifts in `shifts` at which the sample rows are closest, best first, at least
     /// `refineRadius` apart. Closeness is the average of the closest `trimmedShare` of the rows.
     private static func closestShifts(in shifts: ClosedRange<Int>, sample: [Int], middle: Range<Int>,
                                       distance: (Int, Int) -> Int) -> [Int] {
         var scored: [(shift: Int, distance: Double)] = []
         var distances: [Int] = []
+        distances.reserveCapacity(sample.count)
         for shift in shifts {
             distances.removeAll(keepingCapacity: true)
             for row in sample where middle.contains(row + shift) {
@@ -377,9 +399,13 @@ struct ScrollStitcher: @unchecked Sendable {
             let kept = distances.prefix(max(1, distances.count * trimmedShare / 100))
             scored.append((shift, Double(kept.reduce(0, +)) / Double(kept.count)))
         }
-        scored.sort { $0.distance != $1.distance ? $0.distance < $1.distance : abs($0.shift) < abs($1.shift) }
+        return rankedShifts(scored)
+    }
+
+    private static func rankedShifts(_ scored: [(shift: Int, distance: Double)]) -> [Int] {
+        let sorted = scored.sorted { $0.distance != $1.distance ? $0.distance < $1.distance : abs($0.shift) < abs($1.shift) }
         var best: [Int] = []
-        for candidate in scored where best.allSatisfy({ abs($0 - candidate.shift) > refineRadius }) {
+        for candidate in sorted where best.allSatisfy({ abs($0 - candidate.shift) > refineRadius }) {
             best.append(candidate.shift)
             if best.count == searchedCandidates { break }
         }

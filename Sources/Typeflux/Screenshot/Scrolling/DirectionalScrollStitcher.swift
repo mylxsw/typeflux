@@ -227,14 +227,24 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
     static func thumbnail(of image: CGImage, axis: ScrollCaptureAxis) -> CGImage? {
         let cross = axis == .horizontal ? image.height : image.width
         guard cross > thumbnailCrossLength else { return nil }
-        let scale = CGFloat(thumbnailCrossLength) / CGFloat(cross)
+        return reducedImage(image, scale: CGFloat(thumbnailCrossLength) / CGFloat(cross), interpolation: .medium)
+    }
+
+    static func viewportThumbnail(of image: CGImage) -> CGImage? {
+        let longestEdge = max(image.width, image.height)
+        guard longestEdge > thumbnailCrossLength else { return image }
+        return reducedImage(image, scale: CGFloat(thumbnailCrossLength) / CGFloat(longestEdge), interpolation: .low)
+    }
+
+    private static func reducedImage(_ image: CGImage, scale: CGFloat,
+                                     interpolation: CGInterpolationQuality) -> CGImage? {
         let width = max(1, Int((CGFloat(image.width) * scale).rounded()))
         let height = max(1, Int((CGFloat(image.height) * scale).rounded()))
         let space = image.colorSpace.flatMap { $0.model == .rgb ? $0 : nil } ?? CGColorSpaceCreateDeviceRGB()
         guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
                                       space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         else { return nil }
-        context.interpolationQuality = .medium
+        context.interpolationQuality = interpolation
         context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
         return context.makeImage()
     }

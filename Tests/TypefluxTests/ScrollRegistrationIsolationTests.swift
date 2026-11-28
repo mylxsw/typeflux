@@ -173,7 +173,9 @@ final class ScrollRegistrationIsolationTests: XCTestCase {
         let last = ScrollCaptureFixtures.solid(width: 21, height: 20, gray: 255)
         XCTAssertTrue(inbox.offer(first))
         for _ in 0..<1000 { XCTAssertFalse(inbox.offer(last)) }
-        XCTAssertTrue(inbox.take() === last); XCTAssertNil(inbox.take())
+        let delivered = inbox.take()
+        XCTAssertTrue(delivered?.image === last); XCTAssertTrue(delivered?.viewport === last)
+        XCTAssertNil(inbox.take())
         XCTAssertTrue(inbox.offer(first)); inbox.close()
         XCTAssertNil(inbox.take()); XCTAssertFalse(inbox.offer(last))
         let oversized = ScrollCaptureFixtures.solid(width: 16385, height: 1, gray: 255)
